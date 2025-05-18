@@ -1,9 +1,11 @@
 import { expect } from 'chai';
+import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'packages/base/test/utils/setup';
 import {
   InfraredBGTMetaVault,
@@ -17,11 +19,10 @@ import {
 } from '../src/types';
 import {
   createPOLIsolationModeTokenVaultV1,
-  createPOLIsolationModeVaultFactory, createPolLiquidatorProxy,
+  createPOLIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
   createTestBerachainRewardsRegistry,
 } from './berachain-ecosystem-utils';
-import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 describe('MetaVaultUpgradeableProxy', () => {
   let snapshotId: string;
@@ -43,8 +44,8 @@ describe('MetaVaultUpgradeableProxy', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -111,7 +112,10 @@ describe('MetaVaultUpgradeableProxy', () => {
     });
 
     it('should fail if already initialized', async () => {
-      await expectThrow(metaVaultProxy.initialize(core.hhUser1.address), 'MetaVaultUpgradeableProxy: Already initialized');
+      await expectThrow(
+        metaVaultProxy.initialize(core.hhUser1.address),
+        'MetaVaultUpgradeableProxy: Already initialized',
+      );
     });
   });
 

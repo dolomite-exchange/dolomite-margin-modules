@@ -1,21 +1,21 @@
-import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import { parseEther } from 'ethers/lib/utils';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getBerachainRewardsRegistryConstructorParams } from 'packages/berachain/src/berachain-constructors';
 import {
   BerachainRewardsRegistry__factory,
   InfraredBGTMetaVault__factory,
-  POLIsolationModeUnwrapperTraderV2__factory,
-  POLIsolationModeWrapperTraderV2__factory,
   POLLiquidatorProxyV1__factory,
 } from 'packages/berachain/src/types';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import getScriptName from '../../../../utils/get-script-name';
+
+const POL_FEE_PERCENTAGE = parseEther('0.0005');
 
 /**
  * This script encodes the following transactions:
@@ -27,8 +27,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
-
-  const transactions: EncodedTransaction[] = [];
 
   const infraredMetaVaultImplementationAddress = await deployContractAndSave(
     'InfraredBGTMetaVault',
@@ -80,10 +78,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ),
     'BerachainRewardsRegistryProxy',
   );
-  const registry = BerachainRewardsRegistry__factory.connect(registryAddress, core.governance);
+  const berachainRewardsRegistry = BerachainRewardsRegistry__factory.connect(registryAddress, core.governance);
 
   // Deploy POL isolation mode token vault, wrapper and unwrapper
-  await deployContractAndSave(
+  const tokenVaultImplementationAddress = await deployContractAndSave(
     'POLIsolationModeTokenVaultV1',
     [],
     'POLIsolationModeTokenVaultImplementationV1',
@@ -92,63 +90,55 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const unwrapperImplementationAddress = await deployContractAndSave(
     'POLIsolationModeUnwrapperTraderV2',
-    [registry.address, core.dolomiteMargin.address],
+    [berachainRewardsRegistry.address, core.dolomiteMargin.address],
     'POLIsolationModeUnwrapperTraderImplementationV2',
-  );
-  const unwrapperImplementation = POLIsolationModeUnwrapperTraderV2__factory.connect(
-    unwrapperImplementationAddress,
-    core.governance,
   );
 
   const wrapperImplementationAddress = await deployContractAndSave(
     'POLIsolationModeWrapperTraderV2',
-    [registry.address, core.dolomiteMargin.address],
+    [berachainRewardsRegistry.address, core.dolomiteMargin.address],
     'POLIsolationModeWrapperTraderImplementationV2',
   );
-  const wrapperImplementation = POLIsolationModeWrapperTraderV2__factory.connect(
-    wrapperImplementationAddress,
-    core.governance,
-  );
 
-  // set pol wrapper/unwrapper
-  transactions.push(
+  const transactions: EncodedTransaction[] = [
+    // set pol tokenVault/unwrapper/wrapper
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { berachainRewardsRegistry: registry },
+      { berachainRewardsRegistry },
       'berachainRewardsRegistry',
-      'ownerSetPolWrapperTrader',
-      [wrapperImplementation.address],
+      'ownerSetPolTokenVault',
+      [tokenVaultImplementationAddress],
     ),
-  );
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { berachainRewardsRegistry: registry },
+      { berachainRewardsRegistry },
       'berachainRewardsRegistry',
       'ownerSetPolUnwrapperTrader',
-      [unwrapperImplementation.address],
+      [unwrapperImplementationAddress],
     ),
-  );
-
-  // set pol fee agent and fee percentage
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { berachainRewardsRegistry: registry },
+      { berachainRewardsRegistry },
+      'berachainRewardsRegistry',
+      'ownerSetPolWrapperTrader',
+      [wrapperImplementationAddress],
+    ),
+    // set pol fee agent and fee percentage
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { berachainRewardsRegistry },
       'berachainRewardsRegistry',
       'ownerSetPolFeeAgent',
-      [core.gnosisSafe.address], // @follow-up adjust
+      [core.gnosisSafeAddress],
     ),
-  );
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { berachainRewardsRegistry: registry },
+      { berachainRewardsRegistry },
       'berachainRewardsRegistry',
       'ownerSetPolFeePercentage',
-      [parseEther('0.03')], // @follow-up adjust
+      [POL_FEE_PERCENTAGE],
     ),
-  );
+  ];
 
   return {
     core,
@@ -165,27 +155,31 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        (await registry.metaVaultImplementation()) === infraredMetaVaultImplementationAddress,
+        (await berachainRewardsRegistry.metaVaultImplementation()) === infraredMetaVaultImplementationAddress,
         'Invalid meta vault implementation address',
       );
       assertHardhatInvariant(
-        (await registry.polLiquidator()) === polLiquidatorProxyAddress,
+        (await berachainRewardsRegistry.polLiquidator()) === polLiquidatorProxyAddress,
         'Invalid POL liquidator proxy address',
       );
       assertHardhatInvariant(
-        (await registry.polWrapperTrader()) === wrapperImplementationAddress,
-        'Invalid POL wrapper trader address',
+        (await berachainRewardsRegistry.polTokenVault()) === tokenVaultImplementationAddress,
+        'Invalid POL token vault address',
       );
       assertHardhatInvariant(
-        (await registry.polUnwrapperTrader()) === unwrapperImplementationAddress,
+        (await berachainRewardsRegistry.polUnwrapperTrader()) === unwrapperImplementationAddress,
         'Invalid POL unwrapper trader address',
       );
       assertHardhatInvariant(
-        (await registry.polFeeAgent()) === core.gnosisSafe.address,
+        (await berachainRewardsRegistry.polWrapperTrader()) === wrapperImplementationAddress,
+        'Invalid POL wrapper trader address',
+      );
+      assertHardhatInvariant(
+        (await berachainRewardsRegistry.polFeeAgent()) === core.gnosisSafeAddress,
         'Invalid POL fee agent address',
       );
       assertHardhatInvariant(
-        (await registry.polFeePercentage(0)).eq(parseEther('0.03')),
+        (await berachainRewardsRegistry.polFeePercentage(0)).eq(POL_FEE_PERCENTAGE),
         'Invalid POL fee percentage',
       );
     },

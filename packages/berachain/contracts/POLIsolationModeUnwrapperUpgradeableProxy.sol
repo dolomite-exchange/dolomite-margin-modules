@@ -50,7 +50,7 @@ contract POLIsolationModeUnwrapperUpgradeableProxy is ProxyContractHelpers {
         Address.functionDelegateCall(
             implementation(),
             _initializationCalldata,
-            "POLIsolationModeWrapperProxy: Initialization failed"
+            "POLIsolationModeUnwrapperProxy: Initialization failed"
         );
     }
 

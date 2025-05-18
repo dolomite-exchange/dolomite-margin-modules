@@ -6,8 +6,10 @@ import {
   DolomiteERC4626WithPayable__factory,
   IERC20,
   IERC20Metadata__factory,
-  IIsolationModeUnwrapperTraderV2, IIsolationModeUnwrapperTraderV2__factory,
-  IIsolationModeWrapperTraderV2, IIsolationModeWrapperTraderV2__factory,
+  IIsolationModeUnwrapperTraderV2,
+  IIsolationModeUnwrapperTraderV2__factory,
+  IIsolationModeWrapperTraderV2,
+  IIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -21,9 +23,7 @@ import {
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -70,6 +70,18 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
 import { GmToken } from 'packages/base/test/utils/ecosystem-utils/gmx';
+import { getPOLIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
+import {
+  IBerachainRewardsRegistry,
+  IERC4626__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
+  POLIsolationModeWrapperTraderV2,
+  POLPriceOracleV2,
+  POLPriceOracleV2__factory,
+} from 'packages/berachain/src/types';
 import {
   getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
   getGlvIsolationModeVaultFactoryConstructorParams,
@@ -94,20 +106,6 @@ import { SignerWithAddressWithSafety } from '../../../base/src/utils/SignerWithA
 import { impersonate } from '../../../base/test/utils';
 import ModuleDeployments from '../deploy/deployments.json';
 import { CREATE3Factory__factory } from '../saved-types';
-import {
-  IBerachainRewardsRegistry,
-  IERC4626__factory,
-  POLIsolationModeTokenVaultV1,
-  POLIsolationModeUnwrapperTraderV2,
-  POLIsolationModeUnwrapperTraderV2__factory,
-  POLIsolationModeVaultFactory,
-  POLIsolationModeVaultFactory__factory,
-  POLIsolationModeWrapperTraderV2,
-  POLIsolationModeWrapperTraderV2__factory,
-  POLPriceOracleV2,
-  POLPriceOracleV2__factory,
-} from 'packages/berachain/src/types';
-import { getPOLIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
 
 type ChainId = string;
 
@@ -409,6 +407,8 @@ export async function deployContractAndSave(
     typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
     `Invalid chainId, found: ${chainId}`,
   );
+
+  const usedContractName = contractRename ?? contractName;
   const contractData = file[usedContractName]?.[chainId.toString()];
   if (contractData && contractData.address !== ADDRESS_ZERO) {
     const contract = file[usedContractName][chainId.toString()];

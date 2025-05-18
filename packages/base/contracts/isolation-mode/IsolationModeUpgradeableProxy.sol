@@ -95,7 +95,7 @@ contract IsolationModeUpgradeableProxy is
         _setUint256(_IS_INITIALIZED_SLOT, 1);
     }
 
-    function implementation() public override view returns (address) {
+    function implementation() public virtual override view returns (address) {
         return IIsolationModeVaultFactory(vaultFactory()).userVaultImplementation();
     }
 

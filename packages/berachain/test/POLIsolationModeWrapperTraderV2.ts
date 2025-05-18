@@ -1,4 +1,8 @@
-import { DolomiteERC4626, DolomiteERC4626__factory, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  RegistryProxy__factory,
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   BYTES_EMPTY,
   MAX_UINT_256_BI,
@@ -8,10 +12,7 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectThrow,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
   setupCoreProtocol,
@@ -19,11 +20,18 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IInfraredVault,
@@ -39,12 +47,10 @@ import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
+  createPOLIsolationModeWrapperTraderV2,
+  createPolLiquidatorProxy,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
-import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
@@ -91,8 +97,8 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -145,12 +151,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   describe('#initializer', () => {
     it('should fail if already initialized', async () => {
-      await expectThrow(
-        wrapper.initialize(
-          factory.address,
-        ),
-        'Initializable: contract is already initialized',
-      );
+      await expectThrow(wrapper.initialize(factory.address), 'Initializable: contract is already initialized');
     });
   });
 
@@ -170,10 +171,12 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         MAX_UINT_256_BI,
         ONE_BI,
         [wrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -204,10 +207,12 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           MAX_UINT_256_BI,
           amountWei,
           [wrapperParam],
-          [{
-            owner: metaVault.address,
-            number: defaultAccountNumber,
-          }],
+          [
+            {
+              owner: metaVault.address,
+              number: defaultAccountNumber,
+            },
+          ],
           {
             deadline: '123123123123123',
             balanceCheckFlag: BalanceCheckFlag.None,
@@ -229,27 +234,31 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
     });
 
     it('should fail if account owner is not vault', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).callFunction(
-          core.genericTraderProxy.address,
-          { owner: core.hhUser1.address, number: borrowAccountNumber },
-          defaultAbiCoder.encode(
-            ['uint256', 'address', 'uint256'],
-            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .callFunction(
+            core.genericTraderProxy.address,
+            { owner: core.hhUser1.address, number: borrowAccountNumber },
+            defaultAbiCoder.encode(
+              ['uint256', 'address', 'uint256'],
+              [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+            ),
           ),
-        ),
         `POLIsolationModeWrapperV2: Account owner is not a vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -257,28 +266,32 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if transfer amount is 0', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).callFunction(
-          core.genericTraderProxy.address,
-          { owner: vault.address, number: borrowAccountNumber },
-          defaultAbiCoder.encode(
-            ['uint256', 'address', 'uint256'],
-            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .callFunction(
+            core.genericTraderProxy.address,
+            { owner: vault.address, number: borrowAccountNumber },
+            defaultAbiCoder.encode(
+              ['uint256', 'address', 'uint256'],
+              [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+            ),
           ),
-        ),
         'POLIsolationModeWrapperV2: Invalid transfer amount',
       );
     });
 
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).callFunction(
-          core.genericTraderProxy.address,
-          { owner: vault.address, number: borrowAccountNumber },
-          defaultAbiCoder.encode(
-            ['uint256', 'address', 'uint256'],
-            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        wrapper
+          .connect(core.hhUser1)
+          .callFunction(
+            core.genericTraderProxy.address,
+            { owner: vault.address, number: borrowAccountNumber },
+            defaultAbiCoder.encode(
+              ['uint256', 'address', 'uint256'],
+              [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+            ),
           ),
-        ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -286,14 +299,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if sender is not generic trader proxy or liquidator', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).callFunction(
-          core.hhUser1.address,
-          { owner: vault.address, number: borrowAccountNumber },
-          defaultAbiCoder.encode(
-            ['uint256', 'address', 'uint256'],
-            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .callFunction(
+            core.hhUser1.address,
+            { owner: vault.address, number: borrowAccountNumber },
+            defaultAbiCoder.encode(
+              ['uint256', 'address', 'uint256'],
+              [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+            ),
           ),
-        ),
         `POLIsolationModeTraderBaseV2: Caller is not authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -303,14 +318,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if vault for internal trade is empty', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.weth.address,
-          ZERO_BI,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.weth.address,
+            ZERO_BI,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         'POLIsolationModeTraderBaseV2: Invalid isolation mode vault',
       );
     });
@@ -324,23 +341,27 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.weth.address,
-          ZERO_BI,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.weth.address,
+            ZERO_BI,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         `POLIsolationModeWrapperV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -348,14 +369,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if input token is not valid', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.wbera.address,
-          ZERO_BI,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.wbera.address,
+            ZERO_BI,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         `POLIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
     });
@@ -363,14 +386,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if output token is not valid', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          core.tokens.wbera.address,
-          core.tokens.weth.address,
-          ZERO_BI,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            core.tokens.wbera.address,
+            core.tokens.weth.address,
+            ZERO_BI,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
     });
@@ -384,37 +409,43 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         amountWei,
         BalanceCheckFlag.None,
       );
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.weth.address,
-          amountWei,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.weth.address,
+            amountWei,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         'POLIsolationModeWrapperV2: Invalid input amount',
       );
     });
 
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.honey.address,
-          ZERO_BI,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
-        ),
+        wrapper
+          .connect(core.hhUser1)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.honey.address,
+            ZERO_BI,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+          ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -431,14 +462,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       );
 
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       const tradeCost = await wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
         core.marketIds.weth,
         marketId,
@@ -502,14 +535,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         amountWei,
         BalanceCheckFlag.None,
       );
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
           core.marketIds.weth,
@@ -540,14 +575,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
           core.marketIds.weth,
@@ -578,14 +615,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
-        core.genericTraderProxy.address,
-        { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(
-          ['uint256', 'address', 'uint256'],
-          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
-        ),
-      );
+      await wrapper
+        .connect(dolomiteMarginImpersonator)
+        .callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber],
+          ),
+        );
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
           core.marketIds.weth,
@@ -654,21 +693,19 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   describe('#createActionsForWrapping', async () => {
     it('should work normally', async () => {
-      const actions = await wrapper.createActionsForWrapping(
-        {
-          primaryAccountId: 0,
-          otherAccountId: 1,
-          primaryAccountOwner: vault.address,
-          primaryAccountNumber: defaultAccountNumber,
-          otherAccountOwner: metaVault.address,
-          otherAccountNumber: defaultAccountNumber,
-          outputMarket: marketId,
-          inputMarket: core.marketIds.weth,
-          minOutputAmount: ONE_BI,
-          inputAmount: ONE_BI,
-          orderData: defaultAbiCoder.encode(['uint256'], [2]),
-        },
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: 0,
+        otherAccountId: 1,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: metaVault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: marketId,
+        inputMarket: core.marketIds.weth,
+        minOutputAmount: ONE_BI,
+        inputAmount: ONE_BI,
+        orderData: defaultAbiCoder.encode(['uint256'], [2]),
+      });
       expect(actions.length).to.equal(3);
       expect(actions[0].actionType).to.equal(ActionType.Call);
 
@@ -721,46 +758,28 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
     describe('#getExchangeCost', () => {
       it('should work normally', async () => {
-        expect(await wrapper.getExchangeCost(
-          core.tokens.weth.address,
-          factory.address,
-          parAmount,
-          BYTES_EMPTY
-        )).to.equal(parAmount);
+        expect(
+          await wrapper.getExchangeCost(core.tokens.weth.address, factory.address, parAmount, BYTES_EMPTY),
+        ).to.equal(parAmount);
       });
 
       it('should fail if input token is not valid', async () => {
         await expectThrow(
-          wrapper.getExchangeCost(
-            core.tokens.wbera.address,
-            factory.address,
-            parAmount,
-            BYTES_EMPTY
-          ),
+          wrapper.getExchangeCost(core.tokens.wbera.address, factory.address, parAmount, BYTES_EMPTY),
           `POLIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
         );
       });
 
       it('should fail if output token is not valid', async () => {
         await expectThrow(
-          wrapper.getExchangeCost(
-            core.tokens.weth.address,
-            core.tokens.wbera.address,
-            parAmount,
-            BYTES_EMPTY
-          ),
+          wrapper.getExchangeCost(core.tokens.weth.address, core.tokens.wbera.address, parAmount, BYTES_EMPTY),
           `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
         );
       });
 
       it('should fail if desired input amount is 0', async () => {
         await expectThrow(
-          wrapper.getExchangeCost(
-            core.tokens.weth.address,
-            factory.address,
-            0,
-            BYTES_EMPTY
-          ),
+          wrapper.getExchangeCost(core.tokens.weth.address, factory.address, 0, BYTES_EMPTY),
           'POLIsolationModeWrapperV2: Invalid desired input amount',
         );
       });

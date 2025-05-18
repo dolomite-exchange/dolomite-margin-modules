@@ -70,6 +70,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event PolFeeAgentSet(address polFeeAgent);
     event PolFeePercentageSet(uint256 polFeePercentage);
     event PolLiquidatorSet(address polLiquidator);
+    event PolTokenVaultSet(address polTokenVault);
     event PolUnwrapperTraderSet(address polUnwrapperTrader);
     event PolWrapperTraderSet(address polWrapperTrader);
 
@@ -99,6 +100,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetPolFeeAgent(address _polFeeAgent) external;
     function ownerSetPolFeePercentage(uint256 _polFeePercentage) external;
     function ownerSetPolLiquidator(address _polLiquidator) external;
+    function ownerSetPolTokenVault(address _polTokenVault) external;
     function ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) external;
     function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
 
@@ -142,6 +144,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function polFeeAgent() external view returns (address);
     function polFeePercentage(uint256 _marketId) external view returns (uint256);
     function polLiquidator() external view returns (address);
+    function polTokenVault() external view returns (address);
     function polUnwrapperTrader() external view returns (address);
     function polWrapperTrader() external view returns (address);
 }

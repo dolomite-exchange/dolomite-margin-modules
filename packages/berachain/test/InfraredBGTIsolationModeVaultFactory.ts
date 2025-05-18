@@ -10,8 +10,10 @@ import {
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { DolomiteERC4626__factory } from 'packages/base/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   InfraredBGTIsolationModeTokenVaultV1,
@@ -25,10 +27,9 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
   createPOLIsolationModeTokenVaultV1,
-  createPOLIsolationModeVaultFactory, createPolLiquidatorProxy,
+  createPOLIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
-import { DolomiteERC4626__factory } from 'packages/base/src/types';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
@@ -51,8 +52,8 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       network: Network.Berachain,
     });
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -139,7 +140,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
           core.hhUser1.address,
           defaultAccountNumber,
           core.marketIds.honey,
-          amountWei
+          amountWei,
         );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
     });
@@ -164,7 +165,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
           core.hhUser1.address,
           defaultAccountNumber,
           core.marketIds.honey,
-          amountWei
+          amountWei,
         );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
     });
@@ -178,7 +179,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
             core.hhUser1.address,
             defaultAccountNumber,
             iBgtMarketId,
-            amountWei
+            amountWei,
           ),
         `MetaVaultRewardReceiverFactory: Invalid market <${iBgtMarketId.toString()}>`,
       );
@@ -192,7 +193,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
             core.hhUser1.address,
             defaultAccountNumber,
             core.marketIds.honey,
-            amountWei
+            amountWei,
           ),
         'MetaVaultRewardReceiverFactory: Can only deposit from metaVault',
       );

@@ -1,21 +1,12 @@
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
-  LiquidatorProxyV5,
+  LiquidatorProxyV6,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  MAX_UINT_256_BI,
-  Network,
-  ONE_DAY_SECONDS,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectThrow,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
   setupCoreProtocol,
@@ -23,12 +14,11 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IInfraredVault,
@@ -41,7 +31,6 @@ import {
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperTraderV2,
-  POLLiquidatorProxyV1,
   TestPOLLiquidatorProxyV1,
 } from '../src/types';
 import {
@@ -51,17 +40,12 @@ import {
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
+  createPOLIsolationModeWrapperTraderV2,
   createTestPolLiquidatorProxy,
   RewardVaultType,
-  wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 const defaultAccountNumber = ZERO_BI;
-const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('100');
 
 describe('POL_EmptyPOC', () => {
@@ -78,7 +62,7 @@ describe('POL_EmptyPOC', () => {
   let metaVault: InfraredBGTMetaVault;
 
   let polLiquidatorProxy: TestPOLLiquidatorProxyV1;
-  let liquidatorProxyV5: LiquidatorProxyV5;
+  let liquidatorProxyV6: LiquidatorProxyV6;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -92,10 +76,9 @@ describe('POL_EmptyPOC', () => {
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
-    liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV5.address, true);
+    liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV6.address, true);
 
-    // @todo update dToken implementation to handle lossy better
     await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
@@ -107,7 +90,7 @@ describe('POL_EmptyPOC', () => {
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
 
-    polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV5);
+    polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV6);
 
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
@@ -167,10 +150,9 @@ describe('POL_EmptyPOC', () => {
     parAmount = await dToken.balanceOf(core.hhUser1.address);
 
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      core.marketIds.weth,
-      core.testEcosystem!.testPriceOracle.address,
-    );
+    await core.dolomiteMargin
+      .connect(core.governance)
+      .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);

@@ -10,11 +10,12 @@ import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
   InfraredBGTMetaVault__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeTokenVaultV1__factory,
+  POLIsolationModeTokenVaultUpgradeableProxy,
+  POLIsolationModeTokenVaultUpgradeableProxy__factory,
   POLIsolationModeVaultFactory,
-  POLIsolationModeWrapperTraderV2,
-  POLIsolationModeWrapperTraderV2__factory,
   POLIsolationModeWrapperUpgradeableProxy,
-  POLIsolationModeWrapperUpgradeableProxy__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -23,7 +24,7 @@ import {
   createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 
-describe('POLIsolationModeWrapperUpgradeableProxy', () => {
+describe('POLIsolationModeTokenVaultUpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
@@ -32,8 +33,8 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
   let registry: BerachainRewardsRegistry;
 
   let proxy: POLIsolationModeWrapperUpgradeableProxy;
-  let wrapper: POLIsolationModeWrapperTraderV2;
-  let wrapperImpl: POLIsolationModeWrapperTraderV2;
+  let tokenVault: POLIsolationModeTokenVaultV1;
+  let tokenVaultImpl: POLIsolationModeTokenVaultV1;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -53,23 +54,24 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
+
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
     await setupTestMarket(core, factory, true);
 
-    wrapperImpl = await createContractWithAbi<POLIsolationModeWrapperTraderV2>(
-      POLIsolationModeWrapperTraderV2__factory.abi,
-      POLIsolationModeWrapperTraderV2__factory.bytecode,
-      [registry.address, core.dolomiteMargin.address],
+    tokenVaultImpl = await createContractWithAbi<POLIsolationModeTokenVaultV1>(
+      POLIsolationModeTokenVaultV1__factory.abi,
+      POLIsolationModeTokenVaultV1__factory.bytecode,
+      [],
     );
-    await registry.connect(core.governance).ownerSetPolWrapperTrader(wrapperImpl.address);
+    await registry.connect(core.governance).ownerSetPolTokenVault(tokenVaultImpl.address);
 
-    const calldata = await wrapperImpl.populateTransaction.initialize(factory.address);
-    proxy = await createContractWithAbi<POLIsolationModeWrapperUpgradeableProxy>(
-      POLIsolationModeWrapperUpgradeableProxy__factory.abi,
-      POLIsolationModeWrapperUpgradeableProxy__factory.bytecode,
+    const calldata = await tokenVaultImpl.populateTransaction.initialize();
+    proxy = await createContractWithAbi<POLIsolationModeTokenVaultUpgradeableProxy>(
+      POLIsolationModeTokenVaultUpgradeableProxy__factory.abi,
+      POLIsolationModeTokenVaultUpgradeableProxy__factory.bytecode,
       [registry.address, calldata.data!],
     );
-    wrapper = POLIsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+    tokenVault = POLIsolationModeTokenVaultV1__factory.connect(proxy.address, core.hhUser1);
 
     snapshotId = await snapshot();
   });
@@ -80,13 +82,13 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
 
   describe('#fallback', () => {
     it('should work normally', async () => {
-      expect(await wrapper.token()).to.eq(factory.address);
+      expect(await tokenVault.VAULT_FACTORY()).to.eq(factory.address);
     });
   });
 
   describe('#implementation', () => {
     it('should work normally', async () => {
-      expect(await proxy.implementation()).to.eq(wrapperImpl.address);
+      expect(await proxy.implementation()).to.eq(tokenVaultImpl.address);
     });
   });
 });

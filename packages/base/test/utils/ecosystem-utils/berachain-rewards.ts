@@ -1,4 +1,4 @@
-import { IERC20, IERC20__factory, RegistryProxy } from 'packages/base/src/types';
+import { IERC20, IERC20__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
 import {
   BERACHAIN_REWARDS_VAULT_FACTORY_MAP,
   BGTM_MAP,
@@ -15,6 +15,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import {
   BerachainRewardsRegistry,
+  BerachainRewardsRegistry__factory,
   IBerachainRewardsFactory,
   IBerachainRewardsFactory__factory,
   IBGTM,
@@ -26,10 +27,16 @@ import {
   INativeRewardVault,
   INativeRewardVault__factory,
   POLIsolationModeTokenVaultV1,
+  POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeUnwrapperTraderV2__factory,
   POLIsolationModeWrapperTraderV2,
+  POLIsolationModeWrapperTraderV2__factory,
   POLLiquidatorProxyV1,
+  POLLiquidatorProxyV1__factory,
 } from 'packages/berachain/src/types';
+import Deployments from 'packages/deployment/src/deploy/deployments.json';
+import { getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export interface BerachainRewardsEcosystem {
   berachainRewardsFactory: IBerachainRewardsFactory;
@@ -64,22 +71,19 @@ export async function createBerachainRewardsEcosystem(
     return Promise.reject(`Invalid network, found ${network}`);
   }
 
-  // const tokenVaultImplementation = getMaxDeploymentVersionAddressByDeploymentKey(
-  //   'POLIsolationModeTokenVaultImplementation',
-  //   network
-  // );
-  // const unwrapperImplementation = getMaxDeploymentVersionAddressByDeploymentKey(
-  //   'POLIsolationModeUnwrapperTraderImplementation',
-  //   network
-  // );
-  // const wrapperImplementation = getMaxDeploymentVersionAddressByDeploymentKey(
-  //   'POLIsolationModeWrapperTraderImplementation',
-  //   network
-  // );
-  // const polLiquidatorProxy = getMaxDeploymentVersionAddressByDeploymentKey(
-  //   'POLLiquidatorProxy',
-  //   network
-  // );
+  const tokenVaultImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'POLIsolationModeTokenVaultImplementation',
+    network,
+  );
+  const unwrapperImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'POLIsolationModeUnwrapperTraderImplementation',
+    network,
+  );
+  const wrapperImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'POLIsolationModeWrapperTraderImplementation',
+    network,
+  );
+  const polLiquidatorProxyAddress = Deployments.POLLiquidatorProxy[network].address;
 
   return {
     berachainRewardsFactory: IBerachainRewardsFactory__factory.connect(
@@ -113,14 +117,19 @@ export async function createBerachainRewardsEcosystem(
         ),
       },
     },
-    live: {} as any, // TODO: fix
-    // live: {
-    //   registry: BerachainRewardsRegistry__factory.connect(Deployments.BerachainRewardsRegistryProxy['80094'].address, signer),
-    //   registryProxy: RegistryProxy__factory.connect(Deployments.BerachainRewardsRegistryProxy['80094'].address, signer),
-    //   tokenVaultImplementation: POLIsolationModeTokenVaultV1__factory.connect(tokenVaultImplementation, signer),
-    //   unwrapperImplementation: POLIsolationModeUnwrapperTraderV2__factory.connect(unwrapperImplementation, signer),
-    //   wrapperImplementation: POLIsolationModeWrapperTraderV2__factory.connect(wrapperImplementation, signer),
-    //   polLiquidatorProxy: POLLiquidatorProxyV1__factory.connect(polLiquidatorProxy, signer),
-    // }
+    live: {
+      registry: BerachainRewardsRegistry__factory.connect(
+        Deployments.BerachainRewardsRegistryProxy['80094'].address,
+        signer,
+      ),
+      registryProxy: RegistryProxy__factory.connect(Deployments.BerachainRewardsRegistryProxy['80094'].address, signer),
+      tokenVaultImplementation: POLIsolationModeTokenVaultV1__factory.connect(tokenVaultImplementationAddress, signer),
+      unwrapperImplementation: POLIsolationModeUnwrapperTraderV2__factory.connect(
+        unwrapperImplementationAddress,
+        signer,
+      ),
+      wrapperImplementation: POLIsolationModeWrapperTraderV2__factory.connect(wrapperImplementationAddress, signer),
+      polLiquidatorProxy: POLLiquidatorProxyV1__factory.connect(polLiquidatorProxyAddress, signer),
+    },
   };
 }

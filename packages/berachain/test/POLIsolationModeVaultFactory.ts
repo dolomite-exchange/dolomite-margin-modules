@@ -1,12 +1,12 @@
-import { DolomiteERC4626, DolomiteERC4626__factory, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
-import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
@@ -17,7 +17,8 @@ import {
 import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
-  createPOLIsolationModeVaultFactory, createPolLiquidatorProxy,
+  createPOLIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -42,8 +43,8 @@ describe('POLIsolationModeVaultFactory', () => {
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
     const dToken2 = DolomiteERC4626__factory.connect(core.dolomiteTokens.usdc!.address, core.hhUser1);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -79,8 +80,11 @@ describe('POLIsolationModeVaultFactory', () => {
       expect(await factory.berachainRewardsRegistry()).to.equal(registry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(dToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
-      expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
+      expect(await factory.userVaultImplementation()).to.equal(ADDRESS_ZERO);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+
+      await registry.connect(core.governance).ownerSetPolTokenVault(vaultImplementation.address);
+      expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
     });
   });
 
@@ -95,11 +99,11 @@ describe('POLIsolationModeVaultFactory', () => {
       });
       await expectEvent(factory, res, 'VaultCreated', {
         account: core.hhUser1.address,
-        vault: metaVaultAddress
+        vault: metaVaultAddress,
       });
       await expectEvent(factory, res, 'VaultCreated', {
         account: core.hhUser1.address,
-        vault: vaultAddress
+        vault: vaultAddress,
       });
     });
 
@@ -111,7 +115,7 @@ describe('POLIsolationModeVaultFactory', () => {
       const res = await factory.createVault(core.hhUser1.address);
       await expectEvent(factory, res, 'VaultCreated', {
         account: core.hhUser1.address,
-        vault: vaultAddress
+        vault: vaultAddress,
       });
       expect(res).to.emit(factory, 'VaultCreated').withArgs(core.hhUser1.address, metaVaultAddress).to.throw;
     });
@@ -129,6 +133,22 @@ describe('POLIsolationModeVaultFactory', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).ownerSetBerachainRewardsRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetUserVaultImplementation', () => {
+    it('should always fail', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetUserVaultImplementation(OTHER_ADDRESS),
+        'POLIsolationModeVaultFactory: Not implemented',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).ownerSetUserVaultImplementation(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

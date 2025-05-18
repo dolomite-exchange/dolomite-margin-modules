@@ -1,3 +1,5 @@
+import { DolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/src/types';
+import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
@@ -28,24 +30,31 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from 'packages/base/src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { Ownable__factory } from 'packages/tokenomics/src/types';
 import {
   BerachainRewardsRegistry,
-  InfraredBGTMetaVault,
-  InfraredBGTMetaVault__factory,
+  IERC20__factory,
   IInfraredVault,
-  POLIsolationModeUnwrapperTraderV2,
+  IInfraredVault__factory,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
-  IInfraredVault__factory,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
+  POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperTraderV2,
   TestInfraredVault,
   TestInfraredVault__factory,
-  IERC20__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -54,16 +63,11 @@ import {
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
+  createPOLIsolationModeWrapperTraderV2,
+  createPolLiquidatorProxy,
   RewardVaultType,
-  upgradeAndSetupDTokensAndOwnerForPOLTests,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { Ownable__factory } from 'packages/tokenomics/src/types';
-import { DolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/src/types';
-import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
@@ -111,8 +115,8 @@ describe('InfraredBGTMetaVault', () => {
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -183,22 +187,18 @@ describe('InfraredBGTMetaVault', () => {
     dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, dToken.address);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
-      await dolomiteOwner.BYPASS_TIMELOCK_ROLE(),
-      dToken.address
-    );
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
-      await dolomiteOwner.EXECUTOR_ROLE(),
-      dToken.address
-    );
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
-      OTHER_ROLE,
-      core.dolomiteMargin.address,
-      ['0x8f6bc659']
-    );
+    await dolomiteOwner
+      .connect(dolomiteOwnerImpersonator)
+      .grantRole(await dolomiteOwner.BYPASS_TIMELOCK_ROLE(), dToken.address);
+    await dolomiteOwner
+      .connect(dolomiteOwnerImpersonator)
+      .grantRole(await dolomiteOwner.EXECUTOR_ROLE(), dToken.address);
+    await dolomiteOwner
+      .connect(dolomiteOwnerImpersonator)
+      .ownerAddRoleToAddressFunctionSelectors(OTHER_ROLE, core.dolomiteMargin.address, ['0x8f6bc659']);
 
     await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(
-      dolomiteOwner.address
+      dolomiteOwner.address,
     );
 
     await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
@@ -243,9 +243,7 @@ describe('InfraredBGTMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault
-          .connect(core.hhUser2)
-          .setDefaultRewardVaultTypeByAsset(dToken.address, RewardVaultType.Infrared),
+        metaVault.connect(core.hhUser2).setDefaultRewardVaultTypeByAsset(dToken.address, RewardVaultType.Infrared),
         `InfraredBGTMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
@@ -306,10 +304,7 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
       const bexHoneyWberaWhale = await impersonate('0xC2BaA8443cDA8EBE51a640905A8E6bc4e1f9872c', true);
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        bexHoneyWberaWhale,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', bexHoneyWberaWhale);
       const bexHoneyWberaVault = IInfraredVault__factory.connect(
         await registry.rewardVault(bexHoneyWbera.address, RewardVaultType.Infrared),
         core.hhUser1,
@@ -324,10 +319,7 @@ describe('InfraredBGTMetaVault', () => {
 
     it('should fail if not infrared', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        core.hhUser1,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', core.hhUser1);
       await expectThrow(
         metaVault.connect(vaultImpersonator).stake(bexHoneyWbera.address, RewardVaultType.Native, amountWei),
         'InfraredBGTMetaVault: Only infrared is supported',
@@ -335,10 +327,7 @@ describe('InfraredBGTMetaVault', () => {
     });
 
     it('should fail if not called by child vault', async () => {
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        core.hhUser1,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', core.hhUser1);
       await expectThrow(
         metaVault.connect(core.hhUser1).stake(bexHoneyWbera.address, RewardVaultType.Infrared, amountWei),
         `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
@@ -359,10 +348,7 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
       const bexHoneyWberaWhale = await impersonate('0xC2BaA8443cDA8EBE51a640905A8E6bc4e1f9872c', true);
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        bexHoneyWberaWhale,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', bexHoneyWberaWhale);
       const bexHoneyWberaVault = IInfraredVault__factory.connect(
         await registry.rewardVault(bexHoneyWbera.address, RewardVaultType.Infrared),
         core.hhUser1,
@@ -381,10 +367,7 @@ describe('InfraredBGTMetaVault', () => {
 
     it('should fail if not infrared', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        core.hhUser1,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', core.hhUser1);
       await expectThrow(
         metaVault.connect(vaultImpersonator).unstake(bexHoneyWbera.address, RewardVaultType.Native, amountWei),
         'InfraredBGTMetaVault: Only infrared is supported',
@@ -392,10 +375,7 @@ describe('InfraredBGTMetaVault', () => {
     });
 
     it('should fail if not called by child vault', async () => {
-      const bexHoneyWbera = IERC20__factory.connect(
-        '0x2c4a603A2aA5596287A06886862dc29d56DbC354',
-        core.hhUser1,
-      );
+      const bexHoneyWbera = IERC20__factory.connect('0x2c4a603A2aA5596287A06886862dc29d56DbC354', core.hhUser1);
       await expectThrow(
         metaVault.connect(core.hhUser1).unstake(bexHoneyWbera.address, RewardVaultType.Infrared, amountWei),
         `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
@@ -434,11 +414,9 @@ describe('InfraredBGTMetaVault', () => {
       await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
       await setupHONEYBalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.honey.address, rewardAmount);
-      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
-        dToken.address,
-        RewardVaultType.Infrared,
-        testInfraredVault.address,
-      );
+      await registry
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetRewardVaultOverride(dToken.address, RewardVaultType.Infrared, testInfraredVault.address);
 
       const rewards = await testInfraredVault.getAllRewardsForUser(metaVault.address);
       await vault.getReward();
@@ -451,11 +429,9 @@ describe('InfraredBGTMetaVault', () => {
       await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
       await setupHONEYBalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.honey.address, rewardAmount);
-      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
-        dToken.address,
-        RewardVaultType.Infrared,
-        testInfraredVault.address,
-      );
+      await registry
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetRewardVaultOverride(dToken.address, RewardVaultType.Infrared, testInfraredVault.address);
 
       await expectWalletBalance(core.hhUser1, core.tokens.honey, ZERO_BI);
       await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxSupplyWei(core.marketIds.honey, ONE_BI);
@@ -472,11 +448,9 @@ describe('InfraredBGTMetaVault', () => {
       await testToken.addBalance(core.hhUser1.address, rewardAmount);
       await testToken.connect(core.hhUser1).approve(testInfraredVault.address, rewardAmount);
       await testInfraredVault.connect(core.hhUser1).addReward(testToken.address, rewardAmount);
-      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
-        dToken.address,
-        RewardVaultType.Infrared,
-        testInfraredVault.address,
-      );
+      await registry
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetRewardVaultOverride(dToken.address, RewardVaultType.Infrared, testInfraredVault.address);
 
       await expectWalletBalance(core.hhUser1, testToken, ZERO_BI);
       const rewards = await testInfraredVault.getAllRewardsForUser(metaVault.address);
@@ -485,7 +459,7 @@ describe('InfraredBGTMetaVault', () => {
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
     });
 
-    it('should work normally with iBgt rewards if vault is already created',  async () => {
+    it('should work normally with iBgt rewards if vault is already created', async () => {
       const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
       await iBgtFactory.createVault(core.hhUser1.address);
@@ -505,11 +479,9 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally with no rewards', async () => {
       const testToken = await createTestToken();
       await testInfraredVault.setRewardTokens([testToken.address]);
-      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
-        dToken.address,
-        RewardVaultType.Infrared,
-        testInfraredVault.address,
-      );
+      await registry
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetRewardVaultOverride(dToken.address, RewardVaultType.Infrared, testInfraredVault.address);
 
       await vault.getReward();
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
@@ -538,10 +510,9 @@ describe('InfraredBGTMetaVault', () => {
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
 
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
-      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetPriceOracle(
-        core.marketIds.weth,
-        core.testEcosystem!.testPriceOracle.address
-      );
+      await core.dolomiteMargin
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
       await infraredVault.connect(infraredImpersonator).notifyRewardAmount(core.tokens.iBgt.address, parseEther('100'));
       await increase(10 * ONE_DAY_SECONDS);
       const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);

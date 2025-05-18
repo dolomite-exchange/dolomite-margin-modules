@@ -1,38 +1,47 @@
-import { parseEther } from 'ethers/lib/utils';
 import { CHAINSIGHT_KEYS_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  AccountRiskOverrideCategory,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
-import {
-  getBerachainRewardsRegistryConstructorParams,
-  getInfraredBGTIsolationModeVaultFactoryConstructorParams,
-} from 'packages/berachain/src/berachain-constructors';
-import {
-  BerachainRewardsRegistry__factory,
-  InfraredBGTIsolationModeTokenVaultV1__factory,
-  InfraredBGTIsolationModeVaultFactory__factory,
-  InfraredBGTMetaVault__factory,
-} from 'packages/berachain/src/types';
+import { parseEther } from 'ethers/lib/utils';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   SimpleIsolationModeUnwrapperTraderV2__factory,
   SimpleIsolationModeWrapperTraderV2__factory,
 } from 'packages/base/src/types';
+import {
+  getInfraredBGTIsolationModeVaultFactoryConstructorParams,
+} from 'packages/berachain/src/berachain-constructors';
+import {
+  InfraredBGTIsolationModeTokenVaultV1__factory,
+  InfraredBGTIsolationModeVaultFactory__factory,
+} from 'packages/berachain/src/types';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
 import { encodeAddIsolationModeMarket } from 'packages/deployment/src/utils/encoding/add-market-encoder-utils';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { encodeInsertChainsightOracleV3 } from 'packages/deployment/src/utils/encoding/oracle-encoder-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import {
+  encodeSetAccountRiskOverrideCategoryByMarketId,
+  encodeSetAccountRiskOverrideCategorySettings,
+  encodeSetMinCollateralization,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import {
+  checkLiquidationPenalty,
+  checkMinCollateralization,
+  printPriceForVisualCheck,
+} from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Deploys iBGT Isolation Mode Ecosystems
+ * - Deploys staked iBGT isolation mode token
+ * - Deploys the iBGT Isolation Mode Ecosystems
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -40,59 +49,30 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
-  const iBgtMarketId = await core.dolomiteMargin.getNumMarkets();
-
-  const transactions: EncodedTransaction[] = [];
 
   // Deploy iBgt vault implementation and InfraredBGTMetaVault implementation
-  const userVaultImplementationAddress = await deployContractAndSave(
+  const ibgtImplementationAddress = await deployContractAndSave(
     'InfraredBGTIsolationModeTokenVaultV1',
     [],
     'InfraredBGTIsolationModeTokenVaultV1',
     core.libraries.tokenVaultActionsImpl,
   );
-  const userVaultImplementation = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
-    userVaultImplementationAddress,
+  const ibgtImplementation = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
+    ibgtImplementationAddress,
     core.governance,
   );
 
-  const infraredMetavaultImplementationAddress = await deployContractAndSave(
-    'InfraredBGTMetaVault',
-    [],
-    'InfraredBGTMetaVaultImplementationV1',
-  );
-  const infraredMetavaultImplementation = InfraredBGTMetaVault__factory.connect(
-    infraredMetavaultImplementationAddress,
-    core.governance,
-  );
-
-  // Deploy BerachainRewardsRegistry
-  const registryImplementationAddress = await deployContractAndSave(
-    'BerachainRewardsRegistry',
-    [],
-    'BerachainRewardsRegistryImplementationV1',
-  );
-  const registryImplementation = BerachainRewardsRegistry__factory.connect(
-    registryImplementationAddress,
-    core.governance,
-  );
-
-  const registryAddress = await deployContractAndSave(
-    'RegistryProxy',
-    await getBerachainRewardsRegistryConstructorParams(
-      registryImplementation,
-      infraredMetavaultImplementation,
-      core.berachainRewardsEcosystem.live.polLiquidatorProxy,
-      core,
-    ),
-    'BerachainRewardsRegistryProxy',
-  );
-  const registry = BerachainRewardsRegistry__factory.connect(registryAddress, core.governance);
+  const berachainRewardsRegistry = core.berachainRewardsEcosystem.live.registry;
 
   // Deploy iBgt factory, wrapper, unwrapper, set up oracle, and add isolation mode market
   const ibgtFactoryAddress = await deployContractAndSave(
     'InfraredBGTIsolationModeVaultFactory',
-    getInfraredBGTIsolationModeVaultFactoryConstructorParams(registry, core.tokens.iBgt, userVaultImplementation, core),
+    getInfraredBGTIsolationModeVaultFactoryConstructorParams(
+      berachainRewardsRegistry,
+      core.tokens.iBgt,
+      ibgtImplementation,
+      core,
+    ),
     'InfraredBGTIsolationModeVaultFactory',
   );
   const ibgtFactory = InfraredBGTIsolationModeVaultFactory__factory.connect(ibgtFactoryAddress, core.governance);
@@ -112,40 +92,42 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   );
   const ibgtUnwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(ibgtUnwrapperAddress, core.governance);
 
-  // @follow-up Check this code
-  transactions.push(
+  const transactions: EncodedTransaction[] = [
+    ...(await encodeInsertChainsightOracleV3(core, core.tokens.iBgt)),
     ...(await encodeInsertChainsightOracleV3(
       core,
-      ibgtFactory as any,
-      false,
-      ADDRESS_ZERO,
+      ibgtFactory,
+      CHAINSIGHT_KEYS_MAP[Network.Berachain][core.tokens.iBgt.address]!.invertPrice,
+      CHAINSIGHT_KEYS_MAP[Network.Berachain][core.tokens.iBgt.address]!.tokenPairAddress,
       CHAINSIGHT_KEYS_MAP[Network.Berachain][core.tokens.iBgt.address]!.key,
     )),
-  );
-
-  transactions.push(
     ...(await encodeAddIsolationModeMarket(
       core,
       ibgtFactory,
       core.oracleAggregatorV2,
       ibgtUnwrapper,
       ibgtWrapper,
-      iBgtMarketId,
-      TargetCollateralization._120, // @follow-up adjust
-      TargetLiquidationPenalty._6, // adjust
-      parseEther(`${2_000}`), // adjust
+      core.marketIds.diBgt,
+      TargetCollateralization._150,
+      TargetLiquidationPenalty._15,
+      parseEther(`${3_000_000}`),
     )),
-  );
-
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { berachainRewardsRegistry: registry },
+      { berachainRewardsRegistry },
       'berachainRewardsRegistry',
       'ownerSetIBgtIsolationModeVaultFactory',
       [ibgtFactory.address],
     ),
-  );
+    await encodeSetMinCollateralization(core, core.marketIds.wbera, TargetCollateralization._142),
+    await encodeSetAccountRiskOverrideCategorySettings(
+      core,
+      AccountRiskOverrideCategory.BERA,
+      TargetCollateralization._133,
+      TargetLiquidationPenalty._10,
+    ),
+    await encodeSetAccountRiskOverrideCategoryByMarketId(core, core.marketIds.diBgt, AccountRiskOverrideCategory.BERA),
+  ];
 
   return {
     core,
@@ -162,13 +144,18 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketTokenAddress(iBgtMarketId)) === ibgtFactory.address,
+        (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.diBgt)) === ibgtFactory.address,
         'Invalid iBgt market ID',
       );
       assertHardhatInvariant(
-        (await registry.iBgtIsolationModeVaultFactory()) === ibgtFactory.address,
+        (await berachainRewardsRegistry.iBgtIsolationModeVaultFactory()) === ibgtFactory.address,
         'Invalid iBgt isolation mode vault factory',
       );
+      await checkMinCollateralization(core, core.marketIds.diBgt, TargetCollateralization._150);
+      await checkLiquidationPenalty(core, core.marketIds.diBgt, TargetLiquidationPenalty._15);
+      await checkMinCollateralization(core, core.marketIds.wbera, TargetCollateralization._142);
+      await printPriceForVisualCheck(core, core.tokens.iBgt);
+      await printPriceForVisualCheck(core, ibgtFactory);
     },
   };
 }

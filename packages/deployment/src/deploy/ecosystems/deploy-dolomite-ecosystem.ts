@@ -60,6 +60,7 @@ import {
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
+import { encodeGenericTraderProxyMigrations } from './helpers/encode-generic-trader-proxy-migrations';
 import {
   encodeIsolationModeFreezableLiquidatorMigrations,
 } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
@@ -325,6 +326,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     ownerAdapterV1: dolomiteOwnerV1,
     ownerAdapterV2: dolomiteOwnerV2,
   } as CoreProtocolType<T>;
+
+  await encodeGenericTraderProxyMigrations(genericTraderRouterProxyAddress, transactions, core);
 
   await encodeDolomiteAccountRegistryMigrations(
     dolomiteAccountRegistryProxy,

@@ -1,9 +1,5 @@
 import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
-import {
-  Network,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   disableInterestAccrual,
@@ -11,10 +7,13 @@ import {
   setupTestMarket,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
@@ -29,9 +28,6 @@ import {
   createPOLIsolationModeVaultFactory,
   createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
-import { expect } from 'chai';
-import { expectThrow } from 'packages/base/test/utils/assertions';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 
@@ -59,8 +55,8 @@ describe('POLPriceOracleV2', () => {
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
@@ -113,16 +109,13 @@ describe('POLPriceOracleV2', () => {
     it('should fail with invalid token', async () => {
       await expectThrow(
         oracle.getPrice(core.tokens.weth.address),
-        `POLPriceOracleV2: Invalid token <${core.tokens.weth.address.toLowerCase()}>`
+        `POLPriceOracleV2: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if market is not closing', async () => {
       await core.dolomiteMargin.connect(core.governance).ownerSetIsClosing(marketId, false);
-      await expectThrow(
-        oracle.getPrice(factory.address),
-        'POLPriceOracleV2: POL cannot be borrowable'
-      );
+      await expectThrow(oracle.getPrice(factory.address), 'POLPriceOracleV2: POL cannot be borrowable');
     });
   });
 

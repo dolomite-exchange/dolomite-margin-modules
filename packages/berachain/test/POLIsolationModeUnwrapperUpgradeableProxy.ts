@@ -1,4 +1,11 @@
 import { expect } from 'chai';
+import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
+import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
@@ -10,19 +17,12 @@ import {
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperUpgradeableProxy,
 } from '../src/types';
-import { DolomiteERC4626, DolomiteERC4626__factory, RegistryProxy__factory } from 'packages/base/src/types';
 import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeVaultFactory,
   createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { setupCoreProtocol, setupTestMarket, setupWETHBalance } from 'packages/base/test/utils/setup';
-import { Network, ONE_BI, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
-import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 describe('POLIsolationModeUnwrapperUpgradeableProxy', () => {
   let snapshotId: string;
@@ -43,8 +43,8 @@ describe('POLIsolationModeUnwrapperUpgradeableProxy', () => {
     });
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -65,9 +65,7 @@ describe('POLIsolationModeUnwrapperUpgradeableProxy', () => {
     );
     await registry.connect(core.governance).ownerSetPolUnwrapperTrader(unwrapperImpl.address);
 
-    const calldata = await unwrapperImpl.populateTransaction.initialize(
-      factory.address,
-    );
+    const calldata = await unwrapperImpl.populateTransaction.initialize(factory.address);
     proxy = await createContractWithAbi<POLIsolationModeUnwrapperUpgradeableProxy>(
       POLIsolationModeUnwrapperUpgradeableProxy__factory.abi,
       POLIsolationModeUnwrapperUpgradeableProxy__factory.bytecode,

@@ -20,12 +20,19 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IInfraredVault,
@@ -52,13 +59,6 @@ import {
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import {
-  GenericEventEmissionType,
-  GenericTraderParam,
-  GenericTraderType,
-} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
@@ -166,10 +166,9 @@ describe('POLLiquidatorProxyV1', () => {
     parAmount = await dToken.balanceOf(core.hhUser1.address);
 
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      core.marketIds.weth,
-      core.testEcosystem!.testPriceOracle.address,
-    );
+    await core.dolomiteMargin
+      .connect(core.governance)
+      .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
@@ -196,10 +195,12 @@ describe('POLLiquidatorProxyV1', () => {
       amountWei,
       parAmount,
       [wrapperParam],
-      [{
-        owner: metaVault.address,
-        number: defaultAccountNumber,
-      }],
+      [
+        {
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        },
+      ],
       {
         deadline: '123123123123123',
         balanceCheckFlag: BalanceCheckFlag.None,
@@ -227,10 +228,7 @@ describe('POLLiquidatorProxyV1', () => {
 
   describe('#initialize', () => {
     it('should fail if already initialized', async () => {
-      await expectThrow(
-        polLiquidatorProxy.initialize(),
-        'Initializable: contract is already initialized',
-      );
+      await expectThrow(polLiquidatorProxy.initialize(), 'Initializable: contract is already initialized');
     });
   });
 
@@ -257,10 +255,12 @@ describe('POLLiquidatorProxyV1', () => {
         inputAmountWei: MAX_UINT_256_BI,
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: [unwrapperParam],
-        makerAccounts: [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        makerAccounts: [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
@@ -271,10 +271,7 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: vault.address, number: borrowAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber }, marketId),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
@@ -295,10 +292,7 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: metaVault.address, number: defaultAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: metaVault.address, number: defaultAccountNumber }, marketId),
       );
     });
 
@@ -325,10 +319,12 @@ describe('POLLiquidatorProxyV1', () => {
         inputAmountWei: MAX_UINT_256_BI,
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: [unwrapperParam],
-        makerAccounts: [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        makerAccounts: [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
@@ -339,10 +335,7 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: vault.address, number: borrowAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber }, marketId),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
@@ -363,18 +356,17 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: metaVault.address, number: defaultAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: metaVault.address, number: defaultAccountNumber }, marketId),
       );
     });
 
     it('should work normally if sender is local operator for solid account', async () => {
-      await core.dolomiteMargin.connect(core.hhUser2).setOperators([{
-        operator: core.hhUser3.address,
-        trusted: true,
-      }]);
+      await core.dolomiteMargin.connect(core.hhUser2).setOperators([
+        {
+          operator: core.hhUser3.address,
+          trusted: true,
+        },
+      ]);
       await vault.unstake(RewardVaultType.Infrared, parAmount.mul(2));
       const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
@@ -397,10 +389,12 @@ describe('POLLiquidatorProxyV1', () => {
         inputAmountWei: MAX_UINT_256_BI,
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: [unwrapperParam],
-        makerAccounts: [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        makerAccounts: [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
@@ -411,10 +405,7 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: vault.address, number: borrowAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber }, marketId),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
@@ -435,10 +426,7 @@ describe('POLLiquidatorProxyV1', () => {
         ),
       );
       console.log(
-        await core.dolomiteMargin.getAccountWei(
-          { owner: metaVault.address, number: defaultAccountNumber },
-          marketId,
-        ),
+        await core.dolomiteMargin.getAccountWei({ owner: metaVault.address, number: defaultAccountNumber }, marketId),
       );
     });
 
@@ -457,10 +445,12 @@ describe('POLLiquidatorProxyV1', () => {
           inputAmountWei: MAX_UINT_256_BI,
           minOutputAmountWei: MAX_UINT_256_BI,
           tradersPath: [unwrapperParam],
-          makerAccounts: [{
-            owner: metaVault.address,
-            number: defaultAccountNumber,
-          }],
+          makerAccounts: [
+            {
+              owner: metaVault.address,
+              number: defaultAccountNumber,
+            },
+          ],
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
@@ -482,10 +472,12 @@ describe('POLLiquidatorProxyV1', () => {
         inputAmountWei: MAX_UINT_256_BI,
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: [unwrapperParam],
-        makerAccounts: [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        makerAccounts: [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });

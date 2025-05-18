@@ -71,34 +71,6 @@ export const BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
-    marketId: -1,
-  },
-};
-
-export const BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0x656b95E550C07a9ffe548bd4085c72418Ceb1dba',
-    marketId: -1,
-  },
-};
-
-export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5',
-    marketId: 33,
-  },
-};
-
-export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
-    marketId: 34,
-  },
-};
-
 export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<DolomiteNetwork, string> = {
   [Network.ArbitrumOne]: CoreDeployments.ChainlinkPriceOracleV1[Network.ArbitrumOne].address,
   [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
@@ -129,13 +101,6 @@ export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x1d9E10B161aE54FEAbe1E3F71f658cac3468e3C3',
-    marketId: 28,
-  },
-};
-
 export const D_GLV_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x7E584529BB40220A2bD5d0c13E3d65aBd4A47F0E',
@@ -150,10 +115,10 @@ export const D_GLV_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x790FF506ac24b03A21F3d0019227447AE2B55Ca5',
-    marketId: 30,
+    address: '0x1d9E10B161aE54FEAbe1E3F71f658cac3468e3C3',
+    marketId: 28,
   },
 };
 
@@ -266,6 +231,20 @@ export const D_GM_WST_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId
   [Network.ArbitrumOne]: {
     address: '0xc587646f67b38739006ED0200e2E0a26FDb01c9B',
     marketId: 59,
+  },
+};
+
+export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x790FF506ac24b03A21F3d0019227447AE2B55Ca5',
+    marketId: 30,
+  },
+};
+
+export const D_IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x0000000000000000000000000000000000000000',
+    marketId: 38,
   },
 };
 
@@ -1512,10 +1491,6 @@ export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
 };
 
-export const INFRARED_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '0xb71b3DaEA39012Fb0f2B14D2a9C86da9292fC126',
-};
-
 export const BERACHAIN_REWARDS_VAULT_FACTORY_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0x94Ad6Ac84f6C6FbA8b8CCbD71d9f4f101def52a8',
 };
@@ -1548,8 +1523,26 @@ export const HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain
   [Network.Berachain]: '0xA95Ff8097B0E405d1F4139F460fa4c89863784c0',
 };
 
+export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5',
+    marketId: 33,
+  },
+};
+
+export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
+    marketId: 34,
+  },
+};
+
 export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0x75F3Be06b02E235f6d0E7EF2D462b29739168301',
+};
+
+export const INFRARED_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xb71b3DaEA39012Fb0f2B14D2a9C86da9292fC126',
 };
 
 export const KYBER_AGGREGATOR_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
@@ -2493,7 +2486,9 @@ export const CHAINSIGHT_KEYS_MAP: Record<DolomiteNetwork, Record<string, Chainsi
       key: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4',
     },
     [IBGT_MAP[Network.Berachain].address]: {
-      key: '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473',
+      key: '0x29e2150359575ab859cc2b19e79caab44e623d827fd63d5bf484021b311a4773',
+      tokenPairAddress: WBERA_MAP[Network.Berachain].address,
+      invertPrice: false,
     },
   },
   [Network.Ink]: {},

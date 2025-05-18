@@ -34,8 +34,16 @@ interface IBaseMetaVault {
     // ==================== Events ====================
     // ================================================
 
-    event AssetStaked(address indexed asset, IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType, uint256 amount);
-    event AssetUnstaked(address indexed asset, IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType, uint256 amount);
+    event AssetStaked(
+        address indexed asset,
+        IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType,
+        uint256 amount
+    );
+    event AssetUnstaked(
+        address indexed asset,
+        IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType,
+        uint256 amount
+    );
     event DTokenFeeCharged(address indexed asset, address indexed feeAgent, uint256 feeAmount);
     event IBgtStaked(uint256 amount);
     event IBgtUnstaked(uint256 amount);

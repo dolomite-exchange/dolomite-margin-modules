@@ -93,7 +93,7 @@ import {
   D_GM_UNI_USD_MAP,
   D_GM_WIF_USD_MAP,
   D_GM_WST_ETH_USD_MAP,
-  D_GMX_MAP,
+  D_GMX_MAP, D_IBGT_MAP,
   DAI_MAP,
   DE_USD_MAP,
   DFS_GLP_MAP,
@@ -245,7 +245,7 @@ import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/u
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
-import { IBGT__factory } from '@dolomite-exchange/modules-berachain/src/types';
+import { IBGT__factory } from 'packages/berachain/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -1437,6 +1437,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
         deUsd: DE_USD_MAP[typedConfig.network].marketId,
+        diBgt: D_IBGT_MAP[typedConfig.network].marketId,
         dolo: DOLO_MAP[typedConfig.network].marketId,
         eBtc: E_BTC_MAP[typedConfig.network].marketId,
         henlo: HENLO_MAP[typedConfig.network].marketId,
@@ -1486,6 +1487,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         deUsd: IERC20__factory.connect(DE_USD_MAP[typedConfig.network].address, hhUser1),
+        diBgt: IERC20__factory.connect(D_IBGT_MAP[typedConfig.network].address, hhUser1),
         dolo: IERC20__factory.connect(DOLO_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),

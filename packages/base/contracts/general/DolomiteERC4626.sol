@@ -22,8 +22,6 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 
 
 /**
@@ -927,9 +925,10 @@ contract DolomiteERC4626 is
     }
 
     function _isLossy(address _from, address _to, uint256 _amount) internal view returns (bool) {
-        // Step 1: we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
-        // Step 2: we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei from doing the second transfer
-        // Step 3: needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
+        // Step 1:  we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
+        // Step 2:  we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei
+        //          from doing the second transfer
+        // Step 3:  needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
             sign: true,

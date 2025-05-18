@@ -1,3 +1,4 @@
+import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import {
@@ -7,13 +8,21 @@ import {
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
-import { DolomiteERC4626, DolomiteERC4626__factory, LiquidatorProxyV5, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  LiquidatorProxyV6,
+  RegistryProxy,
+  RegistryProxy__factory,
+} from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate } from 'packages/base/test/utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
+import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
+import { Ownable__factory } from 'packages/tokenomics/src/types';
 import {
   getBerachainRewardsRegistryConstructorParams,
   getInfraredBGTIsolationModeVaultFactoryConstructorParams,
@@ -24,7 +33,8 @@ import {
   BerachainRewardsRegistry__factory,
   IBaseMetaVault,
   IBaseMetaVault__factory,
-  IBerachainRewardsRegistry, IERC4626__factory,
+  IBerachainRewardsRegistry,
+  IERC4626__factory,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
@@ -48,9 +58,6 @@ import {
   TestPOLLiquidatorProxyV1,
   TestPOLLiquidatorProxyV1__factory,
 } from '../src/types';
-import { Ownable__factory } from 'packages/tokenomics/src/types';
-import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
-import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 
 export enum RewardVaultType {
   Infrared,
@@ -154,37 +161,37 @@ export async function createPOLIsolationModeVaultFactory(
 
 export async function createPolLiquidatorProxy(
   core: CoreProtocolBerachain,
-  liquidatorProxyV5: LiquidatorProxyV5,
+  liquidatorProxyV6: LiquidatorProxyV6,
 ): Promise<POLLiquidatorProxyV1> {
   const implementation = await createContractWithAbi<POLLiquidatorProxyV1>(
     POLLiquidatorProxyV1__factory.abi,
     POLLiquidatorProxyV1__factory.bytecode,
-    [liquidatorProxyV5.address, core.dolomiteMargin.address],
+    [liquidatorProxyV6.address, core.dolomiteMargin.address],
   );
   const data = await implementation.populateTransaction.initialize();
-  const proxy = await createContractWithAbi(
-    UpgradeableProxy__factory.abi,
-    UpgradeableProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, data.data!],
-  );
+  const proxy = await createContractWithAbi(UpgradeableProxy__factory.abi, UpgradeableProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    data.data!,
+  ]);
   return POLLiquidatorProxyV1__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createTestPolLiquidatorProxy(
   core: CoreProtocolBerachain,
-  liquidatorProxyV5: LiquidatorProxyV5,
+  liquidatorProxyV6: LiquidatorProxyV6,
 ): Promise<TestPOLLiquidatorProxyV1> {
   const implementation = await createContractWithAbi<TestPOLLiquidatorProxyV1>(
     TestPOLLiquidatorProxyV1__factory.abi,
     TestPOLLiquidatorProxyV1__factory.bytecode,
-    [liquidatorProxyV5.address, core.dolomiteMargin.address],
+    [liquidatorProxyV6.address, core.dolomiteMargin.address],
   );
   const data = await implementation.populateTransaction.initialize();
-  const proxy = await createContractWithAbi(
-    UpgradeableProxy__factory.abi,
-    UpgradeableProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, data.data!],
-  );
+  const proxy = await createContractWithAbi(UpgradeableProxy__factory.abi, UpgradeableProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    data.data!,
+  ]);
   return TestPOLLiquidatorProxyV1__factory.connect(proxy.address, core.hhUser1);
 }
 
@@ -269,11 +276,9 @@ export async function upgradeAndSetupDTokensAndOwnerForPOLTests(core: CoreProtoc
   await dolomiteOwner.connect(core.gnosisSafe).grantRole(executorRole, dToken.address);
 
   await dolomiteOwner.connect(core.gnosisSafe).grantRole(dTokenRole, dToken.address);
-  await dolomiteOwner.connect(core.gnosisSafe).ownerAddRoleToAddressFunctionSelectors(
-    dTokenRole,
-    core.dolomiteMargin.address,
-    ['0x8f6bc659']
-  );
+  await dolomiteOwner
+    .connect(core.gnosisSafe)
+    .ownerAddRoleToAddressFunctionSelectors(dTokenRole, core.dolomiteMargin.address, ['0x8f6bc659']);
 }
 
 export async function wrapFullBalanceIntoVaultDefaultAccount(

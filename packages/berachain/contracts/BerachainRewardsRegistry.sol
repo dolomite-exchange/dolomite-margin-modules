@@ -72,6 +72,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _POL_FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeeAgent")) - 1);
     bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POL_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polLiquidator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_TOKEN_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polTokenVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1); // solhint-disable-line max-line-length
 
@@ -262,6 +263,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetPolLiquidator(_polLiquidator);
     }
 
+    function ownerSetPolTokenVault(
+        address _polTokenVault
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolTokenVault(_polTokenVault);
+    }
+
     function ownerSetPolUnwrapperTrader(
         address _polUnwrapperTrader
     ) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -345,6 +352,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     function polLiquidator() public view override returns (address) {
         return _getAddress(_POL_LIQUIDATOR_SLOT);
+    }
+
+    function polTokenVault() public view override returns (address) {
+        return _getAddress(_POL_TOKEN_VAULT_SLOT);
     }
 
     function polUnwrapperTrader() public view override returns (address) {
@@ -549,6 +560,16 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_POL_LIQUIDATOR_SLOT, _polLiquidator);
         emit PolLiquidatorSet(_polLiquidator);
+    }
+
+    function _ownerSetPolTokenVault(address _polTokenVault) internal {
+        Require.that(
+            _polTokenVault != address(0),
+            _FILE,
+            "Invalid polTokenVault"
+        );
+        _setAddress(_POL_TOKEN_VAULT_SLOT, _polTokenVault);
+        emit PolTokenVaultSet(_polTokenVault);
     }
 
     function _ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) internal {

@@ -36,7 +36,7 @@ import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IInfraredVault,
@@ -92,7 +92,6 @@ describe('POLIsolationModeTokenVaultV1', () => {
       blockNumber: 2_040_000,
       network: Network.Berachain,
     });
-    // @todo update dToken implementation to handle lossy better
     await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     await disableInterestAccrual(core, core.marketIds.weth);
@@ -106,8 +105,8 @@ describe('POLIsolationModeTokenVaultV1', () => {
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
 
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,

@@ -1,17 +1,14 @@
-import {
-  ADDRESS_ZERO,
-  Network,
-  ONE_ETH_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IERC20,
@@ -31,10 +28,6 @@ import {
   createPolLiquidatorProxy,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { parseEther } from 'ethers/lib/utils';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -60,8 +53,8 @@ describe('BerachainRewardsRegistry', () => {
       network: Network.Berachain,
     });
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -87,11 +80,11 @@ describe('BerachainRewardsRegistry', () => {
     asset = core.dolomiteTokens.weth!;
     infraredVault = IInfraredVault__factory.connect(
       await core.berachainRewardsEcosystem.infrared.vaultRegistry(asset.address),
-      core.hhUser1
+      core.hhUser1,
     );
     nativeVault = INativeRewardVault__factory.connect(
       await core.berachainRewardsEcosystem.berachainRewardsFactory.getVault(asset.address),
-      core.hhUser1
+      core.hhUser1,
     );
 
     snapshotId = await snapshot();
@@ -218,7 +211,7 @@ describe('BerachainRewardsRegistry', () => {
       await expectEvent(registry, res, 'AccountToAssetToDefaultTypeSet', {
         account: core.hhUser1.address,
         asset: asset.address,
-        type: RewardVaultType.Infrared,
+        rewardType: RewardVaultType.Infrared,
       });
       expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, asset.address)).to.equal(
         RewardVaultType.Infrared,
@@ -228,10 +221,9 @@ describe('BerachainRewardsRegistry', () => {
     it('should fail if the caller is not the meta vault', async () => {
       await iBgtFactory.createVault(core.hhUser1.address);
       await expectThrow(
-        registry.connect(core.hhUser1).setDefaultRewardVaultTypeFromMetaVaultByAsset(
-          asset.address,
-          RewardVaultType.Infrared,
-        ),
+        registry
+          .connect(core.hhUser1)
+          .setDefaultRewardVaultTypeFromMetaVaultByAsset(asset.address, RewardVaultType.Infrared),
         `BerachainRewardsRegistry: Unauthorized meta vault <${core.hhUser1.addressLower}>`,
       );
     });
@@ -479,15 +471,13 @@ describe('BerachainRewardsRegistry', () => {
 
   describe('#ownerSetRewardVaultOverride', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetRewardVaultOverride(
-        asset.address,
-        RewardVaultType.Infrared,
-        OTHER_ADDRESS,
-      );
+      const result = await registry
+        .connect(core.governance)
+        .ownerSetRewardVaultOverride(asset.address, RewardVaultType.Infrared, OTHER_ADDRESS);
       await expectEvent(registry, result, 'RewardVaultOverrideSet', {
         asset: asset.address,
         rewardVaultType: RewardVaultType.Infrared,
-        infraredVault: OTHER_ADDRESS,
+        rewardVault: OTHER_ADDRESS,
       });
       expect(await registry.rewardVault(asset.address, RewardVaultType.Infrared)).to.equal(OTHER_ADDRESS);
     });
@@ -496,11 +486,7 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry
           .connect(core.hhUser1)
-          .ownerSetRewardVaultOverride(
-            asset.address,
-            RewardVaultType.Infrared,
-            OTHER_ADDRESS,
-          ),
+          .ownerSetRewardVaultOverride(asset.address, RewardVaultType.Infrared, OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -509,11 +495,7 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry
           .connect(core.governance)
-          .ownerSetRewardVaultOverride(
-            asset.address,
-            RewardVaultType.Infrared,
-            ADDRESS_ZERO,
-          ),
+          .ownerSetRewardVaultOverride(asset.address, RewardVaultType.Infrared, ADDRESS_ZERO),
         'BerachainRewardsRegistry: Invalid rewardVault address',
       );
     });
@@ -615,6 +597,30 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
+  describe('#ownerSetPolTokenVault', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetPolTokenVault(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'PolTokenVaultSet', {
+        polTokenVault: OTHER_ADDRESS,
+      });
+      expect(await registry.polTokenVault()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPolTokenVault(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid polTokenVault',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPolTokenVault(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetPolUnwrapperTrader', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetPolUnwrapperTrader(OTHER_ADDRESS);
@@ -679,11 +685,9 @@ describe('BerachainRewardsRegistry', () => {
     it('should return the correct reward vault if overridden', async () => {
       expect(await registry.rewardVault(asset.address, RewardVaultType.Infrared)).to.equal(infraredVault.address);
 
-      await registry.connect(core.governance).ownerSetRewardVaultOverride(
-        asset.address,
-        RewardVaultType.Infrared,
-        OTHER_ADDRESS
-      );
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVaultOverride(asset.address, RewardVaultType.Infrared, OTHER_ADDRESS);
       expect(await registry.rewardVault(asset.address, RewardVaultType.Infrared)).to.equal(OTHER_ADDRESS);
     });
   });

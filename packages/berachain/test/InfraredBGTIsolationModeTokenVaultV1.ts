@@ -1,4 +1,4 @@
-import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
@@ -19,6 +19,7 @@ import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV6 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   InfraredBGTIsolationModeTokenVaultV1,
@@ -32,10 +33,9 @@ import {
 import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory, createPolLiquidatorProxy,
+  createInfraredBGTIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
 const defaultAccountNumber = ZERO_BI;
@@ -61,8 +61,8 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       network: Network.Berachain,
     });
 
-    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV6);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
@@ -94,7 +94,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     );
     metaVault = InfraredBGTMetaVault__factory.connect(
       await registry.getMetaVaultByVault(iBgtVault.address),
-      core.hhUser1
+      core.hhUser1,
     );
 
     iBgtWhale = await impersonate(IBGT_WHALE_ADDRESS, true);
@@ -109,10 +109,9 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
     // to avoid price expired errors when advancing time
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.honey.address, ONE_ETH_BI);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      core.marketIds.honey,
-      core.testEcosystem!.testPriceOracle.address
-    );
+    await core.dolomiteMargin
+      .connect(core.governance)
+      .ownerSetPriceOracle(core.marketIds.honey, core.testEcosystem!.testPriceOracle.address);
 
     snapshotId = await snapshot();
   });
@@ -134,7 +133,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by metaVault', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser1).setIsDepositSourceMetaVault(true),
-        'MetaVaultRewardReceiver: Only metaVault'
+        'MetaVaultRewardReceiver: Only metaVault',
       );
     });
   });
