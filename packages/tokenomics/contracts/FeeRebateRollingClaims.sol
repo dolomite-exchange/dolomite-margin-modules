@@ -55,14 +55,20 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ===========================================================
 
     constructor(
+        address _feeRebateAddress,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+        _ownerSetFeeRebateAddress(_feeRebateAddress);
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
+
+    function ownerSetFeeRebateAddress(address _feeRebateAddress) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeRebateAddress(_feeRebateAddress);
+    }
 
     function ownerSetMarketIdToMerkleRoot(
         uint256 _marketId,
@@ -85,6 +91,11 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ======================= View Functions =======================
     // ==============================================================
 
+    function feeRebateAddress() external view returns (address) {
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        return s.feeRebateAddress;
+    }
+
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32) {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         return s.marketIdToMerkleRoot[_marketId];
@@ -101,7 +112,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
 
     function _claim(ClaimParams memory _claimParams) internal {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        address user = msg.sender;
+        address user = getUserOrRemappedAddress(msg.sender);
 
         Require.that(
             _verifyMerkleProof(
@@ -123,12 +134,13 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[user][_claimParams.marketId];
         s.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
 
-        // TODO: change to transfer and move funds from a rebate address (treasury)
         IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
+        token.safeTransferFrom(s.feeRebateAddress, address(this), amountToClaim);
+
         token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
         AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
-            user,
+            msg.sender,
             address(this),
             0,
             _claimParams.marketId,
@@ -147,6 +159,18 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         s.marketIdToMerkleRoot[_marketId] = _merkleRoot;
         emit MarketIdToMerkleRootSet(_marketId, _merkleRoot);
+    }
+
+    function _ownerSetFeeRebateAddress(address _feeRebateAddress) internal virtual {
+        Require.that(
+            _feeRebateAddress != address(0),
+            _FILE,
+            "Invalid fee rebate address"
+        );
+
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        s.feeRebateAddress = _feeRebateAddress;
+        emit FeeRebateAddressSet(_feeRebateAddress);
     }
 
     function _verifyMerkleProof(

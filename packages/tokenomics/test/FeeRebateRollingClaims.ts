@@ -4,7 +4,7 @@ import {
 } from '../src/types';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupWETHBalance } from 'packages/base/test/utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
@@ -78,17 +78,15 @@ describe('FeeRebateRollingClaims', () => {
     feeRebateClaims = await createContractWithAbi<TestFeeRebateRollingClaims>(
       TestFeeRebateRollingClaims__factory.abi,
       TestFeeRebateRollingClaims__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [core.gnosisSafe.address, core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     await feeRebateClaims.connect(core.governance).ownerSetMarketIdToMerkleRoot(core.marketIds.usdc, merkleRootUsdc);
     await feeRebateClaims.connect(core.governance).ownerSetMarketIdToMerkleRoot(core.marketIds.weth, merkleRootWeth);
     await feeRebateClaims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(feeRebateClaims.address, true);
 
-    await setupWETHBalance(core, core.hhUser5, parseEther('100'), feeRebateClaims);
-    await setupUSDCBalance(core, core.hhUser5, BigNumber.from('2000000000'), feeRebateClaims);
-    await core.tokens.weth.connect(core.hhUser5).transfer(feeRebateClaims.address, parseEther('100'));
-    await core.tokens.usdc.connect(core.hhUser5).transfer(feeRebateClaims.address, BigNumber.from('2000000000'));
+    await setupWETHBalance(core, core.gnosisSafe, parseEther('100'), feeRebateClaims);
+    await setupUSDCBalance(core, core.gnosisSafe, BigNumber.from('2000000000'), feeRebateClaims);
     await feeRebateClaims.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
@@ -102,6 +100,7 @@ describe('FeeRebateRollingClaims', () => {
     it('should work normally', async () => {
       expect(await feeRebateClaims.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await feeRebateClaims.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
+      expect(await feeRebateClaims.feeRebateAddress()).to.eq(core.gnosisSafe.address);
     });
   });
 
@@ -121,6 +120,45 @@ describe('FeeRebateRollingClaims', () => {
       expect(await feeRebateClaims.userToMarketIdToClaimAmount(core.hhUser1.address, core.marketIds.usdc))
         .to.eq(BigNumber.from('500000000'));
       await expectProtocolBalance(core, core.hhUser1, 0, core.marketIds.usdc, BigNumber.from('500000000'));
+    });
+
+    it('should work normally with remapped address', async () => {
+      await feeRebateClaims.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
+        [core.hhUser1.address]
+      );
+
+      const res = await feeRebateClaims.connect(core.hhUser4).claim([{
+        marketId: core.marketIds.usdc,
+        proof: validProofUsdc,
+        amount: BigNumber.from('500000000')
+      }]);
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: feeRebateClaims.address,
+        user: core.hhUser1.address,
+        epoch: core.marketIds.usdc,
+        amount: BigNumber.from('500000000')
+      });
+      expect(await feeRebateClaims.userToMarketIdToClaimAmount(core.hhUser1.address, core.marketIds.usdc))
+        .to.eq(BigNumber.from('500000000'));
+      await expectProtocolBalance(core, core.hhUser4, 0, core.marketIds.usdc, BigNumber.from('500000000'));
+
+      await expectThrow(
+        feeRebateClaims.connect(core.hhUser1).claim([{
+          marketId: core.marketIds.usdc,
+          proof: validProofUsdc,
+          amount: BigNumber.from('500000000')
+        }]),
+        'FeeRebateRollingClaims: No amount to claim'
+      );
+      await expectThrow(
+        feeRebateClaims.connect(core.hhUser4).claim([{
+          marketId: core.marketIds.usdc,
+          proof: validProofUsdc,
+          amount: BigNumber.from('500000000')
+        }]),
+        'FeeRebateRollingClaims: No amount to claim'
+      );
     });
 
     it('should work normally with first merkle root and two marketIds', async () => {
@@ -281,6 +319,30 @@ describe('FeeRebateRollingClaims', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         feeRebateClaims.connect(core.hhUser1).ownerSetMarketIdToMerkleRoot(core.marketIds.usdc, merkleRootUsdc),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerSetFeeRebateAddress', () => {
+    it('should work normally', async () => {
+      const res = await feeRebateClaims.connect(core.governance).ownerSetFeeRebateAddress(core.hhUser1.address);
+      await expectEvent(feeRebateClaims, res, 'FeeRebateAddressSet', {
+        feeRebateAddress: core.hhUser1.address
+      });
+      expect(await feeRebateClaims.feeRebateAddress()).to.eq(core.hhUser1.address);
+    });
+
+    it('should fail if zero address', async () => {
+      await expectThrow(
+        feeRebateClaims.connect(core.governance).ownerSetFeeRebateAddress(ADDRESS_ZERO),
+        'FeeRebateRollingClaims: Invalid fee rebate address'
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        feeRebateClaims.connect(core.hhUser1).ownerSetFeeRebateAddress(core.hhUser2.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

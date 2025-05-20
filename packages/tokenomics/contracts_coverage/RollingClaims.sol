@@ -71,7 +71,7 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled nonReentrant {
         RollingClaimsStorage storage s = _getRollingClaimsStorage();
-        address user = msg.sender;
+        address user = getUserOrRemappedAddress(msg.sender);
 
         if (_verifyMerkleProof(user, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -88,7 +88,7 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
         uint256 amountToClaim = _amount - s.userToClaimAmount[user];
         s.userToClaimAmount[user] = _amount;
 
-        ODOLO.safeTransfer(user, amountToClaim);
+        ODOLO.safeTransfer(msg.sender, amountToClaim);
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, EPOCH_NUMBER, amountToClaim);
     }
 
