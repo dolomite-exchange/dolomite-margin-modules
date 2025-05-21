@@ -8442,6 +8442,41 @@
       "isVerified": true
     }
   },
+  "POLrUsdIsolationModeUnwrapperUpgradeableProxy": {
+    "80094": {
+      "address": "0x645004487aE442049efFD66b1A09EcB8d5274b1C",
+      "transaction": "0xbe20d926edad25c9d7a24440021d6183a864fc4ce96df3ef23521b64f239b757",
+      "isVerified": true
+    }
+  },
+  "POLrUsdIsolationModeVaultFactory": {
+    "80094": {
+      "address": "0x5DB5ef3D657471d991e4de09983D2c92b0609749",
+      "transaction": "0xc99f2a81ceae3e74bec386269776326ce7f54a3a3990344ab2c90f22c018ac1a",
+      "isVerified": true
+    }
+  },
+  "POLrUsdIsolationModeVaultFactoryDeadProxy": {
+    "80094": {
+      "address": "0x1cA5C658B4C20f7c5C8153a4F1B6e7E4677B7046",
+      "transaction": "0xc99f2a81ceae3e74bec386269776326ce7f54a3a3990344ab2c90f22c018ac1a",
+      "isVerified": true
+    }
+  },
+  "POLrUsdIsolationModeWrapperUpgradeableProxy": {
+    "80094": {
+      "address": "0xE728b67C258F2e60988bD2CEBf0350Bdc358E3E9",
+      "transaction": "0x9fa22d9b31726640bae287e9a07cb8fb58a36db0e0c267a0c42447388a46acc0",
+      "isVerified": true
+    }
+  },
+  "POLrUsdPriceOracleV2": {
+    "80094": {
+      "address": "0x97860390B611d244307C22044C590d44D4b88B3b",
+      "transaction": "0x466ceb0eda1cdd5bcb5f74009616acdb4260931fdcf3ecc61154f38ee0b047a0",
+      "isVerified": true
+    }
+  },
   "PremiaTWAPPriceOracleV1": {
     "42161": {
       "address": "0x1093e0E82EC11080D6239538a5D5c60d155aF851",

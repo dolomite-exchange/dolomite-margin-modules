@@ -26,6 +26,7 @@ import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/u
 import {
   prettyPrintEncodedDataWithTypeSafety,
 } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
+import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain';
 
 export class DeployedVault {
   public contractName: string;
@@ -172,7 +173,12 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   } else if (config.network === Network.Base) {
     // Do nothing
   } else if (config.network === Network.Berachain) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoBerachain,
+      deployedVaults,
+    );
   } else if (config.network === Network.Ink) {
     // Do nothing
   } else if (config.network === Network.Mantle) {
@@ -189,7 +195,6 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   } else if (config.network === Network.XLayer) {
     // Do nothing
   } else {
-    return deployedVaults;
     throw new Error(`Invalid network, found ${config.network}`);
   }
 

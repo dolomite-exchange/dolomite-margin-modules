@@ -243,7 +243,7 @@ export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const D_IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '0x0000000000000000000000000000000000000000',
+    address: '0x589B3B5E75D5475908C6C2EBD1F2f68eeCA52eE4',
     marketId: 38,
   },
 };

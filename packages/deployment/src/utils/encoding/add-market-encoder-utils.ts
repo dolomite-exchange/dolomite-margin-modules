@@ -146,7 +146,7 @@ export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>
 
     ...await encodeAddIsolationModeMarket(
       core,
-      polSystem.factory,
+      (polSystem.factory as any) as IIsolationModeVaultFactory,
       oracle,
       polSystem.unwrapper,
       polSystem.wrapper,

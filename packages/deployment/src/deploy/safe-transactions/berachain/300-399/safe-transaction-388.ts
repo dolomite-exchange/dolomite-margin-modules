@@ -1,4 +1,3 @@
-import { parseEther } from 'ethers/lib/utils';
 import {
   TargetCollateralization,
   TargetLiquidationPenalty,
@@ -7,10 +6,20 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
+import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { deployBerachainPOLSystem } from 'packages/deployment/src/utils/deploy-utils';
 import { encodeAddPOLIsolationModeMarket } from 'packages/deployment/src/utils/encoding/add-market-encoder-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import {
+  encodeSetSingleCollateralWithStrictDebtByMarketId,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import {
+  checkAccountRiskOverrideIsSingleCollateral,
+  checkSupplyCap,
+  printPriceForVisualCheck,
+} from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -30,7 +39,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     core,
     core.berachainRewardsEcosystem.live.registry,
     core.dolomiteTokens.rUsd,
-    'pol-rUsd',
+    'POLrUsd',
     core.berachainRewardsEcosystem.live.tokenVaultImplementation,
     core.berachainRewardsEcosystem.live.unwrapperImplementation,
     core.berachainRewardsEcosystem.live.wrapperImplementation,
@@ -42,10 +51,21 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       rUsdSystem,
       core.oracleAggregatorV2,
       polRUsdMarketId,
-      TargetCollateralization._120, // @follow-up adjust
-      TargetLiquidationPenalty._6, // adjust
-      parseEther(`${2_000}`), // adjust
+      TargetCollateralization._125,
+      TargetLiquidationPenalty._8,
+      parseEther(`${25_000_000}`),
     )),
+    await encodeSetSingleCollateralWithStrictDebtByMarketId(
+      core,
+      polRUsdMarketId,
+      [
+        {
+          debtMarketIds: [core.marketIds.rUsd],
+          marginRatioOverride: TargetCollateralization._107,
+          liquidationRewardOverride: TargetLiquidationPenalty._2,
+        }
+      ]
+    )
   );
 
   return {
@@ -62,14 +82,22 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      // assertHardhatInvariant(
-      //   (await core.dolomiteMargin.getMarketTokenAddress(iBgtMarketId)) === ibgtFactory.address,
-      //   'Invalid iBgt market ID',
-      // );
-      // assertHardhatInvariant(
-      //   (await registry.iBgtIsolationModeVaultFactory()) === ibgtFactory.address,
-      //   'Invalid iBgt isolation mode vault factory',
-      // );
+      expect(await rUsdSystem.factory.symbol()).to.eq('pol-rUSD');
+      expect(await rUsdSystem.factory.name()).to.eq('Dolomite Isolation: pol-rUSD');
+      await checkSupplyCap(core, polRUsdMarketId, parseEther(`${25_000_000}`));
+      await checkAccountRiskOverrideIsSingleCollateral(
+        core,
+        polRUsdMarketId,
+        [
+          {
+            debtMarketIds: [core.marketIds.rUsd],
+            marginRatioOverride: TargetCollateralization._107,
+            liquidationRewardOverride: TargetLiquidationPenalty._2,
+          },
+        ],
+      );
+
+      await printPriceForVisualCheck(core, rUsdSystem.factory);
     },
   };
 }

@@ -86,23 +86,23 @@ contract POLIsolationModeVaultFactory is
         emit BerachainRewardsRegistrySet(_berachainRewardsRegistry);
     }
 
-    function ownerSetUserVaultImplementation(
-        address /* _userVaultImplementation */
-
-    )
-        external override(IIsolationModeVaultFactory, IsolationModeVaultFactory)
-        view
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        revert("POLIsolationModeVaultFactory: Not implemented");
-    }
-
     function userVaultImplementation()
         public override(IIsolationModeVaultFactory, IsolationModeVaultFactory)
         view
         returns (address)
     {
-        return berachainRewardsRegistry.polTokenVault();
+        if (address(berachainRewardsRegistry) == address(0)) {
+            // This only happens during initialization when the vault is `DEAD`
+            return super.userVaultImplementation();
+        }
+
+        address implementation = berachainRewardsRegistry.polTokenVault();
+        if (implementation == address(0)) {
+            implementation = super.userVaultImplementation();
+        }
+
+        assert(implementation != address(0));
+        return implementation;
     }
 
     // ============ Internal Functions ============
