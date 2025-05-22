@@ -91,11 +91,6 @@ contract POLIsolationModeVaultFactory is
         view
         returns (address)
     {
-        if (address(berachainRewardsRegistry) == address(0)) {
-            // This only happens during initialization when the vault is `DEAD`
-            return super.userVaultImplementation();
-        }
-
         address implementation = berachainRewardsRegistry.polTokenVault();
         if (implementation == address(0)) {
             implementation = super.userVaultImplementation();
