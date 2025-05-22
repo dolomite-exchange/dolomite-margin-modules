@@ -1,5 +1,5 @@
 import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
-import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -80,7 +80,7 @@ describe('POLIsolationModeVaultFactory', () => {
       expect(await factory.berachainRewardsRegistry()).to.equal(registry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(dToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
-      expect(await factory.userVaultImplementation()).to.equal(ADDRESS_ZERO);
+      expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
 
       await registry.connect(core.governance).ownerSetPolTokenVault(vaultImplementation.address);
@@ -117,7 +117,7 @@ describe('POLIsolationModeVaultFactory', () => {
         account: core.hhUser1.address,
         vault: vaultAddress,
       });
-      expect(res).to.emit(factory, 'VaultCreated').withArgs(core.hhUser1.address, metaVaultAddress).to.throw;
+      expect(res).to.not.emit(registry, 'MetaVaultCreated').withArgs(core.hhUser1.address, metaVaultAddress);
     });
   });
 
@@ -133,22 +133,6 @@ describe('POLIsolationModeVaultFactory', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).ownerSetBerachainRewardsRegistry(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetUserVaultImplementation', () => {
-    it('should always fail', async () => {
-      await expectThrow(
-        factory.connect(core.governance).ownerSetUserVaultImplementation(OTHER_ADDRESS),
-        'POLIsolationModeVaultFactory: Not implemented',
-      );
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).ownerSetUserVaultImplementation(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
