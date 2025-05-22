@@ -230,6 +230,7 @@ contract LiquidatorProxyV5 is
         if (_isUnwrapperTraderType(_param.traderType) || _isWrapperTraderType(_param.traderType)) {
             // For liquidations, the asset amount must match the amount of collateral transferred from liquid account
             // to solid account. This is done via always selling the max amount of held collateral.
+            if (_inputAmountWei == type(uint256).max) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _inputAmountWei == type(uint256).max,
                 _FILE,

@@ -42,7 +42,8 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../../utils/deploy-utils';
 import {
   DeployedVaultInformation,
-  getConstructorParametersForAsyncIsolationMode, getIsolationModeLibrariesByType,
+  getConstructorParametersForAsyncIsolationMode,
+  getIsolationModeLibrariesByType,
   IsolationModeVaultType,
 } from './isolation-mode-helpers';
 

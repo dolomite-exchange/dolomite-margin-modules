@@ -59,24 +59,25 @@ abstract contract HasLiquidatorRegistry {
 
     // ============ Internal Functions ============
 
-    function _validateAssetForLiquidation(uint256 _marketId) internal view {
-        if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, address(this))) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, address(this)),
-            _FILE,
-            "Asset not whitelisted",
-            _marketId
-        );
-    }
-
     function _validateAssetsForLiquidation(uint256[] memory _marketIds) internal view {
         for (uint256 i = 0; i < _marketIds.length; i++) {
-            if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this))) { /* FOR COVERAGE TESTING */ }
+            _validateAssetForLiquidation(_marketIds[i]);
+        }
+    }
+
+    function _validateAssetForLiquidation(uint256 _marketId) internal view {
+        bool whitelistedForLiquidation = LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(
+            _marketId,
+            address(this)
+        );
+
+        if (!whitelistedForLiquidation) {
+            if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, msg.sender)) { /* FOR COVERAGE TESTING */ }
             Require.that(
-                LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this)),
+                LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, msg.sender),
                 _FILE,
                 "Asset not whitelisted",
-                _marketIds[i]
+                _marketId
             );
         }
     }

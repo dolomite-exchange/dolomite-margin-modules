@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { VeTokenClaim__factory } from 'packages/tokenomics/src/types';
 import { getUpgradeableProxyConstructorParams } from '../../../../../../base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
@@ -14,7 +13,6 @@ import { checkIsGlobalOperator } from '../../../../utils/invariant-utils';
 import Deployments from '../../../deployments.json';
 
 const BOYCO_PARTNER_AIRDROP_MERKLE_ROOT = '0xfa190eb9ac3a57cb05f956b654054780cc80bbbbab2e5316c962797e95624075';
-const DOLO_AMOUNT = BigNumber.from('5592674851887171961327208');
 
 /**
  * This script encodes the following transactions:

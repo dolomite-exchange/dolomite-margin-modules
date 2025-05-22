@@ -11,7 +11,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 import { DolomiteOwnerV1 } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createDolomiteOwner } from './admin-ecosystem-utils';
+import { createDolomiteOwnerV1 } from './admin-ecosystem-utils';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
@@ -34,7 +34,7 @@ describe('DolomiteOwner', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    dolomiteOwner = (await createDolomiteOwner(core, SECONDS_TIME_LOCKED)).connect(core.gnosisSafe);
+    dolomiteOwner = (await createDolomiteOwnerV1(core, SECONDS_TIME_LOCKED)).connect(core.gnosisSafe);
     bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
     executorRole = await dolomiteOwner.EXECUTOR_ROLE();
     securityCouncilRole = await dolomiteOwner.SECURITY_COUNCIL_ROLE();

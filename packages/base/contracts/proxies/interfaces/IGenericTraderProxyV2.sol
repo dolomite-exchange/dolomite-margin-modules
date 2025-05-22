@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IAuthorizationBase } from "../../interfaces/IAuthorizationBase.sol";
 import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
@@ -31,7 +32,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
  *
  * Trader router interface for trading assets using any trader from msg.sender
  */
-interface IGenericTraderProxyV2 is IGenericTraderBase {
+interface IGenericTraderProxyV2 is IGenericTraderBase, IAuthorizationBase {
 
     // ============ Enums ============
 

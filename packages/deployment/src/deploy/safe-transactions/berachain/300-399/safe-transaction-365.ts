@@ -10,10 +10,7 @@ import { checkAccountRiskOverrideIsBorrowOnly, checkIsCollateralOnly } from '../
 
 /**
  * This script encodes the following transactions:
- * - Adds the deUSD market
- * - Adds the sdeUSD market
- * - Opens up borrowing SolvBTC and xSolvBTC
- * - Removes SolvBTC as borrowable from other BTC LSTs
+ * - Adds dTokens for deUSD and sdeUSD
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);

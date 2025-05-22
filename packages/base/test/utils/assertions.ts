@@ -148,6 +148,26 @@ export async function expectProtocolBalance<T extends DolomiteNetwork>(
   );
 }
 
+export async function expectProtocolParBalance<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  accountOwner: { address: address } | address,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
+  amountPar: BigNumberish,
+) {
+  const account = {
+    owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
+    number: accountNumber,
+  };
+  const rawBalancePar = await core.dolomiteMargin.getAccountPar(account, marketId);
+  const balancePar = rawBalancePar.sign ? rawBalancePar.value : rawBalancePar.value.mul(-1);
+  expect(balancePar)
+    .eq(
+      amountPar,
+      `Expected ${balancePar.toString()} to equal ${amountPar.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
+    );
+}
+
 export async function expectProtocolBalanceDustyOrZero<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,

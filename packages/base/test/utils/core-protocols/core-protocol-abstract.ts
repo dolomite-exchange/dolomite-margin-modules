@@ -5,25 +5,28 @@ import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } 
 import {
   DolomiteERC4626,
   DolomiteERC4626WithPayable,
-  IBorrowPositionProxyV2, IBorrowPositionRouter,
-  IDepositWithdrawalProxy, IDepositWithdrawalRouter,
+  IBorrowPositionProxyV2,
+  IBorrowPositionRouter,
+  IDepositWithdrawalProxy,
+  IDepositWithdrawalRouter,
   IDolomiteAccountRegistry,
   IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
-  IGenericTraderProxyV2, IGenericTraderRouter,
+  IGenericTraderProxyV2,
+  IGenericTraderRouter,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
-  ILiquidatorProxyV5,
+  ILiquidatorProxyV6,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
   RegistryProxy,
 } from '../../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/utils/constants';
-import { Network, DolomiteNetwork } from '../../../src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
@@ -37,6 +40,7 @@ export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
   unwrapperTraderImpl: Record<string, string>;
   wrapperTraderImpl: Record<string, string>;
+  genericTraderProxyV2Lib: Record<string, string>;
 }
 
 export interface ImplementationContracts {
@@ -138,7 +142,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  liquidatorProxyV5: ILiquidatorProxyV5;
+  liquidatorProxyV6: ILiquidatorProxyV6;
   marketIdToDeployedVaultMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
@@ -208,7 +212,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  public readonly liquidatorProxyV5: ILiquidatorProxyV5;
+  public readonly liquidatorProxyV6: ILiquidatorProxyV6;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
@@ -273,7 +277,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.liquidatorAssetRegistry = params.liquidatorAssetRegistry;
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
-    this.liquidatorProxyV5 = params.liquidatorProxyV5;
+    this.liquidatorProxyV6 = params.liquidatorProxyV6;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapterV1 = params.ownerAdapterV1;
     this.ownerAdapterV2 = params.ownerAdapterV2;

@@ -33,6 +33,11 @@ export enum TargetCollateralization {
   _111 = '1.111111111111111111',
 
   /**
+   * 107% collateralization || 93% LTV
+   */
+  _107 = '1.071428571428571428',
+
+  /**
    * 120% collateralization || 83.33% LTV
    */
   _120 = '1.20',
@@ -209,7 +214,7 @@ export async function getEventEmitterRegistryConstructorParams<T extends Dolomit
   return [implementation.address, core.dolomiteMargin.address, initializationCallData.data!];
 }
 
-type OwnerAddMarketParameters<T extends Network> = T extends Network.ArbitrumOne
+type OwnerAddMarketParameters<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? Parameters<IDolomiteMargin['functions']['ownerAddMarket']>
   : Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']>;
 
@@ -381,7 +386,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Dolomit
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId
+    marketId,
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
@@ -404,7 +409,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId
+    marketId,
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }

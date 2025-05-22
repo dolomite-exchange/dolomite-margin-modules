@@ -18,17 +18,33 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, DolomiteNetwork, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  DolomiteNetwork,
+  Network,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import {
+  getFormattedTokenName,
+  isValidAmountForCapForToken,
+  prettyPrintEncodedDataWithTypeSafety,
+} from './base-encoder-utils';
+import { BerachainPOLSystem } from '../deploy-utils';
 
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
   decimals?: number;
+  skipEncodeLiquidatorWhitelist?: boolean;
+}
+
+export interface AddIsolationModeMarketOptions extends AddMarketOptions {
+  whitelistedLiquidatorAddress?: string;
 }
 
 export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
@@ -41,7 +57,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
-  options: AddMarketOptions = {},
+  options: AddIsolationModeMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
@@ -86,7 +102,76 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV5.address],
+      [marketId, options.whitelistedLiquidatorAddress ?? core.liquidatorProxyV6.address],
+    ),
+  );
+
+  return transactions;
+}
+
+export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  polSystem: BerachainPOLSystem,
+  oracle: IDolomitePriceOracle,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddIsolationModeMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  if (core.network !== Network.Berachain) {
+    return Promise.reject(new Error('Core protocol is not Berachain'));
+  }
+
+  const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: polSystem.factory.address,
+          decimals: 18,
+          oracleInfos: [
+            {
+              oracle: polSystem.oracle.address,
+              tokenPair: ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+
+    ...await encodeAddIsolationModeMarket(
+      core,
+      (polSystem.factory as any) as IIsolationModeVaultFactory,
+      oracle,
+      polSystem.unwrapper,
+      polSystem.wrapper,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      { ...options, whitelistedLiquidatorAddress: core.berachainRewardsEcosystem.live.polLiquidatorProxy.address },
+    ),
+  ];
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [polSystem.unwrapper.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [polSystem.wrapper.address, true],
     ),
   );
 

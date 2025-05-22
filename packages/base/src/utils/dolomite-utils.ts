@@ -13,7 +13,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { DolomiteNetwork, MAX_UINT_256_BI, Network, NETWORK_TO_NETWORK_NAME_MAP } from './no-deps-constants';
+import { DolomiteNetwork, MAX_UINT_256_BI, NETWORK_TO_NETWORK_NAME_MAP } from './no-deps-constants';
 import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 
 export async function createArtifactFromBaseWorkspaceIfNotExists(
@@ -214,7 +214,7 @@ export function heldWeiToOwedWei(heldWei: BigNumber, heldPrice: BigNumber, owedP
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
 
-export async function getAnyNetwork<T extends Network>(): Promise<T> {
+export async function getAnyNetwork<T extends DolomiteNetwork>(): Promise<T> {
   let foundNetwork;
   if (hardhat.network.name === 'hardhat') {
     if (!process.env.NETWORK) {
@@ -228,7 +228,7 @@ export async function getAnyNetwork<T extends Network>(): Promise<T> {
   return foundNetwork as T;
 }
 
-export async function getAndCheckSpecificNetwork<T extends Network>(networkInvariant: T): Promise<T> {
+export async function getAndCheckSpecificNetwork<T extends DolomiteNetwork>(networkInvariant: T): Promise<T> {
   let foundNetwork: string;
   if (hardhat.network.name === 'hardhat') {
     if (!process.env.NETWORK) {
