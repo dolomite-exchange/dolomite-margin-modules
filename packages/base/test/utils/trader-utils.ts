@@ -22,7 +22,7 @@ const api_config = {
 };
 
 const ODOS_API_URL = 'https://api.odos.xyz';
-const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
+const PARASWAP_API_URL = 'https://api.paraswap.io';
 
 export interface TraderOutput {
   calldata: string;
@@ -45,6 +45,27 @@ export enum ParaswapSwapSelector {
   Mega = '0x46c67b6d',
   Multi = '0xa94e78ef',
   Simple = '0x54e3f31b',
+}
+
+export enum VeloraSwapType {
+  SwapExactAmountIn = 'swapExactAmountIn',
+  SwapExactAmountInOnBalancerV2 = 'swapExactAmountInOnBalancerV2',
+  SwapExactAmountInOnCurveV1 = 'swapExactAmountInOnCurveV1',
+  SwapExactAmountInOnUniswapV2 = 'swapExactAmountInOnUniswapV2',
+}
+
+const allVeloraSwapTypes: VeloraSwapType[] = [
+  VeloraSwapType.SwapExactAmountIn,
+  VeloraSwapType.SwapExactAmountInOnBalancerV2,
+  VeloraSwapType.SwapExactAmountInOnCurveV1,
+  VeloraSwapType.SwapExactAmountInOnUniswapV2,
+];
+
+export enum VeloraSwapSelector {
+  SwapExactAmountIn = '0xe3ead59e',
+  SwapExactAmountInOnBalancerV2 = '0xd85ca173',
+  SwapExactAmountInOnCurveV1 = '0x1a01c532',
+  SwapExactAmountInOnUniswapV2 = '0xe8bb3b6c',
 }
 
 export async function getCalldataForOdos<T extends DolomiteNetwork>(
@@ -252,6 +273,72 @@ export async function getCalldataForParaswap<T extends DolomiteNetwork>(
   };
 }
 
+export async function getCalldataForVelora<T extends DolomiteNetwork>(
+  inputAmount: BigNumber,
+  inputToken: { address: address },
+  inputDecimals: number,
+  minOutputAmount: BigNumber,
+  outputToken: { address: address },
+  outputDecimals: number,
+  txOrigin: { address: address },
+  receiver: { address: address },
+  core: CoreProtocolType<T>,
+  swapTypes: VeloraSwapType[] = allVeloraSwapTypes,
+): Promise<TraderOutput> {
+  if (swapTypes.length === 0) {
+    return Promise.reject(new Error('swapTypes is empty'));
+  }
+  const priceRouteResponse = await axios.get(`${PARASWAP_API_URL}/prices`, {
+    params: {
+      network: core.config.network,
+      srcToken: inputToken.address,
+      srcDecimals: inputDecimals,
+      destToken: outputToken.address,
+      destDecimals: outputDecimals,
+      amount: inputAmount.toString(),
+      includeContractMethods: swapTypes.join(','),
+      version: 6.2
+    },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in prices', error);
+      throw error;
+    });
+
+  const queryParams = new URLSearchParams({
+    ignoreChecks: 'true',
+    ignoreGasEstimate: 'true',
+    onlyParams: 'false',
+  }).toString();
+  const result = await axios.post(`${PARASWAP_API_URL}/transactions/${core.config.network}?${queryParams}`, {
+    priceRoute: priceRouteResponse?.priceRoute,
+    txOrigin: txOrigin.address,
+    srcToken: inputToken.address,
+    srcDecimals: inputDecimals,
+    destToken: outputToken.address,
+    destDecimals: outputDecimals,
+    srcAmount: inputAmount.toString(),
+    destAmount: minOutputAmount.toString(),
+    userAddress: receiver.address,
+    receiver: receiver.address,
+    deadline: 9999999999,
+    partnerAddress: core.governance.address,
+    partnerFeeBps: '0',
+    positiveSlippageToUser: false,
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in transactions', error);
+      throw error;
+    });
+
+  return {
+    calldata: result.data,
+    outputAmount: BigNumber.from(BigNumber.from(priceRouteResponse.priceRoute.destAmount)),
+  };
+}
+
 export async function checkForParaswapSuccess(
   contractTransactionPromise: Promise<ContractTransaction>,
 ): Promise<boolean> {
@@ -280,6 +367,21 @@ export function swapTypeToSelector(swapType: ParaswapSwapType): ParaswapSwapSele
       return ParaswapSwapSelector.Multi;
     case ParaswapSwapType.Simple:
       return ParaswapSwapSelector.Simple;
+    default:
+      throw new Error(`Unknown swap type ${swapType}`);
+  }
+}
+
+export function veloraSwapTypeToSelector(swapType: VeloraSwapType): VeloraSwapSelector {
+  switch (swapType) {
+    case VeloraSwapType.SwapExactAmountIn:
+      return VeloraSwapSelector.SwapExactAmountIn;
+    case VeloraSwapType.SwapExactAmountInOnBalancerV2:
+      return VeloraSwapSelector.SwapExactAmountInOnBalancerV2;
+    case VeloraSwapType.SwapExactAmountInOnCurveV1:
+      return VeloraSwapSelector.SwapExactAmountInOnCurveV1;
+    case VeloraSwapType.SwapExactAmountInOnUniswapV2:
+      return VeloraSwapSelector.SwapExactAmountInOnUniswapV2;
     default:
       throw new Error(`Unknown swap type ${swapType}`);
   }

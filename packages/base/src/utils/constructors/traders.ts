@@ -67,3 +67,12 @@ export function getOogaBoogaAggregatorTraderConstructorParams(
     core.dolomiteMargin.address,
   ];
 }
+
+export function getVeloraAggregatorTraderConstructorParams<T extends Network>(
+  core: CoreProtocolWithParaswap<T>,
+): any[] {
+  return [
+    core.paraswapEcosystem.augustusSwapper.address,
+    core.dolomiteMargin.address,
+  ];
+}

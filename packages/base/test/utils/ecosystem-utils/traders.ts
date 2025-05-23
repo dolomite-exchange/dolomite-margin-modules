@@ -12,6 +12,8 @@ import {
   ParaswapAggregatorTraderV2__factory,
   TestOkxAggregatorTrader,
   TestOkxAggregatorTrader__factory,
+  VeloraAggregatorTrader,
+  VeloraAggregatorTrader__factory,
 } from '../../../src/types';
 import {
   CoreProtocolWithOdos,
@@ -22,6 +24,7 @@ import {
   getOkxAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
+  getVeloraAggregatorTraderConstructorParams,
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from '../core-protocols/core-protocol-berachain';
@@ -83,5 +86,15 @@ export async function createOogaBoogaAggregatorTrader(
     OogaBoogaAggregatorTrader__factory.abi,
     OogaBoogaAggregatorTrader__factory.bytecode,
     getOogaBoogaAggregatorTraderConstructorParams(core),
+  );
+}
+
+export async function createVeloraAggregatorTrader<T extends Network>(
+  core: CoreProtocolWithParaswap<T>,
+): Promise<VeloraAggregatorTrader> {
+  return await createContractWithAbi<VeloraAggregatorTrader>(
+    VeloraAggregatorTrader__factory.abi,
+    VeloraAggregatorTrader__factory.bytecode,
+    getVeloraAggregatorTraderConstructorParams(core),
   );
 }

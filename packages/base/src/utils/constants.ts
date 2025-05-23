@@ -1591,6 +1591,17 @@ export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<DolomiteNetwork, string | unde
   [Network.XLayer]: undefined,
 };
 
+export const PARASWAP_AUGUSTUS_SWAPPER_MAP: Record<DolomiteNetwork, string | undefined> = {
+  [Network.ArbitrumOne]: '0x6A000F20005980200259B80c5102003040001068',
+  [Network.Base]: undefined,
+  [Network.Berachain]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: undefined,
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
+};
+
 export const PARASWAP_FEE_CLAIMER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0xA7465CCD97899edcf11C56D2d26B49125674e45F',
   [Network.Base]: '0x9aaB4B24541af30fD72784ED98D8756ac0eFb3C7',
