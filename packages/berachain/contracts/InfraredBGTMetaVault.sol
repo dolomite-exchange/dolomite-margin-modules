@@ -178,6 +178,19 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     // ======================== View Functions ==========================
     // ==================================================================
 
+    function getPendingRewardsByAsset(
+        address _asset
+    ) external view returns (IInfraredVault.UserReward[] memory) {
+        IBerachainRewardsRegistry registry = REGISTRY();
+        if (_asset == address(registry.iBgt())) {
+            return registry.iBgtStakingVault().getAllRewardsForUser(address(this));
+        }
+
+        IBerachainRewardsRegistry.RewardVaultType vaultType = getDefaultRewardVaultTypeByAsset(_asset);
+        IInfraredVault vault = IInfraredVault(registry.rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED));
+        return vault.getAllRewardsForUser(address(this));
+    }
+
     function REGISTRY() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsRegistry(_getAddress(_REGISTRY_SLOT));
     }

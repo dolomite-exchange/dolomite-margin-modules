@@ -259,7 +259,6 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
-    // @todo add tests here with new situations with extra tokens in metavault and/or vault
     it('should work normally (honey)', async () => {
       await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
       await setupHONEYBalance(core, core.hhUser5, rewardAmount, { address: testInfraredVault.address });
@@ -464,6 +463,22 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
         iBgtVault.connect(core.hhUser2).exit(),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
+    });
+  });
+
+  describe('#getPendingRewardsByAsset', () => {
+    it('should work normally for iBgt', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
+      await setupHONEYBalance(core, core.hhUser5, rewardAmount, { address: testInfraredVault.address });
+      await testInfraredVault.connect(core.hhUser5).addReward(core.tokens.honey.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      const pendingRewards = await metaVault.getPendingRewardsByAsset(core.tokens.iBgt.address);
+      expect(pendingRewards[0].amount).to.eq(rewardAmount);
+      expect(pendingRewards[0].token).to.equal(core.tokens.honey.address);
     });
   });
 
