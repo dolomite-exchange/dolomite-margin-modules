@@ -140,6 +140,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
         address _account,
         address _asset
     ) external view returns (RewardVaultType);
+    function getMetaVaultProxyInitCodeHash() external pure returns (bytes32);
 
     function polFeeAgent() external view returns (address);
     function polFeePercentage(uint256 _marketId) external view returns (uint256);

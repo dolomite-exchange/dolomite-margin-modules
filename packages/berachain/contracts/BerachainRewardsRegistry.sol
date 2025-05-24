@@ -396,6 +396,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return _getAddressFromMap(_VAULT_TO_META_VAULT_SLOT, _vault);
     }
 
+    function getMetaVaultProxyInitCodeHash() public pure override returns (bytes32) {
+        return keccak256(type(MetaVaultUpgradeableProxy).creationCode);
+    }
+
     // ================================================
     // =============== Internal Functions =============
     // ================================================
