@@ -110,7 +110,7 @@ describe('InfraredBGTMetaVault', () => {
     const implementation = await createContractWithAbi<DolomiteERC4626>(
       DolomiteERC4626__factory.abi,
       DolomiteERC4626__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+      [core.config.network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
@@ -576,6 +576,20 @@ describe('InfraredBGTMetaVault', () => {
         metaVault.connect(core.hhUser1).chargeDTokenFee(dToken.address, marketId, parAmount),
         `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
       );
+    });
+  });
+
+  describe('#getPendingRewardsByAsset', () => {
+    it('should work normally for dToken', async () => {
+      const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
+      await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
+      await infraredVault.connect(infraredImpersonator).notifyRewardAmount(core.tokens.iBgt.address, parseEther('100'));
+
+      await increase(10 * ONE_DAY_SECONDS);
+      console.log(await metaVault.getPendingRewardsByAsset(dToken.address));
+      const pendingRewards = await metaVault.getPendingRewardsByAsset(dToken.address);
+      expect(pendingRewards[0].amount.gt(0)).to.be.true;
+      expect(pendingRewards[0].token).to.equal(core.tokens.iBgt.address);
     });
   });
 });
