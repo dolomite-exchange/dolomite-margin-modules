@@ -1,4 +1,4 @@
-import { D_IBGT_MAP } from 'packages/base/src/utils/constants';
+import { D_IBGT_MAP, POL_R_USD_MAP } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../../utils/deploy-utils';
 import {
@@ -18,5 +18,17 @@ export const marketToIsolationModeVaultInfoBerachain: Record<number, DeployedVau
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
     tokenAddress: D_IBGT_MAP[network].address,
+  },
+  [POL_R_USD_MAP[network].marketId]: {
+    contractName: 'POLIsolationModeTokenVaultV1',
+    contractRenameWithoutVersion: 'POLIsolationModeTokenVaultImplementation',
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
+      'POLIsolationModeTokenVaultImplementation',
+      network,
+    ),
+    constructorParams: [],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
+    vaultType: IsolationModeVaultType.Pol,
+    tokenAddress: POL_R_USD_MAP[network].address,
   },
 };

@@ -50,6 +50,28 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     }
 
     // ================================================
+    // =================== Structs ====================
+    // ================================================
+
+    struct InitializationParams {
+        address bgt;
+        address bgtm;
+        address iBgt;
+        address wbera;
+        address berachainRewardsFactory;
+        address iBgtStakingVault;
+        address infrared;
+        address metaVaultImplementation;
+        address polLiquidator;
+        bytes metaVaultProxyCreationCode;
+        address dolomiteRegistry;
+    }
+
+    struct MetaVaultProxyCreationCode {
+        bytes code;
+    }
+
+    // ================================================
     // ==================== Events ====================
     // ================================================
 
@@ -77,6 +99,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event AccountToAssetToDefaultTypeSet(address indexed account, address indexed asset, RewardVaultType rewardType);
     event MetaVaultCreated(address indexed account, address metaVault);
     event MetaVaultImplementationSet(address metaVaultImplementation);
+    event MetaVaultProxyCreationCodeSet(bytes32 proxyInitHash);
     event VaultToMetaVaultSet(address indexed vault, address metaVault);
 
     // ===================================================
@@ -105,6 +128,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
 
     function ownerSetMetaVaultImplementation(address _metaVaultImplementation) external;
+    function ownerSetMetaVaultProxyCreationCode(bytes calldata _creationCode) external;
 
     // ===================================================
     // ================== Public Functions ===============
@@ -132,6 +156,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function iBgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
 
     function metaVaultImplementation() external view returns (address);
+    function metaVaultProxyCreationCode() external view returns (bytes memory);
     function calculateMetaVaultByAccount(address _account) external view returns (address);
     function getMetaVaultByAccount(address _account) external view returns (address);
     function getAccountByMetaVault(address _metaVault) external view returns (address);
@@ -140,7 +165,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
         address _account,
         address _asset
     ) external view returns (RewardVaultType);
-    function getMetaVaultProxyInitCodeHash() external pure returns (bytes32);
+    function getMetaVaultProxyInitCodeHash() external view returns (bytes32);
 
     function polFeeAgent() external view returns (address);
     function polFeePercentage(uint256 _marketId) external view returns (uint256);

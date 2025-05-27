@@ -8,7 +8,7 @@
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts berachain",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/(InfraredBGTMetaVault|InfraredBGTIsolationModeTokenVaultV1).ts\" --solcoverjs ../../.solcover.js",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/InfraredBGTIsolationModeTokenVaultV1.ts",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/BerachainRewardsRegistry.ts",
     "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/POLIsolationModeVaultFactory.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix berachain",

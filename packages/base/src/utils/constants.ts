@@ -668,6 +668,13 @@ export const POL_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
   },
 };
 
+export const POL_R_USD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x5DB5ef3D657471d991e4de09983D2c92b0609749',
+    marketId: 39,
+  },
+};
+
 export const PREMIA_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x51fC0f6660482Ea73330E414eFd7808811a57Fa2',

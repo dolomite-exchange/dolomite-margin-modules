@@ -542,10 +542,38 @@
   },
   "AtlasSIUserVaultFactory": {},
   "AtlasSIUserVaultV1": {},
+  "BerachainRewardsReaderV1": {
+    "80094": {
+      "address": "0xAe91Ab22A7f6855282d03D17c9b6ECA697d5e666",
+      "transaction": "0x0f8e20ed63be15736638d70800d9eea17c9de19ad174bad8d650620dee23ae7f",
+      "isVerified": true
+    }
+  },
+  "BerachainRewardsReaderV2": {
+    "80094": {
+      "address": "0xA614ab1b2357373522b56702669F5e5f0999fEA0",
+      "transaction": "0x23389c1543a21a184af56222ec66a946a12a7e8194ef0be35d77b836d738e4f2",
+      "isVerified": true
+    }
+  },
   "BerachainRewardsRegistryImplementationV1": {
     "80094": {
       "address": "0xf92FC734f5e2e19f932673A72556bBB05558523D",
       "transaction": "0xfd18906f560efd61fec81f67aa9a1cfd5d0a9e618257443ff755f7272ec7e64f",
+      "isVerified": true
+    }
+  },
+  "BerachainRewardsRegistryImplementationV2": {
+    "80094": {
+      "address": "0xfd37ac8811634F8bC7252b0a68dd907aC3426fB4",
+      "transaction": "0x782962ba8aaab0b967db16deaf871882a04dafcf3cbef41e77583089bbc65720",
+      "isVerified": true
+    }
+  },
+  "BerachainRewardsRegistryImplementationV3": {
+    "80094": {
+      "address": "0x9515Db22b83cD9F2a6e41A8c585f73bdBF8BB418",
+      "transaction": "0x97b6fd807c2881819305c8edbbeae181e381110d7a96d125ff1eca5d654a0ed3",
       "isVerified": true
     }
   },
@@ -3997,6 +4025,13 @@
     "80094": {
       "address": "0x5072488f2b8E8a9FE59Cc39729BEbaA51a9Ff08f",
       "transaction": "0x22a14d3d60f12c652ff561a9fc08ee8b9d19521d22e68bed1f882775529c045e",
+      "isVerified": true
+    }
+  },
+  "InfraredBGTMetaVaultImplementationV2": {
+    "80094": {
+      "address": "0x0BB75F987A9Bdf1263e7eaC320E3783a4Af8d6C6",
+      "transaction": "0xa1fda2a900cc39c1a1b9c0ff76d88348d9c56b26cddd8cbe0a7d92a874480f15",
       "isVerified": true
     }
   },

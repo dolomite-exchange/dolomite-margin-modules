@@ -28,7 +28,10 @@ const OLD_ADDRESSES: Record<'GenericTraderProxyV1' | 'LiquidatorProxyV4WithGener
   },
 };
 
-async function isGlobalOperator<T extends DolomiteNetwork>(core: CoreProtocolType<T>, operator: string): Promise<boolean> {
+async function isGlobalOperator<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  operator: string,
+): Promise<boolean> {
   return core.dolomiteMargin.getIsGlobalOperator(operator);
 }
 

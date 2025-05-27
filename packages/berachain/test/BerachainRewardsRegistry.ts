@@ -1,4 +1,9 @@
-import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
+  Network,
+  ONE_ETH_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -19,6 +24,7 @@ import {
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTMetaVault,
   InfraredBGTMetaVault__factory,
+  MetaVaultUpgradeableProxy__factory,
   POLLiquidatorProxyV1,
 } from '../src/types';
 import {
@@ -28,6 +34,7 @@ import {
   createPolLiquidatorProxy,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
+import { ethers } from 'ethers';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -108,23 +115,29 @@ describe('BerachainRewardsRegistry', () => {
       expect(await registry.infrared()).to.equal(core.berachainRewardsEcosystem.infrared.address);
 
       expect(await registry.metaVaultImplementation()).to.equal(metaVaultImplementation.address);
+      expect(await registry.metaVaultProxyCreationCode()).to.equal(MetaVaultUpgradeableProxy__factory.bytecode);
+      expect(await registry.getMetaVaultProxyInitCodeHash())
+        .to
+        .equal(ethers.utils.keccak256(MetaVaultUpgradeableProxy__factory.bytecode));
+
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
     it('should fail if already initialized', async () => {
       await expectThrow(
-        registry.initialize(
-          core.tokens.bgt.address,
-          core.berachainRewardsEcosystem.bgtm.address,
-          core.tokens.iBgt.address,
-          core.tokens.wbera.address,
-          core.berachainRewardsEcosystem.berachainRewardsFactory.address,
-          core.berachainRewardsEcosystem.iBgtStakingPool.address,
-          core.berachainRewardsEcosystem.infrared.address,
-          metaVaultImplementation.address,
-          polLiquidatorProxy.address,
-          core.dolomiteRegistry.address,
-        ),
+        registry.initialize({
+          bgt: core.tokens.bgt.address,
+          bgtm: core.berachainRewardsEcosystem.bgtm.address,
+          iBgt: core.tokens.iBgt.address,
+          wbera: core.tokens.wbera.address,
+          berachainRewardsFactory: core.berachainRewardsEcosystem.berachainRewardsFactory.address,
+          iBgtStakingVault: core.berachainRewardsEcosystem.iBgtStakingPool.address,
+          infrared: core.berachainRewardsEcosystem.infrared.address,
+          metaVaultImplementation: metaVaultImplementation.address,
+          polLiquidator: polLiquidatorProxy.address,
+          metaVaultProxyCreationCode: MetaVaultUpgradeableProxy__factory.bytecode,
+          dolomiteRegistry: core.dolomiteRegistry.address,
+        }),
         'Initializable: contract is already initialized',
       );
     });
@@ -393,6 +406,34 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetMetaVaultImplementation(ADDRESS_ZERO),
         'BerachainRewardsRegistry: Invalid implementation address',
+      );
+    });
+  });
+
+  describe('#ownerSetMetaVaultProxyCreationCode', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance)
+        .ownerSetMetaVaultProxyCreationCode(MetaVaultUpgradeableProxy__factory.bytecode);
+      await expectEvent(registry, result, 'MetaVaultProxyCreationCodeSet', {
+        proxyInitHash: ethers.utils.keccak256(MetaVaultUpgradeableProxy__factory.bytecode),
+      });
+      expect(await registry.metaVaultProxyCreationCode()).to.equal(MetaVaultUpgradeableProxy__factory.bytecode);
+      expect(await registry.getMetaVaultProxyInitCodeHash())
+        .to
+        .equal(ethers.utils.keccak256(MetaVaultUpgradeableProxy__factory.bytecode));
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetMetaVaultProxyCreationCode(MetaVaultUpgradeableProxy__factory.bytecode),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero bytes is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetMetaVaultProxyCreationCode(BYTES_EMPTY),
+        'BerachainRewardsRegistry: Invalid creation code',
       );
     });
   });

@@ -81,36 +81,28 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _META_VAULT_TO_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultToAccount")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VAULT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultToMetaVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToAssetToDefaultType")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _META_VAULT_PROXY_CREATION_CODE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultProxyCreationCode")) - 1); // solhint-disable-line max-line-length
 
     // ================================================
     // ================== Initializer =================
     // ================================================
 
-    function initialize(
-        address _bgt,
-        address _bgtm,
-        address _iBgt,
-        address _wbera,
-        address _berachainRewardsFactory,
-        address _iBgtStakingVault,
-        address _infrared,
-        address _metaVaultImplementation,
-        address _polLiquidator,
-        address _dolomiteRegistry
-    ) external initializer {
-        _ownerSetBgt(_bgt);
-        _ownerSetBgtm(_bgtm);
-        _ownerSetIBgt(_iBgt);
-        _ownerSetWbera(_wbera);
+    function initialize(InitializationParams calldata _params) external initializer {
+        _ownerSetBgt(_params.bgt);
+        _ownerSetBgtm(_params.bgtm);
+        _ownerSetIBgt(_params.iBgt);
+        _ownerSetWbera(_params.wbera);
 
-        _ownerSetBerachainRewardsFactory(_berachainRewardsFactory);
-        _ownerSetIBgtStakingVault(_iBgtStakingVault);
-        _ownerSetInfrared(_infrared);
+        _ownerSetBerachainRewardsFactory(_params.berachainRewardsFactory);
+        _ownerSetIBgtStakingVault(_params.iBgtStakingVault);
+        _ownerSetInfrared(_params.infrared);
 
-        _ownerSetMetaVaultImplementation(_metaVaultImplementation);
-        _ownerSetPolLiquidator(_polLiquidator);
+        _ownerSetMetaVaultImplementation(_params.metaVaultImplementation);
+        _ownerSetPolLiquidator(_params.polLiquidator);
 
-        _ownerSetDolomiteRegistry(_dolomiteRegistry);
+        _ownerSetMetaVaultCreationCode(_params.metaVaultProxyCreationCode);
+
+        _ownerSetDolomiteRegistry(_params.dolomiteRegistry);
         _createMetaVault(_DEAD_VAULT);
     }
 
@@ -229,6 +221,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _metaVaultImplementation
     ) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetMetaVaultImplementation(_metaVaultImplementation);
+    }
+
+    function ownerSetMetaVaultProxyCreationCode(
+        bytes calldata _creationCode
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMetaVaultCreationCode(_creationCode);
     }
 
     function ownerSetRewardVaultOverride(
@@ -373,8 +371,17 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     function calculateMetaVaultByAccount(address _account) external view override returns (address) {
         return Create2.computeAddress(
             keccak256(abi.encodePacked(_account)),
-            keccak256(type(MetaVaultUpgradeableProxy).creationCode)
+            keccak256(metaVaultProxyCreationCode())
         );
+    }
+
+    function metaVaultProxyCreationCode() public view override returns (bytes memory) {
+        bytes32 slot = _META_VAULT_PROXY_CREATION_CODE_SLOT;
+        MetaVaultProxyCreationCode storage creationCode;
+        assembly {
+            creationCode.slot := slot
+        }
+        return creationCode.code;
     }
 
     function getAccountToAssetToDefaultType(
@@ -396,8 +403,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return _getAddressFromMap(_VAULT_TO_META_VAULT_SLOT, _vault);
     }
 
-    function getMetaVaultProxyInitCodeHash() public pure override returns (bytes32) {
-        return keccak256(type(MetaVaultUpgradeableProxy).creationCode);
+    function getMetaVaultProxyInitCodeHash() public view override returns (bytes32) {
+        return keccak256(metaVaultProxyCreationCode());
     }
 
     // ================================================
@@ -408,7 +415,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address metaVault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
-            type(MetaVaultUpgradeableProxy).creationCode
+            metaVaultProxyCreationCode()
         );
         assert(metaVault != address(0));
         emit MetaVaultCreated(_account, metaVault);
@@ -544,6 +551,21 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_META_VAULT_IMPLEMENTATION_SLOT, _metaVaultImplementation);
         emit MetaVaultImplementationSet(_metaVaultImplementation);
+    }
+
+    function _ownerSetMetaVaultCreationCode(bytes memory _creationCode) internal {
+        Require.that(
+            _creationCode.length != 0,
+            _FILE,
+            "Invalid creation code"
+        );
+        bytes32 slot = _META_VAULT_PROXY_CREATION_CODE_SLOT;
+        MetaVaultProxyCreationCode storage creationCode;
+        assembly {
+            creationCode.slot := slot
+        }
+        creationCode.code = _creationCode;
+        emit MetaVaultProxyCreationCodeSet(keccak256(_creationCode));
     }
 
     function _ownerSetRewardVaultOverride(address _asset, RewardVaultType _type, address _rewardVault) internal {

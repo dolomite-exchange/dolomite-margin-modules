@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IInfraredVault } from "./IInfraredVault.sol";
 
 
 /**
@@ -98,6 +99,10 @@ interface IBaseMetaVault {
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external view returns (uint256);
+
+    function getPendingRewardsByAsset(
+        address _asset
+    ) external view returns (IInfraredVault.UserReward[] memory);
 
     /**
      * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite
