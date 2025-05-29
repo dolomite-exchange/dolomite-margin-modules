@@ -11,10 +11,13 @@ import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/
 import { expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
+  BerachainRewardsRegistry,
   IInfraredVault__factory,
   InfraredBGTMetaVaultV2,
   InfraredBGTMetaVaultV2__factory,
+  POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
+  POLIsolationModeVaultFactory,
   POLIsolationModeVaultFactory__factory,
 } from '../src/types';
 import {
@@ -31,12 +34,30 @@ describe('POLUpdate', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
+  let vaultImplementation: POLIsolationModeTokenVaultV1;
+  let polFactory: POLIsolationModeVaultFactory;
+  let registry: BerachainRewardsRegistry;
+
+  let metavaultImplementationV2: InfraredBGTMetaVaultV2;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 5_586_862,
       network: Network.Berachain,
     });
+
+    vaultImplementation = await createPOLIsolationModeTokenVaultV1();
+    polFactory = POLIsolationModeVaultFactory__factory.connect(
+      '0x5DB5ef3D657471d991e4de09983D2c92b0609749',
+      core.hhUser1
+    );
+    registry = core.berachainRewardsEcosystem.live.registry;
+
+    metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultV2>(
+      InfraredBGTMetaVaultV2__factory.abi,
+      InfraredBGTMetaVaultV2__factory.bytecode,
+      [core.dolomiteMargin.address],
+    );
 
     snapshotId = await snapshot();
   });
@@ -51,8 +72,6 @@ describe('POLUpdate', () => {
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
 
       await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
-
-      const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
       await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetPolTokenVault(
         vaultImplementation.address
       );
@@ -103,14 +122,9 @@ describe('POLUpdate', () => {
 
     it('should have correct balance', async () => {
       const user = '0x2c1259a2C764dCc66241edFbdFD281AfcB6d870A';
-      const polFactory = POLIsolationModeVaultFactory__factory.connect(
-        '0x5DB5ef3D657471d991e4de09983D2c92b0609749',
-        core.hhUser1
-      );
       const vault = await polFactory.getVaultByAccount(user);
       const metavault = await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user);
 
-      const registry = core.berachainRewardsEcosystem.live.registry;
       const infraredVault = IInfraredVault__factory.connect(
         await registry.rewardVault(core.dolomiteTokens.rUsd.address, RewardVaultType.Infrared),
         core.hhUser1,
@@ -130,10 +144,6 @@ describe('POLUpdate', () => {
 
       const user = await impersonate('0x62dFA6eBA6a34E55c454894dd9b3E688F88CB09b', true);
       const accountNumber = BigNumber.from('44976727696018895331746976563377652501904371332622590265514825582226055111404');
-      const polFactory = POLIsolationModeVaultFactory__factory.connect(
-        '0x5DB5ef3D657471d991e4de09983D2c92b0609749',
-        core.hhUser1
-      );
       const vault = await polFactory.getVaultByAccount(user.address);
       const metavault = await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user.address);
 
@@ -189,34 +199,27 @@ describe('POLUpdate', () => {
   });
 
   describe('#ownerStakeDolomiteToken', () => {
-    it.only('should work normally', async () => {
+    it('should work normally', async () => {
       // test that we can correct user's accounting
       await setupRUsdBalance(core, core.hhUser1, amount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
 
-      const metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultV2>(
-        InfraredBGTMetaVaultV2__factory.abi,
-        InfraredBGTMetaVaultV2__factory.bytecode,
-        [core.dolomiteMargin.address],
-      );
       await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetMetaVaultImplementation(
         metavaultImplementationV2.address
       );
 
       const user = await impersonate('0x62dFA6eBA6a34E55c454894dd9b3E688F88CB09b', true);
       const accountNumber = BigNumber.from('44976727696018895331746976563377652501904371332622590265514825582226055111404');
-      const polFactory = POLIsolationModeVaultFactory__factory.connect(
-        '0x5DB5ef3D657471d991e4de09983D2c92b0609749',
-        core.hhUser1
+      const polVault = POLIsolationModeTokenVaultV1__factory.connect(
+        await polFactory.getVaultByAccount(user.address),
+        user
       );
-      const vault = await polFactory.getVaultByAccount(user.address);
       const metavault = InfraredBGTMetaVaultV2__factory.connect(
         await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user.address),
         user
       );
-      const polVault = POLIsolationModeTokenVaultV1__factory.connect(vault, user);
 
-      const par = await core.dolomiteMargin.getAccountPar({ owner: vault, number: accountNumber }, 39);
+      const par = await core.dolomiteMargin.getAccountPar({ owner: polVault.address, number: accountNumber }, 39);
       await core.dolomiteTokens.rUsd.connect(core.hhUser1).transfer(
         metavault.address,
         par.value,
@@ -227,7 +230,7 @@ describe('POLUpdate', () => {
         RewardVaultType.Infrared,
         par.value
       );
-      await expectProtocolBalance(core, vault, accountNumber, 39, par.value);
+      await expectProtocolBalance(core, polVault.address, accountNumber, 39, par.value);
       await expectProtocolBalance(core, metavault, defaultAccountNumber, core.marketIds.rUsd, 0);
       const infraredVault = IInfraredVault__factory.connect(
         await core.berachainRewardsEcosystem.live.registry.rewardVault(
