@@ -132,6 +132,20 @@ contract POLIsolationModeTokenVaultV1 is
     // ======================== View Functions ==========================
     // ==================================================================
 
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) internal view override {
+        revert("Can only zap into POL vault");
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) internal view override {
+        revert("Can only zap out of POL vault");
+    }
+
     function underlyingBalanceOf()
         public
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)

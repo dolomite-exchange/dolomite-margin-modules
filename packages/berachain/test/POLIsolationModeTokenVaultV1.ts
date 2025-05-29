@@ -89,7 +89,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 2_040_000,
+      blockNumber: 5_040_000,
       network: Network.Berachain,
     });
     await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
@@ -100,7 +100,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     const implementation = await createContractWithAbi<DolomiteERC4626>(
       DolomiteERC4626__factory.abi,
       DolomiteERC4626__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+      [core.config.network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
@@ -122,6 +122,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
+    await registry.connect(core.governance).ownerSetPolTokenVault(vaultImplementation.address);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -176,6 +177,48 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#validateDepositIntoVaultAfterTransfer', () => {
+    it('should cause revert if depositing through router', async () => {
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
+        core.depositWithdrawalRouter.address,
+        true
+      );
+      await dToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, ONE_ETH_BI);
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+          marketId,
+          defaultAccountNumber,
+          marketId,
+          ONE_ETH_BI,
+          0,
+          { gasLimit: 15_000_000 }
+        ),
+        'Can only zap into POL vault'
+      );
+    });
+  });
+
+  describe('#validateWithdrawalFromVaultAfterTransfer', () => {
+    it('should cause revert if withdrawing through router', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
+        core.depositWithdrawalRouter.address,
+        true
+      );
+
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+          marketId,
+          defaultAccountNumber,
+          marketId,
+          ONE_ETH_BI,
+          0
+        ),
+        'Can only zap out of POL vault'
+      );
+    });
   });
 
   describe('#depositIntoVaultForDolomiteMargin', () => {
