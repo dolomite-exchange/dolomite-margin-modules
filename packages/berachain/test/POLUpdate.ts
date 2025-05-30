@@ -6,12 +6,13 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { defaultAbiCoder, formatEther, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsRegistry,
+  IInfraredVault,
   IInfraredVault__factory,
   InfraredBGTMetaVaultV2,
   InfraredBGTMetaVaultV2__factory,
@@ -26,9 +27,10 @@ import {
 } from './berachain-ecosystem-utils';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
+import { POLBalanceMapping } from './POLBalanceMapping';
 
 const defaultAccountNumber = ZERO_BI;
-const amount = parseEther('80000');
+const amount = parseEther('1700000'); // 1.7 million rUsd. More than needed
 
 describe('POLUpdate', () => {
   let snapshotId: string;
@@ -37,6 +39,7 @@ describe('POLUpdate', () => {
   let vaultImplementation: POLIsolationModeTokenVaultV1;
   let polFactory: POLIsolationModeVaultFactory;
   let registry: BerachainRewardsRegistry;
+  let rusdInfraredVault: IInfraredVault;
 
   let metavaultImplementationV2: InfraredBGTMetaVaultV2;
 
@@ -52,12 +55,29 @@ describe('POLUpdate', () => {
       core.hhUser1
     );
     registry = core.berachainRewardsEcosystem.live.registry;
+    rusdInfraredVault = IInfraredVault__factory.connect(
+      await registry.rewardVault(core.dolomiteTokens.rUsd.address, RewardVaultType.Infrared),
+      core.hhUser1,
+    );
 
     metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultV2>(
       InfraredBGTMetaVaultV2__factory.abi,
       InfraredBGTMetaVaultV2__factory.bytecode,
       [core.dolomiteMargin.address],
     );
+
+    // update POL vault, metavault, and unpause
+    await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetPolTokenVault(
+      vaultImplementation.address
+    );
+    await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetMetaVaultImplementation(
+      metavaultImplementationV2.address
+    );
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
+
+    // set up gnosis safe rUsd balance and deposit to Dolomite
+    await setupRUsdBalance(core, core.gnosisSafe, amount, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.gnosisSafe, defaultAccountNumber, core.marketIds.rUsd, amount);
 
     snapshotId = await snapshot();
   });
@@ -66,16 +86,127 @@ describe('POLUpdate', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#test', () => {
+  describe('#POLBalanceMapping', () => {
+    it('should have correct balance and total supply', async () => {
+      const totalSupply = await polFactory.totalSupply();
+      let totalSupplySum = BigNumber.from(0);
+
+      for (const user of Object.keys(POLBalanceMapping)) {
+        const userInfo = POLBalanceMapping[user];
+        const vault = await polFactory.getVaultByAccount(user);
+        expect(await registry.getMetaVaultByAccount(user)).to.eq(userInfo.metavault);
+
+        await expectProtocolBalance(core, vault, userInfo.accountNumber, 39, userInfo.polAmount);
+        expect(await core.dolomiteTokens.rUsd.balanceOf(userInfo.metavault)).to.eq(userInfo.drUsdMetavaultBalance);
+        expect(await rusdInfraredVault.balanceOf(userInfo.metavault)).to.eq(userInfo.metavaultStakedBalance);
+
+        totalSupplySum = totalSupplySum.add(POLBalanceMapping[user].polAmount);
+      }
+
+      expect(totalSupplySum.eq(totalSupply)).to.be.true;
+    });
+
+    it('should correctly transfer funds to metavault, stake, and unwrap', async () => {
+      // loop through each user
+      console.log('--------------------------------');
+      for (const user of Object.keys(POLBalanceMapping)) {
+        const userInfo = POLBalanceMapping[user];
+        const vault = POLIsolationModeTokenVaultV1__factory.connect(
+          await polFactory.getVaultByAccount(user),
+          core.hhUser1
+        );
+        const metavault = InfraredBGTMetaVaultV2__factory.connect(
+          await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user),
+          core.hhUser1
+        );
+
+        if (!userInfo.polAmount.eq(userInfo.metavaultStakedBalance)) {
+          // transfer funds to metavault and stake
+          await core.dolomiteTokens.rUsd.connect(core.gnosisSafe).transfer(
+            metavault.address,
+            userInfo.polAmount,
+            { gasLimit: 10_000_000 }
+          );
+          await metavault.connect(core.governance).ownerStakeDolomiteToken(
+            core.dolomiteTokens.rUsd.address,
+            RewardVaultType.Infrared,
+            userInfo.polAmount,
+            { gasLimit: 15_000_000 }
+          );
+          expect(await core.dolomiteTokens.rUsd.balanceOf(metavault.address)).to.eq(ZERO_BI);
+          expect(await rusdInfraredVault.balanceOf(metavault.address)).to.eq(userInfo.polAmount);
+
+          // unwrap
+          const unwrapperParam: GenericTraderParam = {
+            trader: '0x645004487aE442049efFD66b1A09EcB8d5274b1C',
+            traderType: GenericTraderType.IsolationModeUnwrapper,
+            tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+            makerAccountIndex: 0,
+          };
+          const impersonatedUser = await impersonate(user, true);
+          console.log('user: ', user);
+          console.log('polAmount (rUsd par): ', formatEther(userInfo.polAmount));
+          if (userInfo.accountNumber.eq(ZERO_BI)) {
+            await vault.connect(impersonatedUser).swapExactInputForOutputAndRemoveCollateral(
+              userInfo.accountNumber,
+              userInfo.accountNumber,
+              [39, core.marketIds.rUsd],
+              MAX_UINT_256_BI,
+              ONE_BI,
+              [unwrapperParam],
+              [
+                {
+                  owner: metavault.address,
+                  number: defaultAccountNumber,
+                },
+              ],
+              {
+                deadline: '123123123123123',
+                balanceCheckFlag: BalanceCheckFlag.None,
+                eventType: GenericEventEmissionType.None,
+              },
+              { gasLimit: 15_000_000 },
+            );
+            const rUsdBal = await core.dolomiteMargin.getAccountWei(
+              { owner: user, number: userInfo.accountNumber },
+              core.marketIds.rUsd
+            );
+            console.log('rUsd bal post unwrap (wei): ', formatEther(rUsdBal.value));
+          } else {
+            await vault.connect(impersonatedUser).swapExactInputForOutput(
+              userInfo.accountNumber,
+              [39, core.marketIds.rUsd],
+              MAX_UINT_256_BI,
+              ONE_BI,
+              [unwrapperParam],
+              [
+                {
+                  owner: metavault.address,
+                  number: defaultAccountNumber,
+                },
+              ],
+              {
+                deadline: '123123123123123',
+                balanceCheckFlag: BalanceCheckFlag.None,
+                eventType: GenericEventEmissionType.None,
+              },
+              { gasLimit: 15_000_000 },
+            );
+            const rUsdBal = await core.dolomiteMargin.getAccountWei(
+              { owner: vault.address, number: userInfo.accountNumber },
+              core.marketIds.rUsd
+            );
+            console.log('rUsd bal post unwrap (wei): ', formatEther(rUsdBal.value));
+          }
+          console.log('--------------------------------');
+          await expectProtocolBalance(core, vault, userInfo.accountNumber, 39, ZERO_BI);
+        }
+      }
+    });
+  });
+
+  describe('#codeUpdates', () => {
     it('should no longer work through router to deposit', async () => {
-      await setupRUsdBalance(core, core.hhUser1, amount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
-
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
-      await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetPolTokenVault(
-        vaultImplementation.address
-      );
-
       await core.dolomiteTokens.rUsd.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, ONE_ETH_BI);
       await expectThrow(
         core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
@@ -90,200 +221,16 @@ describe('POLUpdate', () => {
     });
 
     it('should no longer work through router to withdraw', async () => {
-      await setupRUsdBalance(core, core.hhUser1, amount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
-
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
-      await core.dolomiteTokens.rUsd.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, ONE_ETH_BI);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        39,
-        defaultAccountNumber,
-        39,
-        ONE_ETH_BI,
-        0,
-      );
-
-      const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
-      await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetPolTokenVault(
-        vaultImplementation.address
-      );
-
+      const user = await impersonate('0x2c1259a2C764dCc66241edFbdFD281AfcB6d870A', true);
       await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+        core.depositWithdrawalRouter.connect(user).withdrawWei(
           39,
           defaultAccountNumber,
           39,
-          ONE_ETH_BI,
+          ONE_BI,
           0,
         ),
         'Can only zap out of POL vault',
-      );
-    });
-
-    it('should have correct balance', async () => {
-      const user = '0x2c1259a2C764dCc66241edFbdFD281AfcB6d870A';
-      const vault = await polFactory.getVaultByAccount(user);
-      const metavault = await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user);
-
-      const infraredVault = IInfraredVault__factory.connect(
-        await registry.rewardVault(core.dolomiteTokens.rUsd.address, RewardVaultType.Infrared),
-        core.hhUser1,
-      );
-      const metavaultPar = await core.dolomiteMargin.getAccountPar(
-        { owner: metavault, number: defaultAccountNumber },
-        core.marketIds.rUsd
-      );
-      const vaultPar = await core.dolomiteMargin.getAccountPar({ owner: vault, number: defaultAccountNumber }, 39);
-      expect(metavaultPar.value).to.eq(ZERO_BI);
-      expect(await infraredVault.balanceOf(metavault)).to.eq(vaultPar.value);
-    });
-
-    it('should transfer funds to metavault', async () => {
-      await setupRUsdBalance(core, core.hhUser1, amount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
-
-      const user = await impersonate('0x62dFA6eBA6a34E55c454894dd9b3E688F88CB09b', true);
-      const accountNumber = BigNumber.from('44976727696018895331746976563377652501904371332622590265514825582226055111404');
-      const vault = await polFactory.getVaultByAccount(user.address);
-      const metavault = await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user.address);
-
-      const par = await core.dolomiteMargin.getAccountPar({ owner: vault, number: accountNumber }, 39);
-      await core.dolomiteTokens.rUsd.connect(core.hhUser1).transfer(metavault, par.value, { gasLimit: 10_000_000 });
-
-      const polVault = POLIsolationModeTokenVaultV1__factory.connect(vault, user);
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
-      await polVault.transferFromPositionWithUnderlyingToken(
-        accountNumber,
-        defaultAccountNumber,
-        par.value
-      );
-
-      const unwrapperParam: GenericTraderParam = {
-        trader: '0x645004487aE442049efFD66b1A09EcB8d5274b1C',
-        traderType: GenericTraderType.IsolationModeUnwrapper,
-        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-        makerAccountIndex: 0,
-      };
-      let userPar = await core.dolomiteMargin.getAccountPar(
-        { owner: user.address, number: defaultAccountNumber },
-        core.marketIds.rUsd
-      );
-      console.log(userPar.value);
-      await polVault.swapExactInputForOutputAndRemoveCollateral(
-        defaultAccountNumber,
-        defaultAccountNumber,
-        [39, core.marketIds.rUsd],
-        MAX_UINT_256_BI,
-        ONE_BI,
-        [unwrapperParam],
-        [
-          {
-            owner: metavault,
-            number: defaultAccountNumber,
-          },
-        ],
-        {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        },
-        { gasLimit: 15_000_000 },
-      );
-
-      userPar = await core.dolomiteMargin.getAccountPar(
-        { owner: user.address, number: defaultAccountNumber },
-        core.marketIds.rUsd
-      );
-      console.log(userPar.value);
-    });
-  });
-
-  describe('#ownerStakeDolomiteToken', () => {
-    it('should work normally', async () => {
-      // test that we can correct user's accounting
-      await setupRUsdBalance(core, core.hhUser1, amount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.rUsd, amount);
-
-      await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetMetaVaultImplementation(
-        metavaultImplementationV2.address
-      );
-
-      const user = await impersonate('0x62dFA6eBA6a34E55c454894dd9b3E688F88CB09b', true);
-      const accountNumber = BigNumber.from('44976727696018895331746976563377652501904371332622590265514825582226055111404');
-      const polVault = POLIsolationModeTokenVaultV1__factory.connect(
-        await polFactory.getVaultByAccount(user.address),
-        user
-      );
-      const metavault = InfraredBGTMetaVaultV2__factory.connect(
-        await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user.address),
-        user
-      );
-
-      const par = await core.dolomiteMargin.getAccountPar({ owner: polVault.address, number: accountNumber }, 39);
-      await core.dolomiteTokens.rUsd.connect(core.hhUser1).transfer(
-        metavault.address,
-        par.value,
-        { gasLimit: 10_000_000 }
-      );
-      await metavault.connect(core.governance).ownerStakeDolomiteToken(
-        core.dolomiteTokens.rUsd.address,
-        RewardVaultType.Infrared,
-        par.value
-      );
-      await expectProtocolBalance(core, polVault.address, accountNumber, 39, par.value);
-      await expectProtocolBalance(core, metavault, defaultAccountNumber, core.marketIds.rUsd, 0);
-      const infraredVault = IInfraredVault__factory.connect(
-        await core.berachainRewardsEcosystem.live.registry.rewardVault(
-          core.dolomiteTokens.rUsd.address,
-          RewardVaultType.Infrared
-        ),
-        core.hhUser1,
-      );
-      expect(await infraredVault.balanceOf(metavault.address)).to.eq(par.value);
-      expect(await polVault.underlyingBalanceOf()).to.eq(par.value);
-
-      // Test can user withdraw
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(39, core.oracleAggregatorV2.address);
-      await polVault.transferFromPositionWithUnderlyingToken(
-        accountNumber,
-        defaultAccountNumber,
-        par.value
-      );
-
-      const unwrapperParam: GenericTraderParam = {
-        trader: '0x645004487aE442049efFD66b1A09EcB8d5274b1C',
-        traderType: GenericTraderType.IsolationModeUnwrapper,
-        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-        makerAccountIndex: 0,
-      };
-      let userPar = await core.dolomiteMargin.getAccountPar(
-        { owner: user.address, number: defaultAccountNumber },
-        core.marketIds.rUsd
-      );
-      await polVault.swapExactInputForOutputAndRemoveCollateral(
-        defaultAccountNumber,
-        defaultAccountNumber,
-        [39, core.marketIds.rUsd],
-        MAX_UINT_256_BI,
-        ONE_BI,
-        [unwrapperParam],
-        [
-          {
-            owner: metavault.address,
-            number: defaultAccountNumber,
-          },
-        ],
-        {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        },
-        { gasLimit: 15_000_000 },
-      );
-
-      userPar = await core.dolomiteMargin.getAccountPar(
-        { owner: user.address, number: defaultAccountNumber },
-        core.marketIds.rUsd
       );
     });
   });
