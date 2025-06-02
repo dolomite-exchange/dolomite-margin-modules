@@ -14,8 +14,8 @@ import {
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
-  InfraredBGTMetaVaultV2,
-  InfraredBGTMetaVaultV2__factory,
+  InfraredBGTMetaVaultWithOwnerStake,
+  InfraredBGTMetaVaultWithOwnerStake__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeVaultFactory,
@@ -41,7 +41,7 @@ describe('POLUpdate', () => {
   let registry: BerachainRewardsRegistry;
   let rusdInfraredVault: IInfraredVault;
 
-  let metavaultImplementationV2: InfraredBGTMetaVaultV2;
+  let metavaultImplementationV2: InfraredBGTMetaVaultWithOwnerStake;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -60,9 +60,9 @@ describe('POLUpdate', () => {
       core.hhUser1,
     );
 
-    metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultV2>(
-      InfraredBGTMetaVaultV2__factory.abi,
-      InfraredBGTMetaVaultV2__factory.bytecode,
+    metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultWithOwnerStake>(
+      InfraredBGTMetaVaultWithOwnerStake__factory.abi,
+      InfraredBGTMetaVaultWithOwnerStake__factory.bytecode,
       [core.dolomiteMargin.address],
     );
 
@@ -122,7 +122,7 @@ describe('POLUpdate', () => {
           await polFactory.getVaultByAccount(user),
           core.hhUser1
         );
-        const metavault = InfraredBGTMetaVaultV2__factory.connect(
+        const metavault = InfraredBGTMetaVaultWithOwnerStake__factory.connect(
           await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user),
           core.hhUser1
         );
