@@ -28,7 +28,7 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
 
 
 /**
- * @title   InfraredBGTMetaVaultV2
+ * @title   InfraredBGTMetaVaultWithOwnerStake
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the underlying berachain rewards
@@ -36,14 +36,14 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *          to be in isolation mode - that is it cannot be borrowed by other users, may only be seized via
  *          liquidation, and cannot be held in the same position as other "isolated" tokens.
  */
-contract InfraredBGTMetaVaultV2 is InfraredBGTMetaVault, OnlyDolomiteMargin {
+contract InfraredBGTMetaVaultWithOwnerStake is InfraredBGTMetaVault, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "InfraredBGTMetaVaultV2";
+    bytes32 private constant _FILE = "InfraredBGTMetaVaultOwnerStake";
 
     constructor(address _dolomiteMargin) InfraredBGTMetaVault() OnlyDolomiteMargin(_dolomiteMargin) {}
 

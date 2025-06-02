@@ -14,8 +14,8 @@ import {
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
-  InfraredBGTMetaVaultV2,
-  InfraredBGTMetaVaultV2__factory,
+  InfraredBGTMetaVaultWithOwnerStake,
+  InfraredBGTMetaVaultWithOwnerStake__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeVaultFactory,
@@ -41,7 +41,7 @@ describe('POLUpdate', () => {
   let registry: BerachainRewardsRegistry;
   let rusdInfraredVault: IInfraredVault;
 
-  let metavaultImplementationV2: InfraredBGTMetaVaultV2;
+  let metavaultImplementationV2: InfraredBGTMetaVaultWithOwnerStake;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -60,9 +60,9 @@ describe('POLUpdate', () => {
       core.hhUser1,
     );
 
-    metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultV2>(
-      InfraredBGTMetaVaultV2__factory.abi,
-      InfraredBGTMetaVaultV2__factory.bytecode,
+    metavaultImplementationV2 = await createContractWithAbi<InfraredBGTMetaVaultWithOwnerStake>(
+      InfraredBGTMetaVaultWithOwnerStake__factory.abi,
+      InfraredBGTMetaVaultWithOwnerStake__factory.bytecode,
       [core.dolomiteMargin.address],
     );
 
@@ -87,9 +87,10 @@ describe('POLUpdate', () => {
   });
 
   describe('#POLBalanceMapping', () => {
-    it('should have correct balance and total supply', async () => {
+    it.only('should have correct balance, total supply, and missing amount', async () => {
       const totalSupply = await polFactory.totalSupply();
       let totalSupplySum = BigNumber.from(0);
+      let missingPolAmount = BigNumber.from(0);
 
       for (const user of Object.keys(POLBalanceMapping)) {
         const userInfo = POLBalanceMapping[user];
@@ -100,9 +101,15 @@ describe('POLUpdate', () => {
         expect(await core.dolomiteTokens.rUsd.balanceOf(userInfo.metavault)).to.eq(userInfo.drUsdMetavaultBalance);
         expect(await rusdInfraredVault.balanceOf(userInfo.metavault)).to.eq(userInfo.metavaultStakedBalance);
 
+        if (userInfo.drUsdMetavaultBalance.eq(ZERO_BI) && userInfo.metavaultStakedBalance.eq(ZERO_BI)) {
+          missingPolAmount = missingPolAmount.add(userInfo.polAmount);
+        }
+
         totalSupplySum = totalSupplySum.add(POLBalanceMapping[user].polAmount);
       }
 
+      console.log('missingPolAmount: ', formatEther(missingPolAmount));
+      console.log('totalSupply: ', formatEther(totalSupply));
       expect(totalSupplySum.eq(totalSupply)).to.be.true;
     });
 
@@ -115,7 +122,7 @@ describe('POLUpdate', () => {
           await polFactory.getVaultByAccount(user),
           core.hhUser1
         );
-        const metavault = InfraredBGTMetaVaultV2__factory.connect(
+        const metavault = InfraredBGTMetaVaultWithOwnerStake__factory.connect(
           await core.berachainRewardsEcosystem.live.registry.getMetaVaultByAccount(user),
           core.hhUser1
         );
