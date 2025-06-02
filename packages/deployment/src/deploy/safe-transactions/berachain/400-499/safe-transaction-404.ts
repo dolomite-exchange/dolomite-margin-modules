@@ -1,15 +1,12 @@
+import { PartnerClaimExcessTokens__factory } from '@dolomite-exchange/modules-admin/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetInterestSetter } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { checkInterestSetter } from '../../../../utils/invariant-utils';
-import { deployContractAndSave } from '../../../../utils/deploy-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { PartnerClaimExcessTokens__factory } from '@dolomite-exchange/modules-admin/src/types';
 import { parseEther } from 'ethers/lib/utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 const RESERVOIR_PARTNER_ADDRESS = '0x5e102471d7084884836eE994877635c8399BD7b7';
 
@@ -29,13 +26,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     core.hhUser1,
   );
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { partnerClaim },
-      'partnerClaim',
-      'ownerSetPartnerInfo',
-      [core.marketIds.rUsd, RESERVOIR_PARTNER_ADDRESS, { value: parseEther('0.6') }],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { partnerClaim }, 'partnerClaim', 'ownerSetPartnerInfo', [
+      core.marketIds.rUsd,
+      RESERVOIR_PARTNER_ADDRESS,
+      { value: parseEther('0.6') },
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomite: core.dolomiteMargin },

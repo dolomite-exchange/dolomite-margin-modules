@@ -19,7 +19,7 @@ export const POLBalanceMapping: Record<string, POLBalanceInfo> = {
   },
   '0x62dFA6eBA6a34E55c454894dd9b3E688F88CB09b': {
     accountNumber: BigNumber.from('44976727696018895331746976563377652501904371332622590265514825582226055111404'),
-    polAmount: BigNumber.from('79565535859332896399831'), // User lost 1.5 POL-rUsd when withdraws returned 0
+    polAmount: BigNumber.from('79565535859332896399831'),
     metavault: '0xcfC2C3C4c92C72c9C77414396551657EcfCa47f0',
     drUsdMetavaultBalance: BigNumber.from('0'),
     metavaultStakedBalance: BigNumber.from('0'),
