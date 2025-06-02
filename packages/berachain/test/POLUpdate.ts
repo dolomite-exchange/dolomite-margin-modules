@@ -87,9 +87,10 @@ describe('POLUpdate', () => {
   });
 
   describe('#POLBalanceMapping', () => {
-    it('should have correct balance and total supply', async () => {
+    it.only('should have correct balance, total supply, and missing amount', async () => {
       const totalSupply = await polFactory.totalSupply();
       let totalSupplySum = BigNumber.from(0);
+      let missingPolAmount = BigNumber.from(0);
 
       for (const user of Object.keys(POLBalanceMapping)) {
         const userInfo = POLBalanceMapping[user];
@@ -100,9 +101,15 @@ describe('POLUpdate', () => {
         expect(await core.dolomiteTokens.rUsd.balanceOf(userInfo.metavault)).to.eq(userInfo.drUsdMetavaultBalance);
         expect(await rusdInfraredVault.balanceOf(userInfo.metavault)).to.eq(userInfo.metavaultStakedBalance);
 
+        if (userInfo.drUsdMetavaultBalance.eq(ZERO_BI) && userInfo.metavaultStakedBalance.eq(ZERO_BI)) {
+          missingPolAmount = missingPolAmount.add(userInfo.polAmount);
+        }
+
         totalSupplySum = totalSupplySum.add(POLBalanceMapping[user].polAmount);
       }
 
+      console.log('missingPolAmount: ', formatEther(missingPolAmount));
+      console.log('totalSupply: ', formatEther(totalSupply));
       expect(totalSupplySum.eq(totalSupply)).to.be.true;
     });
 
