@@ -181,21 +181,15 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
   describe('#validateDepositIntoVaultAfterTransfer', () => {
     it('should cause revert if depositing through router', async () => {
-      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
-        core.depositWithdrawalRouter.address,
-        true
-      );
+      await factory
+        .connect(core.governance)
+        .ownerSetIsTokenConverterTrusted(core.depositWithdrawalRouter.address, true);
       await dToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, ONE_ETH_BI);
       await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-          marketId,
-          defaultAccountNumber,
-          marketId,
-          ONE_ETH_BI,
-          0,
-          { gasLimit: 15_000_000 }
-        ),
-        'Can only zap into POL vault'
+        core.depositWithdrawalRouter
+          .connect(core.hhUser1)
+          .depositWei(marketId, defaultAccountNumber, marketId, ONE_ETH_BI, 0, { gasLimit: 15_000_000 }),
+        'POLIsolationModeTokenVaultV1: Can only zap into POL vault',
       );
     });
   });
@@ -203,33 +197,34 @@ describe('POLIsolationModeTokenVaultV1', () => {
   describe('#validateWithdrawalFromVaultAfterTransfer', () => {
     it('should cause revert if withdrawing through router', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
-        core.depositWithdrawalRouter.address,
-        true
-      );
+      await factory
+        .connect(core.governance)
+        .ownerSetIsTokenConverterTrusted(core.depositWithdrawalRouter.address, true);
 
       await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-          marketId,
-          defaultAccountNumber,
-          marketId,
-          ONE_ETH_BI,
-          0
-        ),
-        'Can only zap out of POL vault'
+        core.depositWithdrawalRouter
+          .connect(core.hhUser1)
+          .withdrawWei(marketId, defaultAccountNumber, marketId, ONE_ETH_BI, 0),
+        'POLIsolationModeTokenVaultV1: Can only zap out of POL vault',
       );
     });
   });
 
   describe('#depositIntoVaultForDolomiteMargin', () => {
     it('should revert', async () => {
-      await expectThrow(vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, parAmount), 'Not implemented');
+      await expectThrow(
+        vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, parAmount),
+        'POLIsolationModeTokenVaultV1: Can only zap into POL vault',
+      );
     });
   });
 
   describe('#withdrawFromVaultForDolomiteMargin', () => {
     it('should revert', async () => {
-      await expectThrow(vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount), 'Not implemented');
+      await expectThrow(
+        vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount),
+        'POLIsolationModeTokenVaultV1: Can only zap out of POL vault',
+      );
     });
   });
 

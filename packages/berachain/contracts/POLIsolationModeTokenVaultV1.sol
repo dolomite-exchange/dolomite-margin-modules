@@ -343,27 +343,27 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 /* _accountNumber */,
         uint256 /* _marketId */
     ) internal pure override {
-        revert("Can only zap into POL vault");
+        revert("POLIsolationModeTokenVaultV1: Can only zap into POL vault");
     }
 
     function _validateWithdrawalFromVaultAfterTransfer(
         uint256 /* _accountNumber */,
         uint256 /* _marketId */
     ) internal pure override {
-        revert("Can only zap out of POL vault");
+        revert("POLIsolationModeTokenVaultV1: Can only zap out of POL vault");
     }
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 /* _toAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert("Not implemented");
+        revert("POLIsolationModeTokenVaultV1: Can only zap into POL vault");
     }
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 /* _fromAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert("Not implemented");
+        revert("POLIsolationModeTokenVaultV1: Can only zap out of POL vault");
     }
 }

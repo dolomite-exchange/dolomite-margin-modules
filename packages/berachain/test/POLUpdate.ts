@@ -95,13 +95,13 @@ describe('POLUpdate', () => {
       for (const user of Object.keys(POLBalanceMapping)) {
         const userInfo = POLBalanceMapping[user];
         const vault = await polFactory.getVaultByAccount(user);
-        expect(await registry.getMetaVaultByAccount(user)).to.eq(userInfo.metavault);
+        expect(await registry.getMetaVaultByAccount(user)).to.eq(userInfo.metaVault);
 
         await expectProtocolBalance(core, vault, userInfo.accountNumber, 39, userInfo.polAmount);
-        expect(await core.dolomiteTokens.rUsd.balanceOf(userInfo.metavault)).to.eq(userInfo.drUsdMetavaultBalance);
-        expect(await rusdInfraredVault.balanceOf(userInfo.metavault)).to.eq(userInfo.metavaultStakedBalance);
+        expect(await core.dolomiteTokens.rUsd.balanceOf(userInfo.metaVault)).to.eq(userInfo.drUsdMetaVaultBalance);
+        expect(await rusdInfraredVault.balanceOf(userInfo.metaVault)).to.eq(userInfo.metaVaultStakedBalance);
 
-        if (userInfo.drUsdMetavaultBalance.eq(ZERO_BI) && userInfo.metavaultStakedBalance.eq(ZERO_BI)) {
+        if (userInfo.drUsdMetaVaultBalance.eq(ZERO_BI) && userInfo.metaVaultStakedBalance.eq(ZERO_BI)) {
           missingPolAmount = missingPolAmount.add(userInfo.polAmount);
         }
 
@@ -127,7 +127,7 @@ describe('POLUpdate', () => {
           core.hhUser1
         );
 
-        if (!userInfo.polAmount.eq(userInfo.metavaultStakedBalance)) {
+        if (!userInfo.polAmount.eq(userInfo.metaVaultStakedBalance)) {
           // transfer funds to metavault and stake
           await core.dolomiteTokens.rUsd.connect(core.gnosisSafe).transfer(
             metavault.address,
