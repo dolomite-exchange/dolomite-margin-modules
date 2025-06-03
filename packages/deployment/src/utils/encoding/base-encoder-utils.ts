@@ -4,7 +4,7 @@ import { commify, formatEther, FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
 import hardhat from 'hardhat';
 import { IChainlinkAggregator__factory } from 'packages/oracles/src/types';
-import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
+import { IERC20, IERC20Metadata, IERC20Metadata__factory } from '../../../../base/src/types';
 import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
 import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
 import {
@@ -23,7 +23,7 @@ let mostRecentTokenDecimals: number | undefined = undefined;
 const numMarketsKey = 'numMarkets';
 const marketIdToMarketNameCache: Record<string, string | undefined> = {};
 
-export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number) {
+export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number | undefined) {
   mostRecentTokenDecimals = _mostRecentTokenDecimals;
 }
 
@@ -60,16 +60,8 @@ export async function getFormattedTokenName<T extends DolomiteNetwork>(
     return '(None)';
   }
 
+  await fetchTokenDecimals(core, tokenAddress);
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
-  try {
-    const tokenInfo = INVALID_TOKEN_MAP[core.network][token.address];
-    if (tokenInfo) {
-      mostRecentTokenDecimals = tokenInfo.decimals;
-    } else {
-      mostRecentTokenDecimals = await token.decimals();
-    }
-  } catch (e) {}
-
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
@@ -81,6 +73,21 @@ export async function getFormattedTokenName<T extends DolomiteNetwork>(
     addressToNameCache[tokenAddress.toLowerCase()] = '';
     return '';
   }
+}
+
+async function fetchTokenDecimals<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  tokenAddress: string,
+): Promise<void> {
+  try {
+    const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+    const tokenInfo = INVALID_TOKEN_MAP[core.network][token.address];
+    if (tokenInfo) {
+      mostRecentTokenDecimals = tokenInfo.decimals;
+    } else {
+      mostRecentTokenDecimals = await token.decimals();
+    }
+  } catch (e) {}
 }
 
 export async function getFormattedChainlinkAggregatorName<T extends DolomiteNetwork>(
@@ -185,13 +192,22 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
 
   if (hardhat.network.name !== 'hardhat') {
+    let decimals: number | undefined;
+    try {
+      contract.interface.getFunction('decimals');
+      decimals = await (contract as any as IERC20Metadata).decimals();
+    } catch (e) {}
+
     const fragment = contract.interface.getFunction(methodName.toString());
     const mappedArgs: string[] = [];
     for (let i = 0; i < (args as any[]).length; i++) {
-      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i], methodName.toString(), args));
+      mappedArgs.push(
+        await getReadableArg(core, fragment.inputs[i], (args as any[])[i], methodName.toString(), args, decimals),
+      );
     }
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
+    const toArg = await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args);
     console.log(''); // add a new line
     console.log(
       `=================================== ${counter++} - ${String(key)}.${String(
@@ -199,14 +215,14 @@ export async function prettyPrintEncodedDataWithTypeSafety<
       )} ===================================`,
     );
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
-    console.log(
-      'To:\t\t',
-      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)).substring(13),
-    );
+    console.log('To:\t\t', toArg.substring(13));
     console.log('Data:\t\t', transaction.data);
     console.log('='.repeat(repeatLength));
     console.log(''); // add a new line
   }
+
+  // Reset the most recent token decimals between calls
+  setMostRecentTokenDecimals(undefined);
 
   const realtimeOwner = await core.dolomiteMargin.owner();
   const skipWrappingCalldataInSubmitTransaction =
@@ -376,6 +392,7 @@ export async function getReadableArg<T extends DolomiteNetwork>(
           specialName = ` (${key})`;
         }
       });
+      await fetchTokenDecimals(core, arg);
     }
 
     if (!specialName) {
@@ -391,7 +408,11 @@ export async function getReadableArg<T extends DolomiteNetwork>(
       return Promise.reject(new Error('Object type is not tuple'));
     }
     let decimals: number | undefined = undefined;
-    if (inputParamType.name.toLowerCase().includes('premium')) {
+    if (
+      inputParamType.name.toLowerCase().includes('premium') ||
+      inputParamType.name.toLowerCase().includes('ratio') ||
+      inputParamType.name.toLowerCase().includes('spread')
+    ) {
       decimals = 18;
     }
     const values: string[] = [];
@@ -418,10 +439,15 @@ export async function getReadableArg<T extends DolomiteNetwork>(
   if (BigNumber.isBigNumber(arg) && typeof decimals !== 'undefined') {
     const multiplier = BigNumber.from(10).pow(18 - decimals);
     specialName = ` (${commify(formatEther(arg.mul(multiplier)))})`;
-  } else if (BigNumber.isBigNumber(arg)) {
-    if (formattedInputParamName.includes('marginRatio') || formattedInputParamName.includes('liquidationReward')) {
-      specialName = ` (${commify(formatEther(arg))})`;
-    }
+  } else if (
+    BigNumber.isBigNumber(arg) &&
+    (formattedInputParamName.includes('marginRatio') || formattedInputParamName.includes('liquidationReward'))
+  ) {
+    specialName = ` (${commify(formatEther(arg))})`;
+  } else if ((inputParamType.type === 'uint256' || inputParamType.type === 'uint128') && mostRecentTokenDecimals) {
+    const multiplier = BigNumber.from(10).pow(18 - mostRecentTokenDecimals);
+    const formattedNumber = commify(formatEther(BigNumber.from(arg).mul(multiplier)));
+    specialName = ` (${formattedNumber}) (${mostRecentTokenDecimals} decimals)`;
   }
 
   return `${formattedInputParamName} = ${arg}${specialName}`;

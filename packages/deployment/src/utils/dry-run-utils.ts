@@ -1,8 +1,8 @@
 import {
+  DolomiteNetwork,
   NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
   NETWORK_TO_SAFE_HASH_NAME_MAP,
-  DolomiteNetwork,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -27,6 +27,14 @@ import MultiSendAbi from './MultiSend.json';
 import { checkPerformance } from './performance-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
+const SUBMIT_TRANSACTION_METHOD_IDS = ['0xc6427474', '0xbbf1b2f1'];
+// These functions invoke the DolomiteOwner and therefore tick the `transactionId` field
+const ADMIN_FUNCTION_METHOD_IDS = [
+  '0x7aa25719', // PartnerClaimExcessTokensV1::claimExcessTokens
+  '0x7aa25719', // AdminClaimExcessTokensV1::claimExcessTokens
+  '0xfc12524c', // AdminPauseMarketV1::pauseMarket
+  '0xb28678ce', // AdminPauseMarketV1::unpauseMarket
+];
 
 export interface EncodedTransaction {
   to: string;
@@ -106,28 +114,11 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
 
     if (result.core && result.upload.transactions.length > 0) {
       console.log('\tSimulating admin transactions...');
+
       const ownerAddress = await result.core.dolomiteMargin.owner();
       const invalidOwnerError = getInvalidOwnerError(ownerAddress);
+      const transactionIds = await getTransactionIds(ownerAddress, result);
 
-      let ownerContract: BaseContract | undefined;
-      let filter: EventFilter | undefined;
-      if (ownerAddress === result.core.ownerAdapterV1.address) {
-        ownerContract = result.core.ownerAdapterV1;
-        filter = result.core.ownerAdapterV1.filters.TransactionSubmitted();
-      } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-        ownerContract = result.core.ownerAdapterV2;
-        filter = result.core.ownerAdapterV2.filters.TransactionSubmitted();
-      } else if (ownerAddress === result.core.delayedMultiSig.address) {
-        ownerContract = result.core.delayedMultiSig;
-        filter = result.core.delayedMultiSig.filters.Submission();
-      } else if (ownerAddress === result.core.gnosisSafe.address) {
-        ownerContract = undefined;
-        filter = undefined;
-      } else {
-        throw new Error(invalidOwnerError);
-      }
-
-      const transactionIds: BigNumberish[] = [];
       for (const transaction of result.upload.transactions) {
         const signer = result.core.gnosisSafe;
         const gasLimit = 50_000_000;
@@ -136,59 +127,39 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
         };
         let txResult: TransactionResponse;
         if (transaction.to === result.core.governance.address || transaction.to !== ownerAddress) {
-          txResult = await executeTransactionAndTraceOnFailure(
-            result.core,
-            () =>
+          txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
+            signer.sendTransaction({
+              gasLimit,
+              to: transaction.to,
+              data: transaction.data,
+            }),
+          );
+        } else {
+          if (ownerAddress === result.core.ownerAdapterV1.address) {
+            txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
+              result.core.ownerAdapterV1.connect(signer).submitTransaction(transaction.to, transaction.data, overrides),
+            );
+          } else if (ownerAddress === result.core.ownerAdapterV2.address) {
+            txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
+              result.core.ownerAdapterV2.connect(signer).submitTransaction(transaction.to, transaction.data, overrides),
+            );
+          } else if (ownerAddress === result.core.delayedMultiSig.address) {
+            txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
+              result.core.delayedMultiSig
+                .connect(signer)
+                .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides),
+            );
+          } else if (ownerAddress === result.core.gnosisSafe.address) {
+            txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
               signer.sendTransaction({
                 gasLimit,
                 to: transaction.to,
                 data: transaction.data,
               }),
-          );
-        } else {
-          if (ownerAddress === result.core.ownerAdapterV1.address) {
-            txResult = await executeTransactionAndTraceOnFailure(
-              result.core,
-              () =>
-                result.core.ownerAdapterV1
-                  .connect(signer)
-                  .submitTransaction(transaction.to, transaction.data, overrides),
-            );
-          } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-            txResult = await executeTransactionAndTraceOnFailure(
-              result.core,
-              () =>
-                result.core.ownerAdapterV2
-                  .connect(signer)
-                  .submitTransaction(transaction.to, transaction.data, overrides),
-            );
-          } else if (ownerAddress === result.core.delayedMultiSig.address) {
-            txResult = await executeTransactionAndTraceOnFailure(
-              result.core,
-              () =>
-                result.core.delayedMultiSig
-                  .connect(signer)
-                  .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides),
-            );
-          } else if (ownerAddress === result.core.gnosisSafe.address) {
-            txResult = await executeTransactionAndTraceOnFailure(
-              result.core,
-              () =>
-                signer.sendTransaction({
-                  gasLimit,
-                  to: transaction.to,
-                  data: transaction.data,
-                }),
             );
           } else {
             throw new Error(invalidOwnerError);
           }
-        }
-
-        const submissionEvent =
-          ownerContract && filter ? (await ownerContract.queryFilter(filter, txResult.blockHash))[0] : undefined;
-        if (submissionEvent) {
-          transactionIds.push((submissionEvent.args as any).transactionId);
         }
       }
 
@@ -217,22 +188,16 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
         for (const transactionId of transactionIds) {
           try {
             if (ownerAddress === result.core.ownerAdapterV1.address) {
-              await executeTransactionAndTraceOnFailure(
-                result.core,
-                () =>
-                  result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
+              await executeTransactionAndTraceOnFailure(result.core, () =>
+                result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
               );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-              await executeTransactionAndTraceOnFailure(
-                result.core,
-                () =>
-                  result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
+              await executeTransactionAndTraceOnFailure(result.core, () =>
+                result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
               );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
-              await executeTransactionAndTraceOnFailure(
-                result.core,
-                () =>
-                  result.core.delayedMultiSig.executeTransaction(transactionId, {}),
+              await executeTransactionAndTraceOnFailure(result.core, () =>
+                result.core.delayedMultiSig.executeTransaction(transactionId, {}),
               );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');
@@ -266,30 +231,11 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
     }
 
     const ownerAddress = await result.core.dolomiteMargin.owner();
-    const invalidOwnerAddress = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+    const invalidOwnerError = getInvalidOwnerError(ownerAddress);
+    const transactionIds = await getTransactionIds(ownerAddress, result);
 
     let encodedTransactionForExecution: EncodedTransaction | null = null;
     if (result.upload.transactions.length > 0) {
-      let transactionCount: number;
-      if (ownerAddress === result.core.ownerAdapterV1.address) {
-        transactionCount = (await result.core.ownerAdapterV1.transactionCount()).toNumber();
-      } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-        transactionCount = (await result.core.ownerAdapterV2.transactionCount()).toNumber();
-      } else if (ownerAddress === result.core.delayedMultiSig.address) {
-        transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
-      } else if (ownerAddress === result.core.gnosisSafeAddress) {
-        transactionCount = 0;
-      } else {
-        return Promise.reject(new Error(invalidOwnerAddress));
-      }
-
-      const submitTransactionMethodIds = ['0xc6427474', '0xbbf1b2f1'];
-      const transactionIds: number[] = [];
-      result.upload.transactions.forEach((t) => {
-        if (submitTransactionMethodIds.some((methodId) => t.data.startsWith(methodId))) {
-          transactionIds.push(transactionCount++);
-        }
-      });
 
       if (transactionIds.length === 0) {
         console.warn('\tTransaction IDs length is equal to 0');
@@ -328,7 +274,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
         } else if (ownerAddress === result.core.gnosisSafeAddress) {
           console.log('\tExecute the transactions directly against the Gnosis Safe');
         } else {
-          return Promise.reject(new Error(invalidOwnerAddress));
+          return Promise.reject(new Error(invalidOwnerError));
         }
       }
     }
@@ -407,6 +353,38 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       );
     }
   }
+}
+
+async function getTransactionIds<T extends DolomiteNetwork>(
+  ownerAddress: string,
+  result: DryRunOutput<T>,
+): Promise<BigNumberish[]> {
+  const invalidOwnerAddress = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+
+  let transactionCount: number;
+  if (ownerAddress === result.core.ownerAdapterV1.address) {
+    transactionCount = (await result.core.ownerAdapterV1.transactionCount()).toNumber();
+  } else if (ownerAddress === result.core.ownerAdapterV2.address) {
+    transactionCount = (await result.core.ownerAdapterV2.transactionCount()).toNumber();
+  } else if (ownerAddress === result.core.delayedMultiSig.address) {
+    transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
+  } else if (ownerAddress === result.core.gnosisSafeAddress) {
+    transactionCount = 0;
+  } else {
+    return Promise.reject(new Error(invalidOwnerAddress));
+  }
+
+  const transactionIds: number[] = [];
+  for (const transaction of result.upload.transactions) {
+    if (SUBMIT_TRANSACTION_METHOD_IDS.some((methodId) => transaction.data.startsWith(methodId))) {
+      transactionIds.push(transactionCount++);
+    } else if (ADMIN_FUNCTION_METHOD_IDS.some((methodId) => transaction.data.startsWith(methodId))) {
+      console.log('\tSkipping transaction ID due to admin function call...');
+      transactionCount++;
+    }
+  }
+
+  return transactionIds;
 }
 
 async function executeTransactionAndTraceOnFailure<T extends DolomiteNetwork>(
