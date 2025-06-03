@@ -28,6 +28,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
 
 
 /**
@@ -47,6 +48,7 @@ interface IDolomiteRegistry {
     // ========================================================
 
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
+    event DepositWithdrawalRouterSet(address indexed _depositWithdrawalRouter);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
     event FeeAgentSet(address indexed _feeAgent);
@@ -73,6 +75,12 @@ interface IDolomiteRegistry {
      * @param  _borrowPositionProxy  The new address of the borrow position proxy
      */
     function ownerSetBorrowPositionProxy(address _borrowPositionProxy) external;
+
+    /**
+     *
+     * @param  _depositWithdrawalRouter  The new address of the deposit withdrawal router
+     */
+    function ownerSetDepositWithdrawalRouter(address _depositWithdrawalRouter) external;
 
     /**
      *
@@ -174,6 +182,11 @@ interface IDolomiteRegistry {
      * @return  The address of the borrow position proxy
      */
     function borrowPositionProxy() external view returns (IBorrowPositionProxyV2);
+
+    /**
+     * @return  The address of the deposit withdrawal router
+     */
+    function depositWithdrawalRouter() external view returns (IDepositWithdrawalRouter);
 
     /**
      * @return  The address of the generic trader proxy for making zaps

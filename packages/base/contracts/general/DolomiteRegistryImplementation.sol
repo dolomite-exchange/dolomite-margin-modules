@@ -34,6 +34,7 @@ import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
 
 
 /**
@@ -54,6 +55,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DEPOSIT_WITHDRAWAL_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositWithdrawalRouter")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
@@ -110,6 +112,14 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
+    }
+
+    function ownerSetDepositWithdrawalRouter(
+        address _depositWithdrawalRouter
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDepositWithdrawalRouter(_depositWithdrawalRouter);
     }
 
     function ownerSetGenericTraderProxy(
@@ -231,6 +241,10 @@ contract DolomiteRegistryImplementation is
         return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
     }
 
+    function depositWithdrawalRouter() public view returns (IDepositWithdrawalRouter) {
+        return IDepositWithdrawalRouter(_getAddress(_DEPOSIT_WITHDRAWAL_ROUTER_SLOT));
+    }
+
     function genericTraderProxy() public view returns (IGenericTraderProxyV2) {
         return IGenericTraderProxyV2(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
@@ -310,6 +324,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
         emit BorrowPositionProxySet(_borrowPositionProxy);
+    }
+
+    function _ownerSetDepositWithdrawalRouter(
+        address _depositWithdrawalRouter
+    ) internal {
+        Require.that(
+            _depositWithdrawalRouter != address(0),
+            _FILE,
+            "Invalid depositWithdrawalRouter"
+        );
+
+        _setAddress(_DEPOSIT_WITHDRAWAL_ROUTER_SLOT, _depositWithdrawalRouter);
+        emit DepositWithdrawalRouterSet(_depositWithdrawalRouter);
     }
 
     function _ownerSetGenericTraderProxy(
