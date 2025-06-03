@@ -100,6 +100,31 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetDepositWithdrawalRouter', () => {
+    it('should work normally', async () => {
+      const depositWithdrawalRouter = core.depositWithdrawalRouter.address;
+      const result = await registry.connect(core.governance).ownerSetDepositWithdrawalRouter(depositWithdrawalRouter);
+      await expectEvent(registry, result, 'DepositWithdrawalRouterSet', {
+        _depositWithdrawalRouter: depositWithdrawalRouter,
+      });
+      expect(await registry.depositWithdrawalRouter()).to.equal(depositWithdrawalRouter);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDepositWithdrawalRouter(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDepositWithdrawalRouter(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid depositWithdrawalRouter',
+      );
+    });
+  });
+
   describe('#ownerSetGenericTraderProxy', () => {
     it('should work normally', async () => {
       const genericTraderProxy = core.genericTraderProxy.address;
