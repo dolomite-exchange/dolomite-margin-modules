@@ -68,6 +68,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ==================== Modifiers ====================
     // ===================================================
 
+    modifier onlyDepositWithdrawalRouter(address _from) {
+        _requireOnlyDepositWithdrawalRouter(_from);
+        _;
+    }
+
     modifier onlyVaultFactory(address _from) {
         _requireOnlyVaultFactory(_from);
         _;
@@ -127,7 +132,35 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
-        _depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
+    }
+
+    function depositIntoVaultForDolomiteMarginFromRouter(
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    nonReentrant
+    onlyDepositWithdrawalRouter(msg.sender) {
+        _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
+    }
+
+    function depositOtherTokenIntoVaultFromRouter(
+        uint256 _marketId,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    nonReentrant
+    onlyDepositWithdrawalRouter(msg.sender) {
+        _transferIntoPositionWithOtherToken(
+            _toAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            AccountBalanceLib.BalanceCheckFlag.None,
+            /* fromWallet = */ true
+        );
     }
 
     function withdrawFromVaultForDolomiteMargin(
@@ -137,7 +170,35 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyVaultOwner(msg.sender) {
-        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
+    }
+
+    function withdrawFromVaultForDolomiteMarginFromRouter(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    nonReentrant
+    onlyDepositWithdrawalRouter(msg.sender) {
+        _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
+    }
+
+    function withdrawOtherTokenFromVaultFromRouter(
+        uint256 _marketId,
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    nonReentrant
+    onlyDepositWithdrawalRouter(msg.sender) {
+        _transferFromPositionWithOtherToken(
+            _fromAccountNumber,
+            _fromAccountNumber,
+            _marketId,
+            _amountWei,
+            AccountBalanceLib.BalanceCheckFlag.None,
+            /* toWallet = */ true
+        );
     }
 
     function openBorrowPosition(
@@ -214,7 +275,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _borrowAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            /* fromWallet = */ false
         );
     }
 
@@ -244,7 +306,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            /* toWallet = */ false
         );
     }
 
@@ -391,6 +454,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         return IIsolationModeVaultFactory(VAULT_FACTORY()).DOLOMITE_MARGIN();
     }
 
+    function DOLOMITE_REGISTRY() public view returns (IDolomiteRegistry) {
+        return IIsolationModeVaultFactory(VAULT_FACTORY()).DOLOMITE_REGISTRY();
+    }
+
     function BORROW_POSITION_PROXY() public view returns (IBorrowPositionProxyV2) {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).BORROW_POSITION_PROXY();
     }
@@ -427,22 +494,26 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _depositIntoVaultForDolomiteMargin(
+        address _from,
         uint256 _toAccountNumber,
         uint256 _amountWei
     ) internal virtual {
         IsolationModeTokenVaultV1ActionsImpl.depositIntoVaultForDolomiteMargin(
             /* _vault = */ this,
+            _from,
             _toAccountNumber,
             _amountWei
         );
     }
 
     function _withdrawFromVaultForDolomiteMargin(
+        address _to,
         uint256 _fromAccountNumber,
         uint256 _amountWei
     ) internal virtual {
         IsolationModeTokenVaultV1ActionsImpl.withdrawFromVaultForDolomiteMargin(
             /* _vault = */ this,
+            _to,
             _fromAccountNumber,
             _amountWei
         );
@@ -533,7 +604,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256 _borrowAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _fromWallet
     )
         internal
         virtual
@@ -546,7 +618,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _amountWei,
             _balanceCheckFlag,
             /* _checkAllowableCollateralMarketFlag =  */ true,
-            /* _bypassAccountNumberCheck = */ false
+            /* _bypassAccountNumberCheck = */ false,
+            _fromWallet
         );
     }
 
@@ -571,7 +644,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     )
         virtual
         internal
@@ -583,7 +657,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _marketId,
             _amountWei,
             _balanceCheckFlag,
-            /* _bypassAccountNumberCheck = */ false
+            /* _bypassAccountNumberCheck = */ false,
+            _toWallet
         );
     }
 
@@ -703,6 +778,16 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             /* _vault = */ this,
             _accountNumber,
             _marketId
+        );
+    }
+
+    function _requireOnlyDepositWithdrawalRouter(address _from) internal virtual view {
+        if (_from == address(DOLOMITE_REGISTRY().depositWithdrawalRouter())) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _from == address(DOLOMITE_REGISTRY().depositWithdrawalRouter()),
+            _FILE,
+            "Only deposit router can call",
+            _from
         );
     }
 

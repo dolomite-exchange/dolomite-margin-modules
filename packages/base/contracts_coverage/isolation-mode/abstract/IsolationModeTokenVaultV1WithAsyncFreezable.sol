@@ -411,6 +411,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     // ==================================================================
 
     function _depositIntoVaultForDolomiteMargin(
+        address _from,
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
@@ -419,10 +420,11 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         override
         _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_toAccountNumber)
     {
-        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
+        address _to,
         uint256 _fromAccountNumber,
         uint256 _amountWei
     )
@@ -431,7 +433,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         override
         _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_fromAccountNumber)
     {
-        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_to, _fromAccountNumber, _amountWei);
     }
 
     function _openBorrowPosition(
@@ -498,7 +500,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         uint256 _borrowAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _fromWallet
     )
         internal
         virtual
@@ -510,7 +513,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _borrowAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _fromWallet
         );
     }
 
@@ -536,7 +540,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     )
         internal
         virtual
@@ -548,7 +553,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _toWallet
         );
     }
 

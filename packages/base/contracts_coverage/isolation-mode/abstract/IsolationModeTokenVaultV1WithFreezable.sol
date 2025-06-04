@@ -140,6 +140,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ==================================================================
 
     function _depositIntoVaultForDolomiteMargin(
+        address _from,
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
@@ -148,10 +149,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         override
         _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
     {
-        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        super._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
+        address _to,
         uint256 _fromAccountNumber,
         uint256 _amountWei
     )
@@ -160,7 +162,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         override
         _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
     {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        super._withdrawFromVaultForDolomiteMargin(_to, _fromAccountNumber, _amountWei);
     }
 
     function _openBorrowPosition(
@@ -219,7 +221,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _borrowAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _fromWallet
     )
         internal
         virtual
@@ -231,7 +234,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _borrowAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _fromWallet
         );
     }
 
@@ -253,7 +257,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     )
         internal
         virtual
@@ -265,7 +270,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _toWallet
         );
     }
 

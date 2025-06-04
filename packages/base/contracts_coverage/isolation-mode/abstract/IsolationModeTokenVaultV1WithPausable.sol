@@ -217,6 +217,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     function isExternalRedemptionPaused() public virtual view returns (bool);
 
     function _depositIntoVaultForDolomiteMargin(
+        address _from,
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
@@ -225,7 +226,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         override
         _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
     {
-        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
@@ -243,7 +244,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _amountWei
         )
     {
-        super._openBorrowPosition(
+        IsolationModeTokenVaultV1._openBorrowPosition(
             _fromAccountNumber,
             _toAccountNumber,
             _amountWei
@@ -265,7 +266,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _collateralMarketIds
         )
     {
-        super._closeBorrowPositionWithOtherTokens(
+        IsolationModeTokenVaultV1._closeBorrowPositionWithOtherTokens(
             _borrowAccountNumber,
             _toAccountNumber,
             _collateralMarketIds
@@ -287,7 +288,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _amountWei
         )
     {
-        super._transferIntoPositionWithUnderlyingToken(
+        IsolationModeTokenVaultV1._transferIntoPositionWithUnderlyingToken(
             _fromAccountNumber,
             _borrowAccountNumber,
             _amountWei
@@ -309,7 +310,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _amountWei
         )
     {
-        super._transferFromPositionWithUnderlyingToken(
+        IsolationModeTokenVaultV1._transferFromPositionWithUnderlyingToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _amountWei
@@ -321,7 +322,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     )
         internal
         virtual
@@ -334,12 +336,13 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _balanceCheckFlag
         )
     {
-        super._transferFromPositionWithOtherToken(
+        IsolationModeTokenVaultV1._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _toWallet
         );
     }
 

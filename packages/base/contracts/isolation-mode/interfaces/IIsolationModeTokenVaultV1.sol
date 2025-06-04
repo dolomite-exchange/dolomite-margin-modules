@@ -75,6 +75,49 @@ interface IIsolationModeTokenVaultV1 {
     function withdrawFromVaultForDolomiteMargin(uint256 _fromAccountNumber, uint256 _amountWei) external;
 
     /**
+     * Deposit the underlying token into DolomiteMargin from the DepositWithdrawalRouter into the vault
+     * 
+     * @dev Only callable by the DepositWithdrawalRouter
+     * 
+     * @param  _toAccountNumber  The account number to deposit into
+     * @param  _amountWei        The amount of underlying token to deposit
+     */
+    function depositIntoVaultForDolomiteMarginFromRouter(uint256 _toAccountNumber, uint256 _amountWei) external;
+
+    /**
+     * Deposit a non-underlying token into DolomiteMargin from the DepositWithdrawalRouter into a vault account
+     * 
+     * @dev Only callable by the DepositWithdrawalRouter
+     * 
+     * @param  _marketId         The market ID of the token to deposit
+     * @param  _toAccountNumber  The account number to deposit into
+     * @param  _amountWei        The amount of underlying token to deposit
+     */
+    function depositOtherTokenIntoVaultFromRouter(uint256 _marketId, uint256 _toAccountNumber, uint256 _amountWei) external;
+
+    /**
+     * Withdraw the underlying token from DolomiteMargin through the DepositWithdrawalRouter
+     * 
+     * @dev Only callable by the DepositWithdrawalRouter
+     * 
+     * @param  _fromAccountNumber  The account number to withdraw from
+     * @param  _amountWei          The amount of underlying token to withdraw
+     */
+    function withdrawFromVaultForDolomiteMarginFromRouter(uint256 _fromAccountNumber, uint256 _amountWei) external;
+
+    /**
+     * Withdraw a non-underlying token from DolomiteMargin through the DepositWithdrawalRouter
+     * 
+     * @dev Only callable by the DepositWithdrawalRouter
+     * 
+     * @param  _marketId           The market ID of the token to withdraw
+     * @param  _fromAccountNumber  The account number to withdraw from
+     * @param  _amountWei          The amount of underlying token to withdraw
+     */
+    function withdrawOtherTokenFromVaultFromRouter(uint256 _marketId, uint256 _fromAccountNumber, uint256 _amountWei) external;
+
+
+    /**
      * @notice  End-user function for opening a borrow position involving the vault factory's underlying token. Should
      *          only be executable by the vault owner. Reverts if `_fromAccountNumber` is not 0 or if `_toAccountNumber`
      *          is 0.
