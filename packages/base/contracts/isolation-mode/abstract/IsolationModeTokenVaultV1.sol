@@ -135,7 +135,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
     }
 
-    function depositIntoVaultForDolomiteMarginFromRouter(
+    function routerDepositUnderlyingTokenIntoVault(
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
@@ -145,7 +145,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
     }
 
-    function depositOtherTokenIntoVaultFromRouter(
+    function routerDepositOtherTokenIntoVault(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -173,7 +173,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
     }
 
-    function withdrawFromVaultForDolomiteMarginFromRouter(
+    function routerWithdrawUnderlyingTokenFromVault(
         uint256 _fromAccountNumber,
         uint256 _amountWei
     )
@@ -183,10 +183,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
     }
 
-    function withdrawOtherTokenFromVaultFromRouter(
+    function routerWithdrawOtherTokenFromVault(
         uint256 _marketId,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
     nonReentrant
@@ -196,7 +197,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _fromAccountNumber,
             _marketId,
             _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.None,
+            _balanceCheckFlag,
             /* toWallet = */ true
         );
     }

@@ -82,7 +82,7 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _toAccountNumber  The account number to deposit into
      * @param  _amountWei        The amount of underlying token to deposit
      */
-    function depositIntoVaultForDolomiteMarginFromRouter(uint256 _toAccountNumber, uint256 _amountWei) external;
+    function routerDepositUnderlyingTokenIntoVault(uint256 _toAccountNumber, uint256 _amountWei) external;
 
     /**
      * Deposit a non-underlying token into DolomiteMargin from the DepositWithdrawalRouter into a vault account
@@ -93,7 +93,7 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _toAccountNumber  The account number to deposit into
      * @param  _amountWei        The amount of underlying token to deposit
      */
-    function depositOtherTokenIntoVaultFromRouter(uint256 _marketId, uint256 _toAccountNumber, uint256 _amountWei) external;
+    function routerDepositOtherTokenIntoVault(uint256 _marketId, uint256 _toAccountNumber, uint256 _amountWei) external;
 
     /**
      * Withdraw the underlying token from DolomiteMargin through the DepositWithdrawalRouter
@@ -103,7 +103,7 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _fromAccountNumber  The account number to withdraw from
      * @param  _amountWei          The amount of underlying token to withdraw
      */
-    function withdrawFromVaultForDolomiteMarginFromRouter(uint256 _fromAccountNumber, uint256 _amountWei) external;
+    function routerWithdrawUnderlyingTokenFromVault(uint256 _fromAccountNumber, uint256 _amountWei) external;
 
     /**
      * Withdraw a non-underlying token from DolomiteMargin through the DepositWithdrawalRouter
@@ -113,9 +113,14 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _marketId           The market ID of the token to withdraw
      * @param  _fromAccountNumber  The account number to withdraw from
      * @param  _amountWei          The amount of underlying token to withdraw
+     * @param  _balanceCheckFlag   The balance check flag to use for the withdrawal
      */
-    function withdrawOtherTokenFromVaultFromRouter(uint256 _marketId, uint256 _fromAccountNumber, uint256 _amountWei) external;
-
+    function routerWithdrawOtherTokenFromVault(
+        uint256 _marketId,
+        uint256 _fromAccountNumber,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
 
     /**
      * @notice  End-user function for opening a borrow position involving the vault factory's underlying token. Should
@@ -339,22 +344,6 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _amount      The amount of the vault's underlying token to transfer out.
      */
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external;
-
-    /**
-     * @notice  Validates a deposit into the vault.
-     *
-     * @param  _toAccountNumber The account number receiving the deposit.
-     * @param  _marketId        The marketId of the deposit.
-     */
-    function validateDepositIntoVaultAfterTransfer(uint256 _toAccountNumber, uint256 _marketId) external;
-
-    /**
-     * @notice  Validates a withdrawal from the vault.
-     *
-     * @param  _fromAccountNumber   The account number withdrawing the funds.
-     * @param  _marketId            The marketId of the withdrawal.
-     */
-    function validateWithdrawalFromVaultAfterTransfer(uint256 _fromAccountNumber, uint256 _marketId) external;
 
     /**
      * @return The amount of `UNDERLYING_TOKEN` that are currently in this vault.

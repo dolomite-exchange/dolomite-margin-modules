@@ -94,7 +94,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
         IDepositWithdrawalRouter router = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
         if (_from == address(router)) {
-            router.vaultExecuteDepositIntoDolomiteMargin(
+            router.vaultExecuteDepositUnderlyingToken(
                 _vault.marketId(),
                 _toAccountNumber,
                 _amountWei
@@ -114,7 +114,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         _checkFromAccountNumberIsZero(_fromAccountNumber);
         IDepositWithdrawalRouter depositWithdrawalRouter = IIsolationModeVaultFactory(_vault.VAULT_FACTORY()).DOLOMITE_REGISTRY().depositWithdrawalRouter();
         if (_to == address(depositWithdrawalRouter)) {
-            depositWithdrawalRouter.vaultExecuteWithdrawFromDolomiteMargin(
+            depositWithdrawalRouter.vaultExecuteWithdrawUnderlyingToken(
                 _vault.marketId(),
                 _fromAccountNumber,
                 _amountWei
@@ -265,7 +265,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
         if (_fromWallet) {
-            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteDepositOtherTokenIntoDolomiteMargin(
+            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteDepositOtherToken(
                 _marketId,
                 _borrowAccountNumber,
                 _amountWei
@@ -324,10 +324,11 @@ library IsolationModeTokenVaultV1ActionsImpl {
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
         if (_toWallet) {
-            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteWithdrawOtherTokenFromDolomiteMargin(
+            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteWithdrawOtherToken(
                 _marketId,
                 _borrowAccountNumber,
-                _amountWei
+                _amountWei,
+                _balanceCheckFlag
             );
         } else {
             _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
