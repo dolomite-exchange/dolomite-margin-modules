@@ -4035,6 +4035,13 @@
       "isVerified": true
     }
   },
+  "InfraredBGTMetaVaultWithOwnerStakeImplementationV1": {
+    "80094": {
+      "address": "0x037D58A03fA6b332Ac1d6d3C1C599D0E87eC0443",
+      "transaction": "0x906c1663b8cbf5cb9326ea40d33d32a71d3b988bab280ebeef4c429fc92dfa3d",
+      "isVerified": true
+    }
+  },
   "IsolationModeFreezableLiquidatorProxyV1": {
     "42161": {
       "address": "0xADEa94E726Ab96b6377e5dff5c24A73130D16026",
@@ -8495,6 +8502,13 @@
     "80094": {
       "address": "0x8d7AB68905C146A8040eCEE94975B89FEd4Ca385",
       "transaction": "0xa5519e62afcf5fa0e0e9e4544d85df92f064c1e759e4770c578bde60bc222b56",
+      "isVerified": true
+    }
+  },
+  "POLIsolationModeVaultImplementationV2": {
+    "80094": {
+      "address": "0xA864E1C97f87Cd0590228Afc037292ffb3feFe9c",
+      "transaction": "0x2a0d5e561d689bfd12ac4e881ad0754fc0451206156b4bc47c3b37361db0743f",
       "isVerified": true
     }
   },

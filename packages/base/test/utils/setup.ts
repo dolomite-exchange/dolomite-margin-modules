@@ -556,6 +556,18 @@ export async function setupRETHBalance(
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupRUsdBalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xD6D83e479359766f21A63b20d6AF43A138356EbA'; // Rusd oft
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.rUsd!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.rUsd!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupSolvBtcBalance(
   core: CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
