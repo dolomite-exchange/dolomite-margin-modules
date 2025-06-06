@@ -5,7 +5,7 @@ import {
   ILinearStepFunctionInterestSetter__factory,
 } from 'packages/interest-setters/src/types';
 import { IDolomiteInterestSetter, IDolomiteInterestSetter__factory } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 
 export interface InterestSetters {
@@ -23,7 +23,9 @@ export interface InterestSetters {
   linearStepFunction10L90U90OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction10L90U95OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction12L88U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction12L88U95OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction14L86U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction14L86U95OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U60OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U75OInterestSetter: ILinearStepFunctionInterestSetter;
@@ -34,6 +36,7 @@ export interface InterestSetters {
   linearStepFunction16L84U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction16L84U80OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction16L84U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction16L84U95OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction20L105U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction20L130U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction30L95U70OInterestSetter: ILinearStepFunctionInterestSetter;
@@ -45,7 +48,7 @@ export interface InterestSetters {
 }
 
 export async function createInterestSetters(
-  network: Network,
+  network: DolomiteNetwork,
   signer: SignerWithAddressWithSafety,
 ): Promise<InterestSetters> {
   return {
@@ -105,8 +108,16 @@ export async function createInterestSetters(
       deployments.LinearStepFunction12L88U90OInterestSetter[network].address,
       signer,
     ),
+    linearStepFunction12L88U95OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction12L88U95OInterestSetter[network].address,
+      signer,
+    ),
     linearStepFunction14L86U90OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
       deployments.LinearStepFunction14L86U90OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction14L86U95OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction14L86U95OInterestSetter[network].address,
       signer,
     ),
     linearStepFunction15L135U60OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
@@ -147,6 +158,10 @@ export async function createInterestSetters(
     ),
     linearStepFunction16L84U90OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
       deployments.LinearStepFunction16L84U90OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction16L84U95OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction16L84U95OInterestSetter[network].address,
       signer,
     ),
 
