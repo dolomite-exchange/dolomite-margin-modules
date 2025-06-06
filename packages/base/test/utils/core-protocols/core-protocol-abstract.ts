@@ -33,7 +33,7 @@ import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { DolomiteOwnerV1, DolomiteOwnerV2 } from 'packages/admin/src/types';
+import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -113,6 +113,8 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   hhUser3: SignerWithAddressWithSafety;
   hhUser4: SignerWithAddressWithSafety;
   hhUser5: SignerWithAddressWithSafety;
+  adminClaimExcessTokens: IAdminClaimExcessTokens;
+  adminPauseMarket: IAdminPauseMarket;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
@@ -182,6 +184,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// =========================
   /// Contracts and Ecosystems
   /// =========================
+  public readonly adminClaimExcessTokens: IAdminClaimExcessTokens;
+  public readonly adminPauseMarket: IAdminPauseMarket;
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
   public readonly borrowPositionRouter: IBorrowPositionRouter;
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
@@ -247,6 +251,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.hhUser3 = params.hhUser3;
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
+    this.adminClaimExcessTokens = params.adminClaimExcessTokens;
+    this.adminPauseMarket = params.adminPauseMarket;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
     this.borrowPositionRouter = params.borrowPositionRouter;
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;
