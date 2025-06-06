@@ -24,7 +24,11 @@ import ZapBigNumber from 'bignumber.js';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers, network as hardhatNetwork } from 'hardhat';
-import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
+import {
+  DolomiteOwnerV1__factory,
+  DolomiteOwnerV2__factory,
+  IAdminClaimExcessTokens__factory, IAdminPauseMarket__factory,
+} from 'packages/admin/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -865,6 +869,16 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
+  const adminClaimExcessTokens = IAdminClaimExcessTokens__factory.connect(
+    ModuleDeployments.AdminClaimExcessTokensV1[config.network].address,
+    governance,
+  );
+
+  const adminPauseMarket = IAdminPauseMarket__factory.connect(
+    ModuleDeployments.AdminPauseMarketV1[config.network].address,
+    governance,
+  );
+
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
@@ -1023,6 +1037,8 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   };
 
   const coreProtocolParams: CoreProtocolParams<T> = {
+    adminClaimExcessTokens,
+    adminPauseMarket,
     borrowPositionProxyV2,
     borrowPositionRouter,
     chainlinkPriceOracleV1,

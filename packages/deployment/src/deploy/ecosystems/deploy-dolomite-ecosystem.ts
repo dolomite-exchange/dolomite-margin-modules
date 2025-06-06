@@ -208,6 +208,12 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, HANDLER_ADDRESS),
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteMigrator', 1),
   );
+
+  await deployContractAndSave(
+    'MultiCallWithExceptionHandler',
+    [],
+  );
+
   const oracleAggregator = await deployOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
   const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
