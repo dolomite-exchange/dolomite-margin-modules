@@ -14,6 +14,8 @@ import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
 
+import "@nomicfoundation/hardhat-foundry";
+
 import { base_config } from '../../hardhat-base-config';
 
 chai.use(solidity);

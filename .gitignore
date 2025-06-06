@@ -26,6 +26,10 @@ packages/*/coverage_2/
 
 dist/
 
+# foundry
+packages/*/out/
+packages/*/cache_forge
+
 output/
 
 yarn-error.log
