@@ -108,6 +108,92 @@ contract DepositWithdrawalRouterStandardTest is Test {
         );
     }
 
+    function test_depositPar_twoNormalDeposits_parProtocolBalanceIsSum(uint32[2] memory _amountPars) public {
+        vm.startPrank(alice);
+        for (uint256 i; i < 2; i++) {
+            vm.assume(_amountPars[i] > 0);
+            IDolomiteStructs.Par memory parStruct = IDolomiteStructs.Par({
+                sign: true,
+                value: _amountPars[i]
+            });
+            uint256 weiAmount = InterestIndexLib.parToWei(
+                dolomiteMargin,
+                dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+                parStruct
+            ).value;
+
+            deal(address(usdc), alice, weiAmount + 1);
+            usdc.approve(address(router), weiAmount + 1);
+
+            router.depositPar(
+                /* _isolationModeMarketId */ 0,
+                /* _toAccountNumber */ 0,
+                /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+                /* _amountPar */ _amountPars[i],
+                /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+            );
+        }
+
+        assertEq(usdc.balanceOf(address(router)), 0);
+        assertProtocolBalancePar(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            uint256(_amountPars[0]) + uint256(_amountPars[1]),
+            true
+        );
+    }
+
+    function test_depositPar_repaysCorrectParAmount(uint32 _amountWei, uint16 _timeElapsed) public {
+        vm.assume(_amountWei > 0);
+
+        // Deposit ETH collateral and borrow USDC
+        vm.startPrank(alice);
+        deal(alice, 10 ether);
+        router.depositPayable{value: 10 ether}(
+            /* _isolationModeMarketId */ 0,
+            /* _toAccountNumber */ 123,
+            /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+        );
+        router.withdrawWei(
+            /* _isolationModeMarketId */ 0,
+            /* _fromAccountNumber */ 123,
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _amountWei */ _amountWei,
+            /* _eventFlag */ AccountBalanceLib.BalanceCheckFlag.None
+        );
+
+        IDolomiteStructs.Par memory parBalance = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: alice,
+                number: 123
+            }),
+            dolomiteMargin.getMarketIdByTokenAddress(address(usdc))
+        );
+        
+        // Repay USDC
+        deal(address(usdc), alice, uint256(_amountWei) * 2);
+        usdc.approve(address(router), type(uint256).max);
+
+        vm.warp(block.timestamp + _timeElapsed);
+        router.depositPar(
+            /* _isolationModeMarketId */ 0,
+            /* _toAccountNumber */ 123,
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _amountPar */ parBalance.value,
+            /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+        );
+
+        // Confirm protocol balance is 0
+        assertProtocolBalancePar(
+            alice,
+            123,
+            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            0,
+            true
+        );
+    }
+
     function test_depositPayable(uint128 _amountWei) public {
         vm.assume(_amountWei > 0);
 
