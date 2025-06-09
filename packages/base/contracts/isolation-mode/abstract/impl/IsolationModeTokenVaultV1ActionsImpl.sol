@@ -557,28 +557,6 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
     }
 
-    function validateDepositIntoVaultAfterTransfer(
-        IIsolationModeTokenVaultV1 _vault,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) public view {
-        if (_marketId != _vault.marketId()) {
-            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
-            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
-        }
-    }
-
-    function validateWithdrawalFromVaultAfterTransfer(
-        IIsolationModeTokenVaultV1 _vault,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) public view {
-        if (_marketId != _vault.marketId()) {
-            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
-            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
-        }
-    }
-
     function validateIsNotLiquidatable(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _accountNumber

@@ -707,32 +707,6 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         );
     }
 
-    function _validateDepositIntoVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
-    {
-        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
-    function _validateWithdrawalFromVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
-    {
-        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
     function _beforeInitiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,

@@ -433,20 +433,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
-     function validateDepositIntoVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) external view {
-         _validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
-    function validateWithdrawalFromVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) external view {
-        _validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
     function UNDERLYING_TOKEN() public view returns (address) {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
     }
@@ -755,28 +741,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Only factory can call",
             _from
-        );
-    }
-
-    function _validateDepositIntoVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) internal virtual view {
-        IsolationModeTokenVaultV1ActionsImpl.validateDepositIntoVaultAfterTransfer(
-            /* _vault = */ this,
-            _accountNumber,
-            _marketId
-        );
-    }
-
-    function _validateWithdrawalFromVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) internal virtual view {
-        IsolationModeTokenVaultV1ActionsImpl.validateWithdrawalFromVaultAfterTransfer(
-            /* _vault = */ this,
-            _accountNumber,
-            _marketId
         );
     }
 

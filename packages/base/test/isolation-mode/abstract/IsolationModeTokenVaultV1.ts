@@ -3,6 +3,8 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
+  DepositWithdrawalRouter,
+  DepositWithdrawalRouter__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -57,6 +59,8 @@ describe('IsolationModeTokenVaultV1', () => {
   let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let userVault: TestIsolationModeTokenVaultV1;
+
+  let router: DepositWithdrawalRouter;
 
   let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
@@ -124,7 +128,7 @@ describe('IsolationModeTokenVaultV1', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -153,7 +157,16 @@ describe('IsolationModeTokenVaultV1', () => {
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
 
-    await createAndUpgradeDolomiteRegistry(core);
+    router = await createContractWithAbi(
+      DepositWithdrawalRouter__factory.abi,
+      DepositWithdrawalRouter__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    await router.connect(core.governance).ownerLazyInitialize(core.tokens.weth.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(router.address, true);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDepositWithdrawalRouter(router.address);
+    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(router.address, true);
+
     const selectors = [...(await userVaultImplementation.testGetFunctionSelectors())];
     await core.dolomiteRegistry.ownerSetIsolationModeMulticallFunctions(selectors.sort());
 
@@ -275,166 +288,10 @@ describe('IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#validateDepositIntoVaultAfterTransfer', () => {
-    it('should work normally when depositing isolation mode asset', async () => {
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        isolationModeMarketId,
-        amountWei,
-        0
-      );
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
-      await expectWalletBalance(userVault, underlyingToken, amountWei);
-      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
-    });
-
-    it('should work normally when depositing other asset', async () => {
-      await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        otherMarketId1,
-        otherAmountWei,
-        0
-      );
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
-    });
-
-    it('should fail when depositing other asset into account number 0', async () => {
-      await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          otherMarketId1,
-          otherAmountWei,
-          0
-        ),
-        'IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <0>'
-      );
-    });
-
-    it('should fail if not valid collateral asset', async () => {
-      await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      await factory.setAllowableCollateralMarketIds([core.marketIds.weth]);
-      
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-          isolationModeMarketId,
-          borrowAccountNumber,
-          otherMarketId1,
-          otherAmountWei,
-          0
-        ),
-        `IsolationModeVaultV1ActionsImpl: Market not allowed as collateral <${otherMarketId1.toString()}>`
-      );
-    });
-  });
-
-  describe('#validateWithdrawalFromVaultAfterTransfer', () => {
-    it('should work normally for isolation mode asset', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        isolationModeMarketId,
-        amountWei,
-        0
-      );
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
-    });
-
-    it('should work normally when withdrawing other asset from borrow account', async () => {
-      await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        otherMarketId1,
-        otherAmountWei,
-        0
-      );
-
-      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        otherMarketId1,
-        otherAmountWei,
-        BalanceCheckFlag.None
-      );
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
-    });
-
-    it('should fail when withdrawing other asset from default account', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          otherMarketId1,
-          otherAmountWei,
-          BalanceCheckFlag.None
-        ),
-        'IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <0>'
-      );
-    });
-
-    it('should fail if balance is negative and not a valid debt market', async () => {
-      await factory.setAllowableDebtMarketIds([otherMarketId1]);
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        isolationModeMarketId,
-        amountWei,
-        0
-      );
-
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-          isolationModeMarketId,
-          borrowAccountNumber,
-          otherMarketId2,
-          ONE_BI,
-          BalanceCheckFlag.None
-        ),
-        `IsolationModeVaultV1ActionsImpl: Market not allowed as debt <${otherMarketId2.toString()}>`
-      );
-    });
-  });
-
   describe('#depositIntoVaultForDolomiteMargin', () => {
     it('should work normally', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
-
-      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
-      await expectWalletBalance(userVault, underlyingToken, amountWei);
-
-      await expectTotalSupply(factory, amountWei);
-    });
-
-    it('should work normally with router', async () => {
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        isolationModeMarketId,
-        amountWei,
-        0
-      );
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
 
@@ -494,31 +351,80 @@ describe('IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#withdrawFromVaultForDolomiteMargin', () => {
+  describe('#routerDepositUnderlyingTokenIntoVault', () => {
     it('should work normally', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-
-      await expectWalletBalance(core.dolomiteMargin, factory, ZERO_BI);
-      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
-
-      await expectTotalSupply(factory, ZERO_BI);
-    });
-
-    it('should work normally with router', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-
-      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+      await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
+      await router.connect(core.hhUser1).depositWei(
         isolationModeMarketId,
         defaultAccountNumber,
         isolationModeMarketId,
         amountWei,
         0
       );
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
+
+      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
+      await expectWalletBalance(userVault, underlyingToken, amountWei);
+      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
+
+      await expectTotalSupply(factory, amountWei);
+    });
+
+    it('should fail when not called by router', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser1).routerDepositUnderlyingTokenIntoVault(defaultAccountNumber, amountWei),
+        `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const routerImpersonator = await impersonate(router.address, true);
+      const data = await userVault.populateTransaction.routerDepositUnderlyingTokenIntoVault(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    });
+  });
+
+  describe('#routerDepositOtherTokenIntoVault', () => {
+    it('should work normally', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(router.address, amountWei);
+      await router.connect(core.hhUser1).depositWei(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        0
+      );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, amountWei);
+    });
+
+    it('should fail when not called by router', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser1).routerDepositOtherTokenIntoVault(otherMarketId1, defaultAccountNumber, amountWei),
+        `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const routerImpersonator = await impersonate(router.address, true);
+      const data = await userVault.populateTransaction.routerDepositOtherTokenIntoVault(otherMarketId1, defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    });
+  });
+
+  describe('#withdrawFromVaultForDolomiteMargin', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
 
@@ -566,6 +472,88 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectThrow(
         userVault.connect(core.hhUser2).withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#routerWithdrawUnderlyingTokenFromVault', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await router.connect(core.hhUser1).withdrawWei(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        isolationModeMarketId,
+        amountWei,
+        0
+      );
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
+    });
+
+    it('should fail when not called by router', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser1).routerWithdrawUnderlyingTokenFromVault(defaultAccountNumber, amountWei),
+        `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const routerImpersonator = await impersonate(router.address, true);
+      const data = await userVault.populateTransaction.routerWithdrawUnderlyingTokenFromVault(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    });
+  });
+
+  describe('#routerWithdrawOtherTokenFromVault', () => {
+    it('should work normally', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(router.address, amountWei);
+      await router.connect(core.hhUser1).depositWei(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        0
+      );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, amountWei);
+
+      await router.connect(core.hhUser1).withdrawWei(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, otherToken1, amountWei);
+    });
+
+    it('should fail when not called by router', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser1).routerWithdrawOtherTokenFromVault(
+          defaultAccountNumber,
+          otherMarketId1,
+          otherAmountWei,
+          0
+        ),
+        `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const routerImpersonator = await impersonate(router.address, true);
+      const data = await userVault.populateTransaction.routerWithdrawOtherTokenFromVault(
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        0
+      );
+      await expectThrow(
+        userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
+        'IsolationModeTokenVaultV1: Reentrant call'
       );
     });
   });
