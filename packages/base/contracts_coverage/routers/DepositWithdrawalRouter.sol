@@ -38,7 +38,6 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
 
 
-
 /**
  * @title   DepositWithdrawalRouter
  * @author  Dolomite
@@ -203,15 +202,16 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
             if (_isolationModeMarketId == _marketId) {
-                vault.withdrawFromVaultForDolomiteMarginFromRouter(
+                vault.routerWithdrawUnderlyingTokenFromVault(
                     _fromAccountNumber,
                     _amountWei
                 );
             } else {
-                vault.withdrawOtherTokenFromVaultFromRouter(
+                vault.routerWithdrawOtherTokenFromVault(
                     _marketId,
                     _fromAccountNumber,
-                    _amountWei
+                    _amountWei,
+                    _balanceCheckFlag
                 );
             }
 
@@ -290,7 +290,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     /// @inheritdoc IDepositWithdrawalRouter
-    function vaultExecuteDepositIntoDolomiteMargin(
+    function vaultExecuteDepositUnderlyingToken(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -315,7 +315,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     /// @inheritdoc IDepositWithdrawalRouter
-    function vaultExecuteDepositOtherTokenIntoDolomiteMargin(
+    function vaultExecuteDepositOtherToken(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -336,7 +336,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     /// @inheritdoc IDepositWithdrawalRouter
-    function vaultExecuteWithdrawFromDolomiteMargin(
+    function vaultExecuteWithdrawUnderlyingToken(
         uint256 _marketId,
         uint256 _fromAccountNumber,
         uint256 _amountWei
@@ -371,10 +371,11 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     /// @inheritdoc IDepositWithdrawalRouter
-    function vaultExecuteWithdrawOtherTokenFromDolomiteMargin(
+    function vaultExecuteWithdrawOtherToken(
         uint256 _marketId,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external onlyPendingVault(msg.sender) {
         IIsolationModeTokenVaultV1 vault = IIsolationModeTokenVaultV1(msg.sender);
         AccountActionLib.withdraw(
@@ -389,7 +390,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             }),
-            AccountBalanceLib.BalanceCheckFlag.From // @todo fix balance check flag
+            _balanceCheckFlag
         );
     }
 
@@ -464,14 +465,14 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
-            vault.depositOtherTokenIntoVaultFromRouter(_marketId, _toAccountNumber, _amountWei);
+            vault.routerDepositOtherTokenIntoVault(_marketId, _toAccountNumber, _amountWei);
         } else {
             // Deposit the isolation mode token into the user's isolation mode vault
             /*assert(_marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(_marketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
-            vault.depositIntoVaultForDolomiteMarginFromRouter(DEFAULT_ACCOUNT_NUMBER, _amountWei);
+            vault.routerDepositUnderlyingTokenIntoVault(DEFAULT_ACCOUNT_NUMBER, _amountWei);
 
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
                 if (_eventFlag == EventFlag.Borrow) {

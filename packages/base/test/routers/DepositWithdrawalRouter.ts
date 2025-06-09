@@ -734,10 +734,10 @@ describe('DepositWithdrawalRouter', () => {
     });
   });
 
-  describe('#vaultExecuteDepositIntoDolomiteMargin', () => {
+  describe('#vaultExecuteDepositUnderlyingToken', () => {
     it('should fail if not called by pending vault', async () => {
       await expectThrow(
-        router.connect(core.hhUser1).vaultExecuteDepositIntoDolomiteMargin(
+        router.connect(core.hhUser1).vaultExecuteDepositUnderlyingToken(
           isolationModeMarketId,
           defaultAccountNumber,
           amountWei,
@@ -747,10 +747,10 @@ describe('DepositWithdrawalRouter', () => {
     });
   });
 
-  describe('#vaultExecuteDepositOtherTokenIntoDolomiteMargin', () => {
+  describe('#vaultExecuteDepositOtherToken', () => {
     it('should fail if not called by pending vault', async () => {
       await expectThrow(
-        router.connect(core.hhUser1).vaultExecuteDepositOtherTokenIntoDolomiteMargin(
+        router.connect(core.hhUser1).vaultExecuteDepositOtherToken(
           isolationModeMarketId,
           defaultAccountNumber,
           amountWei,
@@ -760,10 +760,10 @@ describe('DepositWithdrawalRouter', () => {
     });
   });
 
-  describe('#vaultExecuteWithdrawFromDolomiteMargin', () => {
+  describe('#vaultExecuteWithdrawUnderlyingToken', () => {
     it('should fail if not called by pending vault', async () => {
       await expectThrow(
-        router.connect(core.hhUser1).vaultExecuteWithdrawFromDolomiteMargin(
+        router.connect(core.hhUser1).vaultExecuteWithdrawUnderlyingToken(
           isolationModeMarketId,
           defaultAccountNumber,
           amountWei,
@@ -773,13 +773,14 @@ describe('DepositWithdrawalRouter', () => {
     });
   });
 
-  describe('#vaultExecuteWithdrawOtherTokenFromDolomiteMargin', () => {
+  describe('#vaultExecuteWithdrawOtherToken', () => {
     it('should fail if not called by pending vault', async () => {
       await expectThrow(
-        router.connect(core.hhUser1).vaultExecuteWithdrawOtherTokenFromDolomiteMargin(
+        router.connect(core.hhUser1).vaultExecuteWithdrawOtherToken(
           isolationModeMarketId,
           defaultAccountNumber,
           amountWei,
+          BalanceCheckFlag.Both,
         ),
         'DepositWithdrawalRouter: Not pending vault',
       );

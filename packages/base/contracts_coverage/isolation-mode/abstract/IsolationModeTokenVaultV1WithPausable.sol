@@ -229,6 +229,19 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
     }
 
+    function _withdrawFromVaultForDolomiteMargin(
+        address _to,
+        uint256 _accountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
+    {
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_to, _accountNumber, _amountWei);
+    }
+
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
     function _openBorrowPosition(
         uint256 _fromAccountNumber,
@@ -420,32 +433,6 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         IsolationModeTokenVaultV1._swapExactInputForOutput(
             _params
         );
-    }
-
-    function _validateDepositIntoVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _depositIntoVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
-    {
-        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
-    function _validateWithdrawalFromVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
-    {
-        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     // ===================================================

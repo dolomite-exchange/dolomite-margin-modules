@@ -24,6 +24,7 @@ import { IRouterBase } from "./IRouterBase.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 
+
 /**
  * @title   IDepositWithdrawalRouter
  * @author  Dolomite
@@ -171,7 +172,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
      * @param  _toAccountNumber     The account number to deposit into
      * @param  _amountWei           The amount in Wei to deposit
      */
-    function vaultExecuteDepositIntoDolomiteMargin(
+    function vaultExecuteDepositUnderlyingToken(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -186,7 +187,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
      * @param  _toAccountNumber     The account number to deposit into
      * @param  _amountWei           The amount in Wei to deposit
      */
-    function vaultExecuteDepositOtherTokenIntoDolomiteMargin(
+    function vaultExecuteDepositOtherToken(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -201,7 +202,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
      * @param  _fromAccountNumber   The account number to withdraw from
      * @param  _amountWei           The amount in Wei to withdraw
      */
-    function vaultExecuteWithdrawFromDolomiteMargin(
+    function vaultExecuteWithdrawUnderlyingToken(
         uint256 _marketId,
         uint256 _fromAccountNumber,
         uint256 _amountWei
@@ -215,11 +216,13 @@ interface IDepositWithdrawalRouter is IRouterBase {
      * @param  _marketId            The market ID of the token to withdraw
      * @param  _fromAccountNumber   The account number to withdraw from
      * @param  _amountWei           The amount in Wei to withdraw
+     * @param  _balanceCheckFlag    The balance check flag to use for the withdrawal
      */
-    function vaultExecuteWithdrawOtherTokenFromDolomiteMargin(
+    function vaultExecuteWithdrawOtherToken(
         uint256 _marketId,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
 
     // ========================================================

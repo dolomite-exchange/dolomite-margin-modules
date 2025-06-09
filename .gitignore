@@ -24,6 +24,10 @@ coverage_2/
 packages/*/coverage/
 packages/*/coverage_2/
 
+# foundry
+packages/*/out/
+packages/*/cache_forge
+
 dist/
 
 # foundry
