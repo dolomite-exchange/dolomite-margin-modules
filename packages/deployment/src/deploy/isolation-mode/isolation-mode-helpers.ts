@@ -7,13 +7,12 @@ export function getConstructorParametersForAsyncIsolationMode(network: Network):
 
 export enum IsolationModeVaultType {
   None = 'None',
+  BerachainPol = 'BerachainPol',
+  GLV = 'GLV',
+  GmxV2 = 'GmxV2',
   Migrator = 'Migrator',
-  Pol = 'Pol',
   Pt = 'Pt',
   Yt = 'Yt',
-  GmxV2 = 'GmxV2',
-  GLV = 'GLV',
-  BerachainRewardVault = 'BerachainRewardVault',
 }
 
 export interface DeployedVaultInformation {

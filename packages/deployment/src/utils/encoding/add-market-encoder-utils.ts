@@ -28,22 +28,29 @@ import {
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
+import { BerachainPOLSystem } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
 import {
   getFormattedTokenName,
   isValidAmountForCapForToken,
   prettyPrintEncodedDataWithTypeSafety,
 } from './base-encoder-utils';
-import { BerachainPOLSystem } from '../deploy-utils';
 
 export interface AddMarketOptions {
-  additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
   decimals?: number;
   skipEncodeLiquidatorWhitelist?: boolean;
 }
 
 export interface AddIsolationModeMarketOptions extends AddMarketOptions {
+  /**
+   * Converts to concat to the default batch
+   */
+  additionalConverters?: BaseContract[];
+  /**
+   * Converters to exclude from the default batch
+   */
+  sliceConverters?: BaseContract[];
   whitelistedLiquidatorAddress?: string;
 }
 
@@ -73,14 +80,18 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
     options,
   );
 
-  const converters = [
-    unwrapper.address,
-    wrapper.address,
-    core.borrowPositionRouter.address,
-    core.depositWithdrawalRouter.address,
-    core.genericTraderRouter.address,
-  ];
-  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
+  const converters = (
+    [
+      unwrapper,
+      wrapper,
+      core.borrowPositionRouter,
+      core.depositWithdrawalRouter,
+      core.genericTraderRouter,
+    ] as BaseContract[]
+  )
+    .concat(options.additionalConverters ?? [])
+    .filter((c) => !options.sliceConverters?.some(s => s.address === c.address))
+    .map(c => c.address);
 
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -90,13 +101,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [converters.concat(additionalConverters)],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [converters]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -144,9 +149,9 @@ export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>
       ],
     ),
 
-    ...await encodeAddIsolationModeMarket(
+    ...(await encodeAddIsolationModeMarket(
       core,
-      (polSystem.factory as any) as IIsolationModeVaultFactory,
+      polSystem.factory as any as IIsolationModeVaultFactory,
       oracle,
       polSystem.unwrapper,
       polSystem.wrapper,
@@ -154,8 +159,12 @@ export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>
       targetCollateralization,
       targetLiquidationPremium,
       maxSupplyWei,
-      { ...options, whitelistedLiquidatorAddress: core.berachainRewardsEcosystem.live.polLiquidatorProxy.address },
-    ),
+      {
+        ...options,
+        whitelistedLiquidatorAddress: core.berachainRewardsEcosystem.live.polLiquidatorProxy.address,
+        sliceConverters: [core.depositWithdrawalRouter],
+      },
+    )),
   ];
 
   transactions.push(

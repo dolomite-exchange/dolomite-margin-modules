@@ -117,7 +117,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 6),
   );
   const eventEmitterRegistryImplementation = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,

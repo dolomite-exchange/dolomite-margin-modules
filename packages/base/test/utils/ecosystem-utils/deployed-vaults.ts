@@ -39,6 +39,7 @@ export class DeployedVault {
   public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld;
   public vaultType: IsolationModeVaultType;
   public isUpgradeable: boolean;
+  public isDepositWithdrawalRouterEnabled: boolean;
 
   constructor(
     marketId: number,
@@ -59,6 +60,7 @@ export class DeployedVault {
     this.factory = factory;
     this.vaultType = info.vaultType;
     this.isUpgradeable = info.vaultType !== IsolationModeVaultType.Migrator;
+    this.isDepositWithdrawalRouterEnabled = info.vaultType !== IsolationModeVaultType.BerachainPol;
   }
 
   public async deployNewVaultAndEncodeUpgradeTransaction<T extends DolomiteNetwork>(

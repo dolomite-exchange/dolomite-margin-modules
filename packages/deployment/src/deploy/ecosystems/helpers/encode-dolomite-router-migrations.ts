@@ -1,11 +1,11 @@
-import { DeployedVault } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
-import { CoreProtocolType } from 'packages/base/test/utils/setup';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
-import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { DepositWithdrawalRouter, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { PAYABLE_TOKEN_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { DepositWithdrawalRouter, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { DeployedVault } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
+import { CoreProtocolType } from 'packages/base/test/utils/setup';
+import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
 const INITIALIZED_NETWORKS = [
   Network.ArbitrumOne,
@@ -68,8 +68,11 @@ export async function encodeDolomiteRouterMigrations(
 
   for (const deployedVault of deployedVaults) {
     for (const routerAddress of routers) {
-      if (!(await deployedVault.factory.isTokenConverterTrusted(routerAddress))) {
-        transactions.push(await deployedVault.encodeSetTrustedTokenConverter(core, routerAddress, true));
+      if (deployedVault.isDepositWithdrawalRouterEnabled || routerAddress !== depositWithdrawalRouter.address) {
+        // Some vaults don't use the deposit/withdrawal router
+        if (!(await deployedVault.factory.isTokenConverterTrusted(routerAddress))) {
+          transactions.push(await deployedVault.encodeSetTrustedTokenConverter(core, routerAddress, true));
+        }
       }
     }
   }
