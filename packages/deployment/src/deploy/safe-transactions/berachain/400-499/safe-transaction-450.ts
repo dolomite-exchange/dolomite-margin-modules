@@ -3,16 +3,13 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetInterestSetter,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetInterestSetter } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { checkInterestSetter } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Fix pol-rUsd accounts, deploy new vault
+ * - Adjust the rUSD interest rate model
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -46,7 +43,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await checkInterestSetter(
         core,
         core.marketIds.rUsd,
-        core.interestSetters.linearStepFunction12L88U90OInterestSetter,
+        core.interestSetters.linearStepFunction12L88U95OInterestSetter,
       );
     },
   };
