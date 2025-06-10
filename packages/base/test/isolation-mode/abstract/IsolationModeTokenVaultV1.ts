@@ -381,7 +381,10 @@ describe('IsolationModeTokenVaultV1', () => {
 
     it('should fail if reentered', async () => {
       const routerImpersonator = await impersonate(router.address, true);
-      const data = await userVault.populateTransaction.routerDepositUnderlyingTokenIntoVault(defaultAccountNumber, amountWei);
+      const data = await userVault.populateTransaction.routerDepositUnderlyingTokenIntoVault(
+        defaultAccountNumber,
+        amountWei
+      );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
         'IsolationModeTokenVaultV1: Reentrant call'
@@ -405,14 +408,22 @@ describe('IsolationModeTokenVaultV1', () => {
 
     it('should fail when not called by router', async () => {
       await expectThrow(
-        userVault.connect(core.hhUser1).routerDepositOtherTokenIntoVault(otherMarketId1, defaultAccountNumber, amountWei),
+        userVault.connect(core.hhUser1).routerDepositOtherTokenIntoVault(
+          otherMarketId1,
+          defaultAccountNumber,
+          amountWei
+        ),
         `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if reentered', async () => {
       const routerImpersonator = await impersonate(router.address, true);
-      const data = await userVault.populateTransaction.routerDepositOtherTokenIntoVault(otherMarketId1, defaultAccountNumber, amountWei);
+      const data = await userVault.populateTransaction.routerDepositOtherTokenIntoVault(
+        otherMarketId1,
+        defaultAccountNumber,
+        amountWei,
+      );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
         'IsolationModeTokenVaultV1: Reentrant call'
@@ -499,7 +510,10 @@ describe('IsolationModeTokenVaultV1', () => {
 
     it('should fail if reentered', async () => {
       const routerImpersonator = await impersonate(router.address, true);
-      const data = await userVault.populateTransaction.routerWithdrawUnderlyingTokenFromVault(defaultAccountNumber, amountWei);
+      const data = await userVault.populateTransaction.routerWithdrawUnderlyingTokenFromVault(
+        defaultAccountNumber,
+        amountWei,
+      );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
         'IsolationModeTokenVaultV1: Reentrant call'

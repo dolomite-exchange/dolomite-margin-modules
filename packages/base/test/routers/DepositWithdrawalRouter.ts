@@ -30,7 +30,7 @@ import {
 } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectProtocolParBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
@@ -381,6 +381,90 @@ describe('DepositWithdrawalRouter', () => {
         router.depositPayable(
           ZERO_BI,
           defaultAccountNumber,
+          EventFlag.None,
+          { value: amountWei },
+        ),
+        'DepositWithdrawalRouter: Not initialized',
+      );
+    });
+  });
+
+  describe('#depositParPayable', () => {
+    it('should work normally with no refund', async () => {
+      const parAmountOneEth = BigNumber.from('1037792607162347861');
+      await expect(() => router.depositParPayable(
+        ZERO_BI,
+        defaultAccountNumber,
+        ONE_ETH_BI,
+        EventFlag.None,
+        { value: parAmountOneEth }
+      )).to.changeEtherBalance(core.hhUser1, ZERO_BI.sub(parAmountOneEth));
+
+      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+    });
+
+    it('should work normally with refund', async () => {
+      const parAmountOneEth = BigNumber.from('1037792607162347861');
+      await expect(() => router.depositParPayable(
+        ZERO_BI,
+        defaultAccountNumber,
+        ONE_ETH_BI,
+        EventFlag.None,
+        { value: parseEther('1.5') }
+      )).to.changeEtherBalance(core.hhUser1, ZERO_BI.sub(parAmountOneEth));
+
+      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+    });
+
+    it('should work normally for isolation mode vault', async () => {
+      await factory.connect(core.governance).setAllowableCollateralMarketIds(
+        [isolationModeMarketId, core.marketIds.dai, core.marketIds.weth]
+      );
+      const parAmountOneEth = BigNumber.from('1037792607162347861');
+      await router.depositParPayable(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        ONE_ETH_BI,
+        EventFlag.None,
+        { value: parAmountOneEth }
+      );
+      await expectProtocolParBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+    });
+
+    it('should fail if not enough ETH sent', async () => {
+      await expectThrow(
+        router.depositParPayable(
+          ZERO_BI,
+          defaultAccountNumber,
+          ONE_ETH_BI,
+          EventFlag.None,
+          { value: ONE_ETH_BI.sub(1) }
+        ),
+        'DepositWithdrawalRouter: Insufficient ETH sent',
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const transaction = await router.populateTransaction.depositParPayable(
+        ZERO_BI,
+        defaultAccountNumber,
+        parAmount,
+        EventFlag.None,
+        { value: amountWei },
+      );
+      await expectThrow(
+        router.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuardUpgradeable: Reentrant call',
+      );
+    });
+
+    it('should fail if not initialized', async () => {
+      await router.setInitialized(false);
+      await expectThrow(
+        router.depositParPayable(
+          ZERO_BI,
+          defaultAccountNumber,
+          parAmount,
           EventFlag.None,
           { value: amountWei },
         ),

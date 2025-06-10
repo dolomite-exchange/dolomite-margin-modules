@@ -112,7 +112,10 @@ library IsolationModeTokenVaultV1ActionsImpl {
     ) public {
         // This implementation requires we withdraw from index 0
         _checkFromAccountNumberIsZero(_fromAccountNumber);
-        IDepositWithdrawalRouter depositWithdrawalRouter = IIsolationModeVaultFactory(_vault.VAULT_FACTORY()).DOLOMITE_REGISTRY().depositWithdrawalRouter();
+
+        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
+        IDepositWithdrawalRouter depositWithdrawalRouter = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
+
         if (_to == address(depositWithdrawalRouter)) {
             depositWithdrawalRouter.vaultExecuteWithdrawUnderlyingToken(
                 _vault.marketId(),
@@ -120,7 +123,10 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 _amountWei
             );
         } else {
-            IIsolationModeVaultFactory(_vault.VAULT_FACTORY()).withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
+            factory.withdrawFromDolomiteMargin(
+                _fromAccountNumber,
+                _amountWei
+            );
         }
     }
 

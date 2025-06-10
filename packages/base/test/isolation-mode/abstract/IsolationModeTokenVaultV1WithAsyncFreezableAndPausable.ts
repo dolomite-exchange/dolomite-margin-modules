@@ -41,7 +41,11 @@ import {
 } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createAsyncIsolationModeTokenVaultV1ActionsImpl, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createAsyncIsolationModeTokenVaultV1ActionsImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
+} from '../../utils/dolomite';
 import {
   createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
@@ -168,7 +172,11 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize([
+      tokenUnwrapper.address,
+      tokenWrapper.address,
+      core.depositWithdrawalRouter.address,
+    ]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

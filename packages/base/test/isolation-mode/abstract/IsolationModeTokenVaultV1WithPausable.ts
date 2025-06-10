@@ -127,7 +127,11 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize([
+      tokenUnwrapper.address,
+      tokenWrapper.address,
+      core.depositWithdrawalRouter.address,
+    ]);
 
     solidUser = core.hhUser5;
 
@@ -407,7 +411,13 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferFromPositionWithOtherToken(borrowAccountNumber, defaultAccountNumber, otherMarketId1, otherAmountWei, BalanceCheckFlag.To);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(otherAmountWei));
 
