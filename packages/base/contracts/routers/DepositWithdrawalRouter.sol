@@ -181,6 +181,37 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         );
     }
 
+    /// @inheritdoc IDepositWithdrawalRouter
+    function depositParPayable(
+        uint256 _isolationModeMarketId,
+        uint256 _toAccountNumber,
+        uint256 _amountPar,
+        EventFlag _eventFlag
+    ) external payable nonReentrant requireInitialized {
+        uint256 marketId = payableMarketId();
+        MarketInfo memory marketInfo = _getMarketInfo(marketId);
+
+        uint256 amountWei = _convertParToWei(msg.sender, _toAccountNumber, marketId, _amountPar);
+        Require.that(
+            msg.value >= amountWei,
+            _FILE,
+            "Insufficient ETH sent"
+        );
+
+        _wrap(amountWei);
+        _depositWei(
+            marketInfo,
+            _isolationModeMarketId,
+            _toAccountNumber,
+            marketId,
+            amountWei,
+            _eventFlag
+        );
+
+        // Refund the difference
+        Address.sendValue(payable(msg.sender), msg.value - amountWei);
+    }
+
     // ========================================================
     // ================== Withdraw Functions ==================
     // ========================================================
@@ -492,6 +523,15 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
      */
     function _wrap() internal {
         wrappedPayableToken().deposit{ value: msg.value }();
+    }
+
+    /**
+     * Wraps a specific amount of the native currency into the wrapped payable token
+     * 
+     * @param  _amountWei   The amount of native currency to wrap
+     */
+    function _wrap(uint256 _amountWei) internal {
+        wrappedPayableToken().deposit{ value: _amountWei }();
     }
 
     /**

@@ -103,6 +103,25 @@ interface IDepositWithdrawalRouter is IRouterBase {
         EventFlag _eventFlag
     ) external payable;
 
+    /**
+     * Deposits native ETH by wrapping it to WETH first
+     * 
+     * @dev This function will refund the difference between ETH send and WETH deposited
+     *
+     * @param  _isolationModeMarketId     The market ID of the isolation mode token vault
+     *                                    (0 if not using isolation mode)
+     * @param  _toAccountNumber           The account number to deposit the wrapped ETH into
+     * @param  _amountPar                 The par amount of the token to deposit
+     * @param  _eventFlag                 Flag indicating if this deposit should emit special
+     *                                    events (e.g. opening a borrow position)
+     */
+    function depositParPayable(
+        uint256 _isolationModeMarketId,
+        uint256 _toAccountNumber,
+        uint256 _amountPar,
+        EventFlag _eventFlag
+    ) external payable;
+
     // ========================================================
     // ================== Withdraw Functions ==================
     // ========================================================
