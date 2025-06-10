@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import { DepositWithdrawalRouter } from "../../../contracts/routers/DepositWithdrawalRouter.sol";
 import { IDepositWithdrawalRouter } from "../../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
 import { IDolomiteMargin } from "../../../contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginV2 } from "../../../contracts/protocol/interfaces/IDolomiteMarginV2.sol";
 import { IDolomiteRegistry } from "../../../contracts/interfaces/IDolomiteRegistry.sol";
 import { IWETH } from "../../../contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,30 +16,38 @@ import { AccountBalanceLib } from "../../../contracts/lib/AccountBalanceLib.sol"
 
 import { SimpleIsolationModeTokenVaultV1 } from "../../../contracts/isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 
-contract DepositWithdrawalRouterStandardTest is Test {
+contract DepositWithdrawalRouterParBerachainTest is Test {
 
-    bytes32 private constant _FILE = "DepositWithdrawalRouterTest";
+    bytes32 private constant _FILE = "DepositWithdrawalRouterBerachain";
 
-    IDolomiteMargin public dolomiteMargin = IDolomiteMargin(0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072);
-    IDolomiteRegistry public dolomiteRegistry = IDolomiteRegistry(0x2A059D6d682e5fB1226eB8bC2977b512698C2404);
+    IDolomiteMargin public dolomiteMargin = IDolomiteMargin(0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D);
+    IDolomiteRegistry public dolomiteRegistry = IDolomiteRegistry(0x0F38bFBd9c1450BCF7A758e80E148CE78cfE09fD);
     address public dolomiteOwner;
 
-    IWETH public weth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
-    IERC20 public usdc = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
+    IWETH public wbera = IWETH(0x6969696969696969696969696969696969696969);
+    IERC20 public honey = IERC20(0xFCBD14DC51f0A4d49d5E53C2E0950e0bC26d0Dce);
 
     DepositWithdrawalRouter public router;
 
     address public alice = makeAddr("alice");
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ARBITRUM_ONE_WEB3_PROVIDER_URL"), 344263500);
+        vm.createSelectFork(vm.envString("BERACHAIN_WEB3_PROVIDER_URL"), 6_080_000);
         dolomiteOwner = dolomiteMargin.owner();
 
         router = new DepositWithdrawalRouter(address(dolomiteRegistry), address(dolomiteMargin));
 
         vm.startPrank(dolomiteOwner);
-        router.ownerLazyInitialize(address(weth));
+        router.ownerLazyInitialize(address(wbera));
         dolomiteMargin.ownerSetGlobalOperator(address(router), true);
+        IDolomiteMarginV2(address(dolomiteMargin)).ownerSetMaxSupplyWei(
+            dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
+            0
+        );
+        IDolomiteMarginV2(address(dolomiteMargin)).ownerSetMaxSupplyWei(
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
+            0
+        );
     }
 
     // =============================================
@@ -48,26 +57,26 @@ contract DepositWithdrawalRouterStandardTest is Test {
     function test_depositWei_normalToken(uint128 _amountWei) public {
         vm.assume(_amountWei > 0);
 
-        deal(address(usdc), alice, _amountWei);
+        deal(address(wbera), alice, _amountWei);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), _amountWei);
+        wbera.approve(address(router), _amountWei);
         router.depositWei(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             /* _amountWei */ _amountWei,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
 
-        assertEq(usdc.allowance(alice, address(router)), 0);
-        assertEq(usdc.allowance(address(router), address(dolomiteMargin)), 0);
-        assertEq(usdc.balanceOf(alice), 0);
-        assertEq(usdc.balanceOf(address(router)), 0);
+        assertEq(wbera.allowance(alice, address(router)), 0);
+        assertEq(wbera.allowance(address(router), address(dolomiteMargin)), 0);
+        assertEq(wbera.balanceOf(alice), 0);
+        assertEq(wbera.balanceOf(address(router)), 0);
         assertProtocolBalanceWei(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             _amountWei,
             true,
             /* _marginOfErrorWei */ 1
@@ -81,28 +90,32 @@ contract DepositWithdrawalRouterStandardTest is Test {
             sign: true,
             value: _amountPar
         });
-        uint256 weiAmount = InterestIndexLib.parToWei(dolomiteMargin, dolomiteMargin.getMarketIdByTokenAddress(address(usdc)), parStruct).value;
+        uint256 weiAmount = InterestIndexLib.parToWei(
+            dolomiteMargin,
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
+            parStruct
+        ).value;
 
-        deal(address(usdc), alice, weiAmount);
+        deal(address(wbera), alice, weiAmount);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), weiAmount);
+        wbera.approve(address(router), weiAmount);
         router.depositPar(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             /* _amountPar */ _amountPar,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
 
-        assertEq(usdc.allowance(alice, address(router)), 0);
-        assertEq(usdc.allowance(address(router), address(dolomiteMargin)), 0);
-        assertEq(usdc.balanceOf(alice), 0);
-        assertEq(usdc.balanceOf(address(router)), 0);
+        assertEq(wbera.allowance(alice, address(router)), 0);
+        assertEq(wbera.allowance(address(router), address(dolomiteMargin)), 0);
+        assertEq(wbera.balanceOf(alice), 0);
+        assertEq(wbera.balanceOf(address(router)), 0);
         assertProtocolBalancePar(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             _amountPar,
             true
         );
@@ -118,47 +131,51 @@ contract DepositWithdrawalRouterStandardTest is Test {
             });
             uint256 weiAmount = InterestIndexLib.parToWei(
                 dolomiteMargin,
-                dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+                dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
                 parStruct
             ).value;
 
-            deal(address(usdc), alice, weiAmount + 1);
-            usdc.approve(address(router), weiAmount + 1);
+            deal(address(wbera), alice, weiAmount + 1);
+            wbera.approve(address(router), weiAmount + 1);
 
             router.depositPar(
                 /* _isolationModeMarketId */ 0,
                 /* _toAccountNumber */ 0,
-                /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+                /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
                 /* _amountPar */ _amountPars[i],
                 /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
             );
         }
 
-        assertEq(usdc.balanceOf(address(router)), 0);
+        assertEq(wbera.balanceOf(address(router)), 0);
         assertProtocolBalancePar(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             uint256(_amountPars[0]) + uint256(_amountPars[1]),
             true
         );
     }
 
-    function test_depositPar_repaysCorrectParAmount(uint32 _amountWei, uint16 _timeElapsed) public {
+    function test_depositPar_repaysCorrectParAmount(uint256 _amountWei, uint16 _timeElapsed) public {
         vm.assume(_amountWei > 0);
+        _amountWei = bound(_amountWei, 2, 20_000 ether);
 
-        // Deposit ETH collateral and borrow USDC
+        // Deposit HONEY collateral and borrow WBERA
         vm.startPrank(alice);
-        deal(alice, 10 ether);
-        router.depositPayable{value: 10 ether}(
+        deal(address(honey), alice, 100_000 ether);
+        honey.approve(address(router), 100_000 ether);
+        router.depositWei(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 123,
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
+            /* _amountWei */ 100_000 ether,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
         router.withdrawWei(
             /* _isolationModeMarketId */ 0,
             /* _fromAccountNumber */ 123,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             /* _amountWei */ _amountWei,
             /* _eventFlag */ AccountBalanceLib.BalanceCheckFlag.None
         );
@@ -168,18 +185,18 @@ contract DepositWithdrawalRouterStandardTest is Test {
                 owner: alice,
                 number: 123
             }),
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc))
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera))
         );
         
-        // Repay USDC
-        deal(address(usdc), alice, uint256(_amountWei) * 2);
-        usdc.approve(address(router), type(uint256).max);
+        // Repay WBERA
+        deal(address(wbera), alice, uint256(_amountWei) * 2);
+        wbera.approve(address(router), type(uint256).max);
 
         vm.warp(block.timestamp + _timeElapsed);
         router.depositPar(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 123,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             /* _amountPar */ parBalance.value,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
@@ -188,7 +205,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertProtocolBalancePar(
             alice,
             123,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             0,
             true
         );
@@ -211,7 +228,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertProtocolBalanceWei(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(wbera)),
             _amountWei,
             true,
             /* _marginOfErrorWei */ 1
@@ -225,14 +242,14 @@ contract DepositWithdrawalRouterStandardTest is Test {
     function test_withdrawWei_normalToken(uint128 _amountWei, uint256 _withdrawAmount) public {
         vm.assume(_amountWei > 0);
 
-        deal(address(usdc), alice, _amountWei);
+        deal(address(honey), alice, _amountWei);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), _amountWei);
+        honey.approve(address(router), _amountWei);
         router.depositWei(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             /* _amountWei */ _amountWei,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
@@ -242,23 +259,23 @@ contract DepositWithdrawalRouterStandardTest is Test {
                 owner: alice,
                 number: 0
             }),
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc))
+            dolomiteMargin.getMarketIdByTokenAddress(address(honey))
         ).value;
         _withdrawAmount = bound(_withdrawAmount, 1, protocolBalance);
         router.withdrawWei(
             /* _isolationModeMarketId */ 0,
             /* _fromAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             /* _amountWei */ _withdrawAmount,
             /* _eventFlag */ AccountBalanceLib.BalanceCheckFlag.From
         );
 
-        assertEq(usdc.balanceOf(alice), _withdrawAmount);
-        assertEq(usdc.balanceOf(address(router)), 0);
+        assertEq(honey.balanceOf(alice), _withdrawAmount);
+        assertEq(honey.balanceOf(address(router)), 0);
         assertProtocolBalanceWei(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             _withdrawAmount >= _amountWei ? 0 : _amountWei - _withdrawAmount,
             true,
             /* _marginOfErrorWei */ 2
@@ -272,16 +289,20 @@ contract DepositWithdrawalRouterStandardTest is Test {
             sign: true,
             value: _amountPar
         });
-        uint256 weiAmount = InterestIndexLib.parToWei(dolomiteMargin, dolomiteMargin.getMarketIdByTokenAddress(address(usdc)), parStruct).value;
+        uint256 weiAmount = InterestIndexLib.parToWei(
+            dolomiteMargin,
+            dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
+            parStruct
+        ).value;
 
-        deal(address(usdc), alice, weiAmount);
+        deal(address(honey), alice, weiAmount);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), weiAmount);
+        honey.approve(address(router), weiAmount);
         router.depositPar(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             /* _amountPar */ _amountPar,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
@@ -289,7 +310,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         _withdrawAmount = bound(_withdrawAmount, 1, _amountPar);
         router.withdrawPar(
             /* _fromAccountNumber */ 0,
-            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             /* _amountPar */ _withdrawAmount,
             /* _eventFlag */ AccountBalanceLib.BalanceCheckFlag.From
         );
@@ -297,7 +318,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertProtocolBalancePar(
             alice,
             0,
-            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             _amountPar - _withdrawAmount,
             true
         );
