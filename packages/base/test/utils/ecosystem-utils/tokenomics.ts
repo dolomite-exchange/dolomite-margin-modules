@@ -26,6 +26,7 @@ import { getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 export interface TokenomicsEcosystem {
   buybackPool: IBuybackPool;
   dolo: DOLO;
+  handlerAddress: string;
   oDolo: ODOLO;
   veDolo: VotingEscrow;
   veDoloProxy: UpgradeableProxy;
@@ -34,6 +35,8 @@ export interface TokenomicsEcosystem {
   veVesterDiscountCalculator: IVesterDiscountCalculator;
   veFeeCalculator: VeFeeCalculator;
 }
+
+export const LEVEL_INITIATOR_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 
 export async function createTokenomicsEcosystem(
   network: Network,
@@ -49,6 +52,7 @@ export async function createTokenomicsEcosystem(
       signer,
     ),
     dolo: DOLO__factory.connect(Deployments.DolomiteToken[network].address, signer),
+    handlerAddress: LEVEL_INITIATOR_ADDRESS,
     oDolo: ODOLO__factory.connect(Deployments.oDOLO[network].address, signer),
     veDolo: VotingEscrow__factory.connect(Deployments.VotingEscrowProxy[network].address, signer),
     veDoloProxy: UpgradeableProxy__factory.connect(Deployments.VotingEscrowProxy[network].address, signer),

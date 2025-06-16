@@ -6543,6 +6543,20 @@
       "isVerified": true
     }
   },
+  "ODoloRollingClaimsImplementationV1": {
+    "80094": {
+      "address": "0x2f70d788383063a51859A7CE597a9a0CF5C5946C",
+      "transaction": "0x02485b5e234f377f5335fe04a2a4076f9e0f962986a6e58c85cd69d84e0330a8",
+      "isVerified": true
+    }
+  },
+  "ODoloRollingClaimsProxy": {
+    "80094": {
+      "address": "0x79E6E932bf6686a4D357D7821E6e08835Ba8A026",
+      "transaction": "0xa2fb593b433866929ed157226bbfc34f97c4695ad5fc72dd5078bda648adc92a",
+      "isVerified": true
+    }
+  },
   "OdosAggregatorTrader": {
     "5000": {
       "address": "0xDcE03d31D9ad29c3785E61D6F85B31AB3239d379",

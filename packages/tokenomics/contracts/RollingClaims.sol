@@ -45,8 +45,6 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
     bytes32 private constant _FILE = "RollingClaims";
     bytes32 private constant _ROLLING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rollingClaimsStorage")) - 1); // solhint-disable-line max-line-length
 
-    uint256 public constant EPOCH_NUMBER = 0;
-
     // ===================================================
     // ==================== State Variables ==============
     // ===================================================
@@ -66,8 +64,12 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
     }
 
     // ==============================================================
-    // ======================= User Functions =======================
+    // ======================= Write Functions ======================
     // ==============================================================
+
+    function handlerSetMerkleRoot(bytes32 _merkleRoot) external onlyHandler(msg.sender) {
+        _ownerSetMerkleRoot(_merkleRoot);
+    }
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled nonReentrant {
         RollingClaimsStorage storage s = _getRollingClaimsStorage();
@@ -83,25 +85,48 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
             _FILE,
             "No amount to claim"
         );
+
         uint256 amountToClaim = _amount - s.userToClaimAmount[user];
         s.userToClaimAmount[user] = _amount;
+        s.userToClaimEpoch[user] = s.currentEpoch;
 
         ODOLO.safeTransfer(msg.sender, amountToClaim);
-        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, EPOCH_NUMBER, amountToClaim);
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, s.currentEpoch, amountToClaim);
     }
 
     // ==============================================================
     // ======================= View Functions =======================
     // ==============================================================
 
+    function currentEpoch() external view returns (uint256) {
+        RollingClaimsStorage storage s = _getRollingClaimsStorage();
+        return s.currentEpoch;
+    }
+
     function userToClaimAmount(address _user) external view returns (uint256) {
         RollingClaimsStorage storage s = _getRollingClaimsStorage();
         return s.userToClaimAmount[_user];
     }
 
+    function userToClaimEpoch(address _user) external view returns (uint256) {
+        RollingClaimsStorage storage s = _getRollingClaimsStorage();
+        return s.userToClaimEpoch[_user];
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
+
+
+    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal override {
+        bytes32 merkleRootBefore = _getBaseClaimStorage().merkleRoot;
+        super._ownerSetMerkleRoot(_merkleRoot);
+
+        if (merkleRootBefore != bytes32(0)) {
+            // First epoch starts at 0
+            _getRollingClaimsStorage().currentEpoch += 1;
+        }
+    }
 
     function _getRollingClaimsStorage() internal pure returns (RollingClaimsStorage storage rollingClaimsStorage) {
         bytes32 slot = _ROLLING_CLAIMS_STORAGE_SLOT;
