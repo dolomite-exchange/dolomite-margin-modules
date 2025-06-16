@@ -2,7 +2,7 @@ import {
   NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
   NETWORK_TO_SAFE_HASH_NAME_MAP,
-  NetworkType,
+  DolomiteNetwork,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -36,7 +36,7 @@ export interface EncodedTransaction {
 
 export interface DenJsonUpload {
   addExecuteImmediatelyTransactions?: boolean;
-  chainId: NetworkType;
+  chainId: DolomiteNetwork;
   transactions: EncodedTransaction[];
 }
 
@@ -48,7 +48,7 @@ export interface TransactionBuilderUpload extends DenJsonUpload {
   };
 }
 
-export interface DryRunOutput<T extends NetworkType> {
+export interface DryRunOutput<T extends DolomiteNetwork> {
   readonly upload: DenJsonUpload | TransactionBuilderUpload;
   readonly core: CoreProtocolType<T>;
   readonly scriptName: string;
@@ -71,7 +71,7 @@ function cleanHardhatDeployment(): void {
   }
 }
 
-export function getOwnerContractAndSubmissionFilter<T extends NetworkType>(
+export function getOwnerContractAndSubmissionFilter<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   ownerAddress: string,
 ) {
@@ -100,7 +100,7 @@ function getInvalidOwnerError(ownerAddress: string): string {
   return `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
 }
 
-async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise<DryRunOutput<T>>) {
+async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Promise<DryRunOutput<T>>) {
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
@@ -135,31 +135,51 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
           gasLimit,
         };
         let txResult: TransactionResponse;
-        if (transaction.to === result.core.governance.address) {
-          txResult = await signer.sendTransaction({
-            gasLimit,
-            to: transaction.to,
-            data: transaction.data,
-          });
+        if (transaction.to === result.core.governance.address || transaction.to !== ownerAddress) {
+          txResult = await executeTransactionAndTraceOnFailure(
+            result.core,
+            () =>
+              signer.sendTransaction({
+                gasLimit,
+                to: transaction.to,
+                data: transaction.data,
+              }),
+          );
         } else {
           if (ownerAddress === result.core.ownerAdapterV1.address) {
-            txResult = await result.core.ownerAdapterV1
-              .connect(signer)
-              .submitTransaction(transaction.to, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.ownerAdapterV1
+                  .connect(signer)
+                  .submitTransaction(transaction.to, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-            txResult = await result.core.ownerAdapterV2
-              .connect(signer)
-              .submitTransaction(transaction.to, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.ownerAdapterV2
+                  .connect(signer)
+                  .submitTransaction(transaction.to, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.delayedMultiSig.address) {
-            txResult = await result.core.delayedMultiSig
-              .connect(signer)
-              .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.delayedMultiSig
+                  .connect(signer)
+                  .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.gnosisSafe.address) {
-            txResult = await signer.sendTransaction({
-              gasLimit,
-              to: transaction.to,
-              data: transaction.data,
-            });
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                signer.sendTransaction({
+                  gasLimit,
+                  to: transaction.to,
+                  data: transaction.data,
+                }),
+            );
           } else {
             throw new Error(invalidOwnerError);
           }
@@ -197,11 +217,23 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
         for (const transactionId of transactionIds) {
           try {
             if (ownerAddress === result.core.ownerAdapterV1.address) {
-              await result.core.ownerAdapterV1.executeTransactions([transactionId], {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
+              );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-              await result.core.ownerAdapterV2.executeTransactions([transactionId], {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
+              );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
-              await result.core.delayedMultiSig.executeTransaction(transactionId, {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.delayedMultiSig.executeTransaction(transactionId, {}),
+              );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');
             } else {
@@ -377,7 +409,20 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
   }
 }
 
-export async function doDryRunAndCheckDeployment<T extends NetworkType>(
+async function executeTransactionAndTraceOnFailure<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  transactionExecutor: () => Promise<TransactionResponse>,
+): Promise<TransactionResponse> {
+  try {
+    hardhat.tracer.enabled = true;
+    hardhat.tracer.printNext = true;
+    return await transactionExecutor();
+  } catch (e: any) {
+    return Promise.reject(e);
+  }
+}
+
+export async function doDryRunAndCheckDeployment<T extends DolomiteNetwork>(
   executionFn: () => Promise<DryRunOutput<T>>,
 ): Promise<void> {
   await doStuffInternal(executionFn)

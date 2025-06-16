@@ -14,7 +14,7 @@ async function encodeTestOracle(
   core: CoreProtocolBerachain,
 ): Promise<EncodedTransaction[]> {
   const testPriceOracle = TestPriceOracle__factory.connect(
-    ModuleDeployments.TestPriceOracle[core.network].address,
+    ModuleDeployments.TestPriceOracleForAdmin[core.network].address,
     core.hhUser1,
   );
 
@@ -63,7 +63,7 @@ export async function encodeSimpleBoycoListing(
       core,
       token,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
+      core.interestSetters.alwaysZeroInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,

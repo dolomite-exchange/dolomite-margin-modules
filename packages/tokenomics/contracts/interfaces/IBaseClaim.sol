@@ -41,9 +41,9 @@ interface IBaseClaim {
     // ======================================================
 
     event AddressRemappingSet(address[] users, address[] remappedAddresses);
+    event AddressRemappingCleared(address user);
     event ClaimEnabledSet(bool claimEnabled);
     event HandlerSet(address handler);
-    event MerkleRootSet(bytes32 merkleRoot);
 
     // ======================================================
     // ================== External Functions ================
@@ -54,8 +54,6 @@ interface IBaseClaim {
     function ownerSetClaimEnabled(bool _enabled) external;
 
     function ownerSetHandler(address _handler) external;
-
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
 
     function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
@@ -68,8 +66,6 @@ interface IBaseClaim {
     function claimEnabled() external view returns (bool);
 
     function getUserOrRemappedAddress(address _user) external view returns (address);
-
-    function merkleRoot() external view returns (bytes32);
 
     function handler() external view returns (address);
 }

@@ -36,6 +36,7 @@ import { IAsyncFreezableIsolationModeVaultFactory } from "../interfaces/IAsyncFr
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { AsyncIsolationModeTokenVaultV1ActionsImpl } from "./impl/AsyncIsolationModeTokenVaultV1ActionsImpl.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
 
@@ -697,6 +698,32 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         );
     }
 
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override
+        view
+        _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
+    {
+        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override
+        view
+        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
+    {
+        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
     function _beforeInitiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -745,7 +772,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
                 "Invalid marketIds path for wrap"
             );
             _requireNotLiquidatable(_tradeAccountNumber);
-            IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForWrapToUnderlying(
+            AsyncIsolationModeTokenVaultV1ActionsImpl.validateMinAmountOutForWrapToUnderlying(
                 dolomiteRegistry(),
                 DOLOMITE_MARGIN(),
                 _inputSourceAccountOwner,
@@ -778,7 +805,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             number: _tradeAccountNumber
         });
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForLiquidation(
+        AsyncIsolationModeTokenVaultV1ActionsImpl.validateMinAmountOutForLiquidation(
             dolomiteMargin,
             CHAIN_ID,
             liquidAccount,
@@ -827,57 +854,11 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         uint256 _withdrawalAmount,
         bool _isLiquidation
     ) private view {
-        Require.that(
-            _withdrawalAmount > 0,
-            _FILE,
-            "Invalid withdrawal amount"
-        );
-
-        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY());
-        address vault = address(this);
-        uint256 withdrawalPendingAmount = factory.getPendingAmountByAccount(
-            vault,
+        AsyncIsolationModeTokenVaultV1ActionsImpl.validateWithdrawalAmountForUnwrapping(
+            IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()),
             _accountNumber,
-            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+            _withdrawalAmount,
+            _isLiquidation
         );
-        uint256 depositPendingAmount = factory.getPendingAmountByAccount(
-            vault,
-            _accountNumber,
-            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        );
-
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
-            owner: vault,
-            number: _accountNumber
-        });
-        uint256 balance = factory.DOLOMITE_MARGIN().getAccountWei(accountInfo, factory.marketId()).value;
-
-        if (!_isLiquidation) {
-            // The requested withdrawal cannot be for more than the user's balance, minus any pending.
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
-                _FILE,
-                "Withdrawal too large",
-                vault,
-                _accountNumber
-            );
-        } else {
-            // The requested withdrawal must be for the entirety of the user's balance
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) > 0,
-                _FILE,
-                "Account is frozen",
-                vault,
-                _accountNumber
-            );
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
-                _FILE,
-                "Liquidation must be full balance",
-                vault,
-                _accountNumber
-            );
-        }
     }
-
 }

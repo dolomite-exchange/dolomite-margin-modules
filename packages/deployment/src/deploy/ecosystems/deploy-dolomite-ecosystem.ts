@@ -1,5 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import { getDolomiteOwnerConstructorParams } from '@dolomite-exchange/modules-admin/src/admin';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
 import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
@@ -8,8 +9,9 @@ import {
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
   ILiquidatorAssetRegistry__factory,
-  ILiquidatorProxyV5__factory,
+  ILiquidatorProxyV6__factory,
   IPartiallyDelayedMultiSig__factory,
+  LiquidatorProxyV6__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
@@ -20,7 +22,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -47,6 +49,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployDolomiteAccountRiskOverrideSetter } from './helpers/deploy-dolomite-account-risk-override-setter';
+import { deployDolomiteAdminContracts } from './helpers/deploy-dolomite-admin-contracts';
 import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
@@ -57,15 +60,15 @@ import {
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
+import { encodeGenericTraderProxyMigrations } from './helpers/encode-generic-trader-proxy-migrations';
 import {
   encodeIsolationModeFreezableLiquidatorMigrations,
 } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
-import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
 
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   if (!(ModuleDeployments.CREATE3Factory as any)?.[network]) {
     return Promise.reject(new Error('CREATE3 not found! Please deploy first!'));
@@ -179,13 +182,26 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1);
 
-  const liquidatorProxyV5Address = await deployContractAndSave(
-    'LiquidatorProxyV5',
+  const liquidatorProxyV6ImplementationAddress = await deployContractAndSave(
+    'LiquidatorProxyV6',
     [network, expiry.address, dolomiteMargin.address, dolomiteRegistry.address, liquidatorAssetRegistry.address],
-    undefined,
+    'LiquidatorProxyV6ImplementationV1',
     { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
   );
-  const liquidatorProxyV5 = ILiquidatorProxyV5__factory.connect(liquidatorProxyV5Address, hhUser1);
+  const liquidatorProxyV6Implementation = LiquidatorProxyV6__factory.connect(
+    liquidatorProxyV6ImplementationAddress,
+    hhUser1,
+  );
+  const liquidatorProxyV6Address = await deployContractAndSave(
+    'RegistryProxy',
+    getRegistryProxyConstructorParams(
+      liquidatorProxyV6ImplementationAddress,
+      (await liquidatorProxyV6Implementation.populateTransaction.initialize()).data!,
+      dolomiteMargin,
+    ),
+    'LiquidatorProxyV6',
+  );
+  const liquidatorProxyV6 = ILiquidatorProxyV6__factory.connect(liquidatorProxyV6Address, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -209,7 +225,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 3),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -260,8 +276,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 11),
     { SafeDelegateCallLib: safeDelegateCallLibAddress },
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeTokenVaultV1ActionsImpl',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeTokenVaultV1ActionsImpl', 2),
   );
 
   await deployContractAndSave(
@@ -278,6 +300,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
+  const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
+    dolomiteMargin,
+    dolomiteRegistry,
+    hhUser1,
+  );
+
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
@@ -290,7 +318,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    liquidatorProxyV5,
+    liquidatorProxyV6,
     genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
@@ -298,6 +326,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     ownerAdapterV1: dolomiteOwnerV1,
     ownerAdapterV2: dolomiteOwnerV2,
   } as CoreProtocolType<T>;
+
+  await encodeGenericTraderProxyMigrations(genericTraderRouterProxyAddress, transactions, core);
 
   await encodeDolomiteAccountRegistryMigrations(
     dolomiteAccountRegistryProxy,
@@ -313,7 +343,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteAccountRegistryProxy,
     dolomiteMigratorAddress,
     genericTraderProxy,
-    liquidatorProxyV5,
+    liquidatorProxyV6,
     oracleAggregator.address,
     dolomiteRegistryImplementationAddress,
     transactions,
@@ -356,7 +386,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, transactions, core);
+  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, adminClaimExcessTokens, adminPauseMarket, transactions, core);
 
   return {
     core: {

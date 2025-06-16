@@ -1,4 +1,4 @@
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
@@ -59,6 +59,7 @@ import { CHAINLINK_DATA_STREAM_FEEDS_MAP, CHAINLINK_VERIFIER_PROXY_MAP } from 'p
 import { ChainlinkDataStreamsPriceOracle, ChainlinkDataStreamsPriceOracle__factory, IVerifierProxy__factory } from 'packages/oracles/src/types';
 import { getChainlinkDataStreamsPriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import { PairType } from '../utils/trader-utils';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 
 const amountWei = ONE_ETH_BI;
 const outputAmount = parseEther('.5');
@@ -122,7 +123,7 @@ describe('GenericTraderProxyV2', () => {
     genericTraderProxy = await createContractWithLibrary(
       'TestGenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -243,6 +244,11 @@ describe('GenericTraderProxyV2', () => {
       const verifierProxy = IVerifierProxy__factory.connect(
         CHAINLINK_VERIFIER_PROXY_MAP[Network.ArbitrumOne],
         core.hhUser1
+      );
+      const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
+        TestDolomiteAutoTrader__factory.abi,
+        TestDolomiteAutoTrader__factory.bytecode,
+        [],
       );
       const oracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
         ChainlinkDataStreamsPriceOracle__factory.abi,

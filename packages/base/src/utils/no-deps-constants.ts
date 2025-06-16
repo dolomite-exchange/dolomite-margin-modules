@@ -7,6 +7,7 @@ export enum Network {
   ArbitrumOne = '42161',
   Base = '8453',
   Berachain = '80094',
+  Ethereum = '1',
   Ink = '57073',
   Mantle = '5000',
   PolygonZkEvm = '1101',
@@ -14,8 +15,8 @@ export enum Network {
   XLayer = '196',
 }
 
-export type NetworkTypeForDolomiteV2 =
-  Network.Base
+export type DolomiteV2Network =
+  | Network.Base
   | Network.Berachain
   | Network.Ink
   | Network.Mantle
@@ -23,12 +24,13 @@ export type NetworkTypeForDolomiteV2 =
   | Network.SuperSeed
   | Network.XLayer;
 
-export type NetworkType = Network.ArbitrumOne | NetworkTypeForDolomiteV2;
+export type DolomiteNetwork = Network.ArbitrumOne | DolomiteV2Network;
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
   Berachain = 'berachain',
+  Ethereum = 'ethereum',
   Ink = 'ink',
   Mantle = 'mantle',
   PolygonZkEvm = 'polygon_zkevm',
@@ -40,6 +42,7 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,
+  [Network.Ethereum]: NetworkName.Ethereum,
   [Network.Ink]: NetworkName.Ink,
   [Network.Mantle]: NetworkName.Mantle,
   [Network.PolygonZkEvm]: NetworkName.PolygonZkEvm,
@@ -54,6 +57,7 @@ export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> 
   [Network.ArbitrumOne]: 'arbitrum',
   [Network.Base]: 'base',
   [Network.Berachain]: 'berachain',
+  [Network.Ethereum]: 'ethereum',
   [Network.Ink]: undefined,
   [Network.Mantle]: 'mantle',
   [Network.PolygonZkEvm]: 'polygon-zkevm',
@@ -65,6 +69,7 @@ export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Ethereum]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Mantle]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.PolygonZkEvm]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
@@ -81,6 +86,7 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 160822,
+  [Network.Ethereum]: 22_308_000,
   [Network.Ink]: 0,
   [Network.Mantle]: 66_804_500,
   [Network.PolygonZkEvm]: 9_860_500,
@@ -116,3 +122,14 @@ export const LIQUIDATE_ALL = MAX_UINT_256_BI;
 export const SELL_ALL = MAX_UINT_256_BI;
 
 export const NO_PARASWAP_TRADER_PARAM: GenericTraderParamStruct | undefined = undefined;
+
+// ========================================
+// ================= Roles ================
+// ========================================
+
+export const ADMIN_CLAIM_EXCESS_TOKENS_ROLE = '0xebeb1fd66be1e1671e89346bde616d3c80a23c8200e82898d23f4769ae075f75';
+export const ADMIN_PAUSE_MARKET_ROLE = '0xb74ffa3c06e003b9396a9563087dd5e1f06cf2c92548550a731a01f76c77545f';
+export const BYPASS_TIMELOCK_ROLE = '0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921';
+export const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
+export const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
+export const EXECUTOR_ROLE = '0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63';

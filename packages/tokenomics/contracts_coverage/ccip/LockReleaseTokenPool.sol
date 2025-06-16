@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.9;
 
-import {ILiquidityContainer} from "@chainlink/contracts-ccip/src/v0.8/liquiditymanager/interfaces/ILiquidityContainer.sol";
-import {ITypeAndVersion} from "@chainlink/contracts-ccip/src/v0.8/shared/interfaces/ITypeAndVersion.sol";
+import { Pool } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
+import { ILiquidityContainer } from "@chainlink/contracts-ccip/src/v0.8/liquiditymanager/interfaces/ILiquidityContainer.sol"; // solhint-disable-line max-line-length
+import { ITypeAndVersion } from "@chainlink/contracts-ccip/src/v0.8/shared/interfaces/ITypeAndVersion.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { TokenPool } from "./TokenPool.sol";
 
-import {Pool} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
-import {TokenPool} from "./TokenPool.sol";
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-
-/// @notice Token pool used for tokens on their native chain. This uses a lock and release mechanism.
-/// Because of lock/unlock requiring liquidity, this pool contract also has function to add and remove
-/// liquidity. This allows for proper bookkeeping for both user and liquidity provider balances.
-/// @dev One token per LockReleaseTokenPool.
+/**
+ * @title   LockReleaseTokenPool
+ * @author  Chainlink
+ *
+ * @notice  Token pool used for tokens on their native chain. This uses a lock and release mechanism.
+ *          Because of lock/unlock requiring liquidity, this pool contract also has function to add and remove
+ *          liquidity. This allows for proper bookkeeping for both user and liquidity provider balances.
+ * @dev One token per LockReleaseTokenPool.
+ */
 contract LockReleaseTokenPool is TokenPool, ILiquidityContainer, ITypeAndVersion {
   using SafeERC20 for IERC20;
 
@@ -28,7 +32,8 @@ contract LockReleaseTokenPool is TokenPool, ILiquidityContainer, ITypeAndVersion
   /// @dev Whether or not the pool accepts liquidity.
   /// External liquidity is not required when there is one canonical token deployed to a chain,
   /// and CCIP is facilitating mint/burn on all the other chains, in which case the invariant
-  /// balanceOf(pool) on home chain >= sum(totalSupply(mint/burn "wrapped" token) on all remote chains) should always hold
+  /// balanceOf(pool) on home chain >= sum(totalSupply(mint/burn "wrapped" token) on all remote chains) should always
+  /// hold
   bool internal immutable i_acceptLiquidity;
   /// @notice The address of the rebalancer.
   address internal s_rebalancer;
@@ -106,7 +111,7 @@ contract LockReleaseTokenPool is TokenPool, ILiquidityContainer, ITypeAndVersion
   }
 
   /// @notice Adds liquidity to the pool. The tokens should be approved first.
-  /// @param amount The amount of liquidity to provide.
+  /// @param  amount The amount of liquidity to provide.
   function provideLiquidity(
     uint256 amount
   ) external {
@@ -118,7 +123,7 @@ contract LockReleaseTokenPool is TokenPool, ILiquidityContainer, ITypeAndVersion
   }
 
   /// @notice Removed liquidity to the pool. The tokens will be sent to msg.sender.
-  /// @param amount The amount of liquidity to remove.
+  /// @param  amount The amount of liquidity to remove.
   function withdrawLiquidity(
     uint256 amount
   ) external {
@@ -138,8 +143,8 @@ contract LockReleaseTokenPool is TokenPool, ILiquidityContainer, ITypeAndVersion
   /// changing which pool CCIP uses, to ensure both pools can operate. Then the pool should be changed in the
   /// TokenAdminRegistry, which will activate the new pool. All new transactions will use the new pool and its
   /// liquidity. Finally, the remaining liquidity can be transferred to the new pool using this function one more time.
-  /// @param from The address of the old pool.
-  /// @param amount The amount of liquidity to transfer.
+  /// @param  from The address of the old pool.
+  /// @param  amount The amount of liquidity to transfer.
   function transferLiquidity(address from, uint256 amount) external onlyOwner {
     LockReleaseTokenPool(from).withdrawLiquidity(amount);
 

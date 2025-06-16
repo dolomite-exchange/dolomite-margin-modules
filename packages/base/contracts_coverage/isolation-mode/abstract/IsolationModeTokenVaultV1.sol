@@ -373,22 +373,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256 _accountNumber,
         uint256 _marketId
     ) external view {
-        IsolationModeTokenVaultV1ActionsImpl.validateDepositIntoVaultAfterTransfer(
-            /* _vault = */ this,
-            _accountNumber,
-            _marketId
-        );
+         _validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     function validateWithdrawalFromVaultAfterTransfer(
         uint256 _accountNumber,
         uint256 _marketId
     ) external view {
-        IsolationModeTokenVaultV1ActionsImpl.validateWithdrawalFromVaultAfterTransfer(
-            /* _vault = */ this,
-            _accountNumber,
-            _marketId
-        );
+        _validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     function UNDERLYING_TOKEN() public view returns (address) {
@@ -689,6 +681,28 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Only factory can call",
             _from
+        );
+    }
+
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) internal virtual view {
+        IsolationModeTokenVaultV1ActionsImpl.validateDepositIntoVaultAfterTransfer(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
+        );
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) internal virtual view {
+        IsolationModeTokenVaultV1ActionsImpl.validateWithdrawalFromVaultAfterTransfer(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
         );
     }
 

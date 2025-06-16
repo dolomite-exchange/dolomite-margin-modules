@@ -49,7 +49,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "IsolationModeUnwrapperTraderV2";
-    uint256 private constant _ACTIONS_LENGTH = 2;
+    uint256 internal constant _ACTIONS_LENGTH = 2;
 
     // ======================== Constructor ========================
 
@@ -88,6 +88,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _orderData
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
@@ -111,7 +112,13 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
         {
-            uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            address tokenOverride = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(_inputToken);
+            uint256 balance;
+            if (tokenOverride == address(0)) {
+                balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            } else {
+                balance = IERC20(tokenOverride).balanceOf(address(this));
+            }
             Require.that(
                 balance >= _inputAmount,
                 _FILE,
@@ -151,6 +158,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         CreateActionsForUnwrappingParams calldata _params
     )
         external
+        virtual
         view
         returns (IDolomiteMargin.ActionArgs[] memory)
     {

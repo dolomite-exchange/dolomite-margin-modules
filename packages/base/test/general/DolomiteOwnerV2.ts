@@ -8,15 +8,15 @@ import {
   ONE_DAY_SECONDS,
 } from 'packages/base/src/utils/no-deps-constants';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
-import { DolomiteOwnerV2 } from '../../src/types';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteOwnerV2 } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { DolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/src/types';
+import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
@@ -63,7 +63,7 @@ describe('DolomiteOwnerV2', () => {
     it('should work normally', async () => {
       expect(await dolomiteOwner.secondsTimeLocked()).to.equal(SECONDS_TIME_LOCKED);
       expect(await dolomiteOwner.getRoles()).to.deep.equal(
-        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole]
+        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole],
       );
       expect(await dolomiteOwner.hasRole(BYTES_ZERO, core.gnosisSafe.address)).to.be.true;
     });
@@ -72,7 +72,7 @@ describe('DolomiteOwnerV2', () => {
   describe('#grantRole', () => {
     it('should work normally', async () => {
       const transaction = await dolomiteOwner.populateTransaction.grantRole(
-        securityCouncilRole, core.hhUser1.address
+        securityCouncilRole, core.hhUser1.address,
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
 
@@ -93,7 +93,7 @@ describe('DolomiteOwnerV2', () => {
   describe('#revokeRole', () => {
     it('should work normally', async () => {
       const transaction = await dolomiteOwner.populateTransaction.grantRole(
-        securityCouncilRole, core.hhUser1.address
+        securityCouncilRole, core.hhUser1.address,
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -101,7 +101,7 @@ describe('DolomiteOwnerV2', () => {
       expect(await dolomiteOwner.hasRole(securityCouncilRole, core.hhUser1.address)).to.be.true;
 
       const revokeTransaction = await dolomiteOwner.populateTransaction.revokeRole(
-        securityCouncilRole, core.hhUser1.address
+        securityCouncilRole, core.hhUser1.address,
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, revokeTransaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -121,7 +121,7 @@ describe('DolomiteOwnerV2', () => {
     it('should work normally', async () => {
       const newSecondsTimeLocked = 123;
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(
-        newSecondsTimeLocked
+        newSecondsTimeLocked,
       );
       expect(await dolomiteOwner.secondsTimeLocked()).to.equal(SECONDS_TIME_LOCKED);
 
@@ -152,7 +152,7 @@ describe('DolomiteOwnerV2', () => {
         role: OTHER_ROLE,
       });
       expect(await dolomiteOwner.getRoles()).to.deep.equal(
-        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole, OTHER_ROLE]
+        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole, OTHER_ROLE],
       );
     });
 
@@ -180,7 +180,7 @@ describe('DolomiteOwnerV2', () => {
         role: OTHER_ROLE,
       });
       expect(await dolomiteOwner.getRoles()).to.deep.equal(
-        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole]
+        [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole],
       );
     });
 
@@ -190,7 +190,7 @@ describe('DolomiteOwnerV2', () => {
       await increase(SECONDS_TIME_LOCKED);
       await expectThrow(
         dolomiteOwner.executeTransaction(0),
-        'DolomiteOwnerV2: Cannot remove admin role'
+        'DolomiteOwnerV2: Cannot remove admin role',
       );
     });
 
@@ -208,7 +208,7 @@ describe('DolomiteOwnerV2', () => {
 
       const res = await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleAddresses(
         securityCouncilRole,
-        [core.dolomiteRegistry.address]
+        [core.dolomiteRegistry.address],
       );
       await expectEvent(dolomiteOwner, res, 'AddressesAddedToRole', {
         role: securityCouncilRole,
@@ -263,7 +263,7 @@ describe('DolomiteOwnerV2', () => {
       expect(await dolomiteOwner.getRoleFunctionSelectors(securityCouncilRole)).to.deep.equal([]);
       const transaction = await dolomiteOwner.populateTransaction.ownerAddRoleFunctionSelectors(
         securityCouncilRole,
-        [BYTES4_OTHER_SELECTOR]
+        [BYTES4_OTHER_SELECTOR],
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -279,7 +279,7 @@ describe('DolomiteOwnerV2', () => {
     it('should fail if invalid role', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerAddRoleFunctionSelectors(
         BAD_ROLE,
-        [BYTES4_OTHER_SELECTOR]
+        [BYTES4_OTHER_SELECTOR],
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -293,7 +293,7 @@ describe('DolomiteOwnerV2', () => {
       await expectThrow(
         dolomiteOwner.connect(core.gnosisSafe).ownerAddRoleFunctionSelectors(
           securityCouncilRole,
-          [BYTES4_OTHER_SELECTOR]
+          [BYTES4_OTHER_SELECTOR],
         ),
         `DolomiteOwnerV2: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
@@ -304,7 +304,7 @@ describe('DolomiteOwnerV2', () => {
     it('should work normally', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerAddRoleFunctionSelectors(
         securityCouncilRole,
-        [BYTES4_OTHER_SELECTOR]
+        [BYTES4_OTHER_SELECTOR],
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -312,7 +312,7 @@ describe('DolomiteOwnerV2', () => {
 
       const removeTransaction = await dolomiteOwner.populateTransaction.ownerRemoveRoleFunctionSelectors(
         securityCouncilRole,
-        [BYTES4_OTHER_SELECTOR]
+        [BYTES4_OTHER_SELECTOR],
       );
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, removeTransaction.data!);
       await increase(SECONDS_TIME_LOCKED);
@@ -328,7 +328,7 @@ describe('DolomiteOwnerV2', () => {
       await expectThrow(
         dolomiteOwner.connect(core.gnosisSafe).ownerRemoveRoleFunctionSelectors(
           securityCouncilRole,
-          [BYTES4_OTHER_SELECTOR]
+          [BYTES4_OTHER_SELECTOR],
         ),
         `DolomiteOwnerV2: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
@@ -379,7 +379,7 @@ describe('DolomiteOwnerV2', () => {
         dolomiteOwner.connect(core.gnosisSafe).ownerAddRoleToAddressFunctionSelectors(
           securityCouncilRole,
           OTHER_ADDRESS,
-          ['0x12345678']
+          ['0x12345678'],
         ),
         `DolomiteOwnerV2: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
@@ -420,7 +420,7 @@ describe('DolomiteOwnerV2', () => {
         dolomiteOwner.connect(core.gnosisSafe).ownerRemoveRoleToAddressFunctionSelectors(
           securityCouncilRole,
           OTHER_ADDRESS,
-          ['0x12345678']
+          ['0x12345678'],
         ),
         `DolomiteOwnerV2: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
@@ -447,7 +447,7 @@ describe('DolomiteOwnerV2', () => {
 
       await expectThrow(
         dolomiteOwner.ownerCancelTransaction(0),
-        'DolomiteOwnerV2: Transaction not cancellable'
+        'DolomiteOwnerV2: Transaction not cancellable',
       );
     });
 
@@ -499,7 +499,8 @@ describe('DolomiteOwnerV2', () => {
 
     it('role should be able to submit an approved function selector', async () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(securityCouncilRole, core.hhUser1.address);
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleFunctionSelectors(securityCouncilRole, ['0xd42d1cb9']);
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator)
+        .ownerAddRoleFunctionSelectors(securityCouncilRole, ['0xd42d1cb9']);
 
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, data.data!);
@@ -614,7 +615,7 @@ describe('DolomiteOwnerV2', () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(executorRole, core.hhUser1.address);
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleAddresses(
         executorRole,
-        [core.dolomiteRegistry.address]
+        [core.dolomiteRegistry.address],
       );
 
       await expectThrow(
@@ -759,7 +760,7 @@ describe('DolomiteOwnerV2', () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(bypassTimelockRole, core.hhUser1.address);
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleAddresses(
         securityCouncilRole,
-        [core.dolomiteRegistry.address]
+        [core.dolomiteRegistry.address],
       );
 
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);

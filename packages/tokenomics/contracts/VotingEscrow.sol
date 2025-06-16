@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import { IERC721, IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { IVotes } from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -26,6 +27,7 @@ import { IVoter } from "./interfaces/IVoter.sol";
  * @dev     Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (2 years).
  */
 contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
+    using DecimalLib for uint256;
     using SafeERC20 for IERC20;
 
     enum DepositType {
@@ -74,8 +76,21 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     event Withdraw(
         address indexed provider,
         uint256 tokenId,
-        uint256 value,
+        uint256 amountReceived,
         uint256 ts
+    );
+
+    event BurnFeePaid(
+        address indexed provider,
+        uint256 tokenId,
+        uint256 amountBurned
+    );
+
+    event RecoupFeePaid(
+        address indexed provider,
+        uint256 tokenId,
+        uint256 amountToVester,
+        uint256 amountToBuybackPool
     );
 
     event Supply(uint256 prevSupply, uint256 supply);
@@ -1013,15 +1028,14 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
         assert(_isApprovedOrOwner(msg.sender, _tokenId));
 
         LockedBalance memory _locked = locked[_tokenId];
-        uint256 unlock_time = ((block.timestamp + _lock_duration) / WEEK) *
-            WEEK; // Locktime is rounded down to weeks
+        uint256 unlock_time = ((block.timestamp + _lock_duration) / WEEK) * WEEK; // Locktime is rounded down to weeks
 
         require(_locked.end > block.timestamp, "Lock expired");
         require(_locked.amount > 0, "Nothing is locked");
         require(unlock_time > _locked.end, "Can only increase lock duration");
         require(
             unlock_time <= block.timestamp + MAXTIME,
-            "Voting lock can be 4 years max"
+            "Voting lock can be 2 years max"
         );
 
         _deposit_for(
@@ -1058,11 +1072,18 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
 
         if (burnFeeAmount > 0) {
             ERC20Burnable(token).burn(burnFeeAmount);
+            emit BurnFeePaid(msg.sender, _tokenId, burnFeeAmount);
         }
         if (recoupFeeAmount > 0) {
-            uint256 buybackAmount = recoupFeeAmount * 90 / 100;
+            uint256 buybackAmount = recoupFeeAmount.mul(IVeFeeCalculator(feeCalculator).buybackFeeSplit());
             IERC20(token).safeTransfer(vester, recoupFeeAmount - buybackAmount);
             IERC20(token).safeTransfer(buybackPool, buybackAmount);
+            emit RecoupFeePaid(
+                msg.sender,
+                _tokenId,
+                recoupFeeAmount - buybackAmount,
+                buybackAmount
+            );
         }
         IERC20(token).safeTransfer(msg.sender, value);
 

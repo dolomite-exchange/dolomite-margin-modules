@@ -279,6 +279,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: weiAmount
                 })
             );
+
+            vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         } else {
             assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
@@ -304,9 +306,11 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: _amountPar
                 })
             );
+
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
                 _emitEventAndTransferToVault(vault, _toAccountNumber, _amountPar, _eventFlag);
             }
+            vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         }
     }
 
@@ -442,6 +446,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
                 _emitEventAndTransferToVault(vault, _toAccountNumber, _amountWei, _eventFlag);
             }
+
+            vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         }
     }
 

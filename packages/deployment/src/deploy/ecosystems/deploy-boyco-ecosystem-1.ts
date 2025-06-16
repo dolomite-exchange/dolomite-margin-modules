@@ -74,7 +74,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       '0x2a3a73ba927ec6bbf0e2e12e21a32e274a295389ce9d6ae2b32435d12c597c2c',
       UNLOCK_TIMESTAMP_1M,
       dTokens.solvBtcBbn,
-      tokens.solvBtcBbn,
+      tokens.xSolvBtc,
     ],
     [
       '0xff917303af9337534eece4b88948d609980b66ca0b41875da782aec4858cade5',

@@ -1,27 +1,29 @@
 import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
-  DolomiteRegistryImplementation__factory, GenericTraderProxyV2, IDolomiteAccountRegistry,
-  IDolomiteRegistry__factory, RegistryProxy,
+  DolomiteRegistryImplementation__factory,
+  IDolomiteAccountRegistry,
+  IDolomiteRegistry__factory,
+  RegistryProxy,
   RegistryProxy__factory,
 } from '../../../../../base/src/types';
 import { SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL } from '../../../../../base/src/utils/constants';
 import { getRegistryProxyConstructorParams } from '../../../../../base/src/utils/constructors/dolomite';
-import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../../../base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin } from '../../../../../base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 
-export async function deployDolomiteRegistry<T extends NetworkType>(
+export async function deployDolomiteRegistry<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   eventEmitterProxyAddress: string,
   dolomiteAccountRegistryProxy: IDolomiteAccountRegistry | RegistryProxy,
-  network: NetworkType,
+  network: DolomiteNetwork,
   hhUser1: SignerWithAddressWithSafety,
 ) {
   const dolomiteRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 13),
   );
   const registryImplementation = DolomiteRegistryImplementation__factory.connect(
     dolomiteRegistryImplementationAddress,

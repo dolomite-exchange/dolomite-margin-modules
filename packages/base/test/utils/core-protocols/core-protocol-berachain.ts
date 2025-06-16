@@ -1,4 +1,8 @@
-import { ChainsightPriceOracleV3, ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
+import {
+  ChainsightPriceOracleV3,
+  ChroniclePriceOracleV3,
+  RedstonePriceOracleV3,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
 import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -8,14 +12,21 @@ import {
   CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens, DolomiteWETHType,
+  CoreProtocolTokens,
+  DolomiteWETHType,
 } from './core-protocol-abstract';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
+import { IBGT } from 'packages/berachain/src/types';
+import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
+  bgt: IBGT;
   btcPlaceholder: IERC20;
+  deUsd: IERC20;
+  diBgt: IERC20;
+  dolo: IERC20;
   eBtc: IERC20;
   fbtc: IERC20;
   henlo: IERC20;
@@ -32,10 +43,10 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   stonebtc: IERC20;
   sUsda: IERC20;
   sUsde: IERC20;
+  sdeUsd: IERC20;
   srUsd: IERC20;
   stBtc: IERC20;
   solvBtc: IERC20;
-  solvBtcBbn: IERC20;
   stone: IERC20;
   uniBtc: IERC20;
   usd0: IERC20;
@@ -46,6 +57,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   wbera: IWETH;
   wbtc: IERC20;
   weEth: IERC20;
+  xSolvBtc: IERC20;
   ylBtcLst: IERC20;
   ylPumpBtc: IERC20;
   ylStEth: IERC20;
@@ -53,6 +65,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
 
 export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomiteTokens<Network.Berachain> {
   beraEth: DolomiteERC4626;
+  deUsd: DolomiteERC4626;
   eBtc: DolomiteERC4626;
   honey: DolomiteERC4626;
   lbtc: DolomiteERC4626;
@@ -64,6 +77,8 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
   sbtc: DolomiteERC4626;
   sUsda: DolomiteERC4626;
   sUsde: DolomiteERC4626;
+  sdeUsd: DolomiteERC4626;
+  srUsd: DolomiteERC4626;
   stBtc: DolomiteERC4626;
   solvBtc: DolomiteERC4626;
   solvBtcBbn: DolomiteERC4626;
@@ -86,6 +101,9 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
 
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   beraEth: BigNumberish;
+  deUsd: BigNumberish;
+  diBgt: BigNumberish;
+  dolo: BigNumberish;
   eBtc: BigNumberish;
   henlo: BigNumberish;
   honey: BigNumberish;
@@ -101,10 +119,10 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   sbtc: BigNumberish;
   sUsda: BigNumberish;
   sUsde: BigNumberish;
+  sdeUsd: BigNumberish;
   srUsd: BigNumberish;
   stBtc: BigNumberish;
   solvBtc: BigNumberish;
-  solvBtcBbn: BigNumberish;
   stone: BigNumberish;
   uniBtc: BigNumberish;
   usd0: BigNumberish;
@@ -115,16 +133,18 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   wbera: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  xSolvBtc: BigNumberish;
   ylFbtc: BigNumberish;
   ylPumpBtc: BigNumberish;
   ylStEth: BigNumberish;
 }
 
 export interface CoreProtocolParamsBerachain {
+  berachainRewardsEcosystem: BerachainRewardsEcosystem;
   dTokens: CoreProtocolDolomiteTokensBerachain;
   marketIds: CoreProtocolMarketIdsBerachain;
-  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   chainsightPriceOracleV3: ChainsightPriceOracleV3;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokenomics: TokenomicsEcosystem;
@@ -144,8 +164,15 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly tokenomicsAirdrop: TokenomicsAirdropEcosystem;
   public readonly tokens: CoreProtocolTokensBerachain;
 
-  constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
+  public readonly berachainRewardsEcosystem: BerachainRewardsEcosystem;
+
+  constructor(
+    params: CoreProtocolParams<Network.Berachain>,
+    berachainParams: CoreProtocolParamsBerachain,
+  ) {
     super(params);
+    this.berachainRewardsEcosystem = berachainParams.berachainRewardsEcosystem;
+    this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
     this.chainsightPriceOracleV3 = berachainParams.chainsightPriceOracleV3;
     this.dolomiteTokens = berachainParams.dTokens;

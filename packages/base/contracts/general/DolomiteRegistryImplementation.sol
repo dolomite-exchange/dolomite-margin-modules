@@ -68,6 +68,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TREASURY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.treasury")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADE_CALLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTradeCallers")) - 1); // solhint-disable-line max-line-length
 
@@ -239,6 +240,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetTrustedInternalTradeCallers(_trustedInternalTradeCallers, _isTrusted);
     }
 
+    function ownerSetTreasury(
+        address _treasury
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTreasury(_treasury);
+    }
+
     function ownerSetIsolationModeMulticallFunctions(
         bytes4[] memory _selectors
     )
@@ -325,6 +334,10 @@ contract DolomiteRegistryImplementation is
 
     function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
         return 1e18;
+    }
+
+    function treasury() public view returns (address) {
+        return _getAddress(_TREASURY_SLOT);
     }
 
     // ===================== Internal Functions =====================
@@ -590,5 +603,18 @@ contract DolomiteRegistryImplementation is
 
         ims.isolationModeMulticallFunctions = _selectors;
         emit IsolationModeMulticallFunctionsSet(_selectors);
+    }
+
+    function _ownerSetTreasury(
+        address _treasury
+    ) internal {
+        Require.that(
+            _treasury != address(0),
+            _FILE,
+            "Invalid treasury"
+        );
+
+        _setAddress(_TREASURY_SLOT, _treasury);
+        emit TreasurySet(_treasury);
     }
 }

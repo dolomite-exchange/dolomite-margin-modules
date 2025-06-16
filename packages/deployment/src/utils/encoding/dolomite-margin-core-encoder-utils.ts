@@ -12,15 +12,19 @@ import {
 } from '../../../../base/src/utils/constructors/dolomite';
 import {
   BYTES_EMPTY,
-  NetworkType,
-  NetworkTypeForDolomiteV2,
+  DolomiteNetwork,
+  DolomiteV2Network,
   ONE_ETH_BI,
 } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import {
+  getFormattedTokenName,
+  isValidAmountForCapForToken,
+  prettyPrintEncodedDataWithTypeSafety,
+} from './base-encoder-utils';
 
-export async function encodeSetGlobalOperator<T extends NetworkType>(
+export async function encodeSetGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   address: string | { address: string },
   isGlobalOperator: boolean,
@@ -34,7 +38,21 @@ export async function encodeSetGlobalOperator<T extends NetworkType>(
   );
 }
 
-export async function encodeSetSupplyCap<T extends NetworkType>(
+export async function encodeSetGlobalOperatorIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  address: string | { address: string },
+  isGlobalOperator: boolean,
+): Promise<EncodedTransaction[]> {
+  const transactions = [];
+  const operatorAddress = typeof address === 'string' ? address : address.address;
+  if (isGlobalOperator !== (await core.dolomiteMargin.getIsGlobalOperator(operatorAddress))) {
+    transactions.push(await encodeSetGlobalOperator(core, address, isGlobalOperator));
+  }
+
+  return transactions;
+}
+
+export async function encodeSetSupplyCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   amount: BigNumberish,
@@ -64,7 +82,7 @@ export async function encodeSetSupplyCap<T extends NetworkType>(
 /**
  * Expands the number of decimals for `amount` by deciphering the number decimals the market ID has
  */
-export async function encodeSetSupplyCapWithMagic<T extends NetworkType>(
+export async function encodeSetSupplyCapWithMagic<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   amount: number,
@@ -88,7 +106,7 @@ export async function encodeSetSupplyCapWithMagic<T extends NetworkType>(
   );
 }
 
-export async function encodeSetBorrowCap<T extends NetworkType>(
+export async function encodeSetBorrowCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   amount: BigNumberish,
@@ -115,7 +133,7 @@ export async function encodeSetBorrowCap<T extends NetworkType>(
 /**
  * Expands the number of decimals for `amount` by deciphering the number decimals the market ID has
  */
-export async function encodeSetBorrowCapWithMagic<T extends NetworkType>(
+export async function encodeSetBorrowCapWithMagic<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   amount: number,
@@ -139,7 +157,7 @@ export async function encodeSetBorrowCapWithMagic<T extends NetworkType>(
 
 let baseCollateralization: BigNumber | undefined;
 
-export async function encodeSetMinCollateralization<T extends NetworkType>(
+export async function encodeSetMinCollateralization<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   collateralization: TargetCollateralization,
@@ -159,7 +177,7 @@ export async function encodeSetMinCollateralization<T extends NetworkType>(
 
 let baseLiquidationPenalty: BigNumber | undefined;
 
-export async function encodeSetLiquidationPenalty<T extends NetworkType>(
+export async function encodeSetLiquidationPenalty<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   penalty: TargetLiquidationPenalty,
@@ -190,7 +208,7 @@ export async function encodeSetLiquidationPenalty<T extends NetworkType>(
   return Promise.reject('Invalid method name for setting liquidation penalty');
 }
 
-export async function encodeSetInterestSetter<T extends NetworkType>(
+export async function encodeSetInterestSetter<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   setter: IDolomiteInterestSetter,
@@ -204,7 +222,21 @@ export async function encodeSetInterestSetter<T extends NetworkType>(
   );
 }
 
-export async function encodeSetIsCollateralOnly<T extends NetworkType>(
+export async function encodeSetEarningsRateOverride<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  override: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomite: core.dolomiteMargin },
+    'dolomite',
+    'ownerSetEarningsRateOverride',
+    [marketId, { value: override }],
+  );
+}
+
+export async function encodeSetIsCollateralOnly<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   isCollateralOnly: boolean,
@@ -218,7 +250,7 @@ export async function encodeSetIsCollateralOnly<T extends NetworkType>(
   );
 }
 
-export async function encodeSetAccountRiskOverrideCategoryByMarketId<T extends NetworkTypeForDolomiteV2>(
+export async function encodeSetAccountRiskOverrideCategoryByMarketId<T extends DolomiteV2Network>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   category: AccountRiskOverrideCategory,
@@ -232,7 +264,7 @@ export async function encodeSetAccountRiskOverrideCategoryByMarketId<T extends N
   );
 }
 
-export async function encodeSetAccountRiskOverrideCategorySettings<T extends NetworkTypeForDolomiteV2>(
+export async function encodeSetAccountRiskOverrideCategorySettings<T extends DolomiteV2Network>(
   core: CoreProtocolType<T>,
   category: AccountRiskOverrideCategory,
   collateralization: TargetCollateralization,
@@ -247,7 +279,7 @@ export async function encodeSetAccountRiskOverrideCategorySettings<T extends Net
   );
 }
 
-export async function encodeRemoveAllRiskFeaturesByMarketId<T extends NetworkTypeForDolomiteV2>(
+export async function encodeRemoveAllRiskFeaturesByMarketId<T extends DolomiteV2Network>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<EncodedTransaction> {
@@ -260,7 +292,7 @@ export async function encodeRemoveAllRiskFeaturesByMarketId<T extends NetworkTyp
   );
 }
 
-export async function encodeSetIsBorrowOnly<T extends NetworkTypeForDolomiteV2>(
+export async function encodeSetIsBorrowOnly<T extends DolomiteV2Network>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   isBorrowOnly: boolean,
@@ -284,7 +316,7 @@ interface SingleCollateralWithStrictDebtParamsForEncoding {
   liquidationRewardOverride: { value: BigNumberish };
 }
 
-export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extends NetworkTypeForDolomiteV2>(
+export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extends DolomiteV2Network>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   params: SingleCollateralWithStrictDebtParams[],

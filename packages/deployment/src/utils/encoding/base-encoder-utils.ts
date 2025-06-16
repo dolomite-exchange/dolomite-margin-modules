@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
@@ -6,7 +7,14 @@ import { IChainlinkAggregator__factory } from 'packages/oracles/src/types';
 import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
 import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
 import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ONE_BI, TEN_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  DolomiteNetwork,
+  NETWORK_TO_NETWORK_NAME_MAP,
+  ONE_BI,
+  TEN_BI,
+  ZERO_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { CORE_DEPLOYMENT_FILE_NAME, readDeploymentFile } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
@@ -19,7 +27,7 @@ export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number) {
   mostRecentTokenDecimals = _mostRecentTokenDecimals;
 }
 
-export async function getFormattedMarketName<T extends NetworkType>(
+export async function getFormattedMarketName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<string> {
@@ -44,7 +52,7 @@ export async function getFormattedMarketName<T extends NetworkType>(
 
 const addressToNameCache: Record<string, string | undefined> = {};
 
-export async function getFormattedTokenName<T extends NetworkType>(
+export async function getFormattedTokenName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokenAddress: string,
 ): Promise<string> {
@@ -75,7 +83,7 @@ export async function getFormattedTokenName<T extends NetworkType>(
   }
 }
 
-export async function getFormattedChainlinkAggregatorName<T extends NetworkType>(
+export async function getFormattedChainlinkAggregatorName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   aggregatorAddress: string,
 ): Promise<string> {
@@ -121,7 +129,7 @@ export function isMaxWeiParam(paramType: ParamType): boolean {
   );
 }
 
-export function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
+export function isOwnerFunction(methodName: string, isMultiSig: boolean): boolean {
   return (
     methodName.startsWith('owner') ||
     methodName === 'initializeETHMarket' ||
@@ -130,12 +138,12 @@ export function isOwnerFunction(methodName: string, isMultisig: boolean): boolea
     methodName === 'setUserVaultImplementation' ||
     methodName === 'upgradeTo' ||
     methodName === 'upgradeToAndCall' ||
-    (isMultisig && methodName === 'addOwner') ||
-    (isMultisig && methodName === 'changeRequirement') ||
-    (isMultisig && methodName === 'changeTimelock') ||
-    (isMultisig && methodName === 'removeOver') ||
-    (isMultisig && methodName === 'replaceOwner') ||
-    (isMultisig && methodName === 'setSelector')
+    (isMultiSig && methodName === 'addOwner') ||
+    (isMultiSig && methodName === 'changeRequirement') ||
+    (isMultiSig && methodName === 'changeTimelock') ||
+    (isMultiSig && methodName === 'removeOver') ||
+    (isMultiSig && methodName === 'replaceOwner') ||
+    (isMultiSig && methodName === 'setSelector')
   );
 }
 
@@ -157,7 +165,7 @@ export async function isValidAmountForCapForToken(token: IERC20, amount: BigNumb
 let counter = 1;
 
 export async function prettyPrintEncodedDataWithTypeSafety<
-  N extends NetworkType,
+  N extends DolomiteNetwork,
   T extends V[K],
   U extends keyof T['populateTransaction'],
   V extends Record<K, BaseContract>,
@@ -168,7 +176,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
-  options: { skipWrappingCalldataInSubmitTransaction: boolean } = { skipWrappingCalldataInSubmitTransaction: false },
+  options: {
+    skipWrappingCalldataInSubmitTransaction?: boolean;
+    submitAndExecuteImmediately?: boolean;
+  } = { skipWrappingCalldataInSubmitTransaction: false, submitAndExecuteImmediately: false },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
@@ -190,9 +201,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
-      (
-        await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)
-      ).substring(13),
+      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)).substring(13),
     );
     console.log('Data:\t\t', transaction.data);
     console.log('='.repeat(repeatLength));
@@ -213,15 +222,29 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   let outerTransaction: PopulatedTransaction;
   if (realtimeOwner === core.ownerAdapterV1?.address) {
-    outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
-      transaction.to!,
-      transaction.data!,
-    );
+    if (options.submitAndExecuteImmediately) {
+      outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransactionAndExecute(
+        transaction.to!,
+        transaction.data!,
+      );
+    } else {
+      outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
+        transaction.to!,
+        transaction.data!,
+      );
+    }
   } else if (realtimeOwner === core.ownerAdapterV2?.address) {
-    outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
-      transaction.to!,
-      transaction.data!,
-    );
+    if (options.submitAndExecuteImmediately) {
+      outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransactionAndExecute(
+        transaction.to!,
+        transaction.data!,
+      );
+    } else {
+      outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
+        transaction.to!,
+        transaction.data!,
+      );
+    }
   } else if (realtimeOwner === core.delayedMultiSig?.address) {
     outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
@@ -241,7 +264,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   };
 }
 
-export async function getReadableArg<T extends NetworkType>(
+export async function getReadableArg<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   inputParamType: ParamType,
   arg: any,
@@ -285,6 +308,26 @@ export async function getReadableArg<T extends NetworkType>(
     });
     return getReadableArg(core, tupleType, decodedValue, undefined, args, undefined, index, nestedLevel);
   }
+  if (methodName === 'ownerAddRoleToAddressFunctionSelectors' && typeof arg === 'string' && arg.length === 10) {
+    // We're dealing with a function selector
+    const chain = hardhat.userConfig.etherscan?.customChains?.find(
+      (c) => c.chainId === parseInt(core.config.network, 10),
+    );
+    if (typeof hardhat.userConfig.etherscan?.apiKey === 'string') {
+      throw new Error('Invalid API key field on etherscan object');
+    }
+    const apiKey = hardhat.userConfig.etherscan?.apiKey?.[NETWORK_TO_NETWORK_NAME_MAP[core.config.network]];
+
+    if (chain && apiKey) {
+      const baseUrl = chain.urls.apiURL;
+      const response = await axios.get(`${baseUrl}?module=contract&action=getabi&address=${args[1]}&apikey=${apiKey}`);
+      if (response.data.status === '1') {
+        const abi = JSON.parse(response.data.result);
+        const functionName = new ethers.utils.Interface(abi).getFunction(arg).name;
+        return `${formattedInputParamName} = ${arg} (${functionName})`;
+      }
+    }
+  }
 
   if (Array.isArray(arg)) {
     // remove the [] at the end
@@ -322,19 +365,20 @@ export async function getReadableArg<T extends NetworkType>(
   let specialName: string = '';
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
-    const allDeployments = readAllDeploymentFiles();
-    Object.keys(allDeployments).forEach((key) => {
-      if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
-        specialName = ` (${key})`;
-      }
-    });
+    if (arg.toLowerCase() === core.gnosisSafeAddress.toLowerCase()) {
+      specialName = ' (Dolomite Foundation Safe)';
+    }
+
     if (!specialName) {
+      const allDeployments = readAllDeploymentFiles();
       Object.keys(allDeployments).forEach((key) => {
         if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });
+    }
 
+    if (!specialName) {
       const tokenName = await getFormattedTokenName(core, arg);
       if (tokenName) {
         specialName = ` ${tokenName}`;

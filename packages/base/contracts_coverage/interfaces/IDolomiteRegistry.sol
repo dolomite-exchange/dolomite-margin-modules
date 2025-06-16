@@ -64,6 +64,7 @@ interface IDolomiteRegistry {
     event TrustedInternalTradeCallersSet(address[] _trustedInternalTradeCallers, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
     event SmartDebtTraderSet(address indexed _smartDebtTrader);
+    event TreasurySet(address indexed _treasury);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -182,6 +183,12 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _treasury    The new address of the treasury
+     */
+    function ownerSetTreasury(address _treasury) external;
+
+    /**
+     *
      * @param  _selectors    Allowed function selectors for isolation mode multicall
      */
     function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
@@ -283,4 +290,9 @@ interface IDolomiteRegistry {
      * @return  Whether the trade caller is trusted
      */
     function isTrustedInternalTradeCaller(address _tradeCaller) external view returns (bool);
+
+    /**
+     * @return The address of the treasury
+     */
+    function treasury() external view returns (address);
 }

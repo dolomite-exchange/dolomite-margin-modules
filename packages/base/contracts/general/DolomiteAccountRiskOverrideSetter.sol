@@ -172,19 +172,14 @@ contract DolomiteAccountRiskOverrideSetter is
     view
     returns
     (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        if (_account.owner == DOLOMITE_MARGIN_OWNER() || _account.owner == address(0)) {
-            // The Dolomite Margin owner and 0 address call this contract for various readers
-            return _getDefaultValuesForOverride();
-        }
-
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         uint256[] memory marketIds = dolomiteMargin.getAccountMarketsWithBalances(_account);
         uint256 marketIdsLength = marketIds.length;
 
-        // Since this function is always called at the end of an operate call when a user has debt, these two invariants
-        // will always hold.
-        assert(marketIdsLength != 0);
-        assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);
+        if (marketIdsLength == 0 || dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) == 0) {
+            // The Dolomite Margin call this contract for various readers
+            return _getDefaultValuesForOverride();
+        }
 
         Require.that(
             _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,

@@ -1,4 +1,4 @@
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ethers } from 'ethers';
 import { SignerWithAddressWithSafety } from '../../base/src/utils/SignerWithAddressWithSafety';
@@ -12,14 +12,14 @@ import {
   VesterImplementationV2,
 } from './types';
 
-export function getVesterImplementationConstructorParams<T extends NetworkType>(
+export function getVesterImplementationConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   rewardToken: IERC20,
 ): any[] {
   return [core.dolomiteMargin.address, core.dolomiteRegistry.address, core.tokens.weth.address, rewardToken.address];
 }
 
-export function getExternalVesterImplementationConstructorParams<T extends NetworkType>(
+export function getExternalVesterImplementationConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   pairToken: IERC20,
   paymentToken: IERC20,
@@ -78,7 +78,7 @@ export function getVesterExploderConstructorParams(
   return [vester.address, core.dolomiteMargin.address, ['0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2']];
 }
 
-export function getRewardsDistributorConstructorParams<T extends NetworkType>(
+export function getRewardsDistributorConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   oToken: IERC20,
   initialHandlers: string[],

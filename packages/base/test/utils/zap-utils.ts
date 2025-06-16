@@ -6,7 +6,7 @@ import {
   GenericUserConfig,
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import {
   IIsolationModeUnwrapperTrader,
   IIsolationModeUnwrapperTraderV2,
@@ -32,7 +32,7 @@ export interface ZapParam {
   userConfig: GenericUserConfig;
 }
 
-export async function getSimpleZapParams<T extends Network>(
+export async function getSimpleZapParams<T extends DolomiteNetwork>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
@@ -105,7 +105,7 @@ export async function getSmartDebtZapParams<T extends Network>(
   };
 }
 
-export async function getUnwrapZapParams<T extends Network>(
+export async function getUnwrapZapParams<T extends DolomiteNetwork>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
@@ -140,7 +140,7 @@ export async function getUnwrapZapParams<T extends Network>(
   };
 }
 
-export async function getUnwrapAndCustomTradeZapParams<T extends Network>(
+export async function getUnwrapAndCustomTradeZapParams<T extends DolomiteNetwork>(
   marketsPath: BigNumberish[],
   amountsPath: BigNumber[],
   unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
@@ -206,7 +206,7 @@ export async function getUnwrapAndCustomTradeZapParams<T extends Network>(
   };
 }
 
-export async function getWrapZapParams<T extends Network>(
+export async function getWrapZapParams<T extends DolomiteNetwork>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
@@ -241,7 +241,7 @@ export async function getWrapZapParams<T extends Network>(
   };
 }
 
-export async function getLiquidateIsolationModeZapPath<T extends Network>(
+export async function getLiquidateIsolationModeZapPath<T extends DolomiteNetwork>(
   marketIdsPath: BigNumberish[],
   amounts: BigNumber[],
   unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader | IIsolationModeUnwrapperTraderV2,

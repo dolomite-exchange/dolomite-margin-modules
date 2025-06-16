@@ -45,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ...(await encodeInsertChronicleOracleV3(core, core.tokens.wbtc)),
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.btcPlaceholder)),
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.solvBtc)),
-    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.solvBtcBbn)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.xSolvBtc)),
     ...(await encodeInsertChronicleOracleV3(core, core.tokens.pumpBtc)),
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.eBtc)),
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.weEth)),
@@ -88,7 +88,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await printPriceForVisualCheck(core, core.tokens.wbtc);
       await printPriceForVisualCheck(core, core.tokens.btcPlaceholder);
       await printPriceForVisualCheck(core, core.tokens.solvBtc);
-      await printPriceForVisualCheck(core, core.tokens.solvBtcBbn);
+      await printPriceForVisualCheck(core, core.tokens.xSolvBtc);
       await printPriceForVisualCheck(core, core.tokens.pumpBtc);
       await printPriceForVisualCheck(core, core.tokens.eBtc);
       await printPriceForVisualCheck(core, core.tokens.weEth);
