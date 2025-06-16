@@ -26,6 +26,7 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -55,9 +56,8 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
 
     constructor(
         uint256 _chainId,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+        address _dolomiteRegistry
+    ) {
         CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
@@ -74,7 +74,6 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         IDolomiteStructs.AccountInfo memory /* _accountInfo */,
         bytes memory _data
     ) public virtual onlyDolomiteMargin(msg.sender) {
-        // @follow-up Had to make it public
         Require.that(
             DOLOMITE_REGISTRY.isTrustedInternalTradeCaller(_sender),
             _FILE,

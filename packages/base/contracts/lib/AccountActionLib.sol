@@ -395,6 +395,39 @@ library AccountActionLib {
         });
     }
 
+    function encodeInternalTradeActionWithWhitelistedTrader(
+        uint256 _takerAccountId,
+        uint256 _makerAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _amountInWei,
+        uint256 _chainId,
+        bool _calculateAmountWithMakerAccount,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        // @dev We swap the maker and taker here so that the input amount gets applied to the taker
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
+            accountId: _makerAccountId,
+            amount: IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: _amountInWei == _ALL
+                    ? IDolomiteStructs.AssetReference.Target
+                    : IDolomiteStructs.AssetReference.Delta,
+                value: _amountInWei == _ALL ? 0 : _amountInWei
+            }),
+            primaryMarketId: _primaryMarketId,
+            secondaryMarketId: _secondaryMarketId,
+            otherAddress: _traderAddress,
+            otherAccountId: _takerAccountId,
+            data: ChainHelperLib.isArbitrum(_chainId)
+                ? _orderData
+                : abi.encode(_calculateAmountWithMakerAccount, _orderData)
+        });
+    }
+
     function encodeInternalTradeActionForWrap(
         uint256 _fromAccountId,
         uint256 _toAccountId,
@@ -407,7 +440,7 @@ library AccountActionLib {
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         return IDolomiteStructs.ActionArgs({
             actionType: IDolomiteStructs.ActionType.Trade,
-            accountId: _makerAccountId,
+            accountId: _fromAccountId,
             amount: IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
@@ -446,7 +479,7 @@ library AccountActionLib {
             primaryMarketId: _primaryMarketId,
             secondaryMarketId: _secondaryMarketId,
             otherAddress: _traderAddress,
-            otherAccountId: _takerAccountId,
+            otherAccountId: _toAccountId,
             data: ChainHelperLib.isArbitrum(_chainId)
                 ? _orderData
                 : abi.encode(_calculateAmountWithMakerAccount, _orderData)
