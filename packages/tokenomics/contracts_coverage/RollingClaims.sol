@@ -89,12 +89,7 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
         s.userToClaimAmount[user] = _amount;
 
         ODOLO.safeTransfer(msg.sender, amountToClaim);
-
-        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            user,
-            EPOCH_NUMBER,
-            amountToClaim
-        );
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, EPOCH_NUMBER, amountToClaim);
     }
 
     // ==============================================================

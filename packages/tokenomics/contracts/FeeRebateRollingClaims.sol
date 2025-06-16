@@ -55,14 +55,20 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ===========================================================
 
     constructor(
+        address _feeRebateAddress,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+        _ownerSetFeeRebateAddress(_feeRebateAddress);
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
+
+    function ownerSetFeeRebateAddress(address _feeRebateAddress) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeRebateAddress(_feeRebateAddress);
+    }
 
     function ownerSetMarketIdToMerkleRoot(
         uint256 _marketId,
@@ -75,7 +81,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ================== Public Functions ==================
     // ======================================================
 
-    function claim(ClaimParams[] memory _claimParams) external onlyClaimEnabled nonReentrant {
+    function claim(ClaimParams[] calldata _claimParams) external onlyClaimEnabled nonReentrant {
         for (uint256 i = 0; i < _claimParams.length; i++) {
             _claim(_claimParams[i]);
         }
@@ -84,6 +90,11 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ==============================================================
     // ======================= View Functions =======================
     // ==============================================================
+
+    function feeRebateAddress() external view returns (address) {
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        return s.feeRebateAddress;
+    }
 
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32) {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
@@ -124,6 +135,8 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         s.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
 
         IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
+        token.safeTransferFrom(s.feeRebateAddress, address(this), amountToClaim);
+
         token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
         AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
@@ -139,17 +152,25 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             })
         );
 
-        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            user,
-            _claimParams.marketId,
-            amountToClaim
-        );
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, _claimParams.marketId, amountToClaim);
     }
 
     function _ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) internal virtual {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         s.marketIdToMerkleRoot[_marketId] = _merkleRoot;
         emit MarketIdToMerkleRootSet(_marketId, _merkleRoot);
+    }
+
+    function _ownerSetFeeRebateAddress(address _feeRebateAddress) internal virtual {
+        Require.that(
+            _feeRebateAddress != address(0),
+            _FILE,
+            "Invalid fee rebate address"
+        );
+
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        s.feeRebateAddress = _feeRebateAddress;
+        emit FeeRebateAddressSet(_feeRebateAddress);
     }
 
     function _verifyMerkleProof(

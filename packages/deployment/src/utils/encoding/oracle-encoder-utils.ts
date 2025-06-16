@@ -8,7 +8,11 @@ import {
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
 } from 'packages/oracles/src/oracles-constructors';
-import { IChainlinkAggregator__factory, IChronicleScribe__factory } from 'packages/oracles/src/types';
+import {
+  IChainlinkAggregator__factory,
+  IChronicleScribe__factory,
+  TWAPPriceOracleV2,
+} from 'packages/oracles/src/types';
 import { IERC20, IERC20Metadata__factory, TestPriceOracleForAdmin__factory } from '../../../../base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -498,6 +502,36 @@ export async function encodeInsertRedstoneOracleV3<T extends DolomiteNetwork>(
             {
               oracle: core.redstonePriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
+  core: CoreProtocolWithRedstone<T>,
+  token: IERC20,
+  twapOracle: TWAPPriceOracleV2,
+  tokenPair: IERC20 | undefined,
+): Promise<EncodedTransaction[]> {
+  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: twapOracle.address,
+              tokenPair: tokenPair?.address ?? ADDRESS_ZERO,
               weight: 100,
             },
           ],

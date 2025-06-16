@@ -32,6 +32,7 @@ import { IBaseClaim } from "./IBaseClaim.sol";
 interface IFeeRebateRollingClaims is IBaseClaim {
 
     struct FeeRebateRollingClaimsStorage {
+        address feeRebateAddress;
         mapping(address => mapping(uint256 => uint256)) userToMarketIdToClaimAmount;
         mapping(uint256 => bytes32) marketIdToMerkleRoot;
     }
@@ -43,12 +44,15 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     }
 
     event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot);
+    event FeeRebateAddressSet(address feeRebateAddress);
 
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
 
     function ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) external;
+
+    function ownerSetFeeRebateAddress(address _feeRebateAddress) external;
 
     // ======================================================
     // ================== External Functions ================
@@ -61,5 +65,8 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     // ======================================================
 
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
+
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
+
+    function feeRebateAddress() external view returns (address);
 }

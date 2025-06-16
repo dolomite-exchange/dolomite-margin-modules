@@ -292,6 +292,38 @@ contract EventEmitterRegistry is
         emit RewardClaimed(msg.sender, _user, _epoch, _amount);
     }
 
+    function emitDolomiteSettingChanged(
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit DolomiteSettingChanged(_settingId, _value);
+    }
+
+    function emitUserSettingChanged(
+        address _user,
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit UserSettingChanged(_user, _settingId, _value);
+    }
+
+    function emitTokenSettingChanged(
+        address _token,
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit TokenSettingChanged(_token, _settingId, _value);
+    }
+
     // =================================================
     // ============== Internal Functions ===============
     // =================================================

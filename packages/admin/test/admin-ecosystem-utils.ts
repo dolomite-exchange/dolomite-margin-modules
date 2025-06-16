@@ -5,7 +5,7 @@ import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwn
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { getDolomiteOwnerConstructorParams } from '../src/admin';
 
-export async function createDolomiteOwner(
+export async function createDolomiteOwnerV1(
   core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV1> {

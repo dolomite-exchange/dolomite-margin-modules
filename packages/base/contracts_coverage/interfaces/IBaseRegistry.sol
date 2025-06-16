@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
+import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 
 /**
@@ -29,7 +30,7 @@ import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
  *
  * @notice  Interface for base storage variables that should be in all registry contracts
  */
-interface IBaseRegistry {
+interface IBaseRegistry is IOnlyDolomiteMargin {
 
     // ========================================================
     // ======================== Events ========================

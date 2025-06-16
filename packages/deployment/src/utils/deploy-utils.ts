@@ -6,6 +6,10 @@ import {
   DolomiteERC4626WithPayable__factory,
   IERC20,
   IERC20Metadata__factory,
+  IIsolationModeUnwrapperTraderV2,
+  IIsolationModeUnwrapperTraderV2__factory,
+  IIsolationModeWrapperTraderV2,
+  IIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -66,6 +70,18 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
 import { GmToken } from 'packages/base/test/utils/ecosystem-utils/gmx';
+import { getPOLIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
+import {
+  IBerachainRewardsRegistry,
+  IERC4626__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
+  POLIsolationModeWrapperTraderV2,
+  POLPriceOracleV2,
+  POLPriceOracleV2__factory,
+} from 'packages/berachain/src/types';
 import {
   getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
   getGlvIsolationModeVaultFactoryConstructorParams,
@@ -352,6 +368,7 @@ export async function deployContractAndSave(
   contractRename?: string,
   libraries?: Record<string, string>,
   options: {
+    skipRenameUpgradeableContracts?: boolean;
     nonce?: number;
     gasLimit?: BigNumberish;
     gasPrice?: BigNumberish;
@@ -363,6 +380,13 @@ export async function deployContractAndSave(
 ): Promise<address> {
   if (attempts === 3) {
     return Promise.reject(new Error(`\tCould not deploy after ${attempts} attempts!`));
+  }
+
+  const invalidNames = ['RegistryProxy', 'UpgradeableProxy'];
+  if (invalidNames.includes(contractName) && !contractRename) {
+    if (!options.skipRenameUpgradeableContracts) {
+      console.error('Cannot deploy an upgradeable contract with an invalid name:', invalidNames);
+    }
   }
 
   const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
@@ -383,6 +407,7 @@ export async function deployContractAndSave(
     typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
     `Invalid chainId, found: ${chainId}`,
   );
+
   const usedContractName = contractRename ?? contractName;
   const contractData = file[usedContractName]?.[chainId.toString()];
   if (contractData && contractData.address !== ADDRESS_ZERO) {
@@ -811,6 +836,80 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
     oracle,
     unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
     wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
+  };
+}
+
+export interface BerachainPOLSystem {
+  factory: POLIsolationModeVaultFactory;
+  oracle: POLPriceOracleV2;
+  unwrapper: IIsolationModeUnwrapperTraderV2;
+  wrapper: IIsolationModeWrapperTraderV2;
+}
+
+export async function deployBerachainPOLSystem<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  registry: IBerachainRewardsRegistry,
+  dToken: DolomiteERC4626,
+  polName: string,
+  userVaultImplementation: POLIsolationModeTokenVaultV1,
+  polUnwrapperImplementation: POLIsolationModeUnwrapperTraderV2,
+  polWrapperImplementation: POLIsolationModeWrapperTraderV2,
+): Promise<BerachainPOLSystem> {
+  if (core.network !== Network.Berachain) {
+    return Promise.reject(new Error('Core protocol is not Berachain'));
+  }
+  const marketId = await dToken.marketId();
+  if (!marketId || marketId.isNegative()) {
+    return Promise.reject(new Error('Invalid dToken'));
+  }
+
+  const underlyingAddress = await IERC4626__factory.connect(dToken.address, core.hhUser1).asset();
+  const underlyingSymbol = await IERC4626__factory.connect(underlyingAddress, core.hhUser1).symbol();
+  console.log(`\tReal symbol for POL name: ${underlyingSymbol}`);
+
+  const factoryAddress = await deployContractAndSave(
+    'POLIsolationModeVaultFactory',
+    getPOLIsolationModeVaultFactoryConstructorParams(
+      core,
+      underlyingSymbol,
+      registry,
+      dToken,
+      userVaultImplementation,
+      [],
+      [],
+    ),
+    `${polName}IsolationModeVaultFactory`,
+  );
+  const factory = POLIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
+
+  const calldata = await polUnwrapperImplementation.populateTransaction.initialize(factory.address);
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeUnwrapperUpgradeableProxy',
+    [registry.address, calldata.data!],
+    `${polName}IsolationModeUnwrapperUpgradeableProxy`,
+  );
+  const unwrapper = IIsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.governance);
+
+  const wrapperCalldata = await polWrapperImplementation.populateTransaction.initialize(factory.address);
+  const wrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeWrapperUpgradeableProxy',
+    [registry.address, wrapperCalldata.data!],
+    `${polName}IsolationModeWrapperUpgradeableProxy`,
+  );
+  const wrapper = IIsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.governance);
+
+  const oracleAddress = await deployContractAndSave(
+    'POLPriceOracleV2',
+    [factory.address, core.dolomiteMargin.address],
+    `${polName}PriceOracleV2`,
+  );
+  const oracle = POLPriceOracleV2__factory.connect(oracleAddress, core.governance);
+
+  return {
+    factory,
+    unwrapper,
+    wrapper,
+    oracle,
   };
 }
 

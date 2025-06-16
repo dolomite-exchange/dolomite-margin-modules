@@ -24,7 +24,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { BaseClaim } from "./BaseClaim.sol";
+import { BaseClaimWithMerkleProof } from "./BaseClaimWithMerkleProof.sol";
 import { IVeTokenClaim } from "./interfaces/IVeTokenClaim.sol";
 import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
@@ -35,7 +35,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Claim contract for veDOLO from Boyco rewards
  */
-contract VeTokenClaim is BaseClaim, IVeTokenClaim {
+contract VeTokenClaim is BaseClaimWithMerkleProof, IVeTokenClaim {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -44,8 +44,9 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
 
     bytes32 private constant _FILE = "VeTokenClaim";
     bytes32 private constant _VE_TOKEN_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.veTokenClaimStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _EPOCH = 0;
 
-    uint256 public constant _BOYCO_START_TIME = 1738800000; // Feb 06 2025 00:00:00 UTC
+    uint256 public constant BOYCO_START_TIME = 1738800000; // Feb 06 2025 00:00:00 UTC
 
     // ===================================================
     // ==================== State Variables ==============
@@ -53,6 +54,7 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
 
     IERC20 public immutable DOLO; // solhint -disable-line mixed-case
     IVotingEscrow public immutable VE_DOLO; // solhint -disable-line mixed-case
+    uint256 public immutable MAX_LOCK_DURATION; // solhint -disable-line mixed-case;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -63,64 +65,49 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
         address _veDolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+    ) BaseClaimWithMerkleProof(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
         VE_DOLO = IVotingEscrow(_veDolo);
-    }
-
-    // ======================================================
-    // ================== Admin Functions ===================
-    // ======================================================
-
-    function ownerSetMarketIdToMerkleRoot(
-        uint256 _marketId,
-        bytes32 _merkleRoot
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMarketIdToMerkleRoot(_marketId, _merkleRoot);
+        MAX_LOCK_DURATION = VE_DOLO.MAXTIME();
     }
 
     // ======================================================
     // ================== Public Functions ==================
     // ======================================================
 
-    function claim(ClaimParams[] memory _claimParams) external onlyClaimEnabled nonReentrant {
+    function claim(uint256 _amount, bytes32[] calldata _proof) external onlyClaimEnabled nonReentrant {
         VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 
-        uint256 totalAmount;
-        for (uint256 i = 0; i < _claimParams.length; i++) {
-            ClaimParams memory claimParam = _claimParams[i];
+        if (_verifyMerkleProof(user, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _verifyMerkleProof(user, _proof, _amount),
+            _FILE,
+            "Invalid merkle proof"
+        );
+        if (!s.userToClaimStatus[user]) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !s.userToClaimStatus[user],
+            _FILE,
+            "User already claimed"
+        );
 
-            if (_verifyMerkleProof( user, s.marketIdToMerkleRoot[claimParam.marketId], claimParam.proof, claimParam.amount )) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _verifyMerkleProof(
-                    user,
-                    s.marketIdToMerkleRoot[claimParam.marketId],
-                    claimParam.proof,
-                    claimParam.amount
-                ),
-                _FILE,
-                "Invalid merkle proof",
-                claimParam.marketId
-            );
-            if (!s.userToMarketIdToClaimStatus[user][claimParam.marketId]) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                !s.userToMarketIdToClaimStatus[user][claimParam.marketId],
-                _FILE,
-                "User already claimed"
-            );
+        s.userToClaimStatus[user] = true;
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, _EPOCH, _amount);
 
-            s.userToMarketIdToClaimStatus[user][claimParam.marketId] = true;
-            totalAmount += claimParam.amount;
-            DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-                user,
-                claimParam.marketId, // @follow-up @Corey, do you want an event like this? Or one event per claim with an array?
-                claimParam.amount
-            );
-        }
+        DOLO.safeApprove(address(VE_DOLO), _amount);
 
-        DOLO.safeApprove(address(VE_DOLO), totalAmount);
-        VE_DOLO.create_lock_for(totalAmount, block.timestamp - _BOYCO_START_TIME, msg.sender);
+        if (block.timestamp - BOYCO_START_TIME < MAX_LOCK_DURATION) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            block.timestamp - BOYCO_START_TIME < MAX_LOCK_DURATION,
+            _FILE,
+            "Past max claim period"
+        );
+        VE_DOLO.create_lock_for(
+            _amount,
+            MAX_LOCK_DURATION - (block.timestamp - BOYCO_START_TIME),
+            /* _to */ msg.sender
+        );
     }
 
 
@@ -128,35 +115,14 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
     // ======================= View Functions =======================
     // ==============================================================
 
-    function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32) {
+    function userToClaimStatus(address _user) external view returns (bool) {
         VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
-        return s.marketIdToMerkleRoot[_marketId];
-    }
-
-    function userToClaimStatus(address _user, uint256 _marketId) external view returns (bool) {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
-        return s.userToMarketIdToClaimStatus[_user][_marketId];
+        return s.userToClaimStatus[_user];
     }
 
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
-
-    function _ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) internal virtual {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
-        s.marketIdToMerkleRoot[_marketId] = _merkleRoot;
-        emit MarketIdToMerkleRootSet(_marketId, _merkleRoot);
-    }
-
-    function _verifyMerkleProof(
-        address _user,
-        bytes32 _merkleRoot,
-        bytes32[] memory _proof,
-        uint256 _amount
-    ) internal pure returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(_user, _amount));
-        return MerkleProof.verify(_proof, _merkleRoot, leaf);
-    }
 
     function _getVeTokenClaimStorage() internal pure returns (VeTokenClaimStorage storage veTokenClaimStorage) {
         bytes32 slot = _VE_TOKEN_CLAIM_STORAGE_SLOT;

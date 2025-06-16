@@ -29,8 +29,8 @@ export async function createTokenomicsAirdropEcosystem(
   }
 
   return {
-    optionAirdrop: OptionAirdrop__factory.connect(Deployments.OptionAirdrop[network].address, signer),
-    regularAirdrop: RegularAirdrop__factory.connect(Deployments.RegularAirdrop[network].address, signer),
+    optionAirdrop: OptionAirdrop__factory.connect(Deployments.OptionAirdropProxy[network].address, signer),
+    regularAirdrop: RegularAirdrop__factory.connect(Deployments.RegularAirdropProxy[network].address, signer),
     regularInvestorVesting: VestingClaims__factory.connect(Deployments.VestingClaimsProxy[network].address, signer),
     strategicVesting: StrategicVestingClaims__factory.connect(
       Deployments.StrategicVestingProxy[network].address,

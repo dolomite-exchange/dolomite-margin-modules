@@ -2,12 +2,12 @@ import { artifacts } from 'hardhat';
 import { initializeFreshArtifactFromWorkspace, verifyContract } from './deploy-utils';
 
 async function main() {
-  const contractName = 'IsolationModeUpgradeableProxy';
+  const contractName = 'MetaVaultUpgradeableProxy';
   await initializeFreshArtifactFromWorkspace(contractName);
   const sourceName = artifacts.readArtifactSync(contractName).sourceName;
   const libraries = {};
   await verifyContract(
-    '0x2A0c9632B1F75d78F6b1F175Ed222EC77c2b11De',
+    '0xc27d03b0e5335faadbd574e61a86583a6135c395',
     [],
     `${sourceName}:${contractName}`,
     libraries,

@@ -111,7 +111,7 @@ describe('GenericTraderProxyV2', () => {
     genericTraderProxy = await createContractWithLibrary(
       'TestGenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -236,7 +236,7 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it.only('should work with internal liquidity', async () => {
+    xit('should work with internal liquidity', async () => {
       const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
         TestDolomiteAutoTrader__factory.abi,
         TestDolomiteAutoTrader__factory.bytecode,

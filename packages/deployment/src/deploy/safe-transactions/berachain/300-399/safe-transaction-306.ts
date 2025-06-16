@@ -10,8 +10,8 @@ import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Set the treasury to the DAO
- * - Update the uniBTC borrow schematics
+ * - Set the treasury from the registry to the Foundation (for easier claims)
+ * - Upgrade the veDOLO implementation to have better event handling
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);

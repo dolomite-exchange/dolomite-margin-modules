@@ -92,7 +92,10 @@ describe('RollingClaims', () => {
     });
 
     it('should work normally with remapped address', async () => {
-      await rollingClaims.connect(core.hhUser5).ownerSetAddressRemapping([core.hhUser4.address], [core.hhUser1.address]);
+      await rollingClaims.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
+        [core.hhUser1.address]
+      );
 
       const res = await rollingClaims.connect(core.hhUser4).claim(validProof1, parseEther('5'));
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {

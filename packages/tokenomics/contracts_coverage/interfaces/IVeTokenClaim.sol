@@ -32,34 +32,18 @@ import { IBaseClaim } from "./IBaseClaim.sol";
 interface IVeTokenClaim is IBaseClaim {
 
     struct VeTokenClaimStorage {
-        mapping(address => mapping(uint256 => bool)) userToMarketIdToClaimStatus;
-        mapping(uint256 => bytes32) marketIdToMerkleRoot;
+        mapping(address => bool) userToClaimStatus;
     }
-
-    struct ClaimParams {
-        uint256 marketId;
-        bytes32[] proof;
-        uint256 amount;
-    }
-
-    event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot);
-
-    // ======================================================
-    // ==================== Admin Functions =================
-    // ======================================================
-
-    function ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) external;
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(ClaimParams[] memory _claimParams) external;
+    function claim(uint256 _amount, bytes32[] calldata _proof) external;
 
     // ======================================================
     // ==================== View Functions ==================
     // ======================================================
 
-    function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
-    function userToClaimStatus(address _user, uint256 _marketId) external view returns (bool);
+    function userToClaimStatus(address _user) external view returns (bool);
 }

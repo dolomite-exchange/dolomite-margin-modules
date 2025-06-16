@@ -7,9 +7,9 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts base",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.ts\" --solcoverjs ../../.solcover.js",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.ts",
-    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/routers/DepositWithdrawalRouter.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/general/HasLiquidatorRegistry.ts\" --solcoverjs ../../.solcover.js",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/DepositWithdrawEvents.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/routers/GenericTraderRouter.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix base",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
