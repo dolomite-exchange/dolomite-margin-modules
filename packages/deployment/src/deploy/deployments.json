@@ -6550,6 +6550,13 @@
       "isVerified": true
     }
   },
+  "ODoloRollingClaimsImplementationV2": {
+    "80094": {
+      "address": "0xCc036D7f1b6ec8Fe86240f4c036DC3FD46B94bC2",
+      "transaction": "0x3edd4aa66c758c758908eb60a502374b2f15201cecf6c70b1bc8c6ebbebfdbd2",
+      "isVerified": true
+    }
+  },
   "ODoloRollingClaimsProxy": {
     "80094": {
       "address": "0x79E6E932bf6686a4D357D7821E6e08835Ba8A026",

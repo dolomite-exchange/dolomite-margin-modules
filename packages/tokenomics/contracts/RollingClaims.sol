@@ -67,8 +67,13 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
     // ======================= Write Functions ======================
     // ==============================================================
 
-    function handlerSetMerkleRoot(bytes32 _merkleRoot) external onlyHandler(msg.sender) {
+    function handlerSetMerkleRoot(bytes32 _merkleRoot, uint256 _expectedEpoch) external onlyHandler(msg.sender) {
         _ownerSetMerkleRoot(_merkleRoot);
+        Require.that(
+            _getRollingClaimsStorage().currentEpoch == _expectedEpoch,
+            _FILE,
+            "Invalid epoch"
+        );
     }
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled nonReentrant {

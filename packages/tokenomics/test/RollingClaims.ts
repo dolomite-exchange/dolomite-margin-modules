@@ -73,6 +73,27 @@ describe('RollingClaims', () => {
     });
   });
 
+  describe('#handlerSetClaim', () => {
+    it('should work normally', async () => {
+      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, ONE_BI);
+      expect(await rollingClaims.currentEpoch()).to.eq(ONE_BI);
+    });
+
+    it('should fail when handler is not caller', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser1).handlerSetMerkleRoot(merkleRoot, 0),
+        'BaseClaim: Only handler can call',
+      );
+    });
+
+    it('should fail when epochs do not match', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, 0),
+        'RollingClaims: Invalid epoch',
+      );
+    });
+  });
+
   describe('#claim', () => {
     it('should work normally with first merkle root', async () => {
       const res = await rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5'));
