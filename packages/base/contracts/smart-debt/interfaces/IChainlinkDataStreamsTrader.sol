@@ -21,16 +21,27 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IChainlinkDataStreamsHandler
+ * @title   IChainlinkDataStreamsTrader
  * @author  Dolomite
  *
- * Interface for the ChainlinkDataStreamsHandler contract
+ * Interface for the ChainlinkDataStreamsTrader contract
  */
-interface IChainlinkDataStreamsHandler {
+interface IChainlinkDataStreamsTrader {
 
     // ========================================================
     // ====================== Structs =========================
     // ========================================================
+
+    struct ChainlinkDataStreamsTraderStorage {
+        mapping(address => bytes32) tokenToFeedIdMap;
+        mapping(bytes32 => address) feedIdToTokenMap;
+        mapping(address => LatestReport) tokenToLatestReport;
+    }
+
+    struct LatestReport {
+        uint64 timestamp;
+        bytes report;
+    }
 
     struct ReportCallback {
         bytes32[3] reportContext;

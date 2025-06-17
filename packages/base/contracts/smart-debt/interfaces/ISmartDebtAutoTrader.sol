@@ -19,9 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ISmartDebtSettings } from "./ISmartDebtSettings.sol";
 import { IInternalAutoTraderBase } from "../../interfaces/traders/IInternalAutoTraderBase.sol";
-import { ISmartDebtPairSettings } from "./ISmartDebtPairSettings.sol";
 
 
 /**
@@ -30,5 +29,5 @@ import { ISmartDebtPairSettings } from "./ISmartDebtPairSettings.sol";
  *
  * Interface for performing internal trades using smart debt
  */
-interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtPairSettings {
+interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtSettings {
 }

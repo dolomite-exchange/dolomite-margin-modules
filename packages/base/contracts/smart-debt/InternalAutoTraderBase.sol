@@ -26,7 +26,6 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -62,8 +61,8 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
-    function initialize() public virtual initializer {
-    }
+    // function initialize() public virtual initializer {
+    // }
 
     // ========================================================
     // ================== External Functions ==================

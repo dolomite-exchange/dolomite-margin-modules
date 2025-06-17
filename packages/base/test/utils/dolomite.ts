@@ -19,11 +19,13 @@ import {
   GenericTraderRouter__factory,
   IDolomiteMargin,
   IDolomiteMarginV2,
+  IERC20,
   IERC20Metadata__factory,
   IExpiry,
   IExpiryV2,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
+  IVerifierProxy,
   LiquidatorProxyV6,
   LiquidatorProxyV6__factory,
   RegistryProxy,
@@ -385,14 +387,29 @@ export async function createTestGenericTraderRouter(
 
 export async function createSmartDebtAutoTrader(
   core: CoreProtocolType<any>,
-  network: NetworkType,
+  verifierProxy: IVerifierProxy,
+  tokens: IERC20[],
+  feedIds: string[]
 ): Promise<SmartDebtAutoTrader> {
+  if (core.network !== Network.ArbitrumOne) {
+    throw new Error('SmartDebtAutoTrader is only supported on Arbitrum One');
+  }
+
   const implementation = await createContractWithAbi<SmartDebtAutoTrader>(
     SmartDebtAutoTrader__factory.abi,
     SmartDebtAutoTrader__factory.bytecode,
-    [network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [
+      core.tokens.link.address,
+      verifierProxy.address,
+      core.network,
+      core.dolomiteRegistry.address,
+      core.dolomiteMargin.address
+    ],
   );
-  const initCalldata = await implementation.populateTransaction.initialize();
+  const initCalldata = await implementation.populateTransaction.initialize(
+    tokens.map((t) => t.address),
+    feedIds
+  );
 
   const proxy = await createContractWithAbi(
     UpgradeableProxy__factory.abi,

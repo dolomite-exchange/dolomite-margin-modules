@@ -19,22 +19,20 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { InternalAutoTraderBase } from "../traders/InternalAutoTraderBase.sol";
+import { ChainlinkDataStreamsTrader } from "./ChainlinkDataStreamsTrader.sol";
+import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
+import { SmartDebtSettings } from "./SmartDebtSettings.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
-import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
-import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IChainlinkPostPrices } from "./interfaces/IChainlinkPostPrices.sol";
-import { ChainlinkDataStreamsTrader } from "./ChainlinkDataStreamsTrader.sol";
-import { SmartDebtPairSettings } from "./SmartDebtPairSettings.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
 
 
 /**
@@ -43,7 +41,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
  *
  * Contract for performing internal trades using smart debt
  */
-contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, ChainlinkDataStreamsTrader, ISmartDebtAutoTrader {
+contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtSettings, ChainlinkDataStreamsTrader, ISmartDebtAutoTrader {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using SafeCast for int256;
     using DecimalLib for uint256;
@@ -54,7 +52,6 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
-    uint256 private constant _36_DECIMALS_FACTOR = 10 ** 36;
 
     // ========================================================
     // ===================== Constructor ========================
@@ -63,15 +60,13 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
     constructor(
         address _link,
         address _verifierProxy,
-        address[] memory _tokens,
-        bytes32[] memory _feedIds,
         uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) ChainlinkDataStreamsTrader(_link, _verifierProxy, _tokens, _feedIds, _chainId, _dolomiteRegistry)
-    OnlyDolomiteMargin(_dolomiteMargin)
-    {
-    }
+    )
+        ChainlinkDataStreamsTrader(_link, _verifierProxy, _chainId, _dolomiteRegistry)
+        OnlyDolomiteMargin(_dolomiteMargin)
+    {}
 
     // ========================================================
     // ================== External Functions ==================
@@ -106,7 +101,7 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
             "Trade is not enabled"
         );
 
-        PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
+        PairPosition storage pairPosition = _userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
         Require.that(
             pairPosition.pairType != PairType.NONE && pairPosition.pairBytes == pairBytes,
@@ -120,13 +115,6 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
             pairPosition,
             _inputDeltaWei.value,
             _data
-        );
-        _validateExchangeRate(
-            pairPosition,
-            _inputMarketId,
-            _outputMarketId,
-            adjInputAmount,
-            outputTokenAmount
         );
 
         uint256 inputMarketId = _inputMarketId;
@@ -259,25 +247,59 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
     function _calculateInputAndOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        PairPosition memory _pairPosition,
+        PairPosition storage _pairPosition,
         uint256 _inputAmountWei,
         bytes memory _data
     ) internal view returns (uint256, uint256) {
+        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
+        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
+
+        // Get bid price of input token and validate it is in range of user
+        uint256 bidPrice = _safeInt192ToUint256(
+            abi.decode(getLatestReport(inputToken).report, (ReportDataV3)).bid
+        );
+        if (_pairPosition.marketToPriceRange[_inputMarketId].minPrice != 0) {
+            Require.that(
+                bidPrice >= _pairPosition.marketToPriceRange[_inputMarketId].minPrice
+                    && bidPrice <= _pairPosition.marketToPriceRange[_inputMarketId].maxPrice,
+                _FILE,
+                "Input price is out of range"
+            );
+        }
+
+        // Get ask price of output token and validate it is in range of user
+        uint256 askPrice = _safeInt192ToUint256(
+            abi.decode(getLatestReport(outputToken).report, (ReportDataV3)).ask
+        );
+        if (_pairPosition.marketToPriceRange[_outputMarketId].minPrice != 0) {
+            Require.that(
+                askPrice >= _pairPosition.marketToPriceRange[_outputMarketId].minPrice
+                    && askPrice <= _pairPosition.marketToPriceRange[_outputMarketId].maxPrice,
+                _FILE,
+                "Output price is out of range"
+            );
+        }
+
+        // Standardize prices to have 36 - token decimals prices
+        bidPrice = _standardizeNumberOfDecimals(
+            IERC20Metadata(inputToken).decimals(),
+            bidPrice,
+            _DATA_STREAM_PRICE_DECIMALS
+        );
+        askPrice = _standardizeNumberOfDecimals(
+            IERC20Metadata(outputToken).decimals(),
+            askPrice,
+            _DATA_STREAM_PRICE_DECIMALS
+        );
+        assert(bidPrice != 0 && askPrice != 0);
+
+        // Calculate fee amount and adjust input amount
+        // @todo adjust to use time since report
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
         (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
         uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(feePercentage));
 
-        IDolomitePriceOracle chainlinkDataStreamsPriceOracle = DOLOMITE_REGISTRY.chainlinkDataStreamsPriceOracle();
-        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
-        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
-
-        uint256 inputPrice = chainlinkDataStreamsPriceOracle.getPrice(inputToken).value;
-        uint256 outputPrice = chainlinkDataStreamsPriceOracle.getPrice(outputToken).value;
-        assert(inputPrice != 0 && outputPrice != 0);
-
-        uint256 adjInputValue = adjInputAmount * inputPrice;
-        uint256 outputAmount = adjInputValue / outputPrice;
-
+        uint256 outputAmount = adjInputAmount * bidPrice / askPrice;
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -285,51 +307,6 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
         );
 
         return (adjInputAmount, outputAmount);
-    }
-
-    function _validateExchangeRate(
-        PairPosition memory _pairPosition,
-        uint256 _inputMarketId,
-        uint256 _outputMarketId,
-        uint256 _inputAmountWei,
-        uint256 _outputAmount
-    ) internal view {
-        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
-        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
-        uint256 inputDecimals = IERC20Metadata(inputToken).decimals();
-        uint256 outputDecimals = IERC20Metadata(outputToken).decimals();
-
-        uint256 inputAmountStandardized = _standardizeAmount(_inputAmountWei, inputDecimals);
-        uint256 outputAmountStandardized = _standardizeAmount(_outputAmount, outputDecimals);
-        
-        uint256 exchangeRate;
-        if (_inputMarketId < _outputMarketId) {
-            exchangeRate = inputAmountStandardized.div(outputAmountStandardized.toDecimal());
-        } else {
-            exchangeRate = outputAmountStandardized.div(inputAmountStandardized.toDecimal());
-        }
-
-        Require.that(
-            exchangeRate >= _pairPosition.minExchangeRate,
-            _FILE,
-            "Invalid exchange rate"
-        );
-        if (_pairPosition.maxExchangeRate != 0) {
-            Require.that(
-                exchangeRate <= _pairPosition.maxExchangeRate,
-                _FILE,
-                "Invalid exchange rate"
-            );
-        }
-    }
-
-    function _standardizeAmount(
-        uint256 _amount,
-        uint256 _decimals
-    ) internal pure returns (uint256) {
-        uint256 tokenDecimalsFactor = 10 ** _decimals;
-        uint256 changeFactor = _36_DECIMALS_FACTOR / tokenDecimalsFactor;
-        return _amount * changeFactor;
     }
 
     function _getFees(
@@ -351,5 +328,16 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtPairSettings, Chain
         uint256 pairFeeOverride = smartPairsStorage.pairToFee[_pairBytes];
 
         return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
+    }
+
+    function _safeInt192ToUint256(
+        int192 _value
+    ) internal pure returns (uint256) {
+        Require.that(
+            _value >= 0,
+            _FILE,
+            "Value is negative"
+        );
+        return uint256(uint192(_value));
     }
 }

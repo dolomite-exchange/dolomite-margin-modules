@@ -30,11 +30,11 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
-import { ISmartDebtAutoTrader } from "../smart-debt/interfaces/ISmartDebtAutoTrader.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { ISmartDebtAutoTrader } from "../smart-debt/interfaces/ISmartDebtAutoTrader.sol";
 
 
 /**
