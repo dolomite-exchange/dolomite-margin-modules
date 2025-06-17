@@ -39,7 +39,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     // ========================= Constants =========================
 
     bytes32 private constant _FILE = "ChainlinkDataStreamsTrader";
-    bytes32 private constant _CHAINLINK_DATA_STREAMS_TRADER_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkDataStreamsTraderStorage")) - 1);
+    bytes32 private constant _CHAINLINK_DATA_STREAMS_TRADER_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkDataStreamsTraderStorage")) - 1); // solhint-disable-line max-line-length
 
     uint256 internal constant _ONE_DOLLAR = 10 ** 36;
     uint8 internal constant _DATA_STREAM_PRICE_DECIMALS = 18;
@@ -185,7 +185,8 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         // emit TokenInsertedOrUpdated(_token, _feedId);
     }
 
-    function _getChainlinkDataStreamsTraderStorage() internal pure returns (ChainlinkDataStreamsTraderStorage storage $) {
+    function _getChainlinkDataStreamsTraderStorage(
+    ) internal pure returns (ChainlinkDataStreamsTraderStorage storage $) {
         bytes32 slot = _CHAINLINK_DATA_STREAMS_TRADER_STORAGE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {

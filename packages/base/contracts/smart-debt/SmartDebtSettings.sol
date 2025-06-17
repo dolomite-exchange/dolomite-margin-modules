@@ -19,10 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { ISmartDebtSettings } from "./interfaces/ISmartDebtSettings.sol";
 
@@ -35,8 +33,6 @@ import { ISmartDebtSettings } from "./interfaces/ISmartDebtSettings.sol";
  */
 abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
     using EnumerableSet for EnumerableSet.Bytes32Set;
-    using SafeCast for int256;
-    using DecimalLib for uint256;
 
     // ========================================================
     // ====================== Constants =======================
@@ -90,10 +86,12 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
         }
 
         // Set pair
-        smartPairsStorage.userToPair[msg.sender][_accountNumber].pairType = _pairType;
-        smartPairsStorage.userToPair[msg.sender][_accountNumber].pairBytes = pairBytes;
-        smartPairsStorage.userToPair[msg.sender][_accountNumber].marketToPriceRange[_marketId1] = PriceRange(_market1PriceRange[0], _market1PriceRange[1]);
-        smartPairsStorage.userToPair[msg.sender][_accountNumber].marketToPriceRange[_marketId2] = PriceRange(_market2PriceRange[0], _market2PriceRange[1]);
+        PairPosition storage userPair = smartPairsStorage.userToPair[msg.sender][_accountNumber];
+        userPair.pairType = _pairType;
+        userPair.pairBytes = pairBytes;
+        userPair.marketToPriceRange[_marketId1] = PriceRange(_market1PriceRange[0], _market1PriceRange[1]);
+        userPair.marketToPriceRange[_marketId2] = PriceRange(_market2PriceRange[0], _market2PriceRange[1]);
+
         emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes);
     }
 

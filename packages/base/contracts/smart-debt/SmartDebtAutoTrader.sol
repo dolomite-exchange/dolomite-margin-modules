@@ -20,8 +20,6 @@
 pragma solidity ^0.8.9;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ChainlinkDataStreamsTrader } from "./ChainlinkDataStreamsTrader.sol";
 import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
 import { SmartDebtSettings } from "./SmartDebtSettings.sol";
@@ -41,9 +39,12 @@ import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
  *
  * Contract for performing internal trades using smart debt
  */
-contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtSettings, ChainlinkDataStreamsTrader, ISmartDebtAutoTrader {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
-    using SafeCast for int256;
+contract SmartDebtAutoTrader is
+    OnlyDolomiteMargin,
+    SmartDebtSettings,
+    ChainlinkDataStreamsTrader,
+    ISmartDebtAutoTrader
+{
     using DecimalLib for uint256;
 
     // ========================================================
@@ -332,7 +333,7 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, SmartDebtSettings, Chainlink
 
     function _safeInt192ToUint256(
         int192 _value
-    ) internal pure returns (uint256) {
+    ) private pure returns (uint256) {
         Require.that(
             _value >= 0,
             _FILE,
