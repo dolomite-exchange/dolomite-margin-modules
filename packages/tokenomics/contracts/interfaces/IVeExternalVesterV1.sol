@@ -173,6 +173,11 @@ interface IVeExternalVesterV1 {
     function initialize(bytes calldata _data) external;
 
     /**
+     * @notice Registers this Vester with the subgraph so its positions are tracked
+     */
+    function ownerRegisterDistributor() external;
+
+    /**
      * @notice  Transfers PAIR_TOKEN and oToken from user's wallet to the contract and begins vesting
      * @dev     Duration must be at least 1 week, modulo of 1 week, and a maximum of 40 weeks (in seconds)
      *

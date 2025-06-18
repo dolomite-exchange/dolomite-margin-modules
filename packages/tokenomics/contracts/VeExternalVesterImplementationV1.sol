@@ -169,6 +169,14 @@ contract VeExternalVesterImplementationV1 is
         emit VeTokenSet(_veToken);
     }
 
+    function ownerRegisterDistributor() external onlyDolomiteMarginOwner(msg.sender) {
+        DOLOMITE_REGISTRY.eventEmitter().emitDistributorRegistered(
+            address(oToken()),
+            address(PAIR_TOKEN),
+            address(PAYMENT_TOKEN)
+        );
+    }
+
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
@@ -238,7 +246,7 @@ contract VeExternalVesterImplementationV1 is
         uint256 _maxPaymentAmount
     )
     external
-    nonReentrant 
+    nonReentrant
     returns (uint256) {
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
