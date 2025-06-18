@@ -24,11 +24,13 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 
 /**
- * @title MultiCallWithExceptionHandler - Aggregate results from multiple read-only function calls
- * @author Michael Elliot <mike@makerdao.com>
- * @author Joshua Levine <joshua@makerdao.com>
- * @author Nick Johnson <arachnid@notdot.net>
- * @author Corey Caplan <corey@dolomite.io>
+ * @title   MultiCallWithExceptionHandler
+ * @author  Michael Elliot <mike@makerdao.com>
+ * @author  Joshua Levine <joshua@makerdao.com>
+ * @author  Nick Johnson <arachnid@notdot.net>
+ * @author  Corey Caplan <corey@dolomite.io>
+ *
+ * @notice  Aggregate results from multiple read-only function calls
  */
 contract MultiCallWithExceptionHandler {
     using Strings for address;

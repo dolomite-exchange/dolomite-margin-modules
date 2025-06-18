@@ -171,6 +171,7 @@ contract VeExternalVesterImplementationV1 is
 
     function ownerRegisterDistributor() external onlyDolomiteMarginOwner(msg.sender) {
         DOLOMITE_REGISTRY.eventEmitter().emitDistributorRegistered(
+            address(this),
             address(oToken()),
             address(PAIR_TOKEN),
             address(PAYMENT_TOKEN)

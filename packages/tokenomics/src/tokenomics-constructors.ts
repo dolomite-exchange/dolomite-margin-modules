@@ -1,8 +1,15 @@
-import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import {
+  DolomiteNetwork,
+  DolomiteV2Network,
+  MAX_UINT_256_BI,
+  Network,
+} from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, VotingEscrow } from './types';
 import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
+
+const NO_MARKET_ID = MAX_UINT_256_BI;
 
 export function getBuybackPoolConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
@@ -76,6 +83,19 @@ export function getStrategicVestingClaimsConstructorParams<T extends DolomiteNet
   duration: BigNumberish,
 ): any[] {
   return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+}
+
+export function getVeDoloVesterImplementationConstructorParams(core: CoreProtocolType<Network.Berachain>): any[] {
+  return [
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
+    core.tokenomics.dolo.address, // pairToken
+    NO_MARKET_ID,
+    core.tokens.usdc.address, // payment token
+    core.marketIds.usdc,
+    core.tokenomics.dolo.address, // rewardToken
+    NO_MARKET_ID,
+  ];
 }
 
 export function getVeExternalVesterImplementationConstructorParams<T extends DolomiteNetwork>(

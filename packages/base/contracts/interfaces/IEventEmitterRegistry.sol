@@ -158,6 +158,7 @@ interface IEventEmitterRegistry {
     event AsyncWithdrawalCancelled(bytes32 indexed key, address indexed token);
 
     event DistributorRegistered(
+        address vesterContract,
         address oTokenAddress,
         address pairToken,
         address paymentToken
@@ -305,7 +306,12 @@ interface IEventEmitterRegistry {
 
     function emitAsyncWithdrawalCancelled(bytes32 _key, address _token) external;
 
-    function emitDistributorRegistered(address _oTokenAddress, address _pairToken, address _paymentToken) external;
+    function emitDistributorRegistered(
+        address _vesterContract,
+        address _oTokenAddress,
+        address _pairToken,
+        address _paymentToken
+    ) external;
 
     function emitRewardClaimed(address _user, uint256 _epoch, uint256 _amount) external;
 

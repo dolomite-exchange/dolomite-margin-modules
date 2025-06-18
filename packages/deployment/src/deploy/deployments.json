@@ -2411,6 +2411,13 @@
       "isVerified": true
     }
   },
+  "EventEmitterRegistryImplementationV7": {
+    "80094": {
+      "address": "0xafB94b811fB949b01F8b04280A7607E85852ec52",
+      "transaction": "0x1fa2ecb787e4f3e11f6f7bce74d8b076241f6e20fbe8e2b5d26a62e9c1816969",
+      "isVerified": true
+    }
+  },
   "EventEmitterRegistryProxy": {
     "196": {
       "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",
@@ -8965,6 +8972,13 @@
     "80094": {
       "address": "0x22bf16fa2C2Fa3C2569C4b9E48ae99595D7Ad1f2",
       "transaction": "0xc8ce21674b72585dde13f7c36c12e96f5af53b9748ff56a333744b800226d317",
+      "isVerified": true
+    }
+  },
+  "VeExternalVesterImplementationV4": {
+    "80094": {
+      "address": "0xff6DC6f03d3b14d1fa9270C2aa11F7B3804768f9",
+      "transaction": "0xe975ac6584989c567c5410cecdc2c2d3d4210d13b4586767cb8a45e58e5161bc",
       "isVerified": true
     }
   },
