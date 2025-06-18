@@ -108,6 +108,12 @@ interface IVeExternalVesterV1 {
     ) external;
 
     /**
+     * @notice Allows the owner to sync `pushedTokens` with the current token balance. This means it can ingest donated
+     *         tokens. Throws is `REWARD_MARKET_ID` is set to `_NO_MARKET_ID`
+     */
+    function ownerSyncRewardToken() external;
+
+    /**
      * @notice  Sets isVestingActive. Callable by the owner
      *
      * @param  _isVestingActive   True if creating new vests is allowed, or false to disable it

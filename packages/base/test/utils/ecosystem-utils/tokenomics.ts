@@ -24,10 +24,15 @@ import {
   VotingEscrow__factory,
 } from 'packages/tokenomics/src/types';
 import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
+import {
+  DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  LEVEL_INITIATOR_ADDRESS_MAP,
+} from '../../../src/utils/constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export interface TokenomicsEcosystem {
   buybackPool: IBuybackPool;
+  daoAddress: string;
   dolo: DOLO;
   handlerAddress: string;
   oDolo: ODOLO;
@@ -40,8 +45,6 @@ export interface TokenomicsEcosystem {
   veVesterDiscountCalculator: IVesterDiscountCalculator;
   veFeeCalculator: VeFeeCalculator;
 }
-
-export const LEVEL_INITIATOR_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 
 export async function createTokenomicsEcosystem(
   network: Network,
@@ -56,8 +59,9 @@ export async function createTokenomicsEcosystem(
       getMaxDeploymentVersionAddressByDeploymentKey('DOLOBuybackPool', network),
       signer,
     ),
+    daoAddress: DOLOMITE_DAO_GNOSIS_SAFE_MAP[network]!,
     dolo: DOLO__factory.connect(Deployments.DolomiteToken[network].address, signer),
-    handlerAddress: LEVEL_INITIATOR_ADDRESS,
+    handlerAddress: LEVEL_INITIATOR_ADDRESS_MAP[network],
     oDolo: ODOLO__factory.connect(Deployments.oDOLO[network].address, signer),
     rollingClaims: RollingClaims__factory.connect(Deployments.ODoloRollingClaimsProxy[network].address, signer),
     rollingClaimsProxy: RegistryProxy__factory.connect(Deployments.ODoloRollingClaimsProxy[network].address, signer),

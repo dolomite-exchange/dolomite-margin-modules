@@ -394,6 +394,13 @@ contract VeExternalVesterImplementationV1 is
         );
     }
 
+    function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
+        assert(REWARD_MARKET_ID == _NO_MARKET_ID);
+
+        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
+    }
+
+
     function ownerAccrueRewardTokenInterest(address _toAccount) external onlyDolomiteMarginOwner(msg.sender) {
         // all tokens have been spent
         Require.that(

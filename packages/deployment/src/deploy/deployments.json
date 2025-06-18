@@ -8961,6 +8961,13 @@
       "isVerified": true
     }
   },
+  "VeExternalVesterImplementationV3": {
+    "80094": {
+      "address": "0x22bf16fa2C2Fa3C2569C4b9E48ae99595D7Ad1f2",
+      "transaction": "0xc8ce21674b72585dde13f7c36c12e96f5af53b9748ff56a333744b800226d317",
+      "isVerified": true
+    }
+  },
   "VeExternalVesterProxy": {
     "80094": {
       "address": "0x3E9b9A16743551DA49b5e136C716bBa7932d2cEc",

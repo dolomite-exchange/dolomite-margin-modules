@@ -567,6 +567,18 @@ export const LBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const LEVEL_INITIATOR_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Base]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Berachain]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Ethereum]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Ink]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Mantle]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.PolygonZkEvm]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.SuperSeed]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.XLayer]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+};
+
 export const LINK_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4',
