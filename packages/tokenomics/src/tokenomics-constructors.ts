@@ -120,16 +120,14 @@ export function getVeExternalVesterImplementationConstructorParams<T extends Dol
 }
 
 export function getVeExternalVesterInitializationCalldata(
-  discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
   baseUri: string,
   name: string,
   symbol: string,
 ): string {
   return ethers.utils.defaultAbiCoder.encode(
-    ['address', 'address', 'string', 'string', 'string'],
+    ['address', 'string', 'string', 'string'],
     [
-      discountCalculator.address,
       oToken.address,
       baseUri,
       name,

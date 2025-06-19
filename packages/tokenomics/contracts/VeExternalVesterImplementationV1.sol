@@ -140,14 +140,12 @@ contract VeExternalVesterImplementationV1 is
         initializer
     {
         (
-            address _discountCalculator,
             address _oToken,
             string memory _baseUri,
             string memory _name,
             string memory _symbol
-        ) = abi.decode(_data, (address, address, string, string, string));
+        ) = abi.decode(_data, (address, string, string, string));
         _ownerSetIsVestingActive(true);
-        _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(0 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
@@ -158,6 +156,7 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function lazyInitialize(
+        address _discountCalculator,
         address _veToken
     ) external {
         Require.that(
@@ -167,6 +166,8 @@ contract VeExternalVesterImplementationV1 is
         );
         VE_TOKEN = IVeToken(_veToken);
         emit VeTokenSet(_veToken);
+
+        _ownerSetDiscountCalculator(_discountCalculator);
     }
 
     function ownerRegisterDistributor() external onlyDolomiteMarginOwner(msg.sender) {
@@ -262,6 +263,25 @@ contract VeExternalVesterImplementationV1 is
             _FILE,
             "Position not vested"
         );
+        Require.that(
+            _veTokenId == type(uint256).max || VE_TOKEN.ownerOf(_veTokenId) == positionOwner,
+            _FILE,
+            "Invalid ve token ID"
+        );
+
+        if (_veTokenId != type(uint256).max) {
+            Require.that(
+                _veLockEndTime == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        } else {
+            Require.that(
+                _veLockEndTime > block.timestamp && _veLockEndTime % 1 weeks == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        }
 
         _closePosition(position);
 
