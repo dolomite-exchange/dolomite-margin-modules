@@ -24,7 +24,7 @@ import { ChainlinkDataStreamsTrader } from "./ChainlinkDataStreamsTrader.sol";
 import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
 import { SmartDebtSettings } from "./SmartDebtSettings.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
+import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
@@ -52,10 +52,23 @@ contract SmartDebtAutoTrader is
     // ========================================================
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
-    bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _ONE = 1 ether;
 
     // ========================================================
-    // ===================== Constructor ========================
+    // ===================== Modifiers ========================
+    // ========================================================
+
+    modifier onlyTradeEnabled() {
+        Require.that(
+            tradeEnabled(),
+            _FILE,
+            "Trade is not enabled"
+        );
+        _;
+    }
+
+    // ========================================================
+    // ===================== Constructor ======================
     // ========================================================
 
     constructor(
@@ -69,6 +82,13 @@ contract SmartDebtAutoTrader is
         OnlyDolomiteMargin(_dolomiteMargin)
     {}
 
+    function initialize(
+        address[] memory _tokens,
+        bytes32[] memory _feedIds
+    ) public initializer {
+        _ChainlinkDataStreamsTrader__initialize(_tokens, _feedIds);
+    }
+
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
@@ -81,7 +101,9 @@ contract SmartDebtAutoTrader is
         (bytes[] memory reports, bool tradeEnabled) = abi.decode(_data, (bytes[], bool));
         super.callFunction(_sender, _accountInfo, abi.encode(tradeEnabled));
 
-        _postPrices(reports);
+        if (reports.length > 0) {
+            _postPrices(reports);
+        }
     }
 
     // maker account is the zap account of the person making the trade
@@ -95,13 +117,7 @@ contract SmartDebtAutoTrader is
         IDolomiteStructs.Par memory /* newInputPar */,
         IDolomiteStructs.Wei memory _inputDeltaWei,
         bytes memory _data
-    ) external override(IDolomiteAutoTrader, InternalAutoTraderBase) returns (IDolomiteStructs.AssetAmount memory) {
-        Require.that(
-            tradeEnabled(),
-            _FILE,
-            "Trade is not enabled"
-        );
-
+    ) external override(IDolomiteAutoTrader, InternalAutoTraderBase) onlyTradeEnabled returns (IDolomiteStructs.AssetAmount memory) {
         PairPosition storage pairPosition = _userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
         Require.that(
@@ -110,7 +126,7 @@ contract SmartDebtAutoTrader is
             "User does not have the pair set"
         );
 
-        (uint256 adjInputAmount, uint256 outputTokenAmount) = _calculateInputAndOutputTokenAmount(
+        uint256 outputTokenAmount = _calculateOutputTokenAmount(
             _inputMarketId,
             _outputMarketId,
             pairPosition,
@@ -148,7 +164,7 @@ contract SmartDebtAutoTrader is
                 "Debt pair is not active"
             );
             Require.that(
-                !takerAccountWei.sign && takerAccountWei.value >= adjInputAmount,
+                !takerAccountWei.sign && takerAccountWei.value >= _inputDeltaWei.value,
                 _FILE,
                 "Insufficient debt"
             );
@@ -171,39 +187,32 @@ contract SmartDebtAutoTrader is
     ) 
     external
     view
-    override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
+    override(IInternalAutoTraderBase, InternalAutoTraderBase)
+    returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             actionsLength(_params.trades)
         );
         uint256 actionCursor;
+
+        // Call function to set tradeEnabled to true and post prices
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            /* accountId = */ 0,
+            address(this),
+            abi.encode(abi.decode(_params.extraData, (bytes[])), true) // @follow-up check this encoding
+        );
 
         (
             IDolomiteStructs.Decimal memory adminFeePercentage,
             IDolomiteStructs.Decimal memory feePercentage
         ) = _getFees(_params.inputMarketId, _params.outputMarketId);
 
-        actions[actionCursor++] = AccountActionLib.encodeCallAction(
-            /* accountId = */ 0,
-            address(this),
-            // @follow-up Check how I'm doing this. Maybe just do abi.encode(_params.extraData, true)
-            abi.encode(abi.decode(_params.extraData, (bytes[])), true)
-        );
-        actions[actionCursor++] = AccountActionLib.encodeTransferAction(
-            _params.takerAccountId,
-            _params.feeAccountId,
-            _params.inputMarketId,
-            IDolomiteStructs.AssetDenomination.Wei,
-            _params.inputAmountWei.mul(adminFeePercentage).mul(feePercentage)
-        );
-        // @audit check rounding errors
-
         uint256 tradeTotal;
+        uint256 adminTotal;
         for (uint256 i; i < _params.trades.length; i++) {
-            uint256 originalAmountInWei = _params.trades[i].amount;
+            uint256 amountInWei = _params.trades[i].amount;
             uint256 minOutputAmount = _params.trades[i].minOutputAmount;
-            tradeTotal += originalAmountInWei;
+            uint256 adminFeeAmount = amountInWei.mul(adminFeePercentage).mul(feePercentage);
 
-            uint256 adminFeeAmount = originalAmountInWei.mul(adminFeePercentage).mul(feePercentage);
             // @dev This account action lib function will flip the taker and maker accounts
             actions[actionCursor++] = AccountActionLib.encodeInternalTradeActionWithWhitelistedTrader(
                 /* takerAccountId = */ _params.takerAccountId,
@@ -211,25 +220,35 @@ contract SmartDebtAutoTrader is
                 /* primaryMarketId = */ _params.inputMarketId,
                 /* secondaryMarketId = */ _params.outputMarketId,
                 /* traderAddress = */ address(this),
-                /* amountInWei = */ originalAmountInWei - adminFeeAmount,
+                /* amountInWei = */ amountInWei - adminFeeAmount,
                 /* chainId = */ CHAIN_ID,
                 /* calculateAmountWithMakerAccount = */ true, // @todo Add tests on non-arbitrum chain
                 /* orderData = */ abi.encode(minOutputAmount, adminFeeAmount)
             );
+
+            tradeTotal += amountInWei;
+            adminTotal += adminFeeAmount;
         }
-
-        bytes[] memory emptyReports = new bytes[](0);
-        actions[actionCursor++] = AccountActionLib.encodeCallAction(
-            0,
-            address(this),
-            abi.encode(emptyReports, false)
-        );
-
-        // @audit Make sure this isn't thrown off with rounding
         Require.that(
             tradeTotal == _params.inputAmountWei,
             _FILE,
             "Invalid swap amounts sum"
+        );
+
+        // Transfer admin fees to fee account
+        actions[actionCursor++] = AccountActionLib.encodeTransferAction(
+            _params.takerAccountId,
+            _params.feeAccountId,
+            _params.inputMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
+            adminTotal
+        );
+
+        // Call function to set tradeEnabled to false
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            0,
+            address(this),
+            abi.encode(new bytes(0), false)
         );
 
         return actions;
@@ -245,41 +264,20 @@ contract SmartDebtAutoTrader is
     // ================== Internal Functions ==================
     // ========================================================
 
-    function _calculateInputAndOutputTokenAmount(
+    function _calculateOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         PairPosition storage _pairPosition,
         uint256 _inputAmountWei,
         bytes memory _data
-    ) internal view returns (uint256, uint256) {
+    ) internal view virtual returns (uint256) {
         address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
         address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
 
-        // Get bid price of input token and validate it is in range of user
-        uint256 bidPrice = _safeInt192ToUint256(
-            abi.decode(getLatestReport(inputToken).report, (ReportDataV3)).bid
-        );
-        if (_pairPosition.marketToPriceRange[_inputMarketId].minPrice != 0) {
-            Require.that(
-                bidPrice >= _pairPosition.marketToPriceRange[_inputMarketId].minPrice
-                    && bidPrice <= _pairPosition.marketToPriceRange[_inputMarketId].maxPrice,
-                _FILE,
-                "Input price is out of range"
-            );
-        }
+        uint256 bidPrice = getLatestReport(inputToken).bid;
+        uint256 askPrice = getLatestReport(outputToken).ask;
 
-        // Get ask price of output token and validate it is in range of user
-        uint256 askPrice = _safeInt192ToUint256(
-            abi.decode(getLatestReport(outputToken).report, (ReportDataV3)).ask
-        );
-        if (_pairPosition.marketToPriceRange[_outputMarketId].minPrice != 0) {
-            Require.that(
-                askPrice >= _pairPosition.marketToPriceRange[_outputMarketId].minPrice
-                    && askPrice <= _pairPosition.marketToPriceRange[_outputMarketId].maxPrice,
-                _FILE,
-                "Output price is out of range"
-            );
-        }
+        _validateExchangeRate(_inputMarketId, _outputMarketId, bidPrice, askPrice, _pairPosition);
 
         // Standardize prices to have 36 - token decimals prices
         bidPrice = _standardizeNumberOfDecimals(
@@ -294,11 +292,11 @@ contract SmartDebtAutoTrader is
         );
         assert(bidPrice != 0 && askPrice != 0);
 
-        // Calculate fee amount and adjust input amount
-        // @todo adjust to use time since report
+        IDolomiteStructs.Decimal memory dynamicFee = _calculateDynamicFee(_inputAmountWei, _pairPosition);
+        
+        // @dev We add the admin fee back because admin gets a % of the base fee
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
-        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
-        uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(feePercentage));
+        uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(dynamicFee));
 
         uint256 outputAmount = adjInputAmount * bidPrice / askPrice;
         Require.that(
@@ -307,7 +305,37 @@ contract SmartDebtAutoTrader is
             "Insufficient output token amount"
         );
 
-        return (adjInputAmount, outputAmount);
+        return outputAmount;
+    }
+
+    function getVolatilityLevel(
+        LatestReport memory _report
+    ) public view returns (VolatilityLevel) {
+        
+        // Calculate bid/ask percentage spread
+        uint256 bidAskSpread = _report.ask - _report.bid;
+        uint256 benchmarkPrice = _report.benchmarkPrice;
+
+        uint256 spreadPercentage = bidAskSpread * 1 ether / benchmarkPrice;
+
+        if (spreadPercentage > .005 ether) {
+            return VolatilityLevel.ARMAGEDDON;
+        } else if (spreadPercentage > .001 ether) {
+            return VolatilityLevel.SLIGHT;
+        } else {
+            return VolatilityLevel.NORMAL;
+        }
+    }
+
+    function _calculateDynamicFee(
+        uint256 _inputAmountWei,
+        PairPosition memory _pairPosition
+    ) internal view returns (IDolomiteStructs.Decimal memory) {
+        // @todo adjust to use time since report
+        // @todo exponential curve for fee depending on time since report. Double the fee over some time period maybe fail after 2 minutes
+        // @todo at 1 minute double, then every 30 seconds thereafter judging off user's observation timestamp
+        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
+        return feePercentage;
     }
 
     function _getFees(
@@ -331,14 +359,34 @@ contract SmartDebtAutoTrader is
         return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
     }
 
-    function _safeInt192ToUint256(
-        int192 _value
-    ) private pure returns (uint256) {
-        Require.that(
-            _value >= 0,
-            _FILE,
-            "Value is negative"
-        );
-        return uint256(uint192(_value));
+    function _validateExchangeRate(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _bidPrice,
+        uint256 _askPrice,
+        PairPosition memory _pairPosition
+    ) internal pure {
+        uint256 exchangeRate;
+        if (_inputMarketId < _outputMarketId) {
+            exchangeRate = _bidPrice * _ONE / _askPrice;
+        } else {
+            exchangeRate = _askPrice * _ONE / _bidPrice;
+        }
+
+        if (_pairPosition.minExchangeRate != 0) {
+            Require.that(
+                exchangeRate >= _pairPosition.minExchangeRate,
+                _FILE,
+                "Exchange rate is out of range"
+            );
+        }
+
+        if (_pairPosition.maxExchangeRate != 0) {
+            Require.that(
+                exchangeRate <= _pairPosition.maxExchangeRate,
+                _FILE,
+                "Exchange rate is out of range"
+            );
+        }
     }
 }

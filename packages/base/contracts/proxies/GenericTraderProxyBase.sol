@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
+import { IInternalAutoTraderBase } from "../smart-debt/interfaces/IInternalAutoTraderBase.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";

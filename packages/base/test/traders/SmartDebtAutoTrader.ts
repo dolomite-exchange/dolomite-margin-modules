@@ -129,7 +129,7 @@ describe('SmartDebtAutoTrader', () => {
   });
 
   describe('#callFunction', () => {
-    it.only('should work normally with one report', async () => {
+    it('should work normally with one report', async () => {
       const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
       const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], true]);
 
@@ -430,18 +430,18 @@ describe('SmartDebtAutoTrader', () => {
   });
 
   describe('#getTradeCost', () => {
-    it('should work normally with smart collateral when prices are equal', async () => {
+    it.only('should work normally with smart collateral when prices are equal', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+      // await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
         core.marketIds.usdt,
-        ZERO_BI,
-        ZERO_BI
+        [ZERO_BI, ZERO_BI],
+        [ZERO_BI, ZERO_BI],
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -451,13 +451,16 @@ describe('SmartDebtAutoTrader', () => {
         [price, price],
         timestamp
       );
+      const usdcResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const usdtResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']);
+      const extraBytes = defaultAbiCoder.encode(
+        ['bytes[]', 'bool'],
+        [[usdcResult.report.fullReport, usdtResult.report.fullReport], true]
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(
-          ['bytes[]', 'bool'],
-          [payloads, true]
-        ),
+        extraBytes,
         { gasPrice: BigNumber.from('1000000000000') }
       );
       const outputAmount = await trader.callStatic.getTradeCost(

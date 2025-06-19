@@ -49,15 +49,14 @@ interface ISmartDebtSettings {
      * 
      * @param pairType The type of pair (NONE, SMART_DEBT, or SMART_COLLATERAL)
      * @param pairBytes The unique identifier for the pair
-     * @param market1MinPrice The minimum price for market 1
-     * @param market1MaxPrice The maximum price for market 1
-     * @param market2MinPrice The minimum price for market 2
-     * @param market2MaxPrice The maximum price for market 2
+     * @param minExchangeRate The minimum exchange rate for the pair
+     * @param maxExchangeRate The maximum exchange rate for the pair
      */
     struct PairPosition {
         PairType pairType;
         bytes32 pairBytes;
-        mapping(uint256 => PriceRange) marketToPriceRange;
+        uint256 minExchangeRate;
+        uint256 maxExchangeRate;
     }
 
     /**
@@ -140,16 +139,16 @@ interface ISmartDebtSettings {
      * @param _pairType The type of pair being set
      * @param _marketId1 The first market ID of the pair
      * @param _marketId2 The second market ID of the pair
-     * @param _market1PriceRange The price range for the first market
-     * @param _market2PriceRange The price range for the second market
+     * @param _minExchangeRate The minimum exchange rate for the pair
+     * @param _maxExchangeRate The maximum exchange rate for the pair
      */
     function userSetPair(
         uint256 _accountNumber,
         PairType _pairType,
         uint256 _marketId1,
         uint256 _marketId2,
-        uint256[] memory _market1PriceRange,
-        uint256[] memory _market2PriceRange
+        uint256 _minExchangeRate,
+        uint256 _maxExchangeRate
     ) external;
 
     /**

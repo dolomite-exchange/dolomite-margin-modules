@@ -40,7 +40,9 @@ interface IChainlinkDataStreamsTrader {
 
     struct LatestReport {
         uint64 timestamp;
-        bytes report;
+        uint256 bid;
+        uint256 ask;
+        uint256 benchmarkPrice;
     }
 
     struct ReportCallback {

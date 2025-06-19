@@ -23,7 +23,7 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
+import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
@@ -53,6 +53,12 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ===================== Constructor ========================
     // ========================================================
 
+    /**
+     * Constructor
+     * 
+     * @param _chainId The chain ID of the chain this contract is deployed on
+     * @param _dolomiteRegistry The address of the Dolomite registry contract
+     */
     constructor(
         uint256 _chainId,
         address _dolomiteRegistry
@@ -61,13 +67,11 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
-    // function initialize() public virtual initializer {
-    // }
-
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo memory /* _accountInfo */,
@@ -81,6 +85,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         _setTradeEnabled(abi.decode(_data, (bool)));
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -96,10 +101,12 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ==================== Admin Functions ===================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function ownerSetGlobalFee(uint256 _globalFee) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGlobalFee(_globalFee);
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function ownerSetAdminFee(uint256 _adminFee) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAdminFee(_adminFee);
     }
@@ -108,22 +115,27 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ==================== View Functions ====================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function createActionsForInternalTrade(
         CreateActionsForInternalTradeParams memory _params
     ) external view virtual returns (IDolomiteStructs.ActionArgs[] memory);
 
+    /// @inheritdoc IInternalAutoTraderBase
     function globalFee() public view returns (uint256) {
         return _getInternalTraderStorage().globalFee;
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function adminFee() public view returns (uint256) {
         return _getInternalTraderStorage().adminFee;
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function tradeEnabled() public view returns (bool) {
         return _getInternalTraderStorage().tradeEnabled;
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function actionsLength(InternalTradeParams[] memory _trades) public pure virtual returns (uint256);
 
     // ========================================================

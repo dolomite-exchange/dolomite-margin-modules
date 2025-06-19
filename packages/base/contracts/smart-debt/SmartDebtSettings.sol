@@ -52,17 +52,14 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
         PairType _pairType,
         uint256 _marketId1,
         uint256 _marketId2,
-        uint256[] memory _market1PriceRange,
-        uint256[] memory _market2PriceRange
+        uint256 _minExchangeRate,
+        uint256 _maxExchangeRate
     ) external {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
 
         // Remove pair
         if (_pairType == PairType.NONE) {
-            smartPairsStorage.userToPair[msg.sender][_accountNumber].pairType = PairType.NONE;
-            smartPairsStorage.userToPair[msg.sender][_accountNumber].pairBytes = bytes32(0);
-            smartPairsStorage.userToPair[msg.sender][_accountNumber].marketToPriceRange[_marketId1] = PriceRange(0, 0);
-            smartPairsStorage.userToPair[msg.sender][_accountNumber].marketToPriceRange[_marketId2] = PriceRange(0, 0);
+            delete smartPairsStorage.userToPair[msg.sender][_accountNumber];
             emit UserToPairSet(msg.sender, _accountNumber, _pairType, bytes32(0));
             return;
         }
@@ -89,8 +86,8 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
         PairPosition storage userPair = smartPairsStorage.userToPair[msg.sender][_accountNumber];
         userPair.pairType = _pairType;
         userPair.pairBytes = pairBytes;
-        userPair.marketToPriceRange[_marketId1] = PriceRange(_market1PriceRange[0], _market1PriceRange[1]);
-        userPair.marketToPriceRange[_marketId2] = PriceRange(_market2PriceRange[0], _market2PriceRange[1]);
+        userPair.minExchangeRate = _minExchangeRate;
+        userPair.maxExchangeRate = _maxExchangeRate;
 
         emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes);
     }

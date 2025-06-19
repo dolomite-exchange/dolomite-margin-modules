@@ -20,7 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { ISmartDebtSettings } from "./ISmartDebtSettings.sol";
-import { IInternalAutoTraderBase } from "../../interfaces/traders/IInternalAutoTraderBase.sol";
+import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
 
 
 /**
@@ -30,4 +30,10 @@ import { IInternalAutoTraderBase } from "../../interfaces/traders/IInternalAutoT
  * Interface for performing internal trades using smart debt
  */
 interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtSettings {
+
+    enum VolatilityLevel {
+        NORMAL,
+        SLIGHT,
+        ARMAGEDDON
+    }
 }

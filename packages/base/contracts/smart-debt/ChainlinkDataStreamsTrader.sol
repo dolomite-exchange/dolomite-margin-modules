@@ -59,10 +59,10 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         VERIFIER_PROXY = IVerifierProxy(_verifierProxy);
     }
 
-    function initialize(
+    function _ChainlinkDataStreamsTrader__initialize(
         address[] memory _tokens,
         bytes32[] memory _feedIds
-    ) public initializer {
+    ) internal {
         Require.that(
             _tokens.length == _feedIds.length,
             _FILE,
@@ -147,11 +147,12 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
                 "Invalid feed ID"
             );
 
-            // @follow-up maybe switch to store just specific fields
             if (reportData.observationsTimestamp > $.tokenToLatestReport[token].timestamp) {
                 $.tokenToLatestReport[token] = LatestReport({
                     timestamp: reportData.observationsTimestamp,
-                    report: verifierResponses[i]
+                    bid: _safeInt192ToUint256(reportData.bid),
+                    ask: _safeInt192ToUint256(reportData.ask),
+                    benchmarkPrice: _safeInt192ToUint256(reportData.benchmarkPrice)
                 });
             }
         }
@@ -183,6 +184,17 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         $.tokenToFeedIdMap[_token] = _feedId;
         $.feedIdToTokenMap[_feedId] = _token;
         // emit TokenInsertedOrUpdated(_token, _feedId);
+    }
+
+    function _safeInt192ToUint256(
+        int192 _value
+    ) internal pure returns (uint256) {
+        Require.that(
+            _value >= 0,
+            _FILE,
+            "Value is negative"
+        );
+        return uint256(uint192(_value));
     }
 
     function _getChainlinkDataStreamsTraderStorage(
