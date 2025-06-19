@@ -31,12 +31,14 @@ import { IVerifierProxy } from "./interfaces/IVerifierProxy.sol";
  * @title   ChainlinkDataStreamsTrader
  * @author  Dolomite
  *
- * 
+ * Abstract contract which includes all logic to receive data streams reports, validate them, and store them
  */
 abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainlinkDataStreamsTrader {
     using SafeERC20 for IERC20;
 
-    // ========================= Constants =========================
+    // ========================================================
+    // ===================== Constants ========================
+    // ========================================================
 
     bytes32 private constant _FILE = "ChainlinkDataStreamsTrader";
     bytes32 private constant _CHAINLINK_DATA_STREAMS_TRADER_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkDataStreamsTraderStorage")) - 1); // solhint-disable-line max-line-length
@@ -47,8 +49,18 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     IERC20 public immutable LINK;
     IVerifierProxy public immutable VERIFIER_PROXY;
 
-    // ========================= Constructor =========================
+    // ========================================================
+    // ===================== Constructor ======================
+    // ========================================================
 
+    /**
+     * Constructor
+     * 
+     * @param _link Address of the LINK token
+     * @param _verifierProxy Address of Chainlink Data Streams Verifier Proxy
+     * @param _chainId Chain ID
+     * @param _dolomiteRegistry Address of the DolomiteRegistry contract
+     */
     constructor(
         address _link,
         address _verifierProxy,
@@ -59,6 +71,12 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         VERIFIER_PROXY = IVerifierProxy(_verifierProxy);
     }
 
+    /**
+     * Sets the token to feedId mappings. Approves LINK to Chainlink reward manager
+     * 
+     * @param _tokens Array of token addresses
+     * @param _feedIds Array of feed IDs corresponding to provided token addresses
+     */
     function _ChainlinkDataStreamsTrader__initialize(
         address[] memory _tokens,
         bytes32[] memory _feedIds
@@ -71,7 +89,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
-            _ownerInsertOrUpdateOracleToken(
+            _ownerInsertOrUpdateTokenFeed(
                 _tokens[i],
                 _feedIds[i]
             );
@@ -81,18 +99,22 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         LINK.approve(rewardManager, type(uint256).max);
     }
 
-    // ========================= Admin Functions =========================
+    // ========================================================
+    // ================== External Functions ==================
+    // ========================================================
 
-    function ownerInsertOrUpdateOracleToken(
+    /// @inheritdoc IChainlinkDataStreamsTrader
+    function ownerInsertOrUpdateTokenFeed(
         address _token,
         bytes32 _feedId
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerInsertOrUpdateOracleToken(
+        _ownerInsertOrUpdateTokenFeed(
             _token,
             _feedId
         );
     }
 
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function ownerApproveLink(
         address _spender,
         uint256 _amount
@@ -100,6 +122,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         LINK.safeApprove(_spender, _amount);
     }
 
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function ownerWithdrawLink(
         address _recipient,
         uint256 _amount
@@ -107,26 +130,40 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         LINK.safeTransfer(_recipient, _amount);
     }
 
-    // ========================= Public Functions =========================
+    // ========================================================
+    // ==================== View Functions ====================
+    // ========================================================
 
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function tokenToFeedId(
         address _token
     ) public view returns (bytes32) {
         return _getChainlinkDataStreamsTraderStorage().tokenToFeedIdMap[_token];
     }
 
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function feedIdToToken(
         bytes32 _feedId
     ) public view returns (address) {
         return _getChainlinkDataStreamsTraderStorage().feedIdToTokenMap[_feedId];
     }
 
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function getLatestReport(
         address _token
     ) public view returns (LatestReport memory) {
         return _getChainlinkDataStreamsTraderStorage().tokenToLatestReport[_token];
     }
 
+    // ========================================================
+    // ================== Internal Functions ==================
+    // ========================================================
+
+    /**
+     * Verifies the data stream reports and stores required information
+     * 
+     * @param _reports Array of Chainlink data stream reports
+     */
     function _postPrices(
         bytes[] memory _reports
     ) internal {
@@ -158,12 +195,17 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         }
     }
 
-    // ======================================================================
-    // ========================= Internal Functions =========================
-    // ======================================================================
-
     /**
      * Standardizes `value` to have `ONE_DOLLAR.decimals` - `tokenDecimals` number of decimals.
+     * 
+     * @dev Dolomite uses 36 - tokenDecimals for prices
+     * @dev Data streams reports are in 18 decimals
+     * 
+     * @param _tokenDecimals The number of decimals of the token
+     * @param _value The value to standardize
+     * @param _valueDecimals The number of decimals of the value
+     * 
+     * @return The standardized value
      */
     function _standardizeNumberOfDecimals(
         uint8 _tokenDecimals,
@@ -176,16 +218,29 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         return _value * priceFactor / valueFactor;
     }
 
-    function _ownerInsertOrUpdateOracleToken(
+    /**
+     * Inserts or updates a token feed
+     * 
+     * @param _token The token address
+     * @param _feedId The feed ID
+     */
+    function _ownerInsertOrUpdateTokenFeed(
         address _token,
         bytes32 _feedId
     ) internal {
         ChainlinkDataStreamsTraderStorage storage $ = _getChainlinkDataStreamsTraderStorage();
         $.tokenToFeedIdMap[_token] = _feedId;
         $.feedIdToTokenMap[_feedId] = _token;
-        // emit TokenInsertedOrUpdated(_token, _feedId);
+        emit TokenFeedInsertedOrUpdated(_token, _feedId);
     }
 
+    /**
+     * Safely converts an int192 to a uint256
+     * 
+     * @param _value The int192 value
+     * 
+     * @return The uint256 value
+     */
     function _safeInt192ToUint256(
         int192 _value
     ) internal pure returns (uint256) {
@@ -197,6 +252,11 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         return uint256(uint192(_value));
     }
 
+    /**
+     * Gets the chainlink data streams trader storage
+     * 
+     * @return $ The chainlink data streams trader storage
+     */
     function _getChainlinkDataStreamsTraderStorage(
     ) internal pure returns (ChainlinkDataStreamsTraderStorage storage $) {
         bytes32 slot = _CHAINLINK_DATA_STREAMS_TRADER_STORAGE_SLOT;
