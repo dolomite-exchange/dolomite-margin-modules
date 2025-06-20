@@ -24,12 +24,11 @@ import { ChainlinkDataStreamsTrader } from "./ChainlinkDataStreamsTrader.sol";
 import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
 import { SmartDebtSettings } from "./SmartDebtSettings.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
 
 
@@ -46,6 +45,7 @@ contract SmartDebtAutoTrader is
     ISmartDebtAutoTrader
 {
     using DecimalLib for uint256;
+    using DecimalLib for IDolomiteStructs.Decimal;
 
     // ========================================================
     // ====================== Constants =======================
@@ -82,6 +82,7 @@ contract SmartDebtAutoTrader is
         OnlyDolomiteMargin(_dolomiteMargin)
     {}
 
+    /// @inheritdoc ISmartDebtAutoTrader
     function initialize(
         address[] memory _tokens,
         bytes32[] memory _feedIds
@@ -93,11 +94,21 @@ contract SmartDebtAutoTrader is
     // ================== External Functions ==================
     // ========================================================
 
+    /**
+     * Callback function for DolomiteMargin call action. Sets tradeEnabled to true or false
+     * and verifies the Chainlink data stream reports
+     * 
+     * @dev Only callable by a trusted internal trader caller
+     * 
+     * @param _sender The address of the sender
+     * @param _accountInfo The account info
+     * @param _data The encoded data
+     */
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
         bytes calldata _data
-    ) public override onlyDolomiteMargin(msg.sender) {
+    ) public override(IInternalAutoTraderBase, InternalAutoTraderBase) onlyDolomiteMargin(msg.sender) {
         (bytes[] memory reports, bool tradeEnabled) = abi.decode(_data, (bytes[], bool));
         super.callFunction(_sender, _accountInfo, abi.encode(tradeEnabled));
 
@@ -106,8 +117,17 @@ contract SmartDebtAutoTrader is
         }
     }
 
-    // maker account is the zap account of the person making the trade
-    // taker account is the user who has smart debt enabled
+    /**
+     * Gets the trade cost for an internal trade. Called within a DolomiteMargin trade action
+     * 
+     * @dev The maker account is zap account of user making the trade, taker account is smart debt user
+     * 
+     * @param _inputMarketId The input market ID
+     * @param _outputMarketId The output market ID
+     * @param _takerAccount The taker account
+     * @param _inputDeltaWei The input delta wei
+     * @param _data The encoded data
+     */
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -117,9 +137,13 @@ contract SmartDebtAutoTrader is
         IDolomiteStructs.Par memory /* newInputPar */,
         IDolomiteStructs.Wei memory _inputDeltaWei,
         bytes memory _data
-    ) external override(IDolomiteAutoTrader, InternalAutoTraderBase) onlyTradeEnabled returns (IDolomiteStructs.AssetAmount memory) {
+    )
+    external
+    override(IInternalAutoTraderBase, InternalAutoTraderBase)
+    onlyTradeEnabled
+    returns (IDolomiteStructs.AssetAmount memory) {
         PairPosition storage pairPosition = _userToPair(_takerAccount.owner, _takerAccount.number);
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
+        bytes32 pairBytes = _getPairBytes(_inputMarketId, _outputMarketId);
         Require.that(
             pairPosition.pairType != PairType.NONE && pairPosition.pairBytes == pairBytes,
             _FILE,
@@ -182,6 +206,7 @@ contract SmartDebtAutoTrader is
     // ==================== View Functions ====================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function createActionsForInternalTrade(
         CreateActionsForInternalTradeParams memory _params
     ) 
@@ -189,10 +214,10 @@ contract SmartDebtAutoTrader is
     view
     override(IInternalAutoTraderBase, InternalAutoTraderBase)
     returns (IDolomiteStructs.ActionArgs[] memory) {
+        uint256 actionCursor;
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             actionsLength(_params.trades)
         );
-        uint256 actionCursor;
 
         // Call function to set tradeEnabled to true and post prices
         actions[actionCursor++] = AccountActionLib.encodeCallAction(
@@ -204,7 +229,7 @@ contract SmartDebtAutoTrader is
         (
             IDolomiteStructs.Decimal memory adminFeePercentage,
             IDolomiteStructs.Decimal memory feePercentage
-        ) = _getFees(_params.inputMarketId, _params.outputMarketId);
+        ) = pairFees(_getPairBytes(_params.inputMarketId, _params.outputMarketId));
 
         uint256 tradeTotal;
         uint256 adminTotal;
@@ -264,6 +289,17 @@ contract SmartDebtAutoTrader is
     // ================== Internal Functions ==================
     // ========================================================
 
+    /**
+     * Calculates the output token amount for a trade
+     * 
+     * @param _inputMarketId The input market ID
+     * @param _outputMarketId The output market ID
+     * @param _pairPosition The pair position
+     * @param _inputAmountWei The input amount in wei
+     * @param _data The encoded data
+     * 
+     * @return The output token amount
+     */
     function _calculateOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -274,25 +310,25 @@ contract SmartDebtAutoTrader is
         address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
         address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
 
-        uint256 bidPrice = getLatestReport(inputToken).bid;
-        uint256 askPrice = getLatestReport(outputToken).ask;
+        LatestReport memory inputReport = getLatestReport(inputToken);
+        LatestReport memory outputReport = getLatestReport(outputToken);
 
-        _validateExchangeRate(_inputMarketId, _outputMarketId, bidPrice, askPrice, _pairPosition);
+        _validateExchangeRate(_inputMarketId, _outputMarketId, inputReport.bid, outputReport.ask, _pairPosition);
 
         // Standardize prices to have 36 - token decimals prices
-        bidPrice = _standardizeNumberOfDecimals(
+        uint256 bidPrice = _standardizeNumberOfDecimals(
             IERC20Metadata(inputToken).decimals(),
-            bidPrice,
+            inputReport.bid,
             _DATA_STREAM_PRICE_DECIMALS
         );
-        askPrice = _standardizeNumberOfDecimals(
+        uint256 askPrice = _standardizeNumberOfDecimals(
             IERC20Metadata(outputToken).decimals(),
-            askPrice,
+            outputReport.ask,
             _DATA_STREAM_PRICE_DECIMALS
         );
         assert(bidPrice != 0 && askPrice != 0);
 
-        IDolomiteStructs.Decimal memory dynamicFee = _calculateDynamicFee(_inputAmountWei, _pairPosition);
+        IDolomiteStructs.Decimal memory dynamicFee = _calculateDynamicFee(inputReport, outputReport, _pairPosition);
         
         // @dev We add the admin fee back because admin gets a % of the base fee
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
@@ -308,57 +344,88 @@ contract SmartDebtAutoTrader is
         return outputAmount;
     }
 
+    /**
+     * Gets the volatility level for a pair based on the bid/ask spread
+     * 
+     * @param _report The latest report
+     * 
+     * @return The volatility level
+     */
     function getVolatilityLevel(
-        LatestReport memory _report
-    ) public view returns (VolatilityLevel) {
-        
-        // Calculate bid/ask percentage spread
-        uint256 bidAskSpread = _report.ask - _report.bid;
-        uint256 benchmarkPrice = _report.benchmarkPrice;
+        LatestReport memory _report,
+        FeeSettings memory _feeSettings
+    ) public pure returns (VolatilityLevel) {
+        uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
 
-        uint256 spreadPercentage = bidAskSpread * 1 ether / benchmarkPrice;
-
-        if (spreadPercentage > .005 ether) {
+        if (spreadPercentage > _feeSettings.armageddonThreshold.value) {
             return VolatilityLevel.ARMAGEDDON;
-        } else if (spreadPercentage > .001 ether) {
+        } else if (spreadPercentage > _feeSettings.slightThreshold.value) {
             return VolatilityLevel.SLIGHT;
         } else {
             return VolatilityLevel.NORMAL;
         }
     }
 
+    /**
+     * Calculates the dynamic fee for a pair based on the volatility level and time since report
+     * 
+     * @dev The volatility level is determined by the bid/ask spread
+     * @dev The fee increases exponentially as time since report increases
+     * 
+     * @param _inputReport The input report
+     * @param _outputReport The output report
+     * @param _pairPosition The pair position
+     * 
+     * @return The dynamic fee
+     */
     function _calculateDynamicFee(
-        uint256 _inputAmountWei,
+        LatestReport memory _inputReport,
+        LatestReport memory _outputReport,
         PairPosition memory _pairPosition
     ) internal view returns (IDolomiteStructs.Decimal memory) {
-        // @todo adjust to use time since report
-        // @todo exponential curve for fee depending on time since report. Double the fee over some time period maybe fail after 2 minutes
-        // @todo at 1 minute double, then every 30 seconds thereafter judging off user's observation timestamp
-        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
-        return feePercentage;
+        // Get the fee settings for the pair
+        FeeSettings memory feeSettings = pairFeeSettings(_pairPosition.pairBytes);
+        (,IDolomiteStructs.Decimal memory baseFee) = pairFees(_pairPosition.pairBytes);
+
+        // Calculate the volatility multiplier
+        VolatilityLevel inputVolatility = getVolatilityLevel(_inputReport, feeSettings);
+        VolatilityLevel outputVolatility = getVolatilityLevel(_outputReport, feeSettings);
+
+        IDolomiteStructs.Decimal memory multiplier;
+        if (inputVolatility == VolatilityLevel.ARMAGEDDON || outputVolatility == VolatilityLevel.ARMAGEDDON) {
+            multiplier = IDolomiteStructs.Decimal({ value: 1.05 ether});
+        } else if (inputVolatility == VolatilityLevel.SLIGHT || outputVolatility == VolatilityLevel.SLIGHT) {
+            multiplier = IDolomiteStructs.Decimal({ value: 1.02 ether});
+        } else {
+            multiplier = IDolomiteStructs.Decimal({ value: 1 ether});
+        }
+
+        // Calculate the time multiplier
+        uint256 timeSinceOldestReport = _inputReport.timestamp < _outputReport.timestamp
+                                            ? block.timestamp - _inputReport.timestamp
+                                            : block.timestamp - _outputReport.timestamp;
+        if (timeSinceOldestReport > feeSettings.feeCliff) {
+            // @todo clean up this code
+            uint256 exponent = (timeSinceOldestReport - feeSettings.feeCliff) / feeSettings.feeCompoundingInterval + 2;
+            for (uint256 i; i < exponent; i++) {
+                multiplier = multiplier.mul(multiplier);
+            }
+        }
+
+        return baseFee.mul(multiplier);
     }
 
-    function _getFees(
-        uint256 _inputMarketId,
-        uint256 _outputMarketId
-    ) internal view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        (uint256 adminFee, uint256 globalFee) = super._getFees();
-        uint256 pairFeeOverride = pairFee(_inputMarketId, _outputMarketId);
-
-        return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
-    }
-
-    function _getFees(
-        bytes32 _pairBytes
-    ) internal view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-
-        (uint256 adminFee, uint256 globalFee) = super._getFees();
-        uint256 pairFeeOverride = smartPairsStorage.pairToFee[_pairBytes];
-
-        return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
-    }
-
+    /**
+     * Validates that the exchange rate being used is within the smart debt user's valid range
+     * 
+     * @dev These prices are straight from the data stream and have 18 decimals
+     * 
+     * @param _inputMarketId The input market ID
+     * @param _outputMarketId The output market ID
+     * @param _bidPrice The bid price
+     * @param _askPrice The ask price
+     * @param _pairPosition The smart debt user's pair position
+     */
     function _validateExchangeRate(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -380,7 +447,6 @@ contract SmartDebtAutoTrader is
                 "Exchange rate is out of range"
             );
         }
-
         if (_pairPosition.maxExchangeRate != 0) {
             Require.that(
                 exchangeRate <= _pairPosition.maxExchangeRate,

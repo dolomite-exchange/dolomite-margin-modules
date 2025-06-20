@@ -86,6 +86,17 @@ library DecimalLib {
         return DolomiteMarginMath.getPartial(target, d.value, _BASE);
     }
 
+    function mul(
+        IDolomiteStructs.Decimal memory d1,
+        IDolomiteStructs.Decimal memory d2
+    )
+        internal
+        pure
+        returns (IDolomiteStructs.Decimal memory)
+    {
+        return IDolomiteStructs.Decimal({ value: mul(d1.value, d2) });
+    }
+
     function div(
         uint256 target,
         IDolomiteStructs.Decimal memory d

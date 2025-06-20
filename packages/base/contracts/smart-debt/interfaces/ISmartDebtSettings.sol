@@ -20,6 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -39,11 +40,6 @@ interface ISmartDebtSettings {
         SMART_COLLATERAL
     }
 
-    struct PriceRange {
-        uint256 minPrice;
-        uint256 maxPrice;
-    }
-
     /**
      * Struct representing a user's position in a pair
      * 
@@ -60,6 +56,25 @@ interface ISmartDebtSettings {
     }
 
     /**
+     * Struct containing dynamic fee settings
+     * 
+     * @param feeOverride The base fee that will be applied. Default value is from InternalAutoTraderBase
+     * @param armageddonThreshold Bid/ask percentage spread for armageddon
+     * @param slightThreshold Bid/ask percentage spread for slight
+     * @param normalThreshold Bid/ask percentage spread for normal
+     * @param feeCliff The report age where the fee will start doubling
+     * @param feeCompoundingInterval The interval at which the fee will double
+     */
+    struct FeeSettings {
+        IDolomiteStructs.Decimal feeOverride;
+        IDolomiteStructs.Decimal armageddonThreshold;
+        IDolomiteStructs.Decimal slightThreshold;
+        IDolomiteStructs.Decimal normalThreshold;
+        uint256 feeCliff;
+        uint256 feeCompoundingInterval;
+    }
+
+    /**
      * Struct containing all storage variables for smart pairs
      * 
      * @param pairToFee Mapping of pair bytes to fee amounts
@@ -68,10 +83,10 @@ interface ISmartDebtSettings {
      * @param userToPair Mapping of user address and account number to pair position
      */
     struct SmartPairsStorage {
-        mapping(bytes32 => uint256) pairToFee;
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
+        mapping(bytes32 => FeeSettings) pairToFeeSettings;
     }
 
     // ========================================================
@@ -127,6 +142,14 @@ interface ISmartDebtSettings {
      * @param pairBytes The unique identifier for the pair
      */
     event UserToPairSet(address indexed user, uint256 indexed accountNumber, PairType pairType, bytes32 pairBytes);
+
+    /**
+     * Event emitted when a pair's fee settings are set
+     * 
+     * @param pairBytes The unique identifier for the pair
+     * @param feeSettings The fee settings
+     */
+    event PairFeeSettingsSet(bytes32 indexed pairBytes, FeeSettings feeSettings);
 
     // ========================================================
     // ================== External Functions ==================
@@ -188,9 +211,13 @@ interface ISmartDebtSettings {
      * 
      * @param _marketId1 The first market ID of the pair
      * @param _marketId2 The second market ID of the pair
-     * @param _fee The fee
+     * @param _feeSettings The fee settings
      */
-    function ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) external;
+    function ownerSetPairFeeSettings(
+        uint256 _marketId1,
+        uint256 _marketId2,
+        FeeSettings memory _feeSettings
+    ) external;
 
     // ========================================================
     // ==================== View Functions ====================
@@ -213,10 +240,18 @@ interface ISmartDebtSettings {
     function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
 
     /**
-     * Gets the fee for a pair
+     * Gets the admin and global fees for a pair
      * 
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param _pairBytes The unique identifier for the pair
      */
-    function pairFee(uint256 _marketId1, uint256 _marketId2) external view returns (uint256);
+    function pairFees(
+        bytes32 _pairBytes
+    ) external view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory);
+
+    /**
+     * Gets the fee settings for a pair
+     * 
+     * @param _pairBytes The unique identifier for the pair
+     */
+    function pairFeeSettings(bytes32 _pairBytes) external view returns (FeeSettings memory);
 }

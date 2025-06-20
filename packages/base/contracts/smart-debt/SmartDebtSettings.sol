@@ -20,7 +20,8 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { ISmartDebtSettings } from "./interfaces/ISmartDebtSettings.sol";
 
@@ -31,7 +32,7 @@ import { ISmartDebtSettings } from "./interfaces/ISmartDebtSettings.sol";
  *
  * Contract for managing smart debt settings
  */
-abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
+abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSettings {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     // ========================================================
@@ -65,7 +66,7 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
         }
 
         // Check valid pair
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
         if (_pairType == PairType.SMART_DEBT) {
             Require.that(
                 smartPairsStorage.smartDebtPairs.contains(pairBytes),
@@ -129,12 +130,12 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
     }
 
     /// @inheritdoc ISmartDebtSettings
-    function ownerSetPairFee(
+    function ownerSetPairFeeSettings(
         uint256 _marketId1,
         uint256 _marketId2,
-        uint256 _fee
+        FeeSettings memory _feeSettings
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPairFee(_marketId1, _marketId2, _fee);
+        _ownerSetPairFeeSettings(_marketId1, _marketId2, _feeSettings);
     }
 
     // ========================================================
@@ -144,34 +145,48 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
     /// @inheritdoc ISmartDebtSettings
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
         return smartPairsStorage.smartDebtPairs.contains(pairBytes);
     }
 
     /// @inheritdoc ISmartDebtSettings
     function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
         return smartPairsStorage.smartCollateralPairs.contains(pairBytes);
     }
 
     /// @inheritdoc ISmartDebtSettings
-    function pairFee(uint256 _marketId1, uint256 _marketId2) public view returns (uint256) {
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
-        return _getSmartPairsStorage().pairToFee[pairBytes];
+    function pairFees(
+        bytes32 _pairBytes
+    ) public view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
+        (IDolomiteStructs.Decimal memory adminFee, IDolomiteStructs.Decimal memory globalFee) = super._getFees();
+
+        SmartPairsStorage storage $ = _getSmartPairsStorage();
+        IDolomiteStructs.Decimal memory pairFeeOverride = $.pairToFeeSettings[_pairBytes].feeOverride;
+        return (adminFee, pairFeeOverride.value == 0 ? globalFee : pairFeeOverride);
+    }
+
+    /// @inheritdoc ISmartDebtSettings
+    function pairFeeSettings(bytes32 _pairBytes) public view returns (FeeSettings memory) {
+        return _getSmartPairsStorage().pairToFeeSettings[_pairBytes];
     }
 
     // ========================================================
     // ================== Internal Functions ==================
     // ========================================================
 
+    /**
+     * Adds a smart debt pair
+     * 
+     * @dev The function will automatically sort the market IDs
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     */
     function _ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (
-            bytes32 pairBytes,
-            uint256 sortedMarketId1,
-            uint256 sortedMarketId2
-        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
 
         bool res = smartPairsStorage.smartDebtPairs.add(pairBytes);
         Require.that(
@@ -179,16 +194,20 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
             _FILE,
             "Pair already exists"
         );
-        emit SmartDebtPairAdded(sortedMarketId1, sortedMarketId2);
+        emit SmartDebtPairAdded(_marketId1, _marketId2);
     }
 
+    /**
+     * Adds a smart collateral pair
+     * 
+     * @dev The function will automatically sort the market IDs
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     */
     function _ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (
-            bytes32 pairBytes,
-            uint256 sortedMarketId1,
-            uint256 sortedMarketId2
-        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
 
         bool wasAdded = smartPairsStorage.smartCollateralPairs.add(pairBytes);
         Require.that(
@@ -196,16 +215,18 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
             _FILE,
             "Pair already exists"
         );
-        emit SmartCollateralPairAdded(sortedMarketId1, sortedMarketId2);
+        emit SmartCollateralPairAdded(_marketId1, _marketId2);
     }
 
+    /**
+     * Removes a smart debt pair
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     */
     function _ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (
-            bytes32 pairBytes,
-            uint256 sortedMarketId1,
-            uint256 sortedMarketId2
-        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
 
         bool wasRemoved = smartPairsStorage.smartDebtPairs.remove(pairBytes);
         Require.that(
@@ -213,16 +234,18 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
             _FILE,
             "Pair does not exist"
         );
-        emit SmartDebtPairRemoved(sortedMarketId1, sortedMarketId2);
+        emit SmartDebtPairRemoved(_marketId1, _marketId2);
     }
 
+    /**
+     * Removes a smart collateral pair
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     */
     function _ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (
-            bytes32 pairBytes,
-            uint256 sortedMarketId1,
-            uint256 sortedMarketId2
-        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
 
         bool res = smartPairsStorage.smartCollateralPairs.remove(pairBytes);
         Require.that(
@@ -230,19 +253,41 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
             _FILE,
             "Pair does not exist"
         );
-        emit SmartCollateralPairRemoved(sortedMarketId1, sortedMarketId2);
+        emit SmartCollateralPairRemoved(_marketId1, _marketId2);
     }
 
-    function _ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) internal {
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
-        _getSmartPairsStorage().pairToFee[pairBytes] = _fee;
-        // emit PairFeeSet(pairBytes, _fee);
+    /**
+     * Sets the fee settings for a pair
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     * @param _feeSettings The fee settings
+     */
+    function _ownerSetPairFeeSettings(
+        uint256 _marketId1,
+        uint256 _marketId2,
+        FeeSettings memory _feeSettings
+    ) internal {
+        bytes32 pairBytes = _getPairBytes(_marketId1, _marketId2);
+        _getSmartPairsStorage().pairToFeeSettings[pairBytes] = _feeSettings;
+        emit PairFeeSettingsSet(pairBytes, _feeSettings);
     }
 
-    function _getPairBytesAndSortMarketIds(
+    /**
+     * Gets the pair hash and sorts the market IDs
+     * 
+     * @dev Pairbytes is stored as the hash of the sorted market IDs
+     * @dev This function will automatically sort the market IDs
+     * 
+     * @param _marketId1 One market id in the pair
+     * @param _marketId2 Other market id in the pair
+     * 
+     * @return pairBytes The hash that corresponds to the specific pair
+     */
+    function _getPairBytes(
         uint256 _marketId1,
         uint256 _marketId2
-    ) internal pure returns (bytes32, uint256, uint256) {
+    ) internal pure returns (bytes32) {
         Require.that(
             _marketId1 != _marketId2,
             _FILE,
@@ -250,16 +295,29 @@ abstract contract SmartDebtSettings is OnlyDolomiteMargin, ISmartDebtSettings {
         );
 
         if (_marketId1 < _marketId2) {
-            return (keccak256(abi.encode(_marketId1, _marketId2)), _marketId1, _marketId2);
+            return (keccak256(abi.encode(_marketId1, _marketId2)));
         } else {
-            return (keccak256(abi.encode(_marketId2, _marketId1)), _marketId2, _marketId1);
+            return (keccak256(abi.encode(_marketId2, _marketId1)));
         }
     }
 
+    /**
+     * Gets the pair position for a user and account number
+     * 
+     * @param _user The user
+     * @param _accountNumber The account number
+     * 
+     * @return The pair position
+     */
     function _userToPair(address _user, uint256 _accountNumber) internal view returns (PairPosition storage) {
         return _getSmartPairsStorage().userToPair[_user][_accountNumber];
     }
 
+    /**
+     * Gets the smart pairs storage
+     * 
+     * @return smartPairsStorage The smart pairs storage
+     */
     function _getSmartPairsStorage() internal pure returns (SmartPairsStorage storage smartPairsStorage) {
         bytes32 slot = _SMART_PAIRS_STORAGE_SLOT;
         // solhint-disable-next-line no-inline-assembly

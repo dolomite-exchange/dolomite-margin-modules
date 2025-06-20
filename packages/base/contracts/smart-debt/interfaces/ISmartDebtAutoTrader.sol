@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { ISmartDebtSettings } from "./ISmartDebtSettings.sol";
 import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
+import { ISmartDebtSettings } from "./ISmartDebtSettings.sol";
 
 
 /**
@@ -31,9 +31,23 @@ import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
  */
 interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtSettings {
 
+    /**
+     * Volatility levels for the smart debt auto trader
+     */
     enum VolatilityLevel {
         NORMAL,
         SLIGHT,
         ARMAGEDDON
     }
+
+    /**
+     * Initializes the smart debt auto trader
+     * 
+     * @param _tokens Array of token addresses
+     * @param _feedIds Array of Chainlink feed IDs corresponding to provided token addresses
+     */
+    function initialize(
+        address[] memory _tokens,
+        bytes32[] memory _feedIds
+    ) external;
 }

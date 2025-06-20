@@ -28,6 +28,12 @@ pragma solidity ^0.8.9;
  */
 interface IChainlinkDataStreamsTrader {
 
+    /**
+     * Emitted when a token feed is inserted or updated
+     * 
+     * @param _token The token address
+     * @param _feedId The feed ID
+     */
     event TokenFeedInsertedOrUpdated(
         address indexed _token,
         bytes32 indexed _feedId

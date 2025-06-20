@@ -32,7 +32,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     // ========================================================
-    // ================== Structs Functions ==================
+    // ======================= Structs ========================
     // ========================================================
 
     /**
@@ -61,8 +61,8 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      */
     struct InternalTraderBaseStorage {
         bool tradeEnabled;
-        uint256 globalFee;
-        uint256 adminFee;
+        IDolomiteStructs.Decimal globalFee;
+        IDolomiteStructs.Decimal adminFee;
     }
 
     /**
@@ -96,9 +96,8 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
     // ================== Events Functions ==================
     // ========================================================
 
-    event GlobalFeeSet(uint256 indexed globalFee);
-    event AdminFeeSet(uint256 indexed adminFee);
-    event PairFeeSet(bytes32 indexed pairBytes, uint256 indexed fee);
+    event GlobalFeeSet(IDolomiteStructs.Decimal indexed globalFee);
+    event AdminFeeSet(IDolomiteStructs.Decimal indexed adminFee);
 
     // ========================================================
     // ================== External Functions ==================
@@ -149,7 +148,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @param _globalFee The global fee
      */
-    function ownerSetGlobalFee(uint256 _globalFee) external;
+    function ownerSetGlobalFee(IDolomiteStructs.Decimal memory _globalFee) external;
 
     /**
      * Sets the admin fee. Only callable by dolomite margin owner
@@ -159,7 +158,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @param _adminFee The admin fee
      */
-    function ownerSetAdminFee(uint256 _adminFee) external;
+    function ownerSetAdminFee(IDolomiteStructs.Decimal memory _adminFee) external;
 
     // ========================================================
     // ==================== View Functions ====================
@@ -190,14 +189,14 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @return The global fee
      */
-    function globalFee() external view returns (uint256);
+    function globalFee() external view returns (IDolomiteStructs.Decimal memory);
 
     /**
      * Returns the admin fee for a trade
      * 
      * @return The admin fee
      */
-    function adminFee() external view returns (uint256);
+    function adminFee() external view returns (IDolomiteStructs.Decimal memory);
 
     /**
      * Returns whether the trade is enabled
