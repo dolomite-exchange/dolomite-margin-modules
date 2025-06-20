@@ -940,6 +940,44 @@ contract DolomiteERC4626 is
         return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
     }
 
+    function _isLossy(address _from, address _to, uint256 _amount) internal view returns (bool) {
+        // Step 1:  we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
+        // Step 2:  we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei
+        //          from doing the second transfer
+        // Step 3:  needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
+            sign: true,
+            value: _amount.to128()
+        });
+
+        // @dev Calculate the first delta wei
+        IDolomiteStructs.Par memory fromPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _from,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(marketId(), fromPar);
+        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(dolomiteMargin.parToWei(marketId(), fromPar.sub(deltaPar)));
+
+        // @dev Calculate the second delta wei
+        IDolomiteStructs.Par memory toPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _to,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(marketId(), toPar);
+        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(marketId(), toPar.add(deltaPar)).sub(toWei);
+
+        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(marketId(), deltaWei1.sub(deltaWei2));
+
+        return finalPar.value != 0;
+    }
+
     function _setMetadataStruct(MetadataStruct memory _metadata) internal {
         MetadataStruct storage metadata = _getMetadataSlot();
         metadata.name = _metadata.name;

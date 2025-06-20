@@ -37,9 +37,9 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Struct for internal trade parameters
-     * 
+     *
      * @dev The maker account is the zap account of the person making the trade
-     * 
+     *
      * @param makerAccount The maker account
      * @param makerAccountId The maker account ID
      * @param amount The amount of the trade
@@ -54,7 +54,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Struct for internal trader base storage
-     * 
+     *
      * @param tradeEnabled Whether a trade is enabled
      * @param globalFee The global fee for a smart debt trade
      * @param adminFee The admin fee for a smart debt trade
@@ -67,9 +67,9 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Struct for creating actions for an internal trade
-     * 
+     *
      * @dev Maker and taker accounts are reversed in AccountActionLib.encodeInternalTradeActionWithWhitelistedTrader
-     * 
+     *
      * @param takerAccountId The taker account ID
      * @param takerAccount The taker account (user making the trade)
      * @param feeAccountId The fee account ID
@@ -105,9 +105,9 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Callback function for DolomiteMargin action. Sets tradeEnabled to true or false
-     * 
+     *
      * @dev Only callable by a trusted internal trader caller
-     * 
+     *
      * @param _sender The address of the sender
      * @param _accountInfo The account info
      * @param _data The encoded data
@@ -120,7 +120,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Gets the trade cost for an internal trade. Called within a DolomiteMargin trade action
-     * 
+     *
      * @param _inputMarketId The input market ID
      * @param _outputMarketId The output market ID
      * @param _makerAccount The maker account
@@ -143,19 +143,19 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Sets the global fee. Only callable by dolomite margin owner
-     * 
+     *
      * @dev 1 ether = 100%
-     * 
+     *
      * @param _globalFee The global fee
      */
     function ownerSetGlobalFee(IDolomiteStructs.Decimal memory _globalFee) external;
 
     /**
      * Sets the admin fee. Only callable by dolomite margin owner
-     * 
+     *
      * @dev 1 ether = 100%
      * @dev Used as a percentage of the global fee
-     * 
+     *
      * @param _adminFee The admin fee
      */
     function ownerSetAdminFee(IDolomiteStructs.Decimal memory _adminFee) external;
@@ -166,7 +166,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Creates the actions for an internal trade
-     * 
+     *
      * @param _params The struct with parameters for the internal trade(s)
      */
     function createActionsForInternalTrade(
@@ -175,39 +175,39 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     /**
      * Returns the number of actions for a trade
-     * 
+     *
      * @dev Calculated as number of trades + constant number of other actions
-     * 
+     *
      * @param _trades List of internal trades
-     * 
+     *
      * @return The number of actions
      */
     function actionsLength(InternalTradeParams[] calldata _trades) external view returns (uint256);
 
     /**
      * Returns the global fee for a trade
-     * 
+     *
      * @return The global fee
      */
     function globalFee() external view returns (IDolomiteStructs.Decimal memory);
 
     /**
      * Returns the admin fee for a trade
-     * 
+     *
      * @return The admin fee
      */
     function adminFee() external view returns (IDolomiteStructs.Decimal memory);
 
     /**
      * Returns the global and admin fees for a trade
-     * 
+     *
      * @return The global and admin fees
      */
     function getFees() external view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory);
 
     /**
      * Returns whether the trade is enabled
-     * 
+     *
      * @return Whether the trade is enabled
      */
     function tradeEnabled() external view returns (bool);

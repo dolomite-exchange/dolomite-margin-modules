@@ -59,25 +59,38 @@ abstract contract HasLiquidatorRegistry {
 
     // ============ Internal Functions ============
 
-    function _validateAssetsForLiquidation(uint256[] memory _marketIds) internal view {
-        for (uint256 i = 0; i < _marketIds.length; i++) {
-            _validateAssetForLiquidation(_marketIds[i]);
+    function _validateAssetForLiquidation(uint256 _marketId) internal view {
+        _validateAssetForLiquidation(_marketId, /* _liquidator = */ address(this), /* _strict */ false);
+    }
+
+    function _validateAssetForLiquidation(uint256 _marketId, address _liquidator, bool _strict) internal view {
+        if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, _liquidator)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, _liquidator),
+            _FILE,
+            "Asset not whitelisted",
+            _marketId
+        );
+
+        if (_strict) {
+            if (LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(_marketId).length != 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(_marketId).length != 0,
+                _FILE,
+                "Asset has nothing whitelisted",
+                _marketId
+            );
         }
     }
 
-    function _validateAssetForLiquidation(uint256 _marketId) internal view {
-        bool whitelistedForLiquidation = LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(
-            _marketId,
-            address(this)
-        );
-
-        if (!whitelistedForLiquidation) {
-            if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, msg.sender)) { /* FOR COVERAGE TESTING */ }
+    function _validateAssetsForLiquidation(uint256[] memory _marketIds) internal view {
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this))) { /* FOR COVERAGE TESTING */ }
             Require.that(
-                LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, msg.sender),
+                LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this)),
                 _FILE,
                 "Asset not whitelisted",
-                _marketId
+                _marketIds[i]
             );
         }
     }

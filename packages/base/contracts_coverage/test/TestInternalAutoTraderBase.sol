@@ -21,24 +21,24 @@
 pragma solidity ^0.8.9;
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { InternalAutoTraderBase } from "../traders/InternalAutoTraderBase.sol";
+import { InternalAutoTraderBase } from "../smart-debt/InternalAutoTraderBase.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 
 /**
- * @title   TestDolomiteAutoTrader
+ * @title   TestInternalAutoTraderBase
  * @author  Dolomite
  *
- * @notice  A test implementation of IDolomiteAutoTrader
+ * @notice  A test implementation of InternalAutoTraderBase
  */
-contract TestDolomiteAutoTrader is InternalAutoTraderBase {
+contract TestInternalAutoTraderBase is InternalAutoTraderBase {
 
     constructor(
         uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) InternalAutoTraderBase(_chainId, _dolomiteRegistry, _dolomiteMargin) {
+    ) InternalAutoTraderBase(_chainId, _dolomiteRegistry) OnlyDolomiteMargin(_dolomiteMargin) {
     }
 
     function getTradeCost(

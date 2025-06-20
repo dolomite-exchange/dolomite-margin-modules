@@ -23,9 +23,9 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 
 
 /**
@@ -53,28 +53,30 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ===================== Constructor ========================
     // ========================================================
 
+    /**
+     * Constructor
+     *
+     * @param _chainId The chain ID of the chain this contract is deployed on
+     * @param _dolomiteRegistry The address of the Dolomite registry contract
+     */
     constructor(
         uint256 _chainId,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+        address _dolomiteRegistry
+    ) {
         CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-    }
-
-    function initialize() public virtual initializer {
     }
 
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo memory /* _accountInfo */,
         bytes memory _data
     ) public virtual onlyDolomiteMargin(msg.sender) {
-        // @follow-up Had to make it public
         if (DOLOMITE_REGISTRY.isTrustedInternalTradeCaller(_sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_REGISTRY.isTrustedInternalTradeCaller(_sender),
@@ -84,6 +86,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         _setTradeEnabled(abi.decode(_data, (bool)));
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -99,11 +102,17 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function ownerSetGlobalFee(uint256 _globalFee) external onlyDolomiteMarginOwner(msg.sender) {
+    /// @inheritdoc IInternalAutoTraderBase
+    function ownerSetGlobalFee(
+        IDolomiteStructs.Decimal memory _globalFee
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGlobalFee(_globalFee);
     }
 
-    function ownerSetAdminFee(uint256 _adminFee) external onlyDolomiteMarginOwner(msg.sender) {
+    /// @inheritdoc IInternalAutoTraderBase
+    function ownerSetAdminFee(
+        IDolomiteStructs.Decimal memory _adminFee
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAdminFee(_adminFee);
     }
 
@@ -111,34 +120,44 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     // ==================== View Functions ====================
     // ========================================================
 
+    /// @inheritdoc IInternalAutoTraderBase
     function createActionsForInternalTrade(
         CreateActionsForInternalTradeParams memory _params
     ) external view virtual returns (IDolomiteStructs.ActionArgs[] memory);
 
-    function globalFee() public view returns (uint256) {
+    /// @inheritdoc IInternalAutoTraderBase
+    function globalFee() public view returns (IDolomiteStructs.Decimal memory) {
         return _getInternalTraderStorage().globalFee;
     }
 
-    function adminFee() public view returns (uint256) {
+    /// @inheritdoc IInternalAutoTraderBase
+    function adminFee() public view returns (IDolomiteStructs.Decimal memory) {
         return _getInternalTraderStorage().adminFee;
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
+    function getFees() public view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
+        return _getFees();
+    }
+
+    /// @inheritdoc IInternalAutoTraderBase
     function tradeEnabled() public view returns (bool) {
         return _getInternalTraderStorage().tradeEnabled;
     }
 
+    /// @inheritdoc IInternalAutoTraderBase
     function actionsLength(InternalTradeParams[] memory _trades) public pure virtual returns (uint256);
 
     // ========================================================
     // ================== Internal Functions ==================
     // ========================================================
 
-    function _ownerSetGlobalFee(uint256 _globalFee) internal {
+    function _ownerSetGlobalFee(IDolomiteStructs.Decimal memory _globalFee) internal {
         _getInternalTraderStorage().globalFee = _globalFee;
         emit GlobalFeeSet(_globalFee);
     }
 
-    function _ownerSetAdminFee(uint256 _adminFee) internal {
+    function _ownerSetAdminFee(IDolomiteStructs.Decimal memory _adminFee) internal {
         _getInternalTraderStorage().adminFee = _adminFee;
         emit AdminFeeSet(_adminFee);
     }
@@ -147,7 +166,8 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         _getInternalTraderStorage().tradeEnabled = _tradeEnabled;
     }
 
-    function _getFees() internal view virtual returns (uint256, uint256) {
+    function _getFees(
+    ) internal view virtual returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         InternalTraderBaseStorage storage internalTraderStorage = _getInternalTraderStorage();
 
         return (internalTraderStorage.adminFee, internalTraderStorage.globalFee);

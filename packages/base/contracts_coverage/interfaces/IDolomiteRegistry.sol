@@ -27,8 +27,8 @@ import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
-import { ISmartDebtAutoTrader } from "./traders/ISmartDebtAutoTrader.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { ISmartDebtAutoTrader } from "../smart-debt/interfaces/ISmartDebtAutoTrader.sol";
 
 
 /**

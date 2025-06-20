@@ -135,6 +135,11 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     }
 
     /// @inheritdoc IInternalAutoTraderBase
+    function getFees() public view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
+        return _getFees();
+    }
+
+    /// @inheritdoc IInternalAutoTraderBase
     function tradeEnabled() public view returns (bool) {
         return _getInternalTraderStorage().tradeEnabled;
     }
