@@ -30,7 +30,7 @@ import { DolomiteNetwork, Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
-import { InterestSetters } from '../ecosystem-utils/interest-setters';
+import { InterestSetters, InterestSettersForOtherChains } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
 import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
@@ -104,6 +104,7 @@ export interface CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
+  daoAddress: string | undefined;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
@@ -139,7 +140,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   genericTraderProxy: IGenericTraderProxyV2;
   genericTraderRouter: IGenericTraderRouter;
   implementationContracts: ImplementationContracts;
-  interestSetters: InterestSetters;
+  interestSetters: InterestSetters<T>;
   libraries: LibraryMaps;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
@@ -172,6 +173,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
+  public readonly daoAddress: string | undefined;
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
@@ -211,7 +213,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly genericTraderProxy: IGenericTraderProxyV2;
   public readonly genericTraderRouter: IGenericTraderRouter;
   public readonly implementationContracts: ImplementationContracts;
-  public readonly interestSetters: InterestSetters;
+  public readonly interestSetters: InterestSetters<T>;
   public readonly libraries: LibraryMaps;
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
@@ -242,6 +244,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
       web3Provider: params.hhUser1.provider!,
       defaultBlockTag: params.config.blockNumber,
     });
+    this.daoAddress = params.daoAddress;
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;

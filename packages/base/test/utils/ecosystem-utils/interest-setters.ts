@@ -3,12 +3,22 @@ import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deplo
 import {
   ILinearStepFunctionInterestSetter,
   ILinearStepFunctionInterestSetter__factory,
+  ModularLinearStepFunctionInterestSetter, ModularLinearStepFunctionInterestSetter__factory,
 } from 'packages/interest-setters/src/types';
 import { IDolomiteInterestSetter, IDolomiteInterestSetter__factory } from '../../../src/types';
-import { DolomiteNetwork } from '../../../src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 
-export interface InterestSetters {
+export type InterestSetters<T extends Network> = T extends Network.Ethereum
+  ? InterestSettersForEthereum
+  : InterestSettersForOtherChains;
+
+export interface InterestSettersForEthereum {
+  alwaysZeroInterestSetter: IDolomiteInterestSetter;
+  modularLinearInterestSetter: ModularLinearStepFunctionInterestSetter;
+}
+
+export interface InterestSettersForOtherChains {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   linearStepFunction4L96U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction4L96U80OInterestSetter: ILinearStepFunctionInterestSetter;
@@ -47,10 +57,23 @@ export interface InterestSetters {
   linearStepFunction50L100U70OInterestSetter: ILinearStepFunctionInterestSetter;
 }
 
-export async function createInterestSetters(
-  network: DolomiteNetwork,
+export async function createInterestSetters<T extends DolomiteNetwork>(
+  network: T,
   signer: SignerWithAddressWithSafety,
-): Promise<InterestSetters> {
+): Promise<InterestSetters<T>> {
+  if (network === Network.Ethereum) {
+    return {
+      alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
+        coreDeployments.AlwaysZeroInterestSetter[network].address,
+        signer,
+      ),
+      modularLinearInterestSetter: ModularLinearStepFunctionInterestSetter__factory.connect(
+        deployments.ModularLinearStepFunctionInterestSetter[network].address,
+        signer,
+      )
+    } as InterestSetters<T>;
+  }
+
   return {
     alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
       coreDeployments.AlwaysZeroInterestSetter[network].address,
@@ -197,5 +220,5 @@ export async function createInterestSetters(
       deployments.LinearStepFunction50L100U70OInterestSetter[network].address,
       signer,
     ),
-  };
+  } as InterestSetters<T>;
 }

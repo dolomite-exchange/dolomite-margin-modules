@@ -1,8 +1,21 @@
 import { parseEther } from 'ethers/lib/utils';
 import { getLinearStepFunctionInterestSetterConstructorParams } from 'packages/interest-setters/src/interest-setters-constructors';
+import { IDolomiteMargin, IDolomiteMarginV2 } from '../../../../../base/src/types';
+import { Network } from '../../../../../base/src/utils/no-deps-constants';
 import { deployContractAndSave } from '../../../utils/deploy-utils';
 
-export async function deployInterestSetters(): Promise<void> {
+export async function deployInterestSetters<T extends Network>(
+  network: T,
+  dolomiteMargin: IDolomiteMargin | IDolomiteMarginV2,
+): Promise<void> {
+  if (network === Network.Ethereum) {
+    await deployContractAndSave(
+      'ModularLinearStepFunctionInterestSetter',
+      [dolomiteMargin.address],
+    );
+    return;
+  }
+
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.70')),

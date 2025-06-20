@@ -664,7 +664,7 @@ contract VeExternalVesterImplementationV1 is
         // Deposit payment tokens into Dolomite, going to DOLOMITE_MARGIN_OWNER()
         PAYMENT_TOKEN.safeTransferFrom(_positionOwner, address(this), paymentAmount);
         _depositIntoDolomite(
-            /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+            /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _token = */ PAYMENT_TOKEN,
             /* _marketId */ PAYMENT_MARKET_ID,

@@ -32,6 +32,8 @@ describe('DolomiteRegistryImplementation', () => {
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
       core.dolomiteAccountRegistry.address,
+      core.gnosisSafeAddress,
+      core.governanceAddress,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -64,6 +66,8 @@ describe('DolomiteRegistryImplementation', () => {
           core.liquidatorAssetRegistry.address,
           core.eventEmitterRegistryProxy.address,
           core.dolomiteAccountRegistry.address,
+          core.gnosisSafeAddress,
+          core.governanceAddress,
         ),
         'Initializable: contract is already initialized',
       );
@@ -452,6 +456,30 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetTreasury(core.hhUser1.address),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetDao', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDao(core.hhUser1.address);
+      await expectEvent(registry, result, 'DaoSet', {
+        _dao: core.hhUser1.address,
+      });
+      expect(await registry.dao()).to.equal(core.hhUser1.address);
+    });
+
+    it('should fail if zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDao(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dao'
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDao(core.hhUser1.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

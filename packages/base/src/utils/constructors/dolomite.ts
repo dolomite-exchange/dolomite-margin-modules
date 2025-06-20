@@ -19,6 +19,53 @@ import { BYTES_EMPTY, Network, DolomiteNetwork, ZERO_BI } from '../no-deps-const
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
+export enum LowerPercentage {
+  _1 = '0.01',
+  _2 = '0.02',
+  _3 = '0.03',
+  _4 = '0.04',
+  _5 = '0.05',
+  _6 = '0.06',
+  _7 = '0.07',
+  _8 = '0.08',
+  _9 = '0.09',
+  _10 = '0.10',
+  _11 = '0.11',
+  _12 = '0.12',
+  _13 = '0.13',
+  _14 = '0.14',
+  _15 = '0.15',
+  _16 = '0.16',
+  _17 = '0.17',
+  _18 = '0.18',
+  _19 = '0.19',
+  _20 = '0.20',
+  _25 = '0.25',
+  _30 = '0.30',
+}
+
+export enum UpperPercentage {
+  _60 = '0.60',
+  _70 = '0.70',
+  _80 = '0.80',
+  _90 = '0.90',
+  _100 = '1.00',
+  _110 = '1.10',
+  _120 = '1.20',
+  _125 = '1.25',
+}
+
+export enum OptimalUtilizationRate {
+  _40 = '0.40',
+  _50 = '0.50',
+  _60 = '0.60',
+  _70 = '0.70',
+  _80 = '0.80',
+  _90 = '0.90',
+  _95 = '0.95',
+  _99 = '0.99',
+}
+
 export enum TargetCollateralization {
   Base = '1.00',
 

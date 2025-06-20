@@ -14,7 +14,7 @@ import {
   LiquidatorProxyV6__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { DOLOMITE_DAO_GNOSIS_SAFE_MAP, GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteErc4626ImplementationConstructorParams,
   getDolomiteMigratorConstructorParams,
@@ -82,6 +82,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const [hhUser1] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
+  const daoAddress = DOLOMITE_DAO_GNOSIS_SAFE_MAP[network];
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[network];
   const gnosisSafeSigner = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
   const transactions: EncodedTransaction[] = [];
@@ -304,7 +305,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
-  await deployInterestSetters();
+  await deployInterestSetters(network, dolomiteMargin);
 
   const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
     dolomiteMargin,
@@ -325,6 +326,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     hhUser1,
     liquidatorAssetRegistry,
     liquidatorProxyV6,
+    daoAddress: daoAddress,
     genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,

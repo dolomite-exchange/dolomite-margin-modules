@@ -1493,11 +1493,10 @@ export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string | undefined> =
   [Network.ArbitrumOne]: undefined,
   [Network.Base]: undefined,
   [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Ethereum]: undefined,
+  [Network.Ethereum]: '0x89576FCE04DD73933f74BbCD4E6F0d9125118542',
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: undefined,
-  // v2 = 0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4; need to fix once they enable the L2 safe module
   [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };

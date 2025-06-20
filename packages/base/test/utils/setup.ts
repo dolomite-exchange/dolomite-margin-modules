@@ -103,7 +103,7 @@ import {
   DFS_GLP_MAP,
   DJ_USDC_V1,
   DJ_USDC_V2,
-  DOLO_MAP,
+  DOLO_MAP, DOLOMITE_DAO_GNOSIS_SAFE_MAP,
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
@@ -873,6 +873,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     );
   }
 
+  const daoAddress = DOLOMITE_DAO_GNOSIS_SAFE_MAP[config.network];
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[config.network];
   const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
 
@@ -1055,6 +1056,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     borrowPositionRouter,
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
+    daoAddress,
     delayedMultiSig,
     deployedVaults,
     depositWithdrawalProxy,
