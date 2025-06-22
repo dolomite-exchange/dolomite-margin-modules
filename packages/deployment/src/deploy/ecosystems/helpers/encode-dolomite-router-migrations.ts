@@ -10,6 +10,8 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/ba
 const INITIALIZED_NETWORKS = [
   Network.ArbitrumOne,
   Network.Berachain,
+  Network.Botanix,
+  Network.Ethereum,
   Network.Mantle,
   Network.PolygonZkEvm,
   Network.XLayer,
@@ -29,10 +31,12 @@ export async function encodeDolomiteRouterMigrations(
   );
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
-  if (!INITIALIZED_NETWORKS.some(n => n === core.config.network) && !(core.depositWithdrawalProxy.g_initialized())) {
-    if (numMarkets.gt(ZERO_BI)) {
-      await core.depositWithdrawalProxy.initializePayableMarket(PAYABLE_TOKEN_MAP[core.config.network].address);
-    } else {
+  if (!(await core.depositWithdrawalProxy.g_initialized())) {
+    const payableTokenAddress = PAYABLE_TOKEN_MAP[core.config.network].address;
+    try {
+      await core.dolomiteMargin.getMarketIdByTokenAddress(payableTokenAddress);
+      await core.depositWithdrawalProxy.initializePayableMarket(payableTokenAddress);
+    } catch (e) {
       console.warn('\tCould not initialize the depositWithdrawalProxy because not payable market has been added yet');
     }
   }

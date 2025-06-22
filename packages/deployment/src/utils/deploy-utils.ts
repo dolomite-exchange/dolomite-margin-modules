@@ -22,8 +22,11 @@ import {
   DolomiteNetwork,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
+  NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -62,7 +65,7 @@ import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
 import { BigNumber, BigNumberish, ethers, Signer } from 'ethers';
-import { keccak256, parseEther } from 'ethers/lib/utils';
+import { keccak256, parseEther, parseUnits } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, network } from 'hardhat';
@@ -178,12 +181,16 @@ export async function verifyContract(
     }, {});
 
     console.log('\tSubmitting verification...');
-    const { message: guid } = await instance.verify(
-      address,
-      JSON.stringify(buildInfo!.input),
-      contractName,
-      `v${buildInfo!.solcLongVersion}`,
-      factory.interface.encodeDeploy(constructorArguments).slice(2),
+    const { message: guid } = await retryWithTimeout(
+      () => instance.verify(
+        address,
+        JSON.stringify(buildInfo!.input),
+        contractName,
+        `v${buildInfo!.solcLongVersion}`,
+        factory.interface.encodeDeploy(constructorArguments).slice(2),
+      ),
+      10_000,
+      3,
     );
 
     console.log('\tSubmitted verification. Checking status...');
@@ -206,6 +213,33 @@ export async function verifyContract(
       return Promise.reject(e);
     }
   }
+}
+
+async function retryWithTimeout<T>(
+  fn: () => Promise<T>,
+  timeoutMs: number,
+  retries: number,
+): Promise<T> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await Promise.race([
+        fn(),
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject('Timeout exceeded'), timeoutMs),
+        ),
+      ]);
+    } catch (err: any) {
+      const message = err.message ?? '';
+      if (attempt === retries) {
+        throw err;
+      }
+      console.warn(`Attempt ${attempt + 1} failed:`, message || err);
+      if (message.includes('does not have bytecode')) {
+        await sleep(timeoutMs);
+      }
+    }
+  }
+  return Promise.reject(new Error('All retries failed'));
 }
 
 type ConstructorArgument = string | BigNumberish | boolean | ConstructorArgument[];
@@ -372,6 +406,7 @@ export async function deployContractAndSave(
     nonce?: number;
     gasLimit?: BigNumberish;
     gasPrice?: BigNumberish;
+    maxPriorityFeePerGas?: BigNumberish;
     type?: number;
     skipArtifactInitialization?: boolean;
     signer?: Signer;
@@ -441,12 +476,21 @@ export async function deployContractAndSave(
     if (nonce === undefined) {
       nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
+
+    const gasPrice = options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice;
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
-      gasPrice: options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice,
+      gasPrice: gasPrice ?? undefined,
       gasLimit: options.gasLimit,
+      maxPriorityFeePerGas: options.maxPriorityFeePerGas,
       type: options.type,
     };
+    if (network.name === NetworkName.Ethereum) {
+      const block = await signer.provider?.getBlock('latest');
+      opts.gasPrice = undefined;
+      opts.maxPriorityFeePerGas = block?.baseFeePerGas?.div(10) ?? parseUnits('0.1', 'gwei');
+      opts.type = 2;
+    }
 
     if (contractName === 'CREATE3Factory') {
       const result = await createContractWithName('CREATE3Factory', args, opts, signer);
@@ -1027,7 +1071,11 @@ async function prettyPrintAndVerifyContract(
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true') && !contract.isVerified) {
-    const sleepTimeSeconds = chainId === parseInt(Network.Ink, 10) ? 10 : 5;
+    const slowNetworks: Record<string, number | undefined> = {
+      [Network.Ethereum]: 15,
+      [Network.Ink]: 10,
+    };
+    const sleepTimeSeconds = slowNetworks[chainId] ?? 5;
     console.log(
       `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
     );

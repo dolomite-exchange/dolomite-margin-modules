@@ -5,7 +5,7 @@ import * as process from 'process';
 
 const HARDHAT_RUN = `node --max-old-space-size=32768 ${process.cwd()}../../../node_modules/.bin/hardhat`;
 
-const ALL_NETWORKS = Object.values(NetworkName).filter(n => n !== NetworkName.Ethereum);
+const ALL_NETWORKS = Object.values(NetworkName);
 // const ALL_NETWORKS = Object.values(NetworkName)
 //   .filter((n) => n >= NetworkName.PolygonZkEvm && n !== NetworkName.Ethereum);
 
