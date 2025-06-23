@@ -64,7 +64,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
+        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
         _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_fromAccountNumber)
         _withdrawFromVaultForDolomiteMarginPausableValidator(_fromAccountNumber)
     {
