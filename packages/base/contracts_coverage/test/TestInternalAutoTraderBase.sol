@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { InternalAutoTraderBase } from "../smart-debt/InternalAutoTraderBase.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 
 /**

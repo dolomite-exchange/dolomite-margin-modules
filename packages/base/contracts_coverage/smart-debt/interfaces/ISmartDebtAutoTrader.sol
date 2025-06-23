@@ -37,7 +37,7 @@ interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtSettings {
     enum VolatilityLevel {
         NORMAL,
         SLIGHT,
-        ARMAGEDDON
+        DEPEG
     }
 
     /**

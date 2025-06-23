@@ -142,7 +142,7 @@ contract SmartDebtAutoTrader is
     override(IInternalAutoTraderBase, InternalAutoTraderBase)
     onlyTradeEnabled
     returns (IDolomiteStructs.AssetAmount memory) {
-        PairPosition storage pairPosition = _userToPair(_takerAccount.owner, _takerAccount.number);
+        PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
         bytes32 pairBytes = _getPairBytes(_inputMarketId, _outputMarketId);
         Require.that(
             pairPosition.pairType != PairType.NONE && pairPosition.pairBytes == pairBytes,
@@ -303,7 +303,7 @@ contract SmartDebtAutoTrader is
     function _calculateOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        PairPosition storage _pairPosition,
+        PairPosition memory _pairPosition,
         uint256 _inputAmountWei,
         bytes memory _data
     ) internal view virtual returns (uint256) {
@@ -357,8 +357,8 @@ contract SmartDebtAutoTrader is
     ) public pure returns (VolatilityLevel) {
         uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
 
-        if (spreadPercentage > _feeSettings.armageddonThreshold.value) {
-            return VolatilityLevel.ARMAGEDDON;
+        if (spreadPercentage > _feeSettings.depegThreshold.value) {
+            return VolatilityLevel.DEPEG;
         } else if (spreadPercentage > _feeSettings.slightThreshold.value) {
             return VolatilityLevel.SLIGHT;
         } else {
@@ -383,36 +383,31 @@ contract SmartDebtAutoTrader is
         LatestReport memory _outputReport,
         PairPosition memory _pairPosition
     ) internal view returns (IDolomiteStructs.Decimal memory) {
-        // Get the fee settings for the pair
         FeeSettings memory feeSettings = pairFeeSettings(_pairPosition.pairBytes);
         (,IDolomiteStructs.Decimal memory baseFee) = pairFees(_pairPosition.pairBytes);
 
-        // Calculate the volatility multiplier
         VolatilityLevel inputVolatility = getVolatilityLevel(_inputReport, feeSettings);
         VolatilityLevel outputVolatility = getVolatilityLevel(_outputReport, feeSettings);
 
-        IDolomiteStructs.Decimal memory multiplier;
-        if (inputVolatility == VolatilityLevel.ARMAGEDDON || outputVolatility == VolatilityLevel.ARMAGEDDON) {
-            multiplier = IDolomiteStructs.Decimal({ value: 1.05 ether});
+        IDolomiteStructs.Decimal memory dynamicFeePercentage;
+        if (inputVolatility == VolatilityLevel.DEPEG || outputVolatility == VolatilityLevel.DEPEG) {
+            dynamicFeePercentage = depegFeePercentage();
         } else if (inputVolatility == VolatilityLevel.SLIGHT || outputVolatility == VolatilityLevel.SLIGHT) {
-            multiplier = IDolomiteStructs.Decimal({ value: 1.02 ether});
+            dynamicFeePercentage = slightFeePercentage();
         } else {
-            multiplier = IDolomiteStructs.Decimal({ value: 1 ether});
+            dynamicFeePercentage = IDolomiteStructs.Decimal({ value: 0 });
         }
 
         // Calculate the time multiplier
         uint256 timeSinceOldestReport = _inputReport.timestamp < _outputReport.timestamp
                                             ? block.timestamp - _inputReport.timestamp
                                             : block.timestamp - _outputReport.timestamp;
-        if (timeSinceOldestReport > feeSettings.feeCliff) {
-            // @todo clean up this code
-            uint256 exponent = (timeSinceOldestReport - feeSettings.feeCliff) / feeSettings.feeCompoundingInterval + 2;
-            for (uint256 i; i < exponent; i++) {
-                multiplier = multiplier.mul(multiplier);
-            }
+        if (timeSinceOldestReport > feeSettings.feeCliffSeconds) {
+            uint256 multiplier = 2 + (timeSinceOldestReport - feeSettings.feeCliffSeconds) / feeSettings.feeCompoundingInterval; // solhint-disable-line max-line-length
+            dynamicFeePercentage = dynamicFeePercentage.mul(multiplier.toDecimal());
         }
 
-        return baseFee.mul(multiplier);
+        return baseFee.mul(dynamicFeePercentage.onePlus());
     }
 
     /**

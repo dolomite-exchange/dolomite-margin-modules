@@ -39,7 +39,7 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = "SmartDebtPairSettings";
+    bytes32 private constant _FILE = "SmartDebtSettings";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _36_DECIMALS_FACTOR = 10 ** 36;
 
@@ -61,7 +61,7 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
         // Remove pair
         if (_pairType == PairType.NONE) {
             delete smartPairsStorage.userToPair[msg.sender][_accountNumber];
-            emit UserToPairSet(msg.sender, _accountNumber, _pairType, bytes32(0));
+            emit UserToPairSet(msg.sender, _accountNumber, _pairType, bytes32(0), 0, 0);
             return;
         }
 
@@ -90,7 +90,7 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
         userPair.minExchangeRate = _minExchangeRate;
         userPair.maxExchangeRate = _maxExchangeRate;
 
-        emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes);
+        emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes, _minExchangeRate, _maxExchangeRate);
     }
 
     // ========================================================
@@ -138,6 +138,20 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
         _ownerSetPairFeeSettings(_marketId1, _marketId2, _feeSettings);
     }
 
+    /// @inheritdoc ISmartDebtSettings
+    function ownerSetDepegFeePercentage(
+        IDolomiteStructs.Decimal memory _depegFeePercentage
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDepegFeePercentage(_depegFeePercentage);
+    }
+
+    /// @inheritdoc ISmartDebtSettings
+    function ownerSetSlightFeePercentage(
+        IDolomiteStructs.Decimal memory _slightFeePercentage
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetSlightFeePercentage(_slightFeePercentage);
+    }
+
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
@@ -170,6 +184,19 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
     /// @inheritdoc ISmartDebtSettings
     function pairFeeSettings(bytes32 _pairBytes) public view returns (FeeSettings memory) {
         return _getSmartPairsStorage().pairToFeeSettings[_pairBytes];
+    }
+
+    /// @inheritdoc ISmartDebtSettings
+    function depegFeePercentage() public view returns (IDolomiteStructs.Decimal memory) {
+        return _getSmartPairsStorage().depegFeePercentage;
+    }
+
+    /// @inheritdoc ISmartDebtSettings
+    function slightFeePercentage() public view returns (IDolomiteStructs.Decimal memory) {
+        return _getSmartPairsStorage().slightFeePercentage;
+    }
+    function userToPair(address _user, uint256 _accountNumber) public view returns (PairPosition memory) {
+        return _getSmartPairsStorage().userToPair[_user][_accountNumber];
     }
 
     // ========================================================
@@ -273,6 +300,16 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
         emit PairFeeSettingsSet(pairBytes, _feeSettings);
     }
 
+    function _ownerSetDepegFeePercentage(IDolomiteStructs.Decimal memory _depegFeePercentage) internal {
+        _getSmartPairsStorage().depegFeePercentage = _depegFeePercentage;
+        emit DepegFeePercentageSet(_depegFeePercentage);
+    }
+
+    function _ownerSetSlightFeePercentage(IDolomiteStructs.Decimal memory _slightFeePercentage) internal {
+        _getSmartPairsStorage().slightFeePercentage = _slightFeePercentage;
+        emit SlightFeePercentageSet(_slightFeePercentage);
+    }
+
     /**
      * Gets the pair hash and sorts the market IDs
      * 
@@ -299,18 +336,6 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
         } else {
             return (keccak256(abi.encode(_marketId2, _marketId1)));
         }
-    }
-
-    /**
-     * Gets the pair position for a user and account number
-     * 
-     * @param _user The user
-     * @param _accountNumber The account number
-     * 
-     * @return The pair position
-     */
-    function _userToPair(address _user, uint256 _accountNumber) internal view returns (PairPosition storage) {
-        return _getSmartPairsStorage().userToPair[_user][_accountNumber];
     }
 
     /**

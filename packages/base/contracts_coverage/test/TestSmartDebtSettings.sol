@@ -24,15 +24,16 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { InternalAutoTraderBase } from "../smart-debt/InternalAutoTraderBase.sol";
+import { SmartDebtSettings } from "../smart-debt/SmartDebtSettings.sol";
 
 
 /**
- * @title   TestInternalAutoTraderBase
+ * @title   TestSmartDebtSettings
  * @author  Dolomite
  *
- * @notice  A test implementation of InternalAutoTraderBase
+ * @notice  A test implementation of SmartDebtSettings
  */
-contract TestInternalAutoTraderBase is InternalAutoTraderBase {
+contract TestSmartDebtSettings is SmartDebtSettings {
 
     constructor(
         uint256 _chainId,

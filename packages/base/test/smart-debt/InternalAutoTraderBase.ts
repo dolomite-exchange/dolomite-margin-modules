@@ -1,13 +1,13 @@
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from "../utils/setup";
-import { Network } from "packages/base/src/utils/no-deps-constants";
-import { CoreProtocolArbitrumOne } from "../utils/core-protocols/core-protocol-arbitrum-one";
-import { createContractWithAbi } from "packages/base/src/utils/dolomite-utils";
-import { impersonate, revertToSnapshotAndCapture, snapshot } from "../utils";
-import { createAndUpgradeDolomiteRegistry } from "../utils/dolomite";
-import { expect } from "chai";
-import { defaultAbiCoder, parseEther } from "ethers/lib/utils";
-import { expectThrow } from "../utils/assertions";
-import { TestInternalAutoTraderBase, TestInternalAutoTraderBase__factory } from "packages/base/src/types";
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
+import { expect } from 'chai';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { expectThrow } from '../utils/assertions';
+import { TestInternalAutoTraderBase, TestInternalAutoTraderBase__factory } from 'packages/base/src/types';
 
 const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 

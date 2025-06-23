@@ -59,18 +59,18 @@ interface ISmartDebtSettings {
      * Struct containing dynamic fee settings
      * 
      * @param feeOverride The base fee that will be applied. Default value is from InternalAutoTraderBase
-     * @param armageddonThreshold Bid/ask percentage spread for armageddon
+     * @param depegThreshold Bid/ask percentage spread for depeg
      * @param slightThreshold Bid/ask percentage spread for slight
      * @param normalThreshold Bid/ask percentage spread for normal
-     * @param feeCliff The report age where the fee will start doubling
+     * @param feeCliffSeconds The report age where the fee will start doubling
      * @param feeCompoundingInterval The interval at which the fee will double
      */
     struct FeeSettings {
         IDolomiteStructs.Decimal feeOverride;
-        IDolomiteStructs.Decimal armageddonThreshold;
+        IDolomiteStructs.Decimal depegThreshold;
         IDolomiteStructs.Decimal slightThreshold;
         IDolomiteStructs.Decimal normalThreshold;
-        uint256 feeCliff;
+        uint256 feeCliffSeconds;
         uint256 feeCompoundingInterval;
     }
 
@@ -87,6 +87,8 @@ interface ISmartDebtSettings {
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
         mapping(bytes32 => FeeSettings) pairToFeeSettings;
+        IDolomiteStructs.Decimal depegFeePercentage;
+        IDolomiteStructs.Decimal slightFeePercentage;
     }
 
     // ========================================================
@@ -140,8 +142,17 @@ interface ISmartDebtSettings {
      * @param accountNumber The account number of the user
      * @param pairType The type of pair being set
      * @param pairBytes The unique identifier for the pair
+     * @param minExchangeRate The minimum exchange rate for the pair
+     * @param maxExchangeRate The maximum exchange rate for the pair
      */
-    event UserToPairSet(address indexed user, uint256 indexed accountNumber, PairType pairType, bytes32 pairBytes);
+    event UserToPairSet(
+        address indexed user,
+        uint256 indexed accountNumber,
+        PairType pairType,
+        bytes32 pairBytes,
+        uint256 minExchangeRate,
+        uint256 maxExchangeRate
+    );
 
     /**
      * Event emitted when a pair's fee settings are set
@@ -150,6 +161,20 @@ interface ISmartDebtSettings {
      * @param feeSettings The fee settings
      */
     event PairFeeSettingsSet(bytes32 indexed pairBytes, FeeSettings feeSettings);
+
+    /**
+     * Event emitted when the depeg fee percentage is set
+     * 
+     * @param depegFeePercentage The depeg fee percentage
+     */
+    event DepegFeePercentageSet(IDolomiteStructs.Decimal depegFeePercentage);
+
+    /**
+     * Event emitted when the slight fee percentage is set
+     * 
+     * @param slightFeePercentage The slight fee percentage
+     */
+    event SlightFeePercentageSet(IDolomiteStructs.Decimal slightFeePercentage);
 
     // ========================================================
     // ================== External Functions ==================
@@ -219,6 +244,20 @@ interface ISmartDebtSettings {
         FeeSettings memory _feeSettings
     ) external;
 
+    /**
+     * Sets the depeg fee percentage
+     * 
+     * @param _depegFeePercentage The depeg fee percentage
+     */
+    function ownerSetDepegFeePercentage(IDolomiteStructs.Decimal memory _depegFeePercentage) external;
+
+    /**
+     * Sets the slight fee percentage
+     * 
+     * @param _slightFeePercentage The slight fee percentage
+     */
+    function ownerSetSlightFeePercentage(IDolomiteStructs.Decimal memory _slightFeePercentage) external;
+
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
@@ -254,4 +293,24 @@ interface ISmartDebtSettings {
      * @param _pairBytes The unique identifier for the pair
      */
     function pairFeeSettings(bytes32 _pairBytes) external view returns (FeeSettings memory);
+
+    /**
+     * Gets the depeg fee percentage
+     */
+    function depegFeePercentage() external view returns (IDolomiteStructs.Decimal memory);
+
+    /**
+     * Gets the slight fee percentage
+     */
+    function slightFeePercentage() external view returns (IDolomiteStructs.Decimal memory);
+
+    /**
+     * Gets the pair position for a user and account number
+     * 
+     * @param _user The user
+     * @param _accountNumber The account number
+     * 
+     * @return The pair position
+     */
+    function userToPair(address _user, uint256 _accountNumber) external view returns (PairPosition memory);
 }

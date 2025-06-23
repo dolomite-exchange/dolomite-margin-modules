@@ -221,7 +221,6 @@ contract DolomiteRegistryImplementation is
         _ownerSetSmartDebtTrader(_smartDebtTrader);
     }
 
-    // @follow-up Check if we need both of these
     function ownerSetTrustedInternalTraders(
         address[] memory _trustedInternalTraders,
         bool[] memory _isTrusted
