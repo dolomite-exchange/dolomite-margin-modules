@@ -450,7 +450,7 @@ export async function deployContractAndSave(
     console.log(
       `\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`,
     );
-    if (!contract.isVerified) {
+    if (!contract.isVerified || process.env.FORCE_VERIFY === 'true') {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
     console.log('');
