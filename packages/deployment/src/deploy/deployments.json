@@ -7168,6 +7168,11 @@
     }
   },
   "OdosAggregatorTrader": {
+    "1": {
+      "address": "0x1Eed28D5e241deD7D067949b1eD8A946eC0188dA",
+      "transaction": "0x947c5703be0281adccd31ab955f002079cb5ecc1b917504f0f9c127b9951d736",
+      "isVerified": true
+    },
     "5000": {
       "address": "0xDcE03d31D9ad29c3785E61D6F85B31AB3239d379",
       "transaction": "0x01d0bbdda5a1aba03d6d397f2ba42e8e30e17937ed1917d776feb4627463a135",

@@ -1,5 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import {
   ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
@@ -27,8 +28,10 @@ import { ethers, network as hardhatNetwork } from 'hardhat';
 import {
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
-  IAdminClaimExcessTokens__factory, IAdminPauseMarket__factory,
+  IAdminClaimExcessTokens__factory,
+  IAdminPauseMarket__factory,
 } from 'packages/admin/src/types';
+import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -72,7 +75,8 @@ import {
 import {
   AAVE_MAP,
   ARB_MAP,
-  BERA_ETH_MAP, BGT_MAP,
+  BERA_ETH_MAP,
+  BGT_MAP,
   BTC_PLACEHOLDER_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -97,13 +101,15 @@ import {
   D_GM_UNI_USD_MAP,
   D_GM_WIF_USD_MAP,
   D_GM_WST_ETH_USD_MAP,
-  D_GMX_MAP, D_IBGT_MAP,
+  D_GMX_MAP,
+  D_IBGT_MAP,
   DAI_MAP,
   DE_USD_MAP,
   DFS_GLP_MAP,
   DJ_USDC_V1,
   DJ_USDC_V2,
-  DOLO_MAP, DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  DOLO_MAP,
+  DOLOMITE_DAO_GNOSIS_SAFE_MAP,
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
@@ -136,6 +142,7 @@ import {
   JONES_MAP,
   LBTC_MAP,
   LINK_MAP,
+  LORENZO_ST_BTC_MAP,
   MAGIC_GLP_MAP,
   MAGIC_MAP,
   MANTLE_REWARD_STATION_MAP,
@@ -166,7 +173,6 @@ import {
   SOL_MAP,
   SOLV_BTC_MAP,
   SR_USD_MAP,
-  LORENZO_ST_BTC_MAP,
   ST_ETH_MAP,
   STONE_BTC_MAP,
   STONE_MAP,
@@ -203,6 +209,7 @@ import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
   DolomiteNetwork,
+  DolomiteNetworkNoEthereum,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
 } from '../../src/utils/no-deps-constants';
@@ -218,12 +225,15 @@ import {
 import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolBase } from './core-protocols/core-protocol-base';
 import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain';
+import { CoreProtocolBotanix } from './core-protocols/core-protocol-botanix';
+import { CoreProtocolEthereum } from './core-protocols/core-protocol-ethereum';
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
+import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
 import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
@@ -243,13 +253,10 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
-import { createUmamiEcosystem } from './ecosystem-utils/umami';
-import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
-import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
-import { IBGT__factory } from 'packages/berachain/src/types';
+import { createUmamiEcosystem } from './ecosystem-utils/umami';
+import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -282,6 +289,14 @@ interface CoreProtocolConfigBerachain extends CoreProtocolConfigParent<Network.B
   readonly berachain: boolean;
 }
 
+interface CoreProtocolConfigBotanix extends CoreProtocolConfigParent<Network.Botanix> {
+  readonly botanix: boolean;
+}
+
+interface CoreProtocolConfigEthereum extends CoreProtocolConfigParent<Network.Ethereum> {
+  readonly ethereum: boolean;
+}
+
 interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mantle> {
   readonly mantle: boolean;
 }
@@ -297,16 +312,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Berachain
-      ? CoreProtocolConfigBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolConfigMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolConfigPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolConfigXLayer
-            : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Botanix
+  ? CoreProtocolConfigBotanix
+  : T extends Network.Ethereum
+  ? CoreProtocolConfigEthereum
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -315,7 +334,7 @@ export async function disableInterestAccrual<T extends DolomiteNetwork>(
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual<T extends DolomiteNetwork>(
+export async function enableInterestAccrual<T extends DolomiteNetworkNoEthereum>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
@@ -670,6 +689,24 @@ function getCoreProtocolConfig<T extends DolomiteNetwork>(network: T, blockNumbe
     } as CoreProtocolConfigBerachain as any;
   }
 
+  if (network === Network.Botanix) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      botanix: true,
+    } as CoreProtocolConfigBotanix as any;
+  }
+
+  if (network === Network.Ethereum) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      ethereum: true,
+    } as CoreProtocolConfigEthereum as any;
+  }
+
   if (network === Network.Mantle) {
     return {
       network,
@@ -721,16 +758,20 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolXLayer
-            : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Botanix
+  ? CoreProtocolBotanix
+  : T extends Network.Ethereum
+  ? CoreProtocolEthereum
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -761,11 +802,13 @@ export function getWethContract<T extends DolomiteNetwork>(
   switch (config.network) {
     case Network.ArbitrumOne:
     case Network.Base:
+    case Network.Ethereum:
     case Network.Ink:
     case Network.PolygonZkEvm:
     case Network.SuperSeed:
       return IWETH__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
     case Network.Berachain:
+    case Network.Botanix:
     case Network.Mantle:
     case Network.XLayer:
       return IERC20__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
@@ -1560,6 +1603,19 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       },
     }) as any;
   }
+  if (config.network === Network.Botanix) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Botanix>;
+    return new CoreProtocolBotanix(coreProtocolParams as CoreProtocolParams<Network.Botanix>, {
+      odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+      paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+    }) as any;
+  }
+  if (config.network === Network.Ethereum) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Ethereum>;
+    return new CoreProtocolEthereum(coreProtocolParams as CoreProtocolParams<Network.Ethereum>, {
+      odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+    }) as any;
+  }
   if (config.network === Network.Mantle) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Mantle>;
     const chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(
@@ -1770,10 +1826,7 @@ function createGenericTraderProxyV2LibLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
-    GenericTraderProxyV2Lib: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GenericTraderProxyV2Lib',
-      config.network,
-    ),
+    GenericTraderProxyV2Lib: getMaxDeploymentVersionAddressByDeploymentKey('GenericTraderProxyV2Lib', config.network),
   };
 }
 

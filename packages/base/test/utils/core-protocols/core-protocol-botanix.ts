@@ -1,25 +1,14 @@
 import { Network } from '../../../src/utils/no-deps-constants';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
-import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
 import { CoreProtocolAbstract, CoreProtocolParams } from './core-protocol-abstract';
 
-export interface CoreProtocolParamsBase {
-  odosEcosystem: OdosEcosystem;
-  paraswapEcosystem: ParaswapEcosystem;
+export interface CoreProtocolParamsBotanix {
 }
 
-export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
+export class CoreProtocolBotanix extends CoreProtocolAbstract<Network.Botanix> {
+  public readonly network: Network.Botanix = Network.Botanix;
 
-  public readonly paraswapEcosystem: ParaswapEcosystem;
-  public readonly odosEcosystem: OdosEcosystem;
-  public readonly network: Network.Base = Network.Base;
-
-  constructor(
-    params: CoreProtocolParams<Network.Base>,
-    baseParams: CoreProtocolParamsBase,
-  ) {
+  constructor(params: CoreProtocolParams<Network.Botanix>, botanixParams: CoreProtocolParamsBotanix) {
     super(params);
-    this.odosEcosystem = baseParams.odosEcosystem;
-    this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
