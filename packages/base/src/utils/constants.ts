@@ -1515,7 +1515,7 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Base]: '0xa75c21c5be284122a87a37a76cc6c4dd3e55a1d4',
   [Network.Berachain]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.Botanix]: '0xD0Ead284Aa5136E95CEc0C1b0bFC928c17D66dF7', // Cannot fix this
+  [Network.Botanix]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ethereum]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ink]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Mantle]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
