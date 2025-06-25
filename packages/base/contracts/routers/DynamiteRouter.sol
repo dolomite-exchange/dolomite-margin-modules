@@ -23,12 +23,13 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IDynamiteRouter } from "./interfaces/IDynamiteRouter.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDynamiteRouter } from "./interfaces/IDynamiteRouter.sol";
+
 
 /**
  * @title   DynamiteRouter
@@ -125,8 +126,8 @@ contract DynamiteRouter is IDynamiteRouter {
                 owner: msg.sender,
                 number: _accountNumber
             });
-            // @follow-up May want to fuzz test this. Could have a rounding issue
             uint256 repayAmount = DOLOMITE_MARGIN.getAccountWei(accountInfo, _repayMarketId).value;
+
             repayToken.safeTransferFrom(msg.sender, address(this), repayAmount);
             repayToken.approve(address(DOLOMITE_MARGIN), repayAmount);
         } else {
@@ -171,6 +172,13 @@ contract DynamiteRouter is IDynamiteRouter {
         DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
+    /**
+     * If the event flag is borrow, check the account number and emit event
+     * 
+     * @param  _accountOwner        The owner of the account
+     * @param  _toAccountNumber     The account number to emit the event for
+     * @param  _eventFlag           The event flag to emit the event for
+     */
     function _emitEventIfNecessary(
         address _accountOwner,
         uint256 _toAccountNumber,

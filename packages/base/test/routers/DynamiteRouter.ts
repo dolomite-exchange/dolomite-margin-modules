@@ -153,7 +153,13 @@ describe('DynamiteRouter', () => {
         daiAmountWei,
         EventFlag.Borrow
       );
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(daiAmountWei));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        ZERO_BI.sub(daiAmountWei)
+      );
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, wethAmountWei);
 
       await core.tokens.dai.connect(core.hhUser1).approve(router.address, daiAmountWei);
