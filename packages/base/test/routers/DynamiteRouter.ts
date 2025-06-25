@@ -44,7 +44,7 @@ describe('DynamiteRouter', () => {
     router = await createContractWithAbi<DynamiteRouter>(
       DynamiteRouter__factory.abi,
       DynamiteRouter__factory.bytecode,
-      [core.dolomiteMargin.address],
+      [core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(router.address, true);
 
@@ -63,7 +63,7 @@ describe('DynamiteRouter', () => {
 
   describe('#depositAndBorrowWei', () => {
     it('should work normally', async () => {
-      await setupWETHBalance(core, core.hhUser1, wethAmountWei, core.dolomiteMargin);
+      await setupWETHBalance(core, core.hhUser1, wethAmountWei, router);
       const res = await router.depositAndBorrowWei(
         borrowAccountNumber,
         core.marketIds.weth,
@@ -72,9 +72,9 @@ describe('DynamiteRouter', () => {
         daiAmountWei,
         EventFlag.Borrow
       );
-      await expectEvent(router, res, 'BorrowPositionOpen', {
-        owner: core.hhUser1.address,
-        number: borrowAccountNumber.toString(),
+      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
+        borrower: core.hhUser1.address,
+        borrowAccountNumber: borrowAccountNumber.toString(),
       });
 
       await expectProtocolBalance(
@@ -90,7 +90,7 @@ describe('DynamiteRouter', () => {
     });
 
     it('should not emit event if event flag is none', async () => {
-      await setupWETHBalance(core, core.hhUser1, wethAmountWei, core.dolomiteMargin);
+      await setupWETHBalance(core, core.hhUser1, wethAmountWei, router);
       const res = await router.depositAndBorrowWei(
         borrowAccountNumber,
         core.marketIds.weth,
@@ -99,13 +99,13 @@ describe('DynamiteRouter', () => {
         daiAmountWei,
         EventFlag.None
       );
-      expect(res).to.not.emit(router, 'BorrowPositionOpen');
+      await expect(res).to.not.emit(core.eventEmitterRegistry, 'BorrowPositionOpen');
     });
   });
 
   describe('#repayAndWithdrawWei', () => {
     it('should work normally', async () => {
-      await setupWETHBalance(core, core.hhUser1, wethAmountWei, core.dolomiteMargin);
+      await setupWETHBalance(core, core.hhUser1, wethAmountWei, router);
       await router.depositAndBorrowWei(
         borrowAccountNumber,
         core.marketIds.weth,
@@ -123,7 +123,7 @@ describe('DynamiteRouter', () => {
       );
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, wethAmountWei);
 
-      await core.tokens.dai.connect(core.hhUser1).approve(core.dolomiteMargin.address, daiAmountWei);
+      await core.tokens.dai.connect(core.hhUser1).approve(router.address, daiAmountWei);
       await router.repayAndWithdrawWei(
         borrowAccountNumber,
         core.marketIds.dai,
@@ -142,31 +142,31 @@ describe('DynamiteRouter', () => {
       await expectWalletBalance(core.hhUser1, core.tokens.weth, wethAmountWei.div(2));
       await expectWalletBalance(core.hhUser1, core.tokens.dai, daiAmountWei.div(2));
     });
-  });
 
-  it('should work normally with max values', async () => {
-    await setupWETHBalance(core, core.hhUser1, wethAmountWei, core.dolomiteMargin);
-    await router.depositAndBorrowWei(
-      borrowAccountNumber,
-      core.marketIds.weth,
-      core.marketIds.dai,
-      wethAmountWei,
-      daiAmountWei,
-      EventFlag.Borrow
-    );
-    await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(daiAmountWei));
-    await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, wethAmountWei);
+    it('should work normally with max values', async () => {
+      await setupWETHBalance(core, core.hhUser1, wethAmountWei, router);
+      await router.depositAndBorrowWei(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        core.marketIds.dai,
+        wethAmountWei,
+        daiAmountWei,
+        EventFlag.Borrow
+      );
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(daiAmountWei));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, wethAmountWei);
 
-    await core.tokens.dai.connect(core.hhUser1).approve(core.dolomiteMargin.address, daiAmountWei);
-    await router.repayAndWithdrawWei(
-      borrowAccountNumber,
-      core.marketIds.dai,
-      core.marketIds.weth,
-      MAX_UINT_256_BI,
-      MAX_UINT_256_BI
-    );
-    await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
-    await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
-    await expectWalletBalance(core.hhUser1, core.tokens.weth, wethAmountWei);
+      await core.tokens.dai.connect(core.hhUser1).approve(router.address, daiAmountWei);
+      await router.repayAndWithdrawWei(
+        borrowAccountNumber,
+        core.marketIds.dai,
+        core.marketIds.weth,
+        MAX_UINT_256_BI,
+        MAX_UINT_256_BI
+      );
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, core.tokens.weth, wethAmountWei);
+    });
   });
 });

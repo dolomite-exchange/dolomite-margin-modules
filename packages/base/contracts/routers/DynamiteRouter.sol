@@ -20,11 +20,15 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IDynamiteRouter } from "./interfaces/IDynamiteRouter.sol";
-
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 /**
  * @title   DynamiteRouter
@@ -33,6 +37,7 @@ import { IDynamiteRouter } from "./interfaces/IDynamiteRouter.sol";
  * @notice  Contract for depositing/borrowing and repaying/withdrawing in one transaction
  */
 contract DynamiteRouter is IDynamiteRouter {
+    using SafeERC20 for IERC20;
 
     // ================================================
     // ================== Constants ===================
@@ -41,14 +46,17 @@ contract DynamiteRouter is IDynamiteRouter {
     bytes32 private constant _FILE = "DynamiteRouter";
 
     IDolomiteMargin public immutable DOLOMITE_MARGIN;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+
     uint256 public constant DEFAULT_ACCOUNT_ID = 0;
 
     // ================================================
     // ================== Constructor =================
     // ================================================
 
-    constructor(address _dolomiteMargin) {
+    constructor(address _dolomiteMargin, address _dolomiteRegistry) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ================================================
@@ -64,9 +72,10 @@ contract DynamiteRouter is IDynamiteRouter {
         uint256 _debtAmountWei,
         EventFlag _eventFlag
     ) external {
-        if (_eventFlag == EventFlag.Borrow) {
-             emit BorrowPositionOpen(msg.sender, _accountNumber);
-        }
+        IERC20 collateralToken = IERC20(DOLOMITE_MARGIN.getMarketTokenAddress(_collateralMarketId));
+        collateralToken.safeTransferFrom(msg.sender, address(this), _collateralAmountWei);
+
+        _emitEventIfNecessary(msg.sender, _accountNumber, _eventFlag);
 
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
         accounts[DEFAULT_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
@@ -84,7 +93,7 @@ contract DynamiteRouter is IDynamiteRouter {
                 ref: IDolomiteStructs.AssetReference.Delta,
                 value: _collateralAmountWei
             }),
-            msg.sender
+            address(this)
         );
         actions[1] = AccountActionLib.encodeWithdrawalAction(
             DEFAULT_ACCOUNT_ID,
@@ -98,6 +107,7 @@ contract DynamiteRouter is IDynamiteRouter {
             msg.sender
         );
 
+        collateralToken.approve(address(DOLOMITE_MARGIN), _collateralAmountWei);
         DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
@@ -109,6 +119,21 @@ contract DynamiteRouter is IDynamiteRouter {
         uint256 _repayAmountWei,
         uint256 _withdrawAmountWei
     ) external {
+        IERC20 repayToken = IERC20(DOLOMITE_MARGIN.getMarketTokenAddress(_repayMarketId));
+        if (_repayAmountWei == type(uint256).max) {
+            IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
+                owner: msg.sender,
+                number: _accountNumber
+            });
+            // @follow-up May want to fuzz test this. Could have a rounding issue
+            uint256 repayAmount = DOLOMITE_MARGIN.getAccountWei(accountInfo, _repayMarketId).value;
+            repayToken.safeTransferFrom(msg.sender, address(this), repayAmount);
+            repayToken.approve(address(DOLOMITE_MARGIN), repayAmount);
+        } else {
+            repayToken.safeTransferFrom(msg.sender, address(this), _repayAmountWei);
+            repayToken.approve(address(DOLOMITE_MARGIN), _repayAmountWei);
+        }
+
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
         accounts[DEFAULT_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: msg.sender,
@@ -127,7 +152,7 @@ contract DynamiteRouter is IDynamiteRouter {
                         : IDolomiteStructs.AssetReference.Delta,
                 value: _repayAmountWei == type(uint256).max ? 0 : _repayAmountWei
             }),
-            msg.sender
+            address(this)
         );
         actions[1] = AccountActionLib.encodeWithdrawalAction(
             DEFAULT_ACCOUNT_ID,
@@ -144,5 +169,20 @@ contract DynamiteRouter is IDynamiteRouter {
         );
 
         DOLOMITE_MARGIN.operate(accounts, actions);
+    }
+
+    function _emitEventIfNecessary(
+        address _accountOwner,
+        uint256 _toAccountNumber,
+        EventFlag _eventFlag
+    ) internal {
+        if (_eventFlag == EventFlag.Borrow) {
+            Require.that(
+                _toAccountNumber >= 100,
+                _FILE,
+                "Invalid toAccountNumber"
+            );
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_accountOwner, _toAccountNumber);
+        }
     }
 }
