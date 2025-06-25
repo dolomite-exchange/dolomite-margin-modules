@@ -82,6 +82,7 @@ import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
   CM_ETH_MAP,
+  CRV_MAP,
   D_ARB_MAP,
   D_GLV_BTC_MAP,
   D_GLV_ETH_MAP,
@@ -181,6 +182,7 @@ import {
   UNI_MAP,
   USD0_MAP,
   USD0PP_MAP,
+  USD1_MAP,
   USDA_MAP,
   USDC_MAP,
   USDE_MAP,
@@ -1613,7 +1615,48 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   if (config.network === Network.Ethereum) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Ethereum>;
     return new CoreProtocolEthereum(coreProtocolParams as CoreProtocolParams<Network.Ethereum>, {
+      marketIds: {
+        ...coreProtocolParams.marketIds,
+        aave: AAVE_MAP[typedConfig.network].marketId,
+        crv: CRV_MAP[typedConfig.network].marketId,
+        link: LINK_MAP[typedConfig.network]!.marketId,
+        rUsd: R_USD_MAP[typedConfig.network]!.marketId,
+        sUsde: S_USDE_MAP[typedConfig.network].marketId,
+        srUsd: SR_USD_MAP[typedConfig.network].marketId,
+        usd1: USD1_MAP[typedConfig.network].marketId,
+        usdc: USDC_MAP[typedConfig.network].marketId,
+        usdt: USDT_MAP[typedConfig.network].marketId,
+        wbtc: WBTC_MAP[typedConfig.network].marketId,
+        weEth: WE_ETH_MAP[typedConfig.network].marketId,
+        wstEth: WST_ETH_MAP[typedConfig.network].marketId,
+        stablecoins: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          USD1_MAP[typedConfig.network].marketId,
+          USDT_MAP[typedConfig.network].marketId,
+        ],
+      },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+      tokens: {
+        ...coreProtocolParams.tokens,
+        aave: IERC20__factory.connect(AAVE_MAP[typedConfig.network].address, hhUser1),
+        crv: IERC20__factory.connect(CRV_MAP[typedConfig.network].address, hhUser1),
+        link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
+        rUsd: IERC20__factory.connect(R_USD_MAP[typedConfig.network]!.address, hhUser1),
+        sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
+        srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
+        usd1: IERC20__factory.connect(USD1_MAP[typedConfig.network].address, hhUser1),
+        usdc: IERC20__factory.connect(USDC_MAP[typedConfig.network].address, hhUser1),
+        usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+        weth: coreProtocolParams.tokens.weth as any,
+        weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
+        wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
+        stablecoins: [
+          ...coreProtocolParams.tokens.stablecoins,
+          IERC20__factory.connect(USD1_MAP[typedConfig.network].address, hhUser1),
+          IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        ],
+      },
     }) as any;
   }
   if (config.network === Network.Mantle) {

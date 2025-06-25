@@ -1,5 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
+import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
@@ -30,10 +31,9 @@ import { DolomiteNetwork, Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
-import { InterestSetters, InterestSettersForOtherChains } from '../ecosystem-utils/interest-setters';
+import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -51,38 +51,46 @@ export interface ImplementationContracts {
 export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-    ? IWETH
-    : T extends Network.Berachain
-      ? IERC20
-      : T extends Network.Ink
-        ? IWETH
-        : T extends Network.Mantle
-          ? IERC20
-          : T extends Network.PolygonZkEvm
-            ? IWETH
-            : T extends Network.SuperSeed
-              ? IWETH
-              : T extends Network.XLayer
-                ? IERC20
-                : never;
+  ? IWETH
+  : T extends Network.Berachain
+  ? IERC20
+  : T extends Network.Botanix
+  ? IERC20
+  : T extends Network.Ethereum
+  ? IWETH
+  : T extends Network.Ink
+  ? IWETH
+  : T extends Network.Mantle
+  ? IERC20
+  : T extends Network.PolygonZkEvm
+  ? IWETH
+  : T extends Network.SuperSeed
+  ? IWETH
+  : T extends Network.XLayer
+  ? IERC20
+  : never;
 
 export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-    ? DolomiteERC4626WithPayable
-    : T extends Network.Berachain
-      ? DolomiteERC4626
-      : T extends Network.Ink
-        ? DolomiteERC4626WithPayable
-        : T extends Network.Mantle
-          ? DolomiteERC4626
-          : T extends Network.PolygonZkEvm
-            ? DolomiteERC4626WithPayable
-            : T extends Network.SuperSeed
-              ? DolomiteERC4626WithPayable
-              : T extends Network.XLayer
-                ? DolomiteERC4626
-                : never;
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.Botanix
+  ? DolomiteERC4626
+  : T extends Network.Ethereum
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
+  : never;
 
 export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;

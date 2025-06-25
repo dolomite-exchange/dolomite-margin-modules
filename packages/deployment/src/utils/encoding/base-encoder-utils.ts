@@ -164,8 +164,8 @@ export async function isValidAmountForCapForToken(token: IERC20, amount: BigNumb
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
   return (
-    // should not be truncated to 0 AND (be less than 100M units or 5% of the total supply)
-    realAmount.div(scale).gt(ONE_BI) && (realAmount.div(scale).lte(100_000_000) || realAmount.lte(totalSupply.div(20)))
+    // should not be truncated to 0 AND (be less than 100M units or 20% of the total supply)
+    realAmount.div(scale).gt(ONE_BI) && (realAmount.div(scale).lte(100_000_000) || realAmount.lte(totalSupply.div(5)))
   );
 }
 
