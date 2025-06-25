@@ -18,11 +18,6 @@ import {
   checkAccountRiskOverrideCategorySettings,
 } from '../../../../utils/invariant-utils';
 
-enum InterestSetter {
-  AlwaysZero,
-  Modular,
-}
-
 /**
  * This script encodes the following transactions:
  * - Sets up e-mode for initial markets
