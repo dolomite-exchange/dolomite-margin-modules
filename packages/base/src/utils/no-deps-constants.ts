@@ -29,6 +29,8 @@ export type DolomiteV2Network =
 
 export type DolomiteNetwork = Network.ArbitrumOne | DolomiteV2Network;
 
+export type DolomiteNetworkNoEthereum = Exclude<DolomiteNetwork, Network.Ethereum>;
+
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',

@@ -90,8 +90,8 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
     ] as BaseContract[]
   )
     .concat(options.additionalConverters ?? [])
-    .filter((c) => !options.sliceConverters?.some(s => s.address === c.address))
-    .map(c => c.address);
+    .filter((c) => !options.sliceConverters?.some((s) => s.address === c.address))
+    .map((c) => c.address);
 
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(

@@ -53,6 +53,7 @@ export enum UpperPercentage {
   _110 = '1.10',
   _120 = '1.20',
   _125 = '1.25',
+  _300 = '3.00',
 }
 
 export enum OptimalUtilizationRate {
@@ -62,6 +63,7 @@ export enum OptimalUtilizationRate {
   _70 = '0.70',
   _80 = '0.80',
   _90 = '0.90',
+  _92 = '0.92',
   _95 = '0.95',
   _99 = '0.99',
 }
@@ -103,6 +105,11 @@ export enum TargetCollateralization {
    * 133% collateralization || 75.00% LTV
    */
   _133 = '1.333333333333333333',
+
+  /**
+   * 136% collateralization || 73.00% LTV
+   */
+  _136 = '1.369863013698630136',
 
   /**
    * 142.85% collateralization || 70.00% LTV
