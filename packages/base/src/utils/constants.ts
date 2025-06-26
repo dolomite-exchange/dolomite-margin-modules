@@ -778,7 +778,7 @@ export const R_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMa
   },
   [Network.Ethereum]: {
     address: '0x09D4214C03D01F49544C0448DBE3A27f768F2b34',
-    marketId: -1,
+    marketId: 11,
   },
 };
 
@@ -860,7 +860,7 @@ export const SR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithM
   },
   [Network.Ethereum]: {
     address: '0x738d1115B90efa71AE468F1287fc864775e23a31',
-    marketId: 6,
+    marketId: 10,
   },
 };
 
@@ -2681,13 +2681,12 @@ export const CHAINSIGHT_KEYS_MAP: Record<DolomiteNetwork, Record<string, Chainsi
 };
 
 export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
-  Network.ArbitrumOne | Network.Berachain | Network.Mantle,
+  Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle,
   Record<string, ChronicleScribe>
 > = {
   [Network.ArbitrumOne]: {
     [W_USDM_MAP[Network.ArbitrumOne].address]: {
       scribeAddress: '0xdC6720c996Fad27256c7fd6E0a271e2A4687eF18',
-      tokenPairAddress: ADDRESS_ZERO,
     },
   },
   [Network.Berachain]: {
@@ -2763,6 +2762,14 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
   },
+  [Network.Ethereum]: {
+    [R_USD_MAP[Network.Ethereum].address]: {
+      scribeAddress: '0xE7A6E74d1654B98E9d3DDb003B645E0d7c82C935',
+    },
+    [SR_USD_MAP[Network.Ethereum].address]: {
+      scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
+    },
+  },
   [Network.Mantle]: {
     [CM_ETH_MAP[Network.Mantle].address]: {
       scribeAddress: '0xB87c54d5a087c0a1F63Aa6D1C5483E2d9a5023dE',
@@ -2778,31 +2785,24 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
     [USDC_MAP[Network.Mantle].address]: {
       scribeAddress: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [USDE_MAP[Network.Mantle].address]: {
       scribeAddress: '0x8744f55149A9923a6eD525A9FEdC270FBC2E1e12',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [USDT_MAP[Network.Mantle].address]: {
       scribeAddress: '0x5400f69e5A2E1712285889bB604Ed8ad44045501',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [USDY_MAP[Network.Mantle].address]: {
       scribeAddress: '0xB1141B90095B6E1aB8a5769868283cFc335047f1',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [WBTC_MAP[Network.Mantle].address]: {
       scribeAddress: '0x36b648060bc490DefC205950d3930bF971a6951B',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [WETH_MAP[Network.Mantle].address]: {
       scribeAddress: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
-      tokenPairAddress: ADDRESS_ZERO,
     },
     [WMNT_MAP[Network.Mantle].address]: {
       scribeAddress: '0xDda786905E8aFaFA0C0D50414F0f8A05a6a7901d',
-      tokenPairAddress: ADDRESS_ZERO,
     },
   },
 };

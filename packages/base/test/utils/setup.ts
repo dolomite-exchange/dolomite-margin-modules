@@ -1615,6 +1615,10 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   if (config.network === Network.Ethereum) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Ethereum>;
     return new CoreProtocolEthereum(coreProtocolParams as CoreProtocolParams<Network.Ethereum>, {
+      chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
+        ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
+        hhUser1,
+      ),
       marketIds: {
         ...coreProtocolParams.marketIds,
         aave: AAVE_MAP[typedConfig.network].marketId,
