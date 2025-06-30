@@ -65,7 +65,7 @@ import {
   PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
   PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
-  PENDLE_ROUTER_V3_MAP, PENDLE_SY_CM_ETH_FEB_2025_TOKEN_MAP,
+  PENDLE_ROUTER_V4_MAP, PENDLE_SY_CM_ETH_FEB_2025_TOKEN_MAP,
   PENDLE_SY_EZ_ETH_TOKEN_MAP,
   PENDLE_SY_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
@@ -244,7 +244,7 @@ export async function createPendleEcosystemMantle(
 
   return {
     pendleRouter: getContract(PENDLE_ROUTER_MAP[network] as string, IPendleRouter__factory.connect, signer),
-    pendleRouterV3: getContract(PENDLE_ROUTER_V3_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
+    pendleRouterV3: getContract(PENDLE_ROUTER_V4_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
     cmEthFeb2025: {
       factory: getContract(
         Deployments.PendlePtcmETHFeb2025IsolationModeVaultFactory[network]?.address,
@@ -357,7 +357,7 @@ export async function createPendleEcosystemArbitrumOne(
 
   return {
     pendleRouter: getContract(PENDLE_ROUTER_MAP[network] as string, IPendleRouter__factory.connect, signer),
-    pendleRouterV3: getContract(PENDLE_ROUTER_V3_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
+    pendleRouterV3: getContract(PENDLE_ROUTER_V4_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
     ezEthJun2024: {
       dPtEzEthJun2024: getContract(
         deployments.PendlePtEzETHJun2024IsolationModeVaultFactory[network].address,

@@ -170,7 +170,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
 
     /**
      * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender has the permission to use the liquidator account
      *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
      *    not just what's being liquidated)
      */
@@ -231,10 +230,10 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     internal
     view
     {
-        // check credentials for msg.sender
         Require.that(
             _constants.solidAccount.owner == msg.sender
-                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
+                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)
+                || DOLOMITE_MARGIN().getIsGlobalOperator(msg.sender),
             _FILE,
             "Sender not operator",
             msg.sender

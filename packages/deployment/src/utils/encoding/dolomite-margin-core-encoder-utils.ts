@@ -1,21 +1,27 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+
+import {
+  BYTES_EMPTY,
+  DolomiteNetwork,
+  DolomiteV2Network,
+  Network,
+  ONE_ETH_BI,
+} from 'packages/base/src/utils/no-deps-constants';
 import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
   AccountRiskOverrideRiskFeature,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
+  LowerPercentage,
+  OptimalUtilizationRate,
   SingleCollateralWithStrictDebtParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
+  UpperPercentage,
 } from '../../../../base/src/utils/constructors/dolomite';
-import {
-  BYTES_EMPTY,
-  DolomiteNetwork,
-  DolomiteV2Network,
-  ONE_ETH_BI,
-} from '../../../../base/src/utils/no-deps-constants';
+import { InterestSettersForEthereum } from '../../../../base/test/utils/ecosystem-utils/interest-setters';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
 import {
@@ -206,6 +212,27 @@ export async function encodeSetLiquidationPenalty<T extends DolomiteNetwork>(
   }
 
   return Promise.reject('Invalid method name for setting liquidation penalty');
+}
+
+export async function encodeSetInterestSetterData<T extends Network.Ethereum>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  lowerRate: LowerPercentage,
+  upperRate: UpperPercentage,
+  optimalUtilizationRate: OptimalUtilizationRate,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.interestSetters as InterestSettersForEthereum,
+    'modularLinearInterestSetter',
+    'ownerSetSettingsByToken',
+    [
+      await core.dolomiteMargin.getMarketTokenAddress(marketId),
+      parseEther(lowerRate),
+      parseEther(upperRate).sub(parseEther(lowerRate)),
+      parseEther(optimalUtilizationRate),
+    ],
+  );
 }
 
 export async function encodeSetInterestSetter<T extends DolomiteNetwork>(

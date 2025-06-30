@@ -29,6 +29,10 @@ const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
+const botanixWeb3Url = process.env.BOTANIX_WEB3_PROVIDER_URL;
+if (!botanixWeb3Url) {
+  throw new Error('No BOTANIX_WEB3_PROVIDER_URL provided!');
+}
 const ethereumWeb3Url = process.env.ETHEREUM_WEB3_PROVIDER_URL;
 if (!ethereumWeb3Url) {
   throw new Error('No ETHEREUM_WEB3_PROVIDER_URL provided!');
@@ -54,7 +58,7 @@ if (!xLayerWeb3Url) {
   throw new Error('No X_LAYER_WEB3_PROVIDER_URL provided!');
 }
 
-// Blcok Explorer API Keys
+// Block Explorer API Keys
 const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
 if (!arbiscanApiKey) {
   throw new Error('No ARBISCAN_API_KEY provided!');
@@ -66,6 +70,10 @@ if (!basescanApiKey) {
 const berascanApiKey = process.env.BERASCAN_API_KEY;
 if (!berascanApiKey) {
   throw new Error('No BERASCAN_API_KEY provided!');
+}
+const botanixApiKey = process.env.BOTANIX_API_KEY;
+if (!botanixApiKey) {
+  throw new Error('No BOTANIX_API_KEY provided!');
 }
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
 if (!etherscanApiKey) {
@@ -98,9 +106,9 @@ export const base_config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      gas: 50_000_000,
+      gas: 80_000_000,
       blockGasLimit: 100000000429720,
-      chainId: parseInt(Network.ArbitrumOne, 10),
+      chainId: parseInt(Network.Berachain, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
@@ -126,6 +134,13 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Berachain, 10),
       url: berachainWeb3Url,
       gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Botanix]: {
+      chainId: parseInt(Network.Botanix, 10),
+      url: botanixWeb3Url,
+      gas: 15_000_000, // 15M gas
+      gasPrice: 800_000, // 0.0008 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Ethereum]: {
@@ -209,6 +224,7 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
       [NetworkName.Berachain]: berascanApiKey,
+      [NetworkName.Botanix]: botanixApiKey,
       [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
@@ -238,7 +254,15 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.Berachain, 10),
         urls: {
           apiURL: 'https://api.berascan.com/api',
-          browserURL: 'https://berascan.com/address',
+          browserURL: 'https://berascan.com',
+        },
+      },
+      {
+        network: NetworkName.Botanix,
+        chainId: parseInt(Network.Botanix, 10),
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/mainnet/evm/3637/etherscan/api',
+          browserURL: 'https://botanixscan.io',
         },
       },
       {
@@ -246,7 +270,7 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.Ethereum, 10),
         urls: {
           apiURL: 'https://api.etherscan.io/api',
-          browserURL: 'https://etherscan.io/address',
+          browserURL: 'https://etherscan.io',
         },
       },
       {

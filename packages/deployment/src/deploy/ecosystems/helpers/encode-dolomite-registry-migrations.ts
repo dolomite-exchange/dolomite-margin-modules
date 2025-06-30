@@ -3,7 +3,8 @@ import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
   GenericTraderProxyV2,
   IDolomiteRegistry,
-  IIsolationModeTokenVaultV1__factory, ILiquidatorProxyV5,
+  IIsolationModeTokenVaultV1__factory,
+  ILiquidatorProxyV6,
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
@@ -20,7 +21,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
   dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
   genericTraderProxyV2: GenericTraderProxyV2,
-  liquidatorProxyV5: ILiquidatorProxyV5,
+  liquidatorProxyV6: ILiquidatorProxyV6,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
   transactions: EncodedTransaction[],
@@ -107,6 +108,23 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
     );
   }
 
+  let needsDaoEncoding = true;
+  try {
+    const foundDao = await dolomiteRegistry.dao();
+    needsDaoEncoding = foundDao !== (core.daoAddress ?? core.gnosisSafeAddress);
+  } catch (e) {}
+  if (needsDaoEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetDao',
+        [core.daoAddress ?? core.gnosisSafeAddress],
+      ),
+    );
+  }
+
   const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
   transactions.push(
     ...await encodeSetGlobalOperatorIfNecessary(
@@ -121,7 +139,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
     ),
     ...await encodeSetGlobalOperatorIfNecessary(
       core,
-      liquidatorProxyV5,
+      liquidatorProxyV6,
       true,
     ),
   );

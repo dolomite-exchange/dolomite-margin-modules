@@ -19,6 +19,55 @@ import { BYTES_EMPTY, Network, DolomiteNetwork, ZERO_BI } from '../no-deps-const
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
+export enum LowerPercentage {
+  _1 = '0.01',
+  _2 = '0.02',
+  _3 = '0.03',
+  _4 = '0.04',
+  _5 = '0.05',
+  _6 = '0.06',
+  _7 = '0.07',
+  _8 = '0.08',
+  _9 = '0.09',
+  _10 = '0.10',
+  _11 = '0.11',
+  _12 = '0.12',
+  _13 = '0.13',
+  _14 = '0.14',
+  _15 = '0.15',
+  _16 = '0.16',
+  _17 = '0.17',
+  _18 = '0.18',
+  _19 = '0.19',
+  _20 = '0.20',
+  _25 = '0.25',
+  _30 = '0.30',
+}
+
+export enum UpperPercentage {
+  _60 = '0.60',
+  _70 = '0.70',
+  _80 = '0.80',
+  _90 = '0.90',
+  _100 = '1.00',
+  _110 = '1.10',
+  _120 = '1.20',
+  _125 = '1.25',
+  _300 = '3.00',
+}
+
+export enum OptimalUtilizationRate {
+  _40 = '0.40',
+  _50 = '0.50',
+  _60 = '0.60',
+  _70 = '0.70',
+  _80 = '0.80',
+  _90 = '0.90',
+  _92 = '0.92',
+  _95 = '0.95',
+  _99 = '0.99',
+}
+
 export enum TargetCollateralization {
   Base = '1.00',
 
@@ -31,6 +80,11 @@ export enum TargetCollateralization {
    * 111% collateralization || 90% LTV
    */
   _111 = '1.111111111111111111',
+
+  /**
+   * 107% collateralization || 93% LTV
+   */
+  _107 = '1.071428571428571428',
 
   /**
    * 120% collateralization || 83.33% LTV
@@ -51,6 +105,11 @@ export enum TargetCollateralization {
    * 133% collateralization || 75.00% LTV
    */
   _133 = '1.333333333333333333',
+
+  /**
+   * 136% collateralization || 73.00% LTV
+   */
+  _136 = '1.369863013698630136',
 
   /**
    * 142.85% collateralization || 70.00% LTV
@@ -209,7 +268,7 @@ export async function getEventEmitterRegistryConstructorParams<T extends Dolomit
   return [implementation.address, core.dolomiteMargin.address, initializationCallData.data!];
 }
 
-type OwnerAddMarketParameters<T extends Network> = T extends Network.ArbitrumOne
+type OwnerAddMarketParameters<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? Parameters<IDolomiteMargin['functions']['ownerAddMarket']>
   : Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']>;
 
@@ -381,7 +440,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Dolomit
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId
+    marketId,
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
@@ -404,7 +463,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId
+    marketId,
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }

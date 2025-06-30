@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.1.3",
+  "version": "0.1.7",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -9,6 +9,7 @@
     "lint": "npm run lint:ts",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
+    "deploy:berachain-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts berachain",
     "deploy:boyco-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts boyco",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
@@ -30,6 +31,8 @@
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:botanix": "NETWORK=botanix ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:ethereum": "NETWORK=ethereum ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:get-transaction-ids": "ts-node src/deploy/other/execute-get-transaction-ids.ts",
     "execute:golem-analyzer": "NETWORK=mainnet hardhat run src/deploy/other/golem-multisig-analyzer.ts",
     "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",

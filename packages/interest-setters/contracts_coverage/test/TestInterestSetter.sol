@@ -52,6 +52,6 @@ contract TestInterestSetter is IDolomiteInterestSetter {
     }
 
     function interestSetterType() external pure returns (InterestSetterType) {
-        return InterestSetterType.Other;
+        return InterestSetterType.None;
     }
 }

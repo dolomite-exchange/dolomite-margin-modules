@@ -67,7 +67,6 @@ abstract contract IsolationModeVaultFactory is
     // ==================== Fields ====================
     // ================================================
 
-    address public override userVaultImplementation;
     bool public isInitialized;
     uint256 public override marketId; // can't be immutable because it's set in the call to #initialize
     uint256 public transferCursor;
@@ -76,6 +75,7 @@ abstract contract IsolationModeVaultFactory is
     mapping(address => address) internal _vaultToUserMap;
     mapping(address => address) internal _userToVaultMap;
     mapping(address => bool) internal _tokenConverterToIsTrustedMap;
+    address private _userVaultImplementation;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -124,7 +124,7 @@ abstract contract IsolationModeVaultFactory is
     constructor(
         address _underlyingToken,
         address _borrowPositionProxyV2,
-        address _userVaultImplementation,
+        address __userVaultImplementation,
         address _dolomiteRegistry,
         address _dolomiteMargin
     )
@@ -138,7 +138,7 @@ abstract contract IsolationModeVaultFactory is
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         UNDERLYING_TOKEN = _underlyingToken;
         BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxyV2);
-        userVaultImplementation = _userVaultImplementation;
+        _userVaultImplementation = __userVaultImplementation;
 
         _createVault(_DEAD_VAULT);
     }
@@ -201,20 +201,21 @@ abstract contract IsolationModeVaultFactory is
     }
 
     function ownerSetUserVaultImplementation(
-        address _userVaultImplementation
+        address __userVaultImplementation
     )
     external
+    virtual
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
-            _userVaultImplementation != address(0),
+            __userVaultImplementation != address(0),
             _FILE,
             "Invalid user implementation"
         );
-        address _oldUserVaultImplementation = userVaultImplementation;
-        userVaultImplementation = _userVaultImplementation;
-        emit UserVaultImplementationSet(_oldUserVaultImplementation, _userVaultImplementation);
+        address oldUserVaultImplementation = _userVaultImplementation;
+        _userVaultImplementation = __userVaultImplementation;
+        emit UserVaultImplementationSet(oldUserVaultImplementation, __userVaultImplementation);
     }
 
     function ownerSetIsTokenConverterTrusted(
@@ -399,8 +400,12 @@ abstract contract IsolationModeVaultFactory is
     // ================= Public Functions =================
     // ====================================================
 
+    function userVaultImplementation() public virtual view returns (address) {
+        return _userVaultImplementation;
+    }
+
     function getProxyVaultInitCodeHash() public pure override returns (bytes32) {
-        return keccak256(type(IsolationModeUpgradeableProxy).creationCode);
+        return keccak256(_proxyCreationCode());
     }
 
     // ====================================================
@@ -435,7 +440,7 @@ abstract contract IsolationModeVaultFactory is
         address vault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
-            type(IsolationModeUpgradeableProxy).creationCode
+            _proxyCreationCode()
         );
         assert(vault != address(0));
         emit VaultCreated(_account, vault);
@@ -561,5 +566,9 @@ abstract contract IsolationModeVaultFactory is
             );
             _burn(_from, _amount);
         }
+    }
+
+    function _proxyCreationCode() internal virtual pure returns (bytes memory) {
+        return type(IsolationModeUpgradeableProxy).creationCode;
     }
 }

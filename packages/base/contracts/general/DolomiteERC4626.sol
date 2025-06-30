@@ -169,10 +169,7 @@ contract DolomiteERC4626 is
         {
             // For avoiding "stack too deep" errors
             IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, _marketId);
-            IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
-                sign: true,
-                value: _shares.to128()
-            });
+            IDolomiteStructs.Par memory deltaPar = _toPar(/* _sign */ true, _shares);
             IDolomiteStructs.Par memory balanceAfterPar = balanceBeforePar.add(deltaPar);
             balanceBeforeWei = dolomiteMargin.parToWei(_marketId, balanceBeforePar);
 
@@ -332,10 +329,7 @@ contract DolomiteERC4626 is
     }
 
     function maxWithdraw(address _owner) external view returns (uint256) {
-        IDolomiteStructs.Par memory balancePar = IDolomiteStructs.Par({
-            sign: true,
-            value: balanceOf(_owner).to128()
-        });
+        IDolomiteStructs.Par memory balancePar = _toPar(/* _sign */ true, balanceOf(_owner));
         return DOLOMITE_MARGIN().parToWei(marketId(), balancePar).value;
     }
 
@@ -352,10 +346,7 @@ contract DolomiteERC4626 is
     }
 
     function convertToAssets(uint256 _shares) public view returns (uint256) {
-        IDolomiteStructs.Par memory amountPar = IDolomiteStructs.Par({
-            sign: true,
-            value: _shares.to128()
-        });
+        IDolomiteStructs.Par memory amountPar = _toPar(/* _sign */ true, _shares);
         return DOLOMITE_MARGIN().parToWei(marketId(), amountPar).value;
     }
 
@@ -461,10 +452,7 @@ contract DolomiteERC4626 is
     }
 
     function totalAssets() public view returns (uint256) {
-        IDolomiteStructs.Par memory totalSupplyPar = IDolomiteStructs.Par({
-            sign: true,
-            value: totalSupply().to128()
-        });
+        IDolomiteStructs.Par memory totalSupplyPar = _toPar(/* _sign = */ true, totalSupply());
         return DOLOMITE_MARGIN().parToWei(marketId(), totalSupplyPar).value;
     }
 
@@ -856,51 +844,6 @@ contract DolomiteERC4626 is
         return _actionsCursor;
     }
 
-    /**
-     * @return  True if the transfer will make `address(this)` go negative due to a rounding error
-     */
-    function _getIsLossy(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) internal view returns (bool) {
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        uint256 _marketId = marketId();
-        IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
-            sign: true,
-            value: _amount.to128()
-        });
-
-        // @dev Calculate the first delta wei
-        IDolomiteStructs.Par memory fromPar = dolomiteMargin.getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: _from,
-                number: _DEFAULT_ACCOUNT_NUMBER
-            }),
-            _marketId
-        );
-        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(_marketId, fromPar);
-        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(
-            dolomiteMargin.parToWei(_marketId, fromPar.sub(deltaPar))
-        );
-
-        // @dev Calculate the second delta wei
-        IDolomiteStructs.Par memory toPar = dolomiteMargin.getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: _to,
-                number: _DEFAULT_ACCOUNT_NUMBER
-            }),
-            _marketId
-        );
-        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(_marketId, toPar);
-        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(_marketId, toPar.add(deltaPar)).sub(toWei);
-
-        // @dev convert the difference in wei values to par
-        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(_marketId, deltaWei1.sub(deltaWei2));
-
-        return !finalPar.isZero();
-    }
-
     function _isOwnerBalanceZeroOrNegative() internal view returns (bool) {
         IDolomiteStructs.Par memory dolomiteOwnerPar = DOLOMITE_MARGIN().getAccountPar(
             IDolomiteStructs.AccountInfo({
@@ -924,11 +867,56 @@ contract DolomiteERC4626 is
         return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
     }
 
+    /**
+     * @return  True if the transfer will make `address(this)` go negative due to a rounding error
+     */
+    function _getIsLossy(address _from, address _to, uint256 _amount) internal view returns (bool) {
+        // Step 1:  we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
+        // Step 2:  we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei
+        //          from doing the second transfer
+        // Step 3:  needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.Par memory deltaPar = _toPar(/* _sign = */ true, _amount);
+
+        // @dev Calculate the first delta wei
+        IDolomiteStructs.Par memory fromPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _from,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(marketId(), fromPar);
+        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(dolomiteMargin.parToWei(marketId(), fromPar.sub(deltaPar)));
+
+        // @dev Calculate the second delta wei
+        IDolomiteStructs.Par memory toPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _to,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(marketId(), toPar);
+        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(marketId(), toPar.add(deltaPar)).sub(toWei);
+
+        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(marketId(), deltaWei1.sub(deltaWei2));
+
+        return finalPar.value != 0;
+    }
+
     function _setMetadataStruct(MetadataStruct memory _metadata) internal {
         MetadataStruct storage metadata = _getMetadataSlot();
         metadata.name = _metadata.name;
         metadata.symbol = _metadata.symbol;
         metadata.decimals = _metadata.decimals;
+    }
+
+    function _toPar(bool _sign, uint256 _value) internal pure returns (IDolomiteStructs.Par memory) {
+        return IDolomiteStructs.Par({
+            sign: _sign,
+            value: _value.to128()
+        });
     }
 
     function _getMetadataSlot() internal pure returns (MetadataStruct storage metadata) {

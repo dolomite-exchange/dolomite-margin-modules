@@ -29,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
           'liquidatorAssetRegistry',
           'ownerAddLiquidatorToAssetWhitelist',
-          [i, core.liquidatorProxyV5.address],
+          [i, core.liquidatorProxyV6.address],
         ),
         await prettyPrintEncodedDataWithTypeSafety(
           core,
@@ -54,7 +54,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       for (const marketId of marketsWithV4Liquidator) {
         assertHardhatInvariant(
-          await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(marketId, core.liquidatorProxyV5.address),
+          await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(marketId, core.liquidatorProxyV6.address),
           `Market [${marketId}] should have liquidator proxy v5 whitelisted`,
         );
         assertHardhatInvariant(

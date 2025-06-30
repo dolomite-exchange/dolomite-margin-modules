@@ -96,6 +96,13 @@ contract VeTokenClaim is BaseClaimWithMerkleProof, IVeTokenClaim {
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, _EPOCH, _amount);
 
         DOLO.safeApprove(address(VE_DOLO), _amount);
+
+        if (block.timestamp - BOYCO_START_TIME < MAX_LOCK_DURATION) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            block.timestamp - BOYCO_START_TIME < MAX_LOCK_DURATION,
+            _FILE,
+            "Past max claim period"
+        );
         VE_DOLO.create_lock_for(
             _amount,
             MAX_LOCK_DURATION - (block.timestamp - BOYCO_START_TIME),

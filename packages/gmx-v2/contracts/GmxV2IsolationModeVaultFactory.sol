@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
 import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
+import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
@@ -120,7 +121,7 @@ contract GmxV2IsolationModeVaultFactory is
     // ================ Internal Functions ================
     // ====================================================
 
-    function _afterInitialize() internal override {
+    function _afterInitialize() internal override(IsolationModeVaultFactory, SimpleIsolationModeVaultFactory) {
         _allowableCollateralMarketIds.push(marketId);
     }
 }
