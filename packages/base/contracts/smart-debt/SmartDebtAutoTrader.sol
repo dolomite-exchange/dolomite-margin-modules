@@ -260,6 +260,13 @@ contract SmartDebtAutoTrader is
             "Invalid swap amounts sum"
         );
 
+        // Call function to set tradeEnabled to false
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            0,
+            address(this),
+            abi.encode(new bytes(0), false)
+        );
+
         // Transfer admin fees to fee account
         actions[actionCursor++] = AccountActionLib.encodeTransferAction(
             _params.takerAccountId,
@@ -267,13 +274,6 @@ contract SmartDebtAutoTrader is
             _params.inputMarketId,
             IDolomiteStructs.AssetDenomination.Wei,
             adminTotal
-        );
-
-        // Call function to set tradeEnabled to false
-        actions[actionCursor++] = AccountActionLib.encodeCallAction(
-            0,
-            address(this),
-            abi.encode(new bytes(0), false)
         );
 
         return actions;
@@ -284,6 +284,29 @@ contract SmartDebtAutoTrader is
     ) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
         return _trades.length + 3;
     }
+
+    /**
+     * Gets the volatility level for a pair based on the bid/ask spread
+     * 
+     * @param _report The latest report
+     * 
+     * @return The volatility level
+     */
+    function getVolatilityLevel(
+        LatestReport memory _report,
+        FeeSettings memory _feeSettings
+    ) public pure returns (VolatilityLevel) {
+        uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
+
+        if (spreadPercentage > _feeSettings.depegThreshold.value) {
+            return VolatilityLevel.DEPEG;
+        } else if (spreadPercentage > _feeSettings.slightThreshold.value) {
+            return VolatilityLevel.SLIGHT;
+        } else {
+            return VolatilityLevel.NORMAL;
+        }
+    }
+
 
     // ========================================================
     // ================== Internal Functions ==================
@@ -345,28 +368,6 @@ contract SmartDebtAutoTrader is
     }
 
     /**
-     * Gets the volatility level for a pair based on the bid/ask spread
-     * 
-     * @param _report The latest report
-     * 
-     * @return The volatility level
-     */
-    function getVolatilityLevel(
-        LatestReport memory _report,
-        FeeSettings memory _feeSettings
-    ) public pure returns (VolatilityLevel) {
-        uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
-
-        if (spreadPercentage > _feeSettings.depegThreshold.value) {
-            return VolatilityLevel.DEPEG;
-        } else if (spreadPercentage > _feeSettings.slightThreshold.value) {
-            return VolatilityLevel.SLIGHT;
-        } else {
-            return VolatilityLevel.NORMAL;
-        }
-    }
-
-    /**
      * Calculates the dynamic fee for a pair based on the volatility level and time since report
      * 
      * @dev The volatility level is determined by the bid/ask spread
@@ -402,7 +403,7 @@ contract SmartDebtAutoTrader is
         uint256 timeSinceOldestReport = _inputReport.timestamp < _outputReport.timestamp
                                             ? block.timestamp - _inputReport.timestamp
                                             : block.timestamp - _outputReport.timestamp;
-        if (timeSinceOldestReport > feeSettings.feeCliffSeconds) {
+        if (timeSinceOldestReport > feeSettings.feeCliffSeconds && feeSettings.feeCompoundingInterval != 0 && feeSettings.feeCliffSeconds != 0) {
             uint256 multiplier = 2 + (timeSinceOldestReport - feeSettings.feeCliffSeconds) / feeSettings.feeCompoundingInterval; // solhint-disable-line max-line-length
             dynamicFeePercentage = dynamicFeePercentage.mul(multiplier.toDecimal());
         }

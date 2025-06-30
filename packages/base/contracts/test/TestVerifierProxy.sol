@@ -21,9 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { IChainlinkDataStreamsPriceOracle } from "../interfaces/IChainlinkDataStreamsPriceOracle.sol";
-import { IVerifierFeeManager } from "../interfaces/IVerifierFeeManager.sol";
-import { IVerifierProxy } from "../interfaces/IVerifierProxy.sol";
+import { IVerifierFeeManager } from "../smart-debt/interfaces/IVerifierFeeManager.sol";
+import { IVerifierProxy } from "../smart-debt/interfaces/IVerifierProxy.sol";
+import { IChainlinkDataStreamsTrader } from "../smart-debt/interfaces/IChainlinkDataStreamsTrader.sol";
 
 
 /**
@@ -75,8 +75,8 @@ contract TestVerifierProxy is IVerifierProxy {
     ) external payable returns (bytes memory) {
         (bytes32 feedId, uint256 price) = abi.decode(payload, (bytes32, uint256));
 
-        IChainlinkDataStreamsPriceOracle.ReportDataV3 memory reportData = 
-            IChainlinkDataStreamsPriceOracle.ReportDataV3({
+        IChainlinkDataStreamsTrader.ReportDataV3 memory reportData = 
+            IChainlinkDataStreamsTrader.ReportDataV3({
                 feedId: feedId,
                 validFromTimestamp: uint32(block.timestamp),
                 observationsTimestamp: uint32(block.timestamp),
