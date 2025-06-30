@@ -7,7 +7,7 @@ import {
   IIsolationModeVaultFactoryOld__factory,
 } from 'packages/base/src/types';
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
-import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
 import {
@@ -27,6 +27,27 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
 } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
 import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain';
+import {
+  marketToIsolationModeVaultInfoBotanix,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/botanix';
+import {
+  marketToIsolationModeVaultInfoEthereum,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ethereum';
+import {
+  marketToIsolationModeVaultInfoPolygonZkEvm,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/polygon-zkevm';
+import {
+  marketToIsolationModeVaultInfoXLayer,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/xlayer';
+import {
+  marketToIsolationModeVaultInfoInk,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ink';
+import {
+  marketToIsolationModeVaultInfoSuperSeed,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/super-seed';
+import {
+  marketToIsolationModeVaultInfoBase,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/base';
 
 export class DeployedVault {
   public contractName: string;
@@ -39,6 +60,7 @@ export class DeployedVault {
   public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld;
   public vaultType: IsolationModeVaultType;
   public isUpgradeable: boolean;
+  public isDepositWithdrawalRouterEnabled: boolean;
 
   constructor(
     marketId: number,
@@ -59,6 +81,7 @@ export class DeployedVault {
     this.factory = factory;
     this.vaultType = info.vaultType;
     this.isUpgradeable = info.vaultType !== IsolationModeVaultType.Migrator;
+    this.isDepositWithdrawalRouterEnabled = info.vaultType !== IsolationModeVaultType.BerachainPol;
   }
 
   public async deployNewVaultAndEncodeUpgradeTransaction<T extends DolomiteNetwork>(
@@ -171,7 +194,12 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       deployedVaults,
     );
   } else if (config.network === Network.Base) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoBase,
+      deployedVaults,
+    );
   } else if (config.network === Network.Berachain) {
     skippedMarkets = await initializeVaults(
       config,
@@ -179,8 +207,27 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       marketToIsolationModeVaultInfoBerachain,
       deployedVaults,
     );
+  } else if (config.network === Network.Botanix) {
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoBotanix,
+      deployedVaults,
+    );
+  } else if (config.network === Network.Ethereum) {
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoEthereum,
+      deployedVaults,
+    );
   } else if (config.network === Network.Ink) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoInk,
+      deployedVaults,
+    );
   } else if (config.network === Network.Mantle) {
     skippedMarkets = await initializeVaults(
       config,
@@ -189,11 +236,26 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       deployedVaults,
     );
   } else if (config.network === Network.PolygonZkEvm) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoPolygonZkEvm,
+      deployedVaults,
+    );
   } else if (config.network === Network.SuperSeed) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoSuperSeed,
+      deployedVaults,
+    );
   } else if (config.network === Network.XLayer) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoXLayer,
+      deployedVaults,
+    );
   } else {
     throw new Error(`Invalid network, found ${config.network}`);
   }

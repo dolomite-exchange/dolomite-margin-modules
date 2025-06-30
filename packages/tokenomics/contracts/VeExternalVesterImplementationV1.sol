@@ -140,14 +140,12 @@ contract VeExternalVesterImplementationV1 is
         initializer
     {
         (
-            address _discountCalculator,
             address _oToken,
             string memory _baseUri,
             string memory _name,
             string memory _symbol
-        ) = abi.decode(_data, (address, address, string, string, string));
+        ) = abi.decode(_data, (address, string, string, string));
         _ownerSetIsVestingActive(true);
-        _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(0 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
@@ -158,6 +156,7 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function lazyInitialize(
+        address _discountCalculator,
         address _veToken
     ) external {
         Require.that(
@@ -167,6 +166,17 @@ contract VeExternalVesterImplementationV1 is
         );
         VE_TOKEN = IVeToken(_veToken);
         emit VeTokenSet(_veToken);
+
+        _ownerSetDiscountCalculator(_discountCalculator);
+    }
+
+    function ownerRegisterDistributor() external onlyDolomiteMarginOwner(msg.sender) {
+        DOLOMITE_REGISTRY.eventEmitter().emitDistributorRegistered(
+            address(this),
+            address(oToken()),
+            address(PAIR_TOKEN),
+            address(PAYMENT_TOKEN)
+        );
     }
 
     // ==================================================================
@@ -238,7 +248,7 @@ contract VeExternalVesterImplementationV1 is
         uint256 _maxPaymentAmount
     )
     external
-    nonReentrant 
+    nonReentrant
     returns (uint256) {
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
@@ -253,6 +263,25 @@ contract VeExternalVesterImplementationV1 is
             _FILE,
             "Position not vested"
         );
+        Require.that(
+            _veTokenId == type(uint256).max || VE_TOKEN.ownerOf(_veTokenId) == positionOwner,
+            _FILE,
+            "Invalid ve token ID"
+        );
+
+        if (_veTokenId != type(uint256).max) {
+            Require.that(
+                _veLockEndTime == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        } else {
+            Require.that(
+                _veLockEndTime > block.timestamp && _veLockEndTime % 1 weeks == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        }
 
         _closePosition(position);
 
@@ -385,6 +414,13 @@ contract VeExternalVesterImplementationV1 is
             /* _withdrawAllIfPossible = */ false
         );
     }
+
+    function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
+        assert(REWARD_MARKET_ID == _NO_MARKET_ID);
+
+        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
+    }
+
 
     function ownerAccrueRewardTokenInterest(address _toAccount) external onlyDolomiteMarginOwner(msg.sender) {
         // all tokens have been spent
@@ -628,7 +664,7 @@ contract VeExternalVesterImplementationV1 is
         // Deposit payment tokens into Dolomite, going to DOLOMITE_MARGIN_OWNER()
         PAYMENT_TOKEN.safeTransferFrom(_positionOwner, address(this), paymentAmount);
         _depositIntoDolomite(
-            /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+            /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _token = */ PAYMENT_TOKEN,
             /* _marketId */ PAYMENT_MARKET_ID,

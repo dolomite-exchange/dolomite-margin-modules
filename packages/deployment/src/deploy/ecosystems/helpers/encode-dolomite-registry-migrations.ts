@@ -108,6 +108,23 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
     );
   }
 
+  let needsDaoEncoding = true;
+  try {
+    const foundDao = await dolomiteRegistry.dao();
+    needsDaoEncoding = foundDao !== (core.daoAddress ?? core.gnosisSafeAddress);
+  } catch (e) {}
+  if (needsDaoEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetDao',
+        [core.daoAddress ?? core.gnosisSafeAddress],
+      ),
+    );
+  }
+
   const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
   transactions.push(
     ...await encodeSetGlobalOperatorIfNecessary(

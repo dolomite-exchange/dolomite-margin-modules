@@ -69,6 +69,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TREASURY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.treasury")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DAO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dao")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADE_CALLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTradeCallers")) - 1); // solhint-disable-line max-line-length
 
@@ -81,7 +82,9 @@ contract DolomiteRegistryImplementation is
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
         address _eventEmitter,
-        address _dolomiteAccountRegistry
+        address _dolomiteAccountRegistry,
+        address _treasury,
+        address _dao
     ) external initializer {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
@@ -90,6 +93,8 @@ contract DolomiteRegistryImplementation is
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
+        _ownerSetTreasury(_treasury);
+        _ownerSetDao(_dao);
     }
 
     function lazyInitialize(
@@ -248,6 +253,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetTreasury(_treasury);
     }
 
+    function ownerSetDao(
+        address _dao
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDao(_dao);
+    }
+
     function ownerSetIsolationModeMulticallFunctions(
         bytes4[] memory _selectors
     )
@@ -337,7 +350,15 @@ contract DolomiteRegistryImplementation is
     }
 
     function treasury() public view returns (address) {
-        return _getAddress(_TREASURY_SLOT);
+        address result = _getAddress(_TREASURY_SLOT);
+        assert(result != address(0));
+        return result;
+    }
+
+    function dao() public view returns (address) {
+        address result = _getAddress(_DAO_SLOT);
+        assert(result != address(0));
+        return result;
     }
 
     // ===================== Internal Functions =====================
@@ -616,5 +637,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_TREASURY_SLOT, _treasury);
         emit TreasurySet(_treasury);
+    }
+
+    function _ownerSetDao(
+        address _dao
+    ) internal {
+        Require.that(
+            _dao != address(0),
+            _FILE,
+            "Invalid dao"
+        );
+
+        _setAddress(_DAO_SLOT, _dao);
+        emit DaoSet(_dao);
     }
 }

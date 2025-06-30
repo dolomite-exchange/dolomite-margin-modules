@@ -161,7 +161,6 @@ export async function createTestVeExternalVesterV1Proxy<T extends DolomiteNetwor
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
   baseUri: string,
   name: string,
@@ -182,7 +181,7 @@ export async function createTestVeExternalVesterV1Proxy<T extends DolomiteNetwor
     ),
   );
   const implementationCalldata = await implementation.populateTransaction.initialize(
-    getVeExternalVesterInitializationCalldata(discountCalculator, oToken, baseUri, name, symbol),
+    getVeExternalVesterInitializationCalldata(oToken, baseUri, name, symbol),
   );
   const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
     UpgradeableProxy__factory.abi,

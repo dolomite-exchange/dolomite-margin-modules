@@ -69,4 +69,8 @@ contract TestVeToken is IVeToken {
         token.transferFrom(msg.sender, address(this), _value);
         return 0;
     }
+
+    function ownerOf(uint256 /* _veNftId */) external view returns (address) {
+        return msg.sender;
+    }
 }

@@ -28,7 +28,7 @@ export const marketToIsolationModeVaultInfoBerachain: Record<number, DeployedVau
     ),
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
-    vaultType: IsolationModeVaultType.Pol,
+    vaultType: IsolationModeVaultType.BerachainPol,
     tokenAddress: POL_R_USD_MAP[network].address,
   },
 };

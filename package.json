@@ -31,7 +31,7 @@
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
     "@chainlink/local": "^0.2.3",
-    "@dolomite-exchange/dolomite-margin": "^0.14.1",
+    "@dolomite-exchange/dolomite-margin": "^0.14.4",
     "@dolomite-exchange/zap-sdk": "^0.3.45",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
     "@nomicfoundation/hardhat-verify": "^2.0.4",

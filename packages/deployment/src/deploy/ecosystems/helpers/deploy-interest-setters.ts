@@ -1,8 +1,21 @@
 import { parseEther } from 'ethers/lib/utils';
 import { getLinearStepFunctionInterestSetterConstructorParams } from 'packages/interest-setters/src/interest-setters-constructors';
+import { IDolomiteMargin, IDolomiteMarginV2 } from '../../../../../base/src/types';
+import { Network } from '../../../../../base/src/utils/no-deps-constants';
 import { deployContractAndSave } from '../../../utils/deploy-utils';
 
-export async function deployInterestSetters(): Promise<void> {
+export async function deployInterestSetters<T extends Network>(
+  network: T,
+  dolomiteMargin: IDolomiteMargin | IDolomiteMarginV2,
+): Promise<void> {
+  if (network === Network.Ethereum) {
+    await deployContractAndSave(
+      'ModularLinearStepFunctionInterestSetter',
+      [dolomiteMargin.address],
+    );
+    return;
+  }
+
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.70')),
@@ -74,11 +87,21 @@ export async function deployInterestSetters(): Promise<void> {
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.12'), parseEther('0.88'), parseEther('0.90')),
     'LinearStepFunction12L88U90OInterestSetter',
   );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.12'), parseEther('0.88'), parseEther('0.95')),
+    'LinearStepFunction12L88U95OInterestSetter',
+  );
 
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.14'), parseEther('0.86'), parseEther('0.90')),
     'LinearStepFunction14L86U90OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.14'), parseEther('0.86'), parseEther('0.95')),
+    'LinearStepFunction14L86U95OInterestSetter',
   );
 
   await deployContractAndSave(
@@ -131,6 +154,11 @@ export async function deployInterestSetters(): Promise<void> {
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.90')),
     'LinearStepFunction16L84U90OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.95')),
+    'LinearStepFunction16L84U95OInterestSetter',
   );
 
   await deployContractAndSave(

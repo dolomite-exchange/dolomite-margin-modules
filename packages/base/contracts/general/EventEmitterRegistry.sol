@@ -268,6 +268,7 @@ contract EventEmitterRegistry is
     }
 
     function emitDistributorRegistered(
+        address _vesterContract,
         address _oTokenAddress,
         address _pairToken,
         address _paymentToken
@@ -278,7 +279,7 @@ contract EventEmitterRegistry is
         // The pair token and the payment token must be valid markets
         DOLOMITE_MARGIN().getMarketIdByTokenAddress(_pairToken);
         DOLOMITE_MARGIN().getMarketIdByTokenAddress(_paymentToken);
-        emit DistributorRegistered(_oTokenAddress, _pairToken, _paymentToken);
+        emit DistributorRegistered(_vesterContract, _oTokenAddress, _pairToken, _paymentToken);
     }
 
     function emitRewardClaimed(
@@ -290,6 +291,38 @@ contract EventEmitterRegistry is
         onlyDolomiteMarginGlobalOperator(msg.sender)
     {
         emit RewardClaimed(msg.sender, _user, _epoch, _amount);
+    }
+
+    function emitDolomiteSettingChanged(
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit DolomiteSettingChanged(_settingId, _value);
+    }
+
+    function emitUserSettingChanged(
+        address _user,
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit UserSettingChanged(_user, _settingId, _value);
+    }
+
+    function emitTokenSettingChanged(
+        address _token,
+        bytes32 _settingId,
+        bytes calldata _value
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit TokenSettingChanged(_token, _settingId, _value);
     }
 
     // =================================================
