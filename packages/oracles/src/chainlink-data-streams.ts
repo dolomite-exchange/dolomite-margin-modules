@@ -54,6 +54,18 @@ export async function getLatestChainlinkDataStreamReport(feedId: string) {
   return result;
 }
 
+export function getAskPriceFromReport(report: any): BigNumber {
+  const decodedReport = defaultAbiCoder.decode(fullReportAbiSchema as any, report.report.fullReport);
+  const detailedReport = defaultAbiCoder.decode(reportBlobV3Schema as any, decodedReport.reportBlob);
+  return BigNumber.from(detailedReport.ask);
+}
+
+export function getBidPriceFromReport(report: any): BigNumber {
+  const decodedReport = defaultAbiCoder.decode(fullReportAbiSchema as any, report.report.fullReport);
+  const detailedReport = defaultAbiCoder.decode(reportBlobV3Schema as any, decodedReport.reportBlob);
+  return BigNumber.from(detailedReport.bid);
+}
+
 export function getPriceFromReport(report: any): BigNumber {
   const decodedReport = defaultAbiCoder.decode(fullReportAbiSchema as any, report.report.fullReport);
   const detailedReport = defaultAbiCoder.decode(reportBlobV3Schema as any, decodedReport.reportBlob);

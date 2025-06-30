@@ -65,6 +65,7 @@ interface IDolomiteRegistry {
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
     event SmartDebtTraderSet(address indexed _smartDebtTrader);
     event TreasurySet(address indexed _treasury);
+    event DaoSet(address indexed _dao);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -189,6 +190,12 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _dao    The new address of the DAO
+     */
+    function ownerSetDao(address _dao) external;
+
+    /**
+     *
      * @param  _selectors    Allowed function selectors for isolation mode multicall
      */
     function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
@@ -295,4 +302,9 @@ interface IDolomiteRegistry {
      * @return The address of the treasury
      */
     function treasury() external view returns (address);
+
+    /**
+     * @return The address of the DAO multisig
+     */
+    function dao() external view returns (address);
 }

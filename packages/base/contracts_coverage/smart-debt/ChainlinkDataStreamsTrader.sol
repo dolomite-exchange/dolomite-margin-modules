@@ -116,6 +116,13 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     }
 
     /// @inheritdoc IChainlinkDataStreamsTrader
+    function ownerRemoveTokenFeed(
+        address _token
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerRemoveTokenFeed(_token);
+    }
+
+    /// @inheritdoc IChainlinkDataStreamsTrader
     function ownerApproveLink(
         address _spender,
         uint256 _amount
@@ -231,9 +238,30 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
         bytes32 _feedId
     ) internal {
         ChainlinkDataStreamsTraderStorage storage $ = _getChainlinkDataStreamsTraderStorage();
+        bytes32 oldFeedId = $.tokenToFeedIdMap[_token];
+
         $.tokenToFeedIdMap[_token] = _feedId;
         $.feedIdToTokenMap[_feedId] = _token;
+        delete $.feedIdToTokenMap[oldFeedId];
+
         emit TokenFeedInsertedOrUpdated(_token, _feedId);
+    }
+
+    /**
+     * Removes a token feed
+     *
+     * @param _token The token address
+     */
+    function _ownerRemoveTokenFeed(
+        address _token
+    ) internal {
+        ChainlinkDataStreamsTraderStorage storage $ = _getChainlinkDataStreamsTraderStorage();
+        bytes32 oldFeedId = $.tokenToFeedIdMap[_token];
+
+        delete $.tokenToFeedIdMap[_token];
+        delete $.feedIdToTokenMap[oldFeedId];
+
+        emit TokenFeedRemoved(_token);
     }
 
     /**

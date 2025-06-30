@@ -39,6 +39,13 @@ interface IChainlinkDataStreamsTrader {
         bytes32 indexed _feedId
     );
 
+    /**
+     * Emitted when a token feed is removed
+     * 
+     * @param _token The token address
+     */
+    event TokenFeedRemoved(address indexed _token);
+
     // ========================================================
     // ====================== Structs =========================
     // ========================================================
@@ -131,6 +138,13 @@ interface IChainlinkDataStreamsTrader {
         address _token,
         bytes32 _feedId
     ) external;
+
+    /**
+     * Removes a token feed. Only callable by dolomite margin owner
+     * 
+     * @param _token The token
+     */
+    function ownerRemoveTokenFeed(address _token) external;
 
     /**
      * Approves LINK to a spender. Only callable by dolomite margin owner
