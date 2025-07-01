@@ -69,7 +69,6 @@ interface ISmartDebtSettings {
         IDolomiteStructs.Decimal feeOverride;
         IDolomiteStructs.Decimal depegThreshold;
         IDolomiteStructs.Decimal slightThreshold;
-        IDolomiteStructs.Decimal normalThreshold;
         uint256 feeCliffSeconds;
         uint256 feeCompoundingInterval;
     }

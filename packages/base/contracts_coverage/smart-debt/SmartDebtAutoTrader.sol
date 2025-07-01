@@ -31,6 +31,7 @@ import { Require } from "../protocol/lib/Require.sol";
 import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   SmartDebtAutoTrader
@@ -267,6 +268,13 @@ contract SmartDebtAutoTrader is
             "Invalid swap amounts sum"
         );
 
+        // Call function to set tradeEnabled to false
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            0,
+            address(this),
+            abi.encode(new bytes(0), false)
+        );
+
         // Transfer admin fees to fee account
         actions[actionCursor++] = AccountActionLib.encodeTransferAction(
             _params.takerAccountId,
@@ -274,13 +282,6 @@ contract SmartDebtAutoTrader is
             _params.inputMarketId,
             IDolomiteStructs.AssetDenomination.Wei,
             adminTotal
-        );
-
-        // Call function to set tradeEnabled to false
-        actions[actionCursor++] = AccountActionLib.encodeCallAction(
-            0,
-            address(this),
-            abi.encode(new bytes(0), false)
         );
 
         return actions;
@@ -292,12 +293,20 @@ contract SmartDebtAutoTrader is
         return _trades.length + 3;
     }
 
+
     // ========================================================
     // ================== Internal Functions ==================
     // ========================================================
 
     /**
      * Calculates the output token amount for a trade
+     *
+     * @dev outputAmount = fullInputAmount * (1 - dynamicFeePercentage) * inputTokenBidPrice / outputTokenAskPrice
+     * @dev Recall that we subtract the admin fee from input amount during createActions, therefore, we must add it back
+     *      to appropriately calculate the fee. fullInputAmount = inputAmount + adminFeeAmount
+     * @dev We standardize the prices to have 36 - tokenDecimals so we can do simple math to calculate output amount
+     *      usdcAmount (6 decimals) * bidPriceOfUsdc (36 - 6 = 30 decimals) = usdcValue (36 decimals)
+     *      usdcValue (36 decimals) / askPriceOfUsdt (36 - 6 = 30 decimals) = usdt amount in 6 decimals
      *
      * @param _inputMarketId The input market ID
      * @param _outputMarketId The output market ID
@@ -335,11 +344,10 @@ contract SmartDebtAutoTrader is
         );
         /*assert(bidPrice != 0 && askPrice != 0);*/
 
-        IDolomiteStructs.Decimal memory dynamicFee = _calculateDynamicFee(inputReport, outputReport, _pairPosition);
+        IDolomiteStructs.Decimal memory totalFeePercentage = _calculateTotalFeePercentage(inputReport, outputReport, _pairPosition);
 
-        // @dev We add the admin fee back because admin gets a % of the base fee
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
-        uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(dynamicFee));
+        uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(totalFeePercentage));
 
         uint256 outputAmount = adjInputAmount * bidPrice / askPrice;
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
@@ -353,32 +361,10 @@ contract SmartDebtAutoTrader is
     }
 
     /**
-     * Gets the volatility level for a pair based on the bid/ask spread
+     * Calculates the total fee percentage for a pair based on the base fee, volatility level, and time since report
      *
-     * @param _report The latest report
-     *
-     * @return The volatility level
-     */
-    function getVolatilityLevel(
-        LatestReport memory _report,
-        FeeSettings memory _feeSettings
-    ) public pure returns (VolatilityLevel) {
-        uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
-
-        if (spreadPercentage > _feeSettings.depegThreshold.value) {
-            return VolatilityLevel.DEPEG;
-        } else if (spreadPercentage > _feeSettings.slightThreshold.value) {
-            return VolatilityLevel.SLIGHT;
-        } else {
-            return VolatilityLevel.NORMAL;
-        }
-    }
-
-    /**
-     * Calculates the dynamic fee for a pair based on the volatility level and time since report
-     *
-     * @dev The volatility level is determined by the bid/ask spread
-     * @dev The fee increases exponentially as time since report increases
+     * @dev The formula is:
+     *      totalFeePercentage = baseFeePercentage * (1 + volatilityFeePercentage) * timeMultiplier
      *
      * @param _inputReport The input report
      * @param _outputReport The output report
@@ -386,7 +372,7 @@ contract SmartDebtAutoTrader is
      *
      * @return The dynamic fee
      */
-    function _calculateDynamicFee(
+    function _calculateTotalFeePercentage(
         LatestReport memory _inputReport,
         LatestReport memory _outputReport,
         PairPosition memory _pairPosition
@@ -394,28 +380,91 @@ contract SmartDebtAutoTrader is
         FeeSettings memory feeSettings = pairFeeSettings(_pairPosition.pairBytes);
         (,IDolomiteStructs.Decimal memory baseFee) = pairFees(_pairPosition.pairBytes);
 
-        VolatilityLevel inputVolatility = getVolatilityLevel(_inputReport, feeSettings);
-        VolatilityLevel outputVolatility = getVolatilityLevel(_outputReport, feeSettings);
+        IDolomiteStructs.Decimal memory volatilityFeePercentage = _getVolatilityFeePercentage(_inputReport, _outputReport, feeSettings);
+        uint256 timeMultiplier = _calculateTimeMultiplier(_min(_inputReport.timestamp, _outputReport.timestamp), feeSettings);
 
-        IDolomiteStructs.Decimal memory dynamicFeePercentage;
+        return (timeMultiplier * baseFee.value.mul(volatilityFeePercentage.onePlus())).toDecimal();
+    }
+
+    /**
+     * Gets the volatility-based fee percentage for a pair of reports
+     *
+     * @dev Returns the corresponding fee percentage based on the maximum volatility level between both reports
+     *
+     * @param _inputReport The latest report for the input token
+     * @param _outputReport The latest report for the output token
+     * @param _feeSettings The fee settings containing volatility thresholds
+     *
+     * @return The volatility-based fee percentage as a Decimal
+     */
+    function _getVolatilityFeePercentage(
+        LatestReport memory _inputReport,
+        LatestReport memory _outputReport,
+        FeeSettings memory _feeSettings
+    ) internal view returns (IDolomiteStructs.Decimal memory) {
+        VolatilityLevel inputVolatility = _getVolatilityLevel(_inputReport, _feeSettings);
+        VolatilityLevel outputVolatility = _getVolatilityLevel(_outputReport, _feeSettings);
+
         if (inputVolatility == VolatilityLevel.DEPEG || outputVolatility == VolatilityLevel.DEPEG) {
-            dynamicFeePercentage = depegFeePercentage();
+            return depegFeePercentage();
         } else if (inputVolatility == VolatilityLevel.SLIGHT || outputVolatility == VolatilityLevel.SLIGHT) {
-            dynamicFeePercentage = slightFeePercentage();
+            return slightFeePercentage();
         } else {
-            dynamicFeePercentage = IDolomiteStructs.Decimal({ value: 0 });
+            return IDolomiteStructs.Decimal({ value: 0 });
+        }
+    }
+
+    /**
+     * Calculates the time multiplier based on report age to penalize stale data
+     *
+     * @dev Returns 1 if no time penalty applies (within cliff period or settings disabled)
+     *      Starts at 2x multiplier after cliff period
+     *      Increases by 1x for each compounding interval beyond the cliff
+     *
+     * @param _oldestReportTimestamp The timestamp of the oldest report between input and output tokens
+     * @param _feeSettings The fee settings containing cliff and compounding interval parameters
+     *
+     * @return The time multiplier (1 if no penalty, >=2 if penalty applies)
+     */
+    function _calculateTimeMultiplier(
+        uint256 _oldestReportTimestamp,
+        FeeSettings memory _feeSettings
+    ) internal view returns (uint256) {
+        if (_feeSettings.feeCliffSeconds == 0 || _feeSettings.feeCompoundingInterval == 0) {
+            return 1;
         }
 
-        // Calculate the time multiplier
-        uint256 timeSinceOldestReport = _inputReport.timestamp < _outputReport.timestamp
-                                            ? block.timestamp - _inputReport.timestamp
-                                            : block.timestamp - _outputReport.timestamp;
-        if (timeSinceOldestReport > feeSettings.feeCliffSeconds) {
-            uint256 multiplier = 2 + (timeSinceOldestReport - feeSettings.feeCliffSeconds) / feeSettings.feeCompoundingInterval; // solhint-disable-line max-line-length
-            dynamicFeePercentage = dynamicFeePercentage.mul(multiplier.toDecimal());
+        uint256 timeSinceOldestReport = block.timestamp - _oldestReportTimestamp;
+        if (timeSinceOldestReport < _feeSettings.feeCliffSeconds) {
+            return 1;
+        } else {
+            return 2 + (timeSinceOldestReport - _feeSettings.feeCliffSeconds) / _feeSettings.feeCompoundingInterval;
+        }
+    }
+
+    /**
+     * Gets the volatility level for a pair based on the bid/ask spread
+     *
+     * @param _report The latest report
+     *
+     * @return The volatility level
+     */
+    function _getVolatilityLevel(
+        LatestReport memory _report,
+        FeeSettings memory _feeSettings
+    ) internal pure returns (VolatilityLevel) {
+        if (_feeSettings.depegThreshold.value == 0 || _feeSettings.slightThreshold.value == 0) {
+            return VolatilityLevel.NORMAL;
         }
 
-        return baseFee.mul(dynamicFeePercentage.onePlus());
+        uint256 spreadPercentage = (_report.ask - _report.bid) * _ONE / _report.benchmarkPrice;
+        if (spreadPercentage >= _feeSettings.depegThreshold.value) {
+            return VolatilityLevel.DEPEG;
+        } else if (spreadPercentage >= _feeSettings.slightThreshold.value) {
+            return VolatilityLevel.SLIGHT;
+        } else {
+            return VolatilityLevel.NORMAL;
+        }
     }
 
     /**
@@ -459,5 +508,17 @@ contract SmartDebtAutoTrader is
                 "Exchange rate is out of range"
             );
         }
+    }
+
+    /**
+     * Returns the minimum of two uint256 values
+     *
+     * @param _a The first value
+     * @param _b The second value
+     *
+     * @return The minimum value
+     */
+    function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
+        return _a < _b ? _a : _b;
     }
 }

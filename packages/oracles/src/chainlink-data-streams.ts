@@ -78,12 +78,18 @@ export function getTimestampFromReport(report: any): BigNumber {
   return BigNumber.from(detailedReport.observationsTimestamp);
 }
 
-export function getTestPayloads(feedIds: string[], prices: BigNumber[], timestamp: BigNumber) {
+export function getTestPayloads(
+  feedIds: string[],
+  prices: BigNumber[],
+  timestamp: BigNumber,
+  bidPrices: BigNumber[] = prices,
+  askPrices: BigNumber[] = prices
+) {
   const payloads = [];
   for (let i = 0; i < feedIds.length; i++) {
     const dataBytes = defaultAbiCoder.encode(
       reportBlobV3Schema as any,
-      [feedIds[i], timestamp, timestamp, 0, 0, timestamp.add(ONE_DAY_SECONDS), prices[i], prices[i], prices[i]]
+      [feedIds[i], timestamp, timestamp, 0, 0, timestamp.add(ONE_DAY_SECONDS), prices[i], bidPrices[i], askPrices[i]]
     );
     const payload = defaultAbiCoder.encode(
       fullReportAbiSchema as any,

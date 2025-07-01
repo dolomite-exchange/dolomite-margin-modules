@@ -42,7 +42,14 @@ contract TestChainlinkDataStreamsTrader is ChainlinkDataStreamsTrader {
         uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) ChainlinkDataStreamsTrader(_link, _verifierProxy, _chainId, _dolomiteRegistry) OnlyDolomiteMargin(_dolomiteMargin) {
+    )
+    ChainlinkDataStreamsTrader(
+        _link,
+        _verifierProxy,
+        _chainId,
+        _dolomiteRegistry
+    )
+    OnlyDolomiteMargin(_dolomiteMargin) {
         _ChainlinkDataStreamsTrader__initialize(_tokens, _feedIds);
     }
 

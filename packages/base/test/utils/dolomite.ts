@@ -421,14 +421,29 @@ export async function createSmartDebtAutoTrader(
 
 export async function createTestSmartDebtAutoTrader(
   core: CoreProtocolType<any>,
-  network: NetworkType,
+  verifierProxy: IVerifierProxy,
+  tokens: IERC20[],
+  feedIds: string[]
 ): Promise<TestSmartDebtAutoTrader> {
+  if (core.network !== Network.ArbitrumOne) {
+    throw new Error('SmartDebtAutoTrader is only supported on Arbitrum One');
+  }
+
   const implementation = await createContractWithAbi<TestSmartDebtAutoTrader>(
     TestSmartDebtAutoTrader__factory.abi,
     TestSmartDebtAutoTrader__factory.bytecode,
-    [network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [
+      core.tokens.link.address,
+      verifierProxy.address,
+      core.network,
+      core.dolomiteRegistry.address,
+      core.dolomiteMargin.address
+    ],
   );
-  const initCalldata = await implementation.populateTransaction.initialize();
+  const initCalldata = await implementation.populateTransaction.initialize(
+    tokens.map((t) => t.address),
+    feedIds
+  );
 
   const proxy = await createContractWithAbi(
     UpgradeableProxy__factory.abi,

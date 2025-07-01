@@ -352,7 +352,6 @@ describe('SmartDebtSettings', () => {
           feeOverride: { value: parseEther('0.05') },
           depegThreshold: { value: parseEther('0.01') },
           slightThreshold: { value: parseEther('0.005') },
-          normalThreshold: { value: parseEther('0.002') },
           feeCliffSeconds: 60,
           feeCompoundingInterval: 10
         }
@@ -364,7 +363,6 @@ describe('SmartDebtSettings', () => {
       expect(feeSettings.feeOverride.value).to.equal(parseEther('0.05'));
       expect(feeSettings.depegThreshold.value).to.equal(parseEther('0.01'));
       expect(feeSettings.slightThreshold.value).to.equal(parseEther('0.005'));
-      expect(feeSettings.normalThreshold.value).to.equal(parseEther('0.002'));
       expect(feeSettings.feeCliffSeconds).to.equal(60);
       expect(feeSettings.feeCompoundingInterval).to.equal(10);
 
@@ -381,7 +379,6 @@ describe('SmartDebtSettings', () => {
             feeOverride: { value: parseEther('0.05') },
             depegThreshold: { value: parseEther('0.01') },
             slightThreshold: { value: parseEther('0.005') },
-            normalThreshold: { value: parseEther('0.002') },
             feeCliffSeconds: 60,
             feeCompoundingInterval: 10
           }
