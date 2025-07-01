@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import {
   GenericTraderProxyV2,
-  SmartDebtAutoTrader,
   TestSmartDebtAutoTrader
 } from '../../src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
@@ -10,8 +9,15 @@ import { getBlockTimestamp, getLatestBlockNumber, impersonate, revertToSnapshotA
 import { expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { disableInterestAccrual, setupCoreProtocol, setupLINKBalance, setupUSDCBalance, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
-import { createAndUpgradeDolomiteRegistry, createGenericTraderProxyV2, createSmartDebtAutoTrader, createTestSmartDebtAutoTrader } from '../utils/dolomite';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupLINKBalance,
+  setupUSDCBalance,
+  setupUSDTBalance,
+  setupWETHBalance
+} from '../utils/setup';
+import { createAndUpgradeDolomiteRegistry, createGenericTraderProxyV2, createTestSmartDebtAutoTrader } from '../utils/dolomite';
 import { BigNumber } from 'ethers';
 import { ActionType, BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
@@ -39,7 +45,7 @@ enum VolatilityLevel {
   NORMAL,
   SLIGHT,
   DEPEG
-};
+}
 
 const depegFeePercentage = parseEther('0.1');
 const slightFeePercentage = parseEther('0.05');
@@ -474,7 +480,7 @@ describe('SmartDebtAutoTrader', () => {
       const totalFee = await trader.calculateTotalFeePercentage(depegReport, normalReport, pairPosition);
       expect(totalFee.value).to.equal(parseEther('.11'));
     });
-  }); 
+  });
 
   describe('#_getVolatilityFeePercentage', () => {
     beforeEach(async () => {
