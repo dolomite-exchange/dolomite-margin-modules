@@ -40,10 +40,10 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @dev The maker account is the zap account of the person making the trade
      * 
-     * @param makerAccount The maker account
-     * @param makerAccountId The maker account ID
-     * @param amount The amount of the trade
-     * @param minOutputAmount The minimum output amount
+     * @param  makerAccount     The maker account
+     * @param  makerAccountId   The maker account ID
+     * @param  amount           The amount of the trade
+     * @param  minOutputAmount  The minimum output amount
      */
     struct InternalTradeParams {
         IDolomiteStructs.AccountInfo makerAccount;
@@ -55,9 +55,9 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
     /**
      * Struct for internal trader base storage
      * 
-     * @param tradeEnabled Whether a trade is enabled
-     * @param globalFee The global fee for a smart debt trade
-     * @param adminFee The admin fee for a smart debt trade
+     * @param  tradeEnabled Whether a trade is enabled
+     * @param  globalFee    The global fee for a smart debt trade
+     * @param  adminFee     The admin fee for a smart debt trade
      */
     struct InternalTraderBaseStorage {
         bool tradeEnabled;
@@ -70,15 +70,15 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @dev Maker and taker accounts are reversed in AccountActionLib.encodeInternalTradeActionWithWhitelistedTrader
      * 
-     * @param takerAccountId The taker account ID
-     * @param takerAccount The taker account (user making the trade)
-     * @param feeAccountId The fee account ID
-     * @param feeAccount The fee account
-     * @param inputMarketId The input market ID
-     * @param outputMarketId The output market ID
-     * @param inputAmountWei The input amount in wei
-     * @param trades The trades (contains the maker account / smart debt account for each trade)
-     * @param extraData The extra data
+     * @param  takerAccountId   The taker account ID
+     * @param  takerAccount     The taker account (user making the trade)
+     * @param  feeAccountId     The fee account ID
+     * @param  feeAccount       The fee account
+     * @param  inputMarketId    The input market ID
+     * @param  outputMarketId   The output market ID
+     * @param  inputAmountWei   The input amount in wei
+     * @param  trades           The trades (contains the maker account / smart debt account for each trade)
+     * @param  extraData        The extra data
      */
     struct CreateActionsForInternalTradeParams {
         uint256 takerAccountId;
@@ -108,9 +108,9 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @dev Only callable by a trusted internal trader caller
      * 
-     * @param _sender The address of the sender
-     * @param _accountInfo The account info
-     * @param _data The encoded data
+     * @param  _sender      The address of the sender
+     * @param  _accountInfo The account info
+     * @param  _data        The encoded data
      */
     function callFunction(
         address _sender,
@@ -121,14 +121,14 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
     /**
      * Gets the trade cost for an internal trade. Called within a DolomiteMargin trade action
      * 
-     * @param _inputMarketId The input market ID
-     * @param _outputMarketId The output market ID
-     * @param _makerAccount The maker account
-     * @param _takerAccount The taker account
-     * @param _oldInputPar The old input par
-     * @param _newInputPar The new input par
-     * @param _inputDeltaWei The input delta wei
-     * @param _data The encoded data
+     * @param  _inputMarketId   The input market ID
+     * @param  _outputMarketId  The output market ID
+     * @param  _makerAccount    The maker account
+     * @param  _takerAccount    The taker account
+     * @param  _oldInputPar     The old input par
+     * @param  _newInputPar     The new input par
+     * @param  _inputDeltaWei   The input delta wei
+     * @param  _data            The encoded data
      */
     function getTradeCost(
         uint256 _inputMarketId,
@@ -146,7 +146,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @dev 1 ether = 100%
      * 
-     * @param _globalFee The global fee
+     * @param  _globalFee The global fee
      */
     function ownerSetGlobalFee(IDolomiteStructs.Decimal memory _globalFee) external;
 
@@ -156,7 +156,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * @dev 1 ether = 100%
      * @dev Used as a percentage of the global fee
      * 
-     * @param _adminFee The admin fee
+     * @param  _adminFee The admin fee
      */
     function ownerSetAdminFee(IDolomiteStructs.Decimal memory _adminFee) external;
 
@@ -167,7 +167,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
     /**
      * Creates the actions for an internal trade
      * 
-     * @param _params The struct with parameters for the internal trade(s)
+     * @param  _params The struct with parameters for the internal trade(s)
      */
     function createActionsForInternalTrade(
         CreateActionsForInternalTradeParams memory _params
@@ -178,7 +178,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
      * 
      * @dev Calculated as number of trades + constant number of other actions
      * 
-     * @param _trades List of internal trades
+     * @param  _trades List of internal trades
      * 
      * @return The number of actions
      */
