@@ -21,9 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IChainlinkDataStreamsTrader } from "../smart-debt/interfaces/IChainlinkDataStreamsTrader.sol";
 import { IVerifierFeeManager } from "../smart-debt/interfaces/IVerifierFeeManager.sol";
 import { IVerifierProxy } from "../smart-debt/interfaces/IVerifierProxy.sol";
-import { IChainlinkDataStreamsTrader } from "../smart-debt/interfaces/IChainlinkDataStreamsTrader.sol";
 
 
 /**

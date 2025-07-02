@@ -210,8 +210,8 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
      *
      * @dev The function will automatically sort the market IDs
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
+     * @param  _marketId1 One market id in the pair
+     * @param  _marketId2 Other market id in the pair
      */
     function _ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
@@ -232,8 +232,8 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
      *
      * @dev The function will automatically sort the market IDs
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
+     * @param  _marketId1 One market id in the pair
+     * @param  _marketId2 Other market id in the pair
      */
     function _ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
@@ -252,8 +252,8 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
     /**
      * Removes a smart debt pair
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
+     * @param  _marketId1 One market id in the pair
+     * @param  _marketId2 Other market id in the pair
      */
     function _ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
@@ -272,8 +272,8 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
     /**
      * Removes a smart collateral pair
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
+     * @param  _marketId1 One market id in the pair
+     * @param  _marketId2 Other market id in the pair
      */
     function _ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
@@ -292,9 +292,9 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
     /**
      * Sets the fee settings for a pair
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
-     * @param _feeSettings The fee settings
+     * @param  _marketId1   One market id in the pair
+     * @param  _marketId2   Other market id in the pair
+     * @param  _feeSettings The fee settings
      */
     function _ownerSetPairFeeSettings(
         uint256 _marketId1,
@@ -322,8 +322,8 @@ abstract contract SmartDebtSettings is InternalAutoTraderBase, ISmartDebtSetting
      * @dev Pairbytes is stored as the hash of the sorted market IDs
      * @dev This function will automatically sort the market IDs
      *
-     * @param _marketId1 One market id in the pair
-     * @param _marketId2 Other market id in the pair
+     * @param  _marketId1 One market id in the pair
+     * @param  _marketId2 Other market id in the pair
      *
      * @return pairBytes The hash that corresponds to the specific pair
      */

@@ -43,10 +43,10 @@ interface ISmartDebtSettings {
     /**
      * Struct representing a user's position in a pair
      *
-     * @param pairType The type of pair (NONE, SMART_DEBT, or SMART_COLLATERAL)
-     * @param pairBytes The unique identifier for the pair
-     * @param minExchangeRate The minimum exchange rate for the pair
-     * @param maxExchangeRate The maximum exchange rate for the pair
+     * @param  pairType         The type of pair (NONE, SMART_DEBT, or SMART_COLLATERAL)
+     * @param  pairBytes        The unique identifier for the pair
+     * @param  minExchangeRate  The minimum exchange rate for the pair
+     * @param  maxExchangeRate  The maximum exchange rate for the pair
      */
     struct PairPosition {
         PairType pairType;
@@ -58,12 +58,11 @@ interface ISmartDebtSettings {
     /**
      * Struct containing dynamic fee settings
      *
-     * @param feeOverride The base fee that will be applied. Default value is from InternalAutoTraderBase
-     * @param depegThreshold Bid/ask percentage spread for depeg
-     * @param slightThreshold Bid/ask percentage spread for slight
-     * @param normalThreshold Bid/ask percentage spread for normal
-     * @param feeCliffSeconds The report age where the fee will start doubling
-     * @param feeCompoundingInterval The interval at which the fee will double
+     * @param  feeOverride              The base fee that will be applied. Default value is from InternalAutoTraderBase
+     * @param  depegThreshold           Bid/ask percentage spread for depeg
+     * @param  slightThreshold          Bid/ask percentage spread for slight
+     * @param  feeCliffSeconds          The report age where the fee will start doubling
+     * @param  feeCompoundingInterval   The interval at which the fee will double
      */
     struct FeeSettings {
         IDolomiteStructs.Decimal feeOverride;
@@ -76,10 +75,10 @@ interface ISmartDebtSettings {
     /**
      * Struct containing all storage variables for smart pairs
      *
-     * @param pairToFee Mapping of pair bytes to fee amounts
-     * @param smartDebtPairs Set of valid smart debt pairs
-     * @param smartCollateralPairs Set of valid smart collateral pairs
-     * @param userToPair Mapping of user address and account number to pair position
+     * @param  pairToFee            Mapping of pair bytes to fee amounts
+     * @param  smartDebtPairs       Set of valid smart debt pairs
+     * @param  smartCollateralPairs Set of valid smart collateral pairs
+     * @param  userToPair           Mapping of user address and account number to pair position
      */
     struct SmartPairsStorage {
         EnumerableSet.Bytes32Set smartDebtPairs;
@@ -99,8 +98,8 @@ interface ISmartDebtSettings {
      *
      * @dev The market IDs are sorted in ascending order
      *
-     * @param marketId1 The first market ID of the pair
-     * @param marketId2 The second market ID of the pair
+     * @param  marketId1 The first market ID of the pair
+     * @param  marketId2 The second market ID of the pair
      */
     event SmartDebtPairAdded(uint256 indexed marketId1, uint256 indexed marketId2);
 
@@ -109,8 +108,8 @@ interface ISmartDebtSettings {
      *
      * @dev The market IDs are sorted in ascending order
      *
-     * @param marketId1 The first market ID of the pair
-     * @param marketId2 The second market ID of the pair
+     * @param  marketId1 The first market ID of the pair
+     * @param  marketId2 The second market ID of the pair
      */
     event SmartDebtPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
 
@@ -119,8 +118,8 @@ interface ISmartDebtSettings {
      *
      * @dev The market IDs are sorted in ascending order
      *
-     * @param marketId1 The first market ID of the pair
-     * @param marketId2 The second market ID of the pair
+     * @param  marketId1 The first market ID of the pair
+     * @param  marketId2 The second market ID of the pair
      */
     event SmartCollateralPairAdded(uint256 indexed marketId1, uint256 indexed marketId2);
 
@@ -129,20 +128,20 @@ interface ISmartDebtSettings {
      *
      * @dev The market IDs are sorted in ascending order
      *
-     * @param marketId1 The first market ID of the pair
-     * @param marketId2 The second market ID of the pair
+     * @param  marketId1 The first market ID of the pair
+     * @param  marketId2 The second market ID of the pair
      */
     event SmartCollateralPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
 
     /**
      * Event emitted when a user's pair is set
      *
-     * @param user The address of the user
-     * @param accountNumber The account number of the user
-     * @param pairType The type of pair being set
-     * @param pairBytes The unique identifier for the pair
-     * @param minExchangeRate The minimum exchange rate for the pair
-     * @param maxExchangeRate The maximum exchange rate for the pair
+     * @param  user             The address of the user
+     * @param  accountNumber    The account number of the user
+     * @param  pairType         The type of pair being set
+     * @param  pairBytes        The unique identifier for the pair
+     * @param  minExchangeRate  The minimum exchange rate for the pair
+     * @param  maxExchangeRate  The maximum exchange rate for the pair
      */
     event UserToPairSet(
         address indexed user,
@@ -156,22 +155,22 @@ interface ISmartDebtSettings {
     /**
      * Event emitted when a pair's fee settings are set
      *
-     * @param pairBytes The unique identifier for the pair
-     * @param feeSettings The fee settings
+     * @param  pairBytes    The unique identifier for the pair
+     * @param  feeSettings  The fee settings
      */
     event PairFeeSettingsSet(bytes32 indexed pairBytes, FeeSettings feeSettings);
 
     /**
      * Event emitted when the depeg fee percentage is set
      *
-     * @param depegFeePercentage The depeg fee percentage
+     * @param  depegFeePercentage The depeg fee percentage
      */
     event DepegFeePercentageSet(IDolomiteStructs.Decimal depegFeePercentage);
 
     /**
      * Event emitted when the slight fee percentage is set
      *
-     * @param slightFeePercentage The slight fee percentage
+     * @param  slightFeePercentage The slight fee percentage
      */
     event SlightFeePercentageSet(IDolomiteStructs.Decimal slightFeePercentage);
 
@@ -182,12 +181,12 @@ interface ISmartDebtSettings {
     /**
      * Sets a user's pair
      *
-     * @param _accountNumber The account number of the user
-     * @param _pairType The type of pair being set
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
-     * @param _minExchangeRate The minimum exchange rate for the pair
-     * @param _maxExchangeRate The maximum exchange rate for the pair
+     * @param  _accountNumber   The account number of the user
+     * @param  _pairType        The type of pair being set
+     * @param  _marketId1       The first market ID of the pair
+     * @param  _marketId2       The second market ID of the pair
+     * @param  _minExchangeRate The minimum exchange rate for the pair
+     * @param  _maxExchangeRate The maximum exchange rate for the pair
      */
     function userSetPair(
         uint256 _accountNumber,
@@ -201,41 +200,41 @@ interface ISmartDebtSettings {
     /**
      * Adds a new smart debt pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
 
     /**
      * Removes a smart debt pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
 
     /**
      * Adds a new smart collateral pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
 
     /**
      * Removes a smart collateral pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
 
     /**
      * Sets the fee for a pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
-     * @param _feeSettings The fee settings
+     * @param  _marketId1   The first market ID of the pair
+     * @param  _marketId2   The second market ID of the pair
+     * @param  _feeSettings The fee settings
      */
     function ownerSetPairFeeSettings(
         uint256 _marketId1,
@@ -246,14 +245,14 @@ interface ISmartDebtSettings {
     /**
      * Sets the depeg fee percentage
      *
-     * @param _depegFeePercentage The depeg fee percentage
+     * @param  _depegFeePercentage The depeg fee percentage
      */
     function ownerSetDepegFeePercentage(IDolomiteStructs.Decimal memory _depegFeePercentage) external;
 
     /**
      * Sets the slight fee percentage
      *
-     * @param _slightFeePercentage The slight fee percentage
+     * @param  _slightFeePercentage The slight fee percentage
      */
     function ownerSetSlightFeePercentage(IDolomiteStructs.Decimal memory _slightFeePercentage) external;
 
@@ -264,23 +263,23 @@ interface ISmartDebtSettings {
     /**
      * Checks if a pair is a smart debt pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
 
     /**
      * Checks if a pair is a smart collateral pair
      *
-     * @param _marketId1 The first market ID of the pair
-     * @param _marketId2 The second market ID of the pair
+     * @param  _marketId1 The first market ID of the pair
+     * @param  _marketId2 The second market ID of the pair
      */
     function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
 
     /**
      * Gets the admin and global fees for a pair
      *
-     * @param _pairBytes The unique identifier for the pair
+     * @param  _pairBytes The unique identifier for the pair
      */
     function pairFees(
         bytes32 _pairBytes
@@ -289,7 +288,7 @@ interface ISmartDebtSettings {
     /**
      * Gets the fee settings for a pair
      *
-     * @param _pairBytes The unique identifier for the pair
+     * @param  _pairBytes The unique identifier for the pair
      */
     function pairFeeSettings(bytes32 _pairBytes) external view returns (FeeSettings memory);
 
@@ -306,8 +305,8 @@ interface ISmartDebtSettings {
     /**
      * Gets the pair position for a user and account number
      *
-     * @param _user The user
-     * @param _accountNumber The account number
+     * @param  _user            The user
+     * @param  _accountNumber   The account number
      *
      * @return The pair position
      */

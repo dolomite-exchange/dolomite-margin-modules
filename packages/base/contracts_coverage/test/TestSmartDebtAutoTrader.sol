@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { SmartDebtAutoTrader } from "../smart-debt/SmartDebtAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { SmartDebtAutoTrader } from "../smart-debt/SmartDebtAutoTrader.sol";
 
 
 /**

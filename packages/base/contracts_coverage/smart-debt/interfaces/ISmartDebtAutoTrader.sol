@@ -43,8 +43,8 @@ interface ISmartDebtAutoTrader is IInternalAutoTraderBase, ISmartDebtSettings {
     /**
      * Initializes the smart debt auto trader
      *
-     * @param _tokens Array of token addresses
-     * @param _feedIds Array of Chainlink feed IDs corresponding to provided token addresses
+     * @param  _tokens  Array of token addresses
+     * @param  _feedIds Array of Chainlink feed IDs corresponding to provided token addresses
      */
     function initialize(
         address[] memory _tokens,

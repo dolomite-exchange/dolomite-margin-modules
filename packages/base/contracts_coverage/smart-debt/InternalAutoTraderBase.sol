@@ -56,8 +56,8 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
     /**
      * Constructor
      *
-     * @param _chainId The chain ID of the chain this contract is deployed on
-     * @param _dolomiteRegistry The address of the Dolomite registry contract
+     * @param  _chainId             The chain ID of the chain this contract is deployed on
+     * @param  _dolomiteRegistry    The address of the Dolomite registry contract
      */
     constructor(
         uint256 _chainId,

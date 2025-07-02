@@ -31,7 +31,6 @@ import { Require } from "../protocol/lib/Require.sol";
 import { IInternalAutoTraderBase } from "./interfaces/IInternalAutoTraderBase.sol";
 import { ISmartDebtAutoTrader } from "./interfaces/ISmartDebtAutoTrader.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   SmartDebtAutoTrader
@@ -102,9 +101,9 @@ contract SmartDebtAutoTrader is
      *
      * @dev Only callable by a trusted internal trader caller
      *
-     * @param _sender The address of the sender
-     * @param _accountInfo The account info
-     * @param _data The encoded data
+     * @param  _sender      The address of the sender
+     * @param  _accountInfo The account info
+     * @param  _data        The encoded data
      */
     function callFunction(
         address _sender,
@@ -124,11 +123,11 @@ contract SmartDebtAutoTrader is
      *
      * @dev The maker account is zap account of user making the trade, taker account is smart debt user
      *
-     * @param _inputMarketId The input market ID
-     * @param _outputMarketId The output market ID
-     * @param _takerAccount The taker account
-     * @param _inputDeltaWei The input delta wei
-     * @param _data The encoded data
+     * @param  _inputMarketId   The input market ID
+     * @param  _outputMarketId  The output market ID
+     * @param  _takerAccount    The taker account
+     * @param  _inputDeltaWei   The input delta wei
+     * @param  _data            The encoded data
      */
     function getTradeCost(
         uint256 _inputMarketId,
@@ -308,11 +307,11 @@ contract SmartDebtAutoTrader is
      *      usdcAmount (6 decimals) * bidPriceOfUsdc (36 - 6 = 30 decimals) = usdcValue (36 decimals)
      *      usdcValue (36 decimals) / askPriceOfUsdt (36 - 6 = 30 decimals) = usdt amount in 6 decimals
      *
-     * @param _inputMarketId The input market ID
-     * @param _outputMarketId The output market ID
-     * @param _pairPosition The pair position
-     * @param _inputAmountWei The input amount in wei
-     * @param _data The encoded data
+     * @param  _inputMarketId   The input market ID
+     * @param  _outputMarketId  The output market ID
+     * @param  _pairPosition    The pair position
+     * @param  _inputAmountWei  The input amount in wei
+     * @param  _data            The encoded data
      *
      * @return The output token amount
      */
@@ -344,7 +343,11 @@ contract SmartDebtAutoTrader is
         );
         /*assert(bidPrice != 0 && askPrice != 0);*/
 
-        IDolomiteStructs.Decimal memory totalFeePercentage = _calculateTotalFeePercentage(inputReport, outputReport, _pairPosition);
+        IDolomiteStructs.Decimal memory totalFeePercentage = _calculateTotalFeePercentage(
+            inputReport,
+            outputReport,
+            _pairPosition
+        );
 
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
         uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(totalFeePercentage));
@@ -366,9 +369,9 @@ contract SmartDebtAutoTrader is
      * @dev The formula is:
      *      totalFeePercentage = baseFeePercentage * (1 + volatilityFeePercentage) * timeMultiplier
      *
-     * @param _inputReport The input report
-     * @param _outputReport The output report
-     * @param _pairPosition The pair position
+     * @param  _inputReport     The input report
+     * @param  _outputReport    The output report
+     * @param  _pairPosition    The pair position
      *
      * @return The dynamic fee
      */
@@ -380,8 +383,15 @@ contract SmartDebtAutoTrader is
         FeeSettings memory feeSettings = pairFeeSettings(_pairPosition.pairBytes);
         (,IDolomiteStructs.Decimal memory baseFee) = pairFees(_pairPosition.pairBytes);
 
-        IDolomiteStructs.Decimal memory volatilityFeePercentage = _getVolatilityFeePercentage(_inputReport, _outputReport, feeSettings);
-        uint256 timeMultiplier = _calculateTimeMultiplier(_min(_inputReport.timestamp, _outputReport.timestamp), feeSettings);
+        IDolomiteStructs.Decimal memory volatilityFeePercentage = _getVolatilityFeePercentage(
+            _inputReport,
+            _outputReport,
+            feeSettings
+        );
+        uint256 timeMultiplier = _calculateTimeMultiplier(
+            _min(_inputReport.timestamp, _outputReport.timestamp),
+            feeSettings
+        );
 
         return (timeMultiplier * baseFee.value.mul(volatilityFeePercentage.onePlus())).toDecimal();
     }
@@ -391,9 +401,9 @@ contract SmartDebtAutoTrader is
      *
      * @dev Returns the corresponding fee percentage based on the maximum volatility level between both reports
      *
-     * @param _inputReport The latest report for the input token
-     * @param _outputReport The latest report for the output token
-     * @param _feeSettings The fee settings containing volatility thresholds
+     * @param  _inputReport     The latest report for the input token
+     * @param  _outputReport    The latest report for the output token
+     * @param  _feeSettings     The fee settings containing volatility thresholds
      *
      * @return The volatility-based fee percentage as a Decimal
      */
@@ -421,8 +431,8 @@ contract SmartDebtAutoTrader is
      *      Starts at 2x multiplier after cliff period
      *      Increases by 1x for each compounding interval beyond the cliff
      *
-     * @param _oldestReportTimestamp The timestamp of the oldest report between input and output tokens
-     * @param _feeSettings The fee settings containing cliff and compounding interval parameters
+     * @param  _oldestReportTimestamp   The timestamp of the oldest report between input and output tokens
+     * @param  _feeSettings             The fee settings containing cliff and compounding interval parameters
      *
      * @return The time multiplier (1 if no penalty, >=2 if penalty applies)
      */
@@ -445,7 +455,7 @@ contract SmartDebtAutoTrader is
     /**
      * Gets the volatility level for a pair based on the bid/ask spread
      *
-     * @param _report The latest report
+     * @param  _report The latest report
      *
      * @return The volatility level
      */
@@ -472,11 +482,11 @@ contract SmartDebtAutoTrader is
      *
      * @dev These prices are straight from the data stream and have 18 decimals
      *
-     * @param _inputMarketId The input market ID
-     * @param _outputMarketId The output market ID
-     * @param _bidPrice The bid price
-     * @param _askPrice The ask price
-     * @param _pairPosition The smart debt user's pair position
+     * @param  _inputMarketId   The input market ID
+     * @param  _outputMarketId  The output market ID
+     * @param  _bidPrice        The bid price
+     * @param  _askPrice        The ask price
+     * @param  _pairPosition    The smart debt user's pair position
      */
     function _validateExchangeRate(
         uint256 _inputMarketId,
@@ -513,8 +523,8 @@ contract SmartDebtAutoTrader is
     /**
      * Returns the minimum of two uint256 values
      *
-     * @param _a The first value
-     * @param _b The second value
+     * @param  _a The first value
+     * @param  _b The second value
      *
      * @return The minimum value
      */

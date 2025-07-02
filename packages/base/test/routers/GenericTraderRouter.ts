@@ -81,10 +81,6 @@ describe('GenericTraderRouter', () => {
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
 
   let smartDebtAutoTrader: SmartDebtAutoTrader;
-  let oracle: ChainlinkDataStreamsPriceOracle;
-  let testOracle: ChainlinkDataStreamsPriceOracle;
-
-  let verifierProxy: IVerifierProxy;
   let testVerifierProxy: TestVerifierProxy;
 
   let otherToken1: CustomTestToken;
@@ -102,40 +98,23 @@ describe('GenericTraderRouter', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
       core.borrowPositionProxyV2.address
     );
-    verifierProxy = IVerifierProxy__factory.connect(CHAINLINK_VERIFIER_PROXY_MAP[Network.ArbitrumOne], core.hhUser1);
     testVerifierProxy = await createContractWithAbi<TestVerifierProxy>(
       TestVerifierProxy__factory.abi,
       TestVerifierProxy__factory.bytecode,
       []
     );
-    oracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
-      ChainlinkDataStreamsPriceOracle__factory.abi,
-      ChainlinkDataStreamsPriceOracle__factory.bytecode,
-      getChainlinkDataStreamsPriceOracleConstructorParams(
-        core,
-        verifierProxy,
-        [core.tokens.usdc, core.tokens.usdt],
-        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
-      )
-    );
-    testOracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
-      ChainlinkDataStreamsPriceOracle__factory.abi,
-      ChainlinkDataStreamsPriceOracle__factory.bytecode,
-      getChainlinkDataStreamsPriceOracleConstructorParams(
-        core,
-        testVerifierProxy,
-        [core.tokens.usdc, core.tokens.usdt],
-        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
-      )
-    );
-    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(oracle.address);
 
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.usdt);
 
-    smartDebtAutoTrader = await createSmartDebtAutoTrader(core, Network.ArbitrumOne);
+    smartDebtAutoTrader = await createSmartDebtAutoTrader(
+      core,
+      testVerifierProxy,
+      [core.tokens.usdc, core.tokens.usdt],
+      [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
+    );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(smartDebtAutoTrader.address, true);
     await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
       [smartDebtAutoTrader.address],
@@ -217,10 +196,10 @@ describe('GenericTraderRouter', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
 
     await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
-    await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
-    await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+    await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee({ value: parseEther('.1') });
+    await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee({ value: parseEther('.5') });
     await setupLINKBalance(core, core.governance, parseEther('100'), smartDebtAutoTrader);
-    await core.tokens.link.connect(core.governance).transfer(oracle.address, parseEther('100'));
+    await core.tokens.link.connect(core.governance).transfer(smartDebtAutoTrader.address, parseEther('100'));
 
     await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
       [traderRouter.address],
@@ -711,7 +690,6 @@ describe('GenericTraderRouter', () => {
 
   describe('#swapExactInputForOutputViaSmartAccount', () => {
     it('should work normally with one swap', async () => {
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
@@ -726,7 +704,9 @@ describe('GenericTraderRouter', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
@@ -778,7 +758,6 @@ describe('GenericTraderRouter', () => {
     });
 
     it('should fail if output amount is insufficient', async () => {
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
@@ -791,7 +770,9 @@ describe('GenericTraderRouter', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
@@ -864,9 +845,6 @@ describe('GenericTraderRouter', () => {
 
   describe('#performExternalSwapViaSmartAccount', () => {
     it('should work normally with one swap', async () => {
-      if (process.env.COVERAGE === 'true') {
-        return;
-      }
       const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
 
@@ -880,72 +858,9 @@ describe('GenericTraderRouter', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
-      );
-
-      const usdcResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
-      const usdtResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']);
-      const extraBytes = defaultAbiCoder.encode(
-        ['bytes[]'],
-        [[usdcResult.report.fullReport, usdtResult.report.fullReport]]
-      );
-      const minOutputAmount = usdcAmount.div(2);
-      await setNextBlockTimestamp(usdcResult.report.timestamp);
-      await traderRouter.performExternalSwapViaSmartAccount(
-        core.tokens.usdc.address,
-        core.tokens.usdt.address,
-        usdcAmount,
-        ONE_BI,
-        [{
-          minOutputAmount,
-          makerAccount: {
-            owner: core.hhUser2.address,
-            number: defaultAccountNumber,
-          },
-          makerAccountId: 0,
-          amount: usdcAmount,
-        }],
-        extraBytes
-      );
-
-      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.usdt, minOutputAmount);
-      const usdtBal = await core.tokens.usdt.balanceOf(core.hhUser1.address);
-      await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
-
-      await expectProtocolBalance(
-        core,
-        core.hhUser2,
-        defaultAccountNumber,
-        core.marketIds.usdc,
-        usdcAmount.sub(adminFeeAmount)
-      );
-      await expectProtocolBalance(
-        core,
-        core.hhUser2,
-        defaultAccountNumber,
         core.marketIds.usdt,
-        usdtAmount.sub(usdtBal) // also fees
-      );
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, adminFeeAmount);
-    });
-
-    it('should work normally with one swap and test verifier proxy', async () => {
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
-
-      const usdcAmount = BigNumber.from('100000000');
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
-
-      const usdtAmount = BigNumber.from('200000000');
-      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
-      const outputAmount = BigNumber.from('90000000'); // 90 USDT
-      const adminFeeAmount = BigNumber.from('5000000'); // 5 USDC
-
-      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
-        defaultAccountNumber,
-        PairType.SMART_COLLATERAL,
-        core.marketIds.usdc,
-        core.marketIds.usdt
+        ZERO_BI,
+        ZERO_BI
       );
 
       const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
@@ -996,8 +911,7 @@ describe('GenericTraderRouter', () => {
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, adminFeeAmount);
     });
 
-    it('should work normally with two swaps and test verifier proxy', async () => {
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+    it('should work normally with two swaps', async () => {
       const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
 
@@ -1014,13 +928,17 @@ describe('GenericTraderRouter', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await smartDebtAutoTrader.connect(core.hhUser3).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
@@ -1096,7 +1014,6 @@ describe('GenericTraderRouter', () => {
     });
 
     it('should fail if output amount is insufficient', async () => {
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
 
@@ -1110,7 +1027,9 @@ describe('GenericTraderRouter', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));

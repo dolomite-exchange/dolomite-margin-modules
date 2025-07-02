@@ -56,10 +56,10 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Constructor
      *
-     * @param _link Address of the LINK token
-     * @param _verifierProxy Address of Chainlink Data Streams Verifier Proxy
-     * @param _chainId Chain ID
-     * @param _dolomiteRegistry Address of the DolomiteRegistry contract
+     * @param  _link                Address of the LINK token
+     * @param  _verifierProxy       Address of Chainlink Data Streams Verifier Proxy
+     * @param  _chainId             Chain ID
+     * @param  _dolomiteRegistry    Address of the DolomiteRegistry contract
      */
     constructor(
         address _link,
@@ -74,8 +74,8 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Sets the token to feedId mappings. Approves LINK to Chainlink reward manager
      *
-     * @param _tokens Array of token addresses
-     * @param _feedIds Array of feed IDs corresponding to provided token addresses
+     * @param  _tokens  Array of token addresses
+     * @param  _feedIds Array of feed IDs corresponding to provided token addresses
      */
     function _ChainlinkDataStreamsTrader__initialize(
         address[] memory _tokens,
@@ -170,7 +170,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Verifies the data stream reports and stores required information
      *
-     * @param _reports Array of Chainlink data stream reports
+     * @param  _reports Array of Chainlink data stream reports
      */
     function _postPrices(
         bytes[] memory _reports
@@ -210,9 +210,9 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
      * @dev Dolomite uses 36 - tokenDecimals for prices
      * @dev Data streams reports are in 18 decimals
      *
-     * @param _tokenDecimals The number of decimals of the token
-     * @param _value The value to standardize
-     * @param _valueDecimals The number of decimals of the value
+     * @param  _tokenDecimals   The number of decimals of the token
+     * @param  _value           The value to standardize
+     * @param  _valueDecimals   The number of decimals of the value
      *
      * @return The standardized value
      */
@@ -230,8 +230,8 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Inserts or updates a token feed
      *
-     * @param _token The token address
-     * @param _feedId The feed ID
+     * @param  _token   The token address
+     * @param  _feedId  The feed ID
      */
     function _ownerInsertOrUpdateTokenFeed(
         address _token,
@@ -250,7 +250,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Removes a token feed
      *
-     * @param _token The token address
+     * @param  _token The token address
      */
     function _ownerRemoveTokenFeed(
         address _token
@@ -267,7 +267,7 @@ abstract contract ChainlinkDataStreamsTrader is InternalAutoTraderBase, IChainli
     /**
      * Safely converts an int192 to a uint256
      *
-     * @param _value The int192 value
+     * @param  _value The int192 value
      *
      * @return The uint256 value
      */
