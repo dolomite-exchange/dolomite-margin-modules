@@ -2554,9 +2554,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
   },
   [Network.Berachain]: {},
   [Network.Botanix]: {
-    [LINK_MAP[Network.Botanix]!.address]: {
-      aggregatorAddress: '0x748499D61977694AD047121a3df677164e461Ca4',
-    },
+    // [LINK_MAP[Network.Botanix]!.address]: {
+    //   aggregatorAddress: '0x748499D61977694AD047121a3df677164e461Ca4',
+    // },
     [PBTC_MAP[Network.Botanix].address]: {
       aggregatorAddress: '0x632d2713F48ac2DF441b3cE46Bd7fa4467D419d1',
     },
