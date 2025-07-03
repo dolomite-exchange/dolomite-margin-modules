@@ -8,11 +8,6 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
-enum InterestSetter {
-  AlwaysZero,
-  Modular,
-}
-
 /**
  * This script encodes the following transactions:
  * - Adjust earnings rate and basic instance setup
@@ -24,7 +19,6 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const tokens = core.tokens;
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,

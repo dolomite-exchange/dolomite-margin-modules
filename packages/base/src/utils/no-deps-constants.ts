@@ -29,7 +29,7 @@ export type DolomiteV2Network =
 
 export type DolomiteNetwork = Network.ArbitrumOne | DolomiteV2Network;
 
-export type DolomiteNetworkNoEthereum = Exclude<DolomiteNetwork, Network.Ethereum>;
+export type DolomiteNetworkNoBotanixOrEthereum = Exclude<DolomiteNetwork, Network.Botanix | Network.Ethereum>;
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
@@ -77,7 +77,7 @@ export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
-  [Network.Botanix]: undefined,
+  [Network.Botanix]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ethereum]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Mantle]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',

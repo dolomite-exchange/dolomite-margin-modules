@@ -30,6 +30,15 @@ interface ChainsightKey {
 type EverythingButBase =
   | Network.ArbitrumOne
   | Network.Berachain
+  | Network.Botanix
+  | Network.Ethereum
+  | Network.Mantle
+  | Network.PolygonZkEvm
+  | Network.XLayer;
+
+type EverythingButBaseAndBotanix =
+  | Network.ArbitrumOne
+  | Network.Berachain
   | Network.Ethereum
   | Network.Mantle
   | Network.PolygonZkEvm
@@ -608,7 +617,10 @@ export const LINK_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = 
     marketId: 3,
   },
   [Network.Berachain]: undefined,
-  [Network.Botanix]: undefined,
+  [Network.Botanix]: {
+    address: 'TODO',
+    marketId: -1,
+  },
   [Network.Ethereum]: {
     address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
     marketId: 3,
@@ -687,6 +699,20 @@ export const OHM_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x18878Df23e2a36f81e820e4b47b4A40576D3159C',
     marketId: 30,
+  },
+};
+
+export const P_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
+  [Network.Botanix]: {
+    address: '0x42725b4D9270CFe24F6852401fdDa88248CB4dE9',
+    marketId: 6,
+  },
+};
+
+export const YP_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
+  [Network.Botanix]: {
+    address: '0xB0730D2992A003CcF99edB0a2dDC048e28393ec5',
+    marketId: 7,
   },
 };
 
@@ -866,7 +892,7 @@ export const SR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithM
 
 export const ST_BTC_MAP: Record<Network.Botanix, TokenWithMarketId> = {
   [Network.Botanix]: {
-    address: '', // TODO
+    address: '0xF4586028FFdA7Eca636864F80f8a3f2589E33795',
     marketId: 3,
   },
 };
@@ -945,7 +971,7 @@ export const USDC_MAP: Record<DolomiteNetwork, TokenWithMarketId> = {
     marketId: 2,
   },
   [Network.Botanix]: {
-    address: 'REPLACE',
+    address: '0x29eE6138DD4C9815f46D34a4A1ed48F46758A402',
     marketId: 2,
   },
   [Network.Ethereum]: {
@@ -1019,6 +1045,10 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
     address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736',
     marketId: 5,
   },
+  [Network.Botanix]: {
+    address: '0x1217bfe6c773eec6cc4a38b5dc45b92292b6e189',
+    marketId: 4,
+  },
   [Network.Ethereum]: {
     address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     marketId: 5,
@@ -1058,7 +1088,7 @@ export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
+export const WBTC_MAP: Record<EverythingButBaseAndBotanix, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
     marketId: 4,
@@ -1106,8 +1136,8 @@ export const WETH_MAP: Record<Network, TokenWithMarketId> = {
     marketId: 0,
   },
   [Network.Botanix]: {
-    address: 'TODO',
-    marketId: -1,
+    address: '0x3292c42e8E9Ab3C6a12CFdA556BbCB6f113B1E28',
+    marketId: 0,
   },
   [Network.Ethereum]: {
     address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -1572,7 +1602,7 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Base]: '0xa75c21c5be284122a87a37a76cc6c4dd3e55a1d4',
   [Network.Berachain]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.Botanix]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
+  [Network.Botanix]: '0xD0Ead284Aa5136E95CEc0C1b0bFC928c17D66dF7',
   [Network.Ethereum]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ink]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Mantle]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
@@ -2523,7 +2553,27 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
   },
   [Network.Berachain]: {},
-  [Network.Botanix]: {},
+  [Network.Botanix]: {
+    [LINK_MAP[Network.Botanix]!.address]: {
+      aggregatorAddress: '0x748499D61977694AD047121a3df677164e461Ca4',
+    },
+    [PBTC_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0x632d2713F48ac2DF441b3cE46Bd7fa4467D419d1',
+    },
+    [ST_BTC_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0x0127B0C7f15d63a9d7a2a9Bf879581B29Ff65618',
+      tokenPairAddress: PBTC_MAP[Network.Botanix].address,
+    },
+    [USDC_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0x9563258f5FF50C176A3780ab02dF25cc39C092C0',
+    },
+    [USDT_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0xA6C9d2Fe0e02D8ef5315ad9ff7045FDae01d6Aff',
+    },
+    [WETH_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0x72DE17fa370220e32ae66A7f22Be7Ab58D41C9b7',
+    },
+  },
   [Network.Ethereum]: {
     [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
