@@ -21,11 +21,11 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
-import { IOogaBoogaRouter } from "../interfaces/traders/IOogaBoogaRouter.sol";
+import { IStBTC } from "../interfaces/traders/IStBTC.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IStBTC } from "../interfaces/traders/IStBTC.sol";
 
 
 /**
@@ -44,7 +44,7 @@ contract StBTCTrader is AggregatorTraderBase {
     // ============ Storage ============
 
     address immutable public PBTC;
-    IStBTC immutable public STBTC; // solhint-disable-line
+    IStBTC immutable public STBTC;
 
     // ============ Constructor ============
 
@@ -75,6 +75,7 @@ contract StBTCTrader is AggregatorTraderBase {
         uint256 outputAmount;
         if (_inputToken == PBTC && _outputToken == address(STBTC)) {
             ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(STBTC), _inputAmount);
+
             outputAmount = STBTC.directDeposit(_inputAmount, address(this));
         } else if (_inputToken == address(STBTC) && _outputToken == PBTC) {
             outputAmount = STBTC.redeem(_inputAmount, address(this), address(this));

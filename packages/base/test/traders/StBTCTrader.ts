@@ -1,16 +1,15 @@
-import { StBTCTrader, StBTCTrader__factory } from "packages/base/src/types";
-import { CoreProtocolBotanix } from "../utils/core-protocols/core-protocol-botanix";
-import { AccountStruct } from "packages/base/src/utils/constants";
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from "../utils";
-import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
-import { disableInterestAccrual, setupCoreProtocol, setupPBTCBalance, setupWETHBalance } from "../utils/setup";
-import { createContractWithAbi, depositIntoDolomiteMargin } from "packages/base/src/utils/dolomite-utils";
-import { expect } from "chai";
-import { defaultAbiCoder, parseEther } from "ethers/lib/utils";
-import { BigNumber, BigNumberish } from "ethers";
-import { AmountDenomination, AmountReference } from "@dolomite-margin/dist/src/types";
-import { ActionType } from "@dolomite-margin/dist/src";
-import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from "../utils/assertions";
+import { StBTCTrader, StBTCTrader__factory } from 'packages/base/src/types';
+import { CoreProtocolBotanix } from '../utils/core-protocols/core-protocol-botanix';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { disableInterestAccrual, setupCoreProtocol, setupPBTCBalance } from '../utils/setup';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { expect } from 'chai';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { BigNumber, BigNumberish } from 'ethers';
+import { AmountDenomination, AmountReference } from '@dolomite-margin/dist/src/types';
+import { ActionType } from '@dolomite-margin/dist/src';
+import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
 const pBtcAmount = parseEther('100');
 const defaultAccountNumber = ZERO_BI;
@@ -20,8 +19,6 @@ describe('StBTCTrader', () => {
 
   let core: CoreProtocolBotanix;
   let trader: StBTCTrader;
-  
-  let defaultAccount: AccountStruct;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -107,7 +104,12 @@ describe('StBTCTrader', () => {
             secondaryMarketId: core.marketIds.stBtc,
             accountId: 0,
             otherAccountId: 0,
-            amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: pBtcAmount },
+            amount: {
+              sign: false,
+              denomination: AmountDenomination.Wei,
+              ref: AmountReference.Delta,
+              value: pBtcAmount
+            },
             otherAddress: trader.address,
             data: actualOrderData,
           },
@@ -218,6 +220,12 @@ describe('StBTCTrader', () => {
     expect(await core.tokens.pbtc.balanceOf(trader.address)).to.eq(ZERO_BI);
     expect(await core.tokens.stBtc.balanceOf(trader.address)).to.eq(ZERO_BI);
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, inputMarketId, ZERO_BI);
-    await expectProtocolBalanceIsGreaterThan(core, { owner: core.hhUser1.address, number: defaultAccountNumber}, outputMarketId, minOutputAmount, 0);
+    await expectProtocolBalanceIsGreaterThan(
+      core,
+      { owner: core.hhUser1.address, number: defaultAccountNumber },
+      outputMarketId,
+      minOutputAmount,
+      0
+    );
   }
 });
