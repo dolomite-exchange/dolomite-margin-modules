@@ -348,6 +348,16 @@ export async function enableInterestAccrual<T extends DolomiteNetworkNoBotanixOr
   );
 }
 
+export async function setupPBTCBalance(
+  core: CoreProtocolBotanix,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.pbtc.connect(signer).deposit({ value: amount });
+  await core.tokens.pbtc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupWBERABalance(
   core: CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
@@ -1623,7 +1633,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       },
       tokens: {
         ...coreProtocolParams.tokens,
-        pbtc: IERC20__factory.connect(PBTC_MAP[typedConfig.network].address, hhUser1),
+        pbtc: IWETH__factory.connect(PBTC_MAP[typedConfig.network].address, hhUser1),
         stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
         usdc: IERC20__factory.connect(USDC_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
