@@ -247,6 +247,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             marketInfo.token.safeTransferFrom(msg.sender, address(this), weiAmount);
             IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), weiAmount);
 
+            _emitEventIfNecessary(/* _accountOwner = */ msg.sender, _toAccountNumber, _eventFlag);
+
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
                 msg.sender,
@@ -264,6 +266,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             // Do an ordinary deposit into an isolation mode vault
             MarketInfo memory isoMarketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isoMarketInfo, msg.sender);
+
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
 
             uint256 weiAmount = _convertParToWei(address(vault), _toAccountNumber, _marketId, _amountPar);
             marketInfo.token.safeTransferFrom(msg.sender, address(this), weiAmount);
@@ -288,6 +292,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             /*assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
+
             // Par == Wei for isolation mode tokens
             marketInfo.token.safeTransferFrom(msg.sender, address(this), _amountPar);
             IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountPar);
@@ -311,7 +317,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             );
 
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
-                _emitEventAndTransferToVault(vault, _toAccountNumber, _amountPar, _eventFlag);
+                vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, _amountPar);
             }
             vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         }
@@ -393,6 +399,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         IERC20(_marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
 
         if (!_marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
+            _emitEventIfNecessary(/* _accountOwner = */ msg.sender, _toAccountNumber, _eventFlag);
+
             // Do an ordinary deposit for the asset
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
@@ -411,6 +419,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             // Do an ordinary deposit into an isolation mode vault
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
 
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
@@ -431,6 +441,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             /*assert(_marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(_marketInfo, msg.sender);
 
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
+
             _marketInfo.factory.enqueueTransferIntoDolomiteMargin(address(vault), _amountWei);
             _marketInfo.token.safeApprove(address(vault), _amountWei);
 
@@ -448,8 +460,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: _amountWei
                 })
             );
+
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
-                _emitEventAndTransferToVault(vault, _toAccountNumber, _amountWei, _eventFlag);
+                vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, _amountWei);
             }
 
             vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
@@ -484,10 +497,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         _token.safeTransfer(msg.sender, _token.balanceOf(address(this)));
     }
 
-    function _emitEventAndTransferToVault(
-        IIsolationModeTokenVaultV1 _vault,
+    function _emitEventIfNecessary(
+        address _accountOwner,
         uint256 _toAccountNumber,
-        uint256 _amount,
         EventFlag _eventFlag
     ) internal {
         if (_eventFlag == EventFlag.Borrow) {
@@ -497,9 +509,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 _FILE,
                 "Invalid toAccountNumber"
             );
-            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(address(_vault), _toAccountNumber);
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_accountOwner, _toAccountNumber);
         }
-        _vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, _amount);
     }
 
     function _wrap() internal {

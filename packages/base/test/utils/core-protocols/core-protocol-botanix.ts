@@ -5,11 +5,11 @@ import {
   CoreProtocolParams,
   CoreProtocolTokens,
 } from './core-protocol-abstract';
-import { IERC20 } from '../../../src/types';
+import { IERC20, IWETH } from '../../../src/types';
 import { BigNumberish } from 'ethers';
 
 interface CoreProtocolTokensBotanix extends CoreProtocolTokens<Network.Botanix> {
-  pbtc: IERC20;
+  pbtc: IWETH;
   pUsd: IERC20;
   stBtc: IERC20;
   usdt: IERC20;
