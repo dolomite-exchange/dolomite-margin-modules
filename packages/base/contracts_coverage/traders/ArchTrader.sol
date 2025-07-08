@@ -21,42 +21,38 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
-import { IStBTC } from "../interfaces/traders/IStBTC.sol";
+import { IAlgebraSwapRouter } from "../interfaces/traders/IAlgebraSwapRouter.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
- * @title   StBTCTrader
+ * @title   ArchTrader
  * @author  Dolomite
  *
- * Contract for performing an external trade with StBTC.
+ * Contract for performing an external trade with Arch.
  */
-contract StBTCTrader is AggregatorTraderBase {
+contract ArchTrader is AggregatorTraderBase {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "StBTCTrader";
+    bytes32 private constant _FILE = "ArchTrader";
 
     // ============ Storage ============
 
-    address immutable public PBTC;
-    IStBTC immutable public STBTC;
+    IAlgebraSwapRouter immutable public ARCH_SWAP_ROUTER; // solhint-disable-line
 
     // ============ Constructor ============
 
     constructor(
-        address _pBTC,
-        address _stBTC,
+        address _archSwapRouter,
         address _dolomiteMargin
     )
         AggregatorTraderBase(_dolomiteMargin)
     {
-        PBTC = _pBTC;
-        STBTC = IStBTC(_stBTC);
+        ARCH_SWAP_ROUTER = IAlgebraSwapRouter(_archSwapRouter);
     }
 
     // ============ Public Functions ============
@@ -72,20 +68,38 @@ contract StBTCTrader is AggregatorTraderBase {
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        uint256 outputAmount;
-        if (_inputToken == PBTC && _outputToken == address(STBTC)) {
-            ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(STBTC), _inputAmount);
-
-            outputAmount = STBTC.directDeposit(_inputAmount, address(this));
-        } else if (_inputToken == address(STBTC) && _outputToken == PBTC) {
-            outputAmount = STBTC.redeem(_inputAmount, address(this), address(this));
-        } else {
-            revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": Invalid trade")));
-        }
+        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(ARCH_SWAP_ROUTER), _inputAmount);
 
         (
             uint256 minAmountOutWei,
+            bytes memory orderData
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
+
+        uint256 outputAmount;
+        if (orderData.length == 0) {
+            IAlgebraSwapRouter.ExactInputSingleParams memory params =
+                IAlgebraSwapRouter.ExactInputSingleParams({
+                    tokenIn: _inputToken,
+                    tokenOut: _outputToken,
+                    deployer: address(0),
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _inputAmount,
+                    amountOutMinimum: 0,
+                    limitSqrtPrice: 0
+                });
+            outputAmount = ARCH_SWAP_ROUTER.exactInputSingle(params);
+        } else {
+            IAlgebraSwapRouter.ExactInputParams memory params =
+                IAlgebraSwapRouter.ExactInputParams({
+                    path: orderData,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _inputAmount,
+                    amountOutMinimum: 0
+                });
+            outputAmount = ARCH_SWAP_ROUTER.exactInput(params);
+        }
 
         if (outputAmount >= minAmountOutWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -102,20 +116,14 @@ contract StBTCTrader is AggregatorTraderBase {
     }
 
     function getExchangeCost(
-        address _inputToken,
-        address _outputToken,
-        uint256 _desiredInputAmount,
-        bytes calldata /* _orderData */
+        address,
+        address,
+        uint256,
+        bytes calldata
     )
     external
-    view
+    pure
     returns (uint256) {
-        if (_inputToken == PBTC && _outputToken == address(STBTC)) {
-            return STBTC.previewDeposit(_desiredInputAmount);
-        } else if (_inputToken == address(STBTC) && _outputToken == PBTC) {
-            return STBTC.previewRedeem(_desiredInputAmount);
-        } else {
-            revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": Invalid trade")));
-        }
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost not implemented")));
     }
 }
