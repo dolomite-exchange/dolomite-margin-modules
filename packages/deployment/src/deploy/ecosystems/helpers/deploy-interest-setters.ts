@@ -8,7 +8,7 @@ export async function deployInterestSetters<T extends Network>(
   network: T,
   dolomiteMargin: IDolomiteMargin | IDolomiteMarginV2,
 ): Promise<void> {
-  if (network === Network.Ethereum) {
+  if (network === Network.Ethereum || network === Network.Botanix) {
     await deployContractAndSave(
       'ModularLinearStepFunctionInterestSetter',
       [dolomiteMargin.address],

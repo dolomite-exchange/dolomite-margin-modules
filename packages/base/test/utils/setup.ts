@@ -154,6 +154,7 @@ import {
   NECT_MAP,
   OHM_MAP,
   PAYABLE_TOKEN_MAP,
+  PBTC_MAP,
   PENDLE_MAP,
   POL_MAP,
   PREMIA_MAP,
@@ -174,6 +175,7 @@ import {
   SOL_MAP,
   SOLV_BTC_MAP,
   SR_USD_MAP,
+  ST_BTC_MAP,
   ST_ETH_MAP,
   STONE_BTC_MAP,
   STONE_MAP,
@@ -211,7 +213,7 @@ import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
   DolomiteNetwork,
-  DolomiteNetworkNoEthereum,
+  DolomiteNetworkNoBotanixOrEthereum,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
 } from '../../src/utils/no-deps-constants';
@@ -314,20 +316,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolConfigBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolConfigEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolConfigBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolConfigEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolConfigMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolConfigPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolConfigXLayer
+                : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -336,7 +338,7 @@ export async function disableInterestAccrual<T extends DolomiteNetwork>(
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual<T extends DolomiteNetworkNoEthereum>(
+export async function enableInterestAccrual<T extends DolomiteNetworkNoBotanixOrEthereum>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
@@ -760,20 +762,20 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolXLayer
+                : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -1608,13 +1610,37 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   if (config.network === Network.Botanix) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Botanix>;
     return new CoreProtocolBotanix(coreProtocolParams as CoreProtocolParams<Network.Botanix>, {
-      odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
-      paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+      marketIds: {
+        ...coreProtocolParams.marketIds,
+        pbtc: PBTC_MAP[typedConfig.network].marketId,
+        stBtc: ST_BTC_MAP[typedConfig.network].marketId,
+        usdc: USDC_MAP[typedConfig.network].marketId,
+        usdt: USDT_MAP[typedConfig.network].marketId,
+        stablecoins: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          USDT_MAP[typedConfig.network].marketId,
+        ],
+      },
+      tokens: {
+        ...coreProtocolParams.tokens,
+        pbtc: IERC20__factory.connect(PBTC_MAP[typedConfig.network].address, hhUser1),
+        stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
+        usdc: IERC20__factory.connect(USDC_MAP[typedConfig.network].address, hhUser1),
+        usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        stablecoins: [
+          ...coreProtocolParams.tokens.stablecoins,
+          IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        ],
+      },
     }) as any;
   }
   if (config.network === Network.Ethereum) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Ethereum>;
     return new CoreProtocolEthereum(coreProtocolParams as CoreProtocolParams<Network.Ethereum>, {
+      chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
+        ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
+        hhUser1,
+      ),
       marketIds: {
         ...coreProtocolParams.marketIds,
         aave: AAVE_MAP[typedConfig.network].marketId,

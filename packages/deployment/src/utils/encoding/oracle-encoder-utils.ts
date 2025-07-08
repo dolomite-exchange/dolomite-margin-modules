@@ -290,8 +290,8 @@ export async function encodeInsertChainsightOracleV3<T extends DolomiteNetwork>(
   ];
 }
 
-export async function encodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
+export async function encodeInsertChronicleOracleV3<T extends DolomiteNetwork>(
+  core: CoreProtocolWithChronicle<T>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]

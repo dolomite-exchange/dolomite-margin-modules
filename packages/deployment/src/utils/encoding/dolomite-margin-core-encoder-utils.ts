@@ -21,7 +21,7 @@ import {
   TargetLiquidationPenalty,
   UpperPercentage,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { InterestSettersForEthereum } from '../../../../base/test/utils/ecosystem-utils/interest-setters';
+import { InterestSettersModular } from '../../../../base/test/utils/ecosystem-utils/interest-setters';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
 import {
@@ -223,7 +223,7 @@ export async function encodeSetInterestSetterData<T extends Network.Ethereum>(
 ): Promise<EncodedTransaction> {
   return prettyPrintEncodedDataWithTypeSafety(
     core,
-    core.interestSetters as InterestSettersForEthereum,
+    core.interestSetters as InterestSettersModular,
     'modularLinearInterestSetter',
     'ownerSetSettingsByToken',
     [
