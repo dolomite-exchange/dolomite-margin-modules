@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
@@ -38,11 +38,12 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
+import { GLPActionsLib } from "./GLPActionsLib.sol";
 // solhint-enable max-line-length
 
 
 /**
- * @title   GLPIsolationModeTokenVaultV2
+ * @title   GLPIsolationModeTokenVaultV3Paused
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the sGLP token that can be used to
@@ -50,9 +51,9 @@ import { ISGMX } from "./interfaces/ISGMX.sol";
  *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-contract GLPIsolationModeTokenVaultV2 is
+contract GLPIsolationModeTokenVaultV3Paused is
     IGLPIsolationModeTokenVaultV2,
-    IsolationModeTokenVaultV1WithFreezable
+    IsolationModeTokenVaultV1WithFreezableAndPausable
 {
     using SafeERC20 for IERC20;
 
@@ -156,88 +157,25 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function signalAccountTransfer(
-        address _receiver,
-        uint256 _glpBalance
-    ) external onlyGmxVault(msg.sender) {
-        if (_glpBalance > 0) {
-            _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BALANCE_SLOT, _glpBalance);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
-            assert(!shouldSkipTransfer());
-        } else {
-            _setUint256(_TEMP_BALANCE_SLOT, 0);
-        }
-
-        gmx().approve(address(sGmx()), type(uint256).max);
-        gmxRewardsRouter().signalTransfer(_receiver);
+        address /* _receiver */,
+        uint256 /* _glpBalance */
+    ) external view onlyGmxVault(msg.sender) {
+        revert("Paused");
     }
 
-    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
-        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
-            gmx().approve(address(sGmx()), 0);
-            gmxRewardsRouter().signalTransfer(address(0));
-
-            uint256 tempBal = _getUint256(_TEMP_BALANCE_SLOT);
-            if (tempBal > 0) {
-                Require.that(
-                    underlyingBalanceOf() >= tempBal,
-                    _FILE,
-                    "Invalid underlying balance of"
-                );
-
-                _setShouldSkipTransfer(true);
-                _setUint256(_TEMP_BALANCE_SLOT, 0);
-                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
-                assert(!shouldSkipTransfer());
-            }
-        }
+    function cancelAccountTransfer() external view onlyGmxVault(msg.sender) {
+        revert("Paused");
     }
 
     function acceptFullAccountTransfer(
-        address _sender
+        address /* _sender */
     )
     external
     override
     nonReentrant
     requireNotFrozen
     onlyVaultOwnerOrVaultFactory(msg.sender) {
-        Require.that(
-            _sender != address(0),
-            _FILE,
-            "Invalid sender"
-        );
-        Require.that(
-            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
-            _FILE,
-            "Cannot transfer more than once"
-        );
-
-        gmxRewardsRouter().acceptTransfer(_sender);
-
-        // set this flag so we don't materialize the transfer. This is needed because the assets are spot settled in
-        // this vault via the call to #acceptTransfer
-        _setIsAcceptingFullAccountTransfer(true);
-
-        // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
-        uint256 amountWei = underlyingBalanceOf();
-        IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, amountWei);
-
-        if (hasSynced()) {
-            uint256 amountGmx = gmxBalanceOf();
-            address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
-            assert(gmxVault != address(0));
-
-            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
-        } else {
-            // This will automatically sync the balances
-            getGmxVaultOrCreate();
-        }
-
-        // reset the flag back to false
-        _setIsAcceptingFullAccountTransfer(false);
-
-        // set this flag so we don't allow full account transfers again
-        _setHasAcceptedFullAccountTransfer(true);
+        revert("Paused");
     }
 
     function vestGlp(uint256 _esGmxAmount) external override requireNotFrozen onlyVaultOwner(msg.sender) {
@@ -344,7 +282,12 @@ contract GLPIsolationModeTokenVaultV2 is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function isVaultFrozen() public view override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) returns (bool) {
+    function isExternalRedemptionPaused() public pure returns (bool) {
+        // Always return true for now while GLP/GMX is exploited
+        return true;
+    }
+
+    function isVaultFrozen() public view override returns (bool) {
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
         return gmxVault == address(0) ? false : IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
     }
@@ -472,76 +415,21 @@ contract GLPIsolationModeTokenVaultV2 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        address gmxVault = getGmxVaultOrCreate();
-        Require.that(
-            (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
-            _FILE,
-            "Can only deposit ETH if claiming"
-        );
-        Require.that(
-            !(!_shouldClaimGmx && _shouldStakeGmx),
-            _FILE,
-            "Can only stake GMX if claiming"
-        );
-
-        IERC20 _gmx = gmx();
-        if (_shouldStakeGmx) {
-            // we don't know how much GMX will be staked, so we have to approve all
-            _approveGmxForStaking(_gmx, type(uint256).max);
-        }
-
-        uint256 stakedGmxBalanceBefore = gmxBalanceOf();
-        gmxRewardsRouter().handleRewards(
+        GLPActionsLib.handleRewards(
+            /* _vault = */ this,
             _shouldClaimGmx,
             _shouldStakeGmx,
             _shouldClaimEsGmx,
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-            /* _shouldConvertWethToEth = */ false
+            _shouldDepositWethIntoDolomite,
+            _depositAccountNumberForWeth
         );
-        uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
-
-        if (_shouldStakeGmx) {
-            // we can reset the allowance back to 0 here
-            _approveGmxForStaking(_gmx, /* _amount = */ 0);
-        }
-
-        if (_shouldClaimGmx) {
-            uint256 unstakedGmxBalance = _gmx.balanceOf(address(this));
-            _gmx.safeApprove(address(DOLOMITE_MARGIN()), unstakedGmxBalance);
-            IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                _DEFAULT_ACCOUNT_NUMBER,
-                DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
-                unstakedGmxBalance
-            );
-            _depositIntoGMXVault(
-                gmxVault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                stakedGmxBalanceDelta,
-                /* shouldSkipTransfer = */ true
-            );
-        }
-
-        if (_shouldClaimWeth) {
-            address factory = VAULT_FACTORY();
-            address weth = IGLPIsolationModeVaultFactory(factory).WETH();
-            uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
-            if (_shouldDepositWethIntoDolomite) {
-                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
-                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    _depositAccountNumberForWeth,
-                    IGLPIsolationModeVaultFactory(factory).WETH_MARKET_ID(),
-                    wethAmountWei
-                );
-            } else {
-                IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
-            }
-        }
     }
 
     function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
-        _approveGmxForStaking(_gmx, _amount);
+        GLPActionsLib.approveGmxForStaking(_gmx, address(sGmx()), _amount);
         gmxRewardsRouter().stakeGmx(_amount);
     }
 
@@ -569,17 +457,6 @@ contract GLPIsolationModeTokenVaultV2 is
                 );
             }
         }
-    }
-
-    function _approveGmxForStaking(IERC20 _gmx, uint256 _amount) internal {
-        address _sGmx = address(sGmx());
-        uint256 allowance = _gmx.allowance(address(this), _sGmx);
-        if (_amount > 0 && allowance > 0) {
-            // reset the allowance to 0 if the approval is greater than zero and there is a non-zero allowance
-            _gmx.safeApprove(_sGmx, 0);
-        }
-
-        _gmx.safeApprove(_sGmx, _amount);
     }
 
     function _sync(address _gmxVault) internal {
