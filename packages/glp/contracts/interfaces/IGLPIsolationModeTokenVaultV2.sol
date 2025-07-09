@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-// solhint-disable-line max-line-length
+// solhint-disable max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { ISGMX } from "./ISGMX.sol";
-// solhint-enable-line max-line-length
+// solhint-enable max-line-length
 
 
 /**

@@ -344,7 +344,12 @@ contract GLPIsolationModeTokenVaultV2 is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function isVaultFrozen() public view override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) returns (bool) {
+    function isVaultFrozen()
+        public
+        view
+        override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
+        returns (bool)
+    {
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
         return gmxVault == address(0) ? false : IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
     }

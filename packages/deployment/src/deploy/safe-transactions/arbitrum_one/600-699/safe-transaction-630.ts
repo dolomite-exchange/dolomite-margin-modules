@@ -26,11 +26,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const glpActionsLib = await deployContractAndSave(
+    'GLPActionsLib',
+    [],
+  );
+
   const vaultAddress = await deployContractAndSave(
     'GLPIsolationModeTokenVaultV3Paused',
     [],
-    undefined,
-    core.libraries.tokenVaultActionsImpl,
+    'GLPIsolationModeTokenVaultV11Paused',
+    { ...core.libraries.tokenVaultActionsImpl, GLPActionsLib: glpActionsLib },
   );
 
   const transactions: EncodedTransaction[] = [
