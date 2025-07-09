@@ -6,10 +6,7 @@ import { parseEther } from 'ethers/lib/utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import { checkSupplyCap } from '../../../../utils/invariant-utils';
-
-const SECURITY_COUNCIL_ADDRESS = '0x9B2B58317d074Fdf9110Bbb78447949DFbB1Cb06';
 
 /**
  * This script encodes the following transactions:
@@ -22,9 +19,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.magic, 250_000),
-  ];
+  const transactions: EncodedTransaction[] = [await encodeSetSupplyCapWithMagic(core, core.marketIds.magic, 250_000)];
 
   return {
     core,

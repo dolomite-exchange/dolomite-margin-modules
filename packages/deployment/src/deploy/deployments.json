@@ -3046,6 +3046,13 @@
       "isVerified": true
     }
   },
+  "GLPActionsLib": {
+    "42161": {
+      "address": "0x5777a3BE29F4f215B0E28727499D53c96a5a3195",
+      "transaction": "0xe4be5b176170309f7823f4f4997582105db561fc70b2ecc10c3501600a372ff4",
+      "isVerified": true
+    }
+  },
   "GLPIsolationModePriceOracleV1": {
     "42161": {
       "address": "0x32A558519623A96611248660e882dC9cF0B15791",
@@ -3057,6 +3064,13 @@
     "42161": {
       "address": "0x36beCd748e7E446069F47209555Ec92Db8b97146",
       "transaction": "0x17dca08a8c77138bd74fc58b7e3469d9c25d0ace995a31b75c79d9bed058d9c4",
+      "isVerified": true
+    }
+  },
+  "GLPIsolationModeTokenVaultV11Paused": {
+    "42161": {
+      "address": "0x99dF3634a3534e88B2fA480c1c595ec9b1fC93b1",
+      "transaction": "0xb68a2c25a723f624d92ee1d45238629ecdf99b849c0f45eefcf34af50256e665",
       "isVerified": true
     }
   },

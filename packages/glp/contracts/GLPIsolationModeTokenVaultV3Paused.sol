@@ -280,7 +280,7 @@ contract GLPIsolationModeTokenVaultV3Paused is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function isExternalRedemptionPaused() public pure returns (bool) {
+    function isExternalRedemptionPaused() public override pure returns (bool) {
         // Always return true for now while GLP/GMX is exploited
         return true;
     }

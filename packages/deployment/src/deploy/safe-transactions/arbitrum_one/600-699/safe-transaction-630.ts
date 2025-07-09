@@ -1,19 +1,11 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
 import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetSupplyCap,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import getScriptName from '../../../../utils/get-script-name';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { checkSupplyCap } from '../../../../utils/invariant-utils';
-
-const SECURITY_COUNCIL_ADDRESS = '0x9B2B58317d074Fdf9110Bbb78447949DFbB1Cb06';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -26,10 +18,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const glpActionsLib = await deployContractAndSave(
-    'GLPActionsLib',
-    [],
-  );
+  const glpActionsLib = await deployContractAndSave('GLPActionsLib', []);
 
   const vaultAddress = await deployContractAndSave(
     'GLPIsolationModeTokenVaultV3Paused',
@@ -39,13 +28,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.gmxEcosystem.live,
-      'dGlp',
-      'setUserVaultImplementation',
-      [vaultAddress],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxEcosystem.live, 'dGlp', 'setUserVaultImplementation', [
+      vaultAddress,
+    ]),
   ];
 
   return {
@@ -61,8 +46,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-    },
+    invariants: async () => {},
   };
 }
 
