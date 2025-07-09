@@ -158,6 +158,7 @@ interface IEventEmitterRegistry {
     event AsyncWithdrawalCancelled(bytes32 indexed key, address indexed token);
 
     event DistributorRegistered(
+        address vesterContract,
         address oTokenAddress,
         address pairToken,
         address paymentToken
@@ -168,6 +169,23 @@ interface IEventEmitterRegistry {
         address indexed user,
         uint256 epoch,
         uint256 amount
+    );
+
+    event DolomiteSettingChanged(
+        bytes32 indexed settingId,
+        bytes value
+    );
+
+    event UserSettingChanged(
+        address indexed user,
+        bytes32 indexed settingId,
+        bytes value
+    );
+
+    event TokenSettingChanged(
+        address indexed token,
+        bytes32 indexed settingId,
+        bytes value
     );
 
     // ================================================
@@ -288,7 +306,18 @@ interface IEventEmitterRegistry {
 
     function emitAsyncWithdrawalCancelled(bytes32 _key, address _token) external;
 
-    function emitDistributorRegistered(address _oTokenAddress, address _pairToken, address _paymentToken) external;
+    function emitDistributorRegistered(
+        address _vesterContract,
+        address _oTokenAddress,
+        address _pairToken,
+        address _paymentToken
+    ) external;
 
     function emitRewardClaimed(address _user, uint256 _epoch, uint256 _amount) external;
+
+    function emitDolomiteSettingChanged(bytes32 _settingId, bytes calldata _value) external;
+
+    function emitUserSettingChanged(address _user, bytes32 _settingId, bytes calldata _value) external;
+
+    function emitTokenSettingChanged(address _token, bytes32 _settingId, bytes calldata _value) external;
 }
