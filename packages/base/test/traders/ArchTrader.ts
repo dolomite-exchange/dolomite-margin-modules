@@ -1,6 +1,6 @@
 import { ArchTrader, ArchTrader__factory } from 'packages/base/src/types';
 import { CoreProtocolBotanix } from '../utils/core-protocols/core-protocol-botanix';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { ADDRESS_ZERO, BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { disableInterestAccrual, setupCoreProtocol, setupPBTCBalance } from '../utils/setup';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
@@ -16,7 +16,7 @@ const pBtcAmount = parseEther('.0001');
 const defaultAccountNumber = ZERO_BI;
 
 const ARCH_SWAP_ROUTER = '0x480E5DDD62637568d2515268f525b34F5387537D';
-const ARCH_POOL_DEPLOYER = '';
+const ARCH_SWAP_QUOTER = '0xbb2D2f51BF9B56eC57Cfb925Fa05d36c3e80cF81';
 
 describe('ArchTrader', () => {
   let snapshotId: string;
@@ -33,7 +33,7 @@ describe('ArchTrader', () => {
     trader = await createContractWithAbi<ArchTrader>(
       ArchTrader__factory.abi,
       ArchTrader__factory.bytecode,
-      [ARCH_SWAP_ROUTER, core.dolomiteMargin.address]
+      [ARCH_SWAP_ROUTER, ARCH_SWAP_QUOTER, core.dolomiteMargin.address]
     );
 
     await disableInterestAccrual(core, core.marketIds.pbtc);
@@ -76,7 +76,10 @@ describe('ArchTrader', () => {
         core.marketIds.stBtc,
         ONE_BI
       );
-      const stBtcAmount = await core.dolomiteMargin.getAccountWei({ owner: core.hhUser1.address, number: defaultAccountNumber }, core.marketIds.stBtc);
+      const stBtcAmount = await core.dolomiteMargin.getAccountWei(
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        core.marketIds.stBtc
+      );
 
       // swap from stBTC to USDC.e
       await doSwapAndCheckResults(
@@ -153,34 +156,17 @@ describe('ArchTrader', () => {
   });
 
   describe('#getExchangeCost', () => {
-    // it('should work normally for pBTC -> stBTC', async () => {
-    //   expect(await trader.getExchangeCost(
-    //     core.tokens.pbtc.address,
-    //     core.tokens.stBtc.address,
-    //     pBtcAmount,
-    //     BYTES_EMPTY
-    //   )).to.eq(pBtcAmount);
-    // });
-
-    // it('should work normally for stBTC -> pBTC', async () => {
-    //   expect(await trader.getExchangeCost(
-    //     core.tokens.stBtc.address,
-    //     core.tokens.pbtc.address,
-    //     pBtcAmount,
-    //     BYTES_EMPTY
-    //   )).to.eq(pBtcAmount);
-    // });
-
-    // it('should fail for invalid trade', async () => {
-    //   await expectThrow(trader.getExchangeCost(
-    //     core.tokens.weth.address,
-    //     core.tokens.pbtc.address,
-    //     pBtcAmount,
-    //     BYTES_EMPTY
-    //   ),
-    //     'StBTCTrader: Invalid trade'
-    //   );
-    // });
+    it('should revert', async () => {
+      await expectThrow(
+        trader.getExchangeCost(
+          core.tokens.pbtc.address,
+          core.tokens.stBtc.address,
+          pBtcAmount,
+          BYTES_EMPTY
+        ),
+        'ArchTrader: getExchangeCost not implemented'
+      );
+    });
   });
 
   async function doSwapAndCheckResults(

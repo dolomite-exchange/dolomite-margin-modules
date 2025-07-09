@@ -21,7 +21,9 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
+import { IAlgebraSwapQuoter } from "../interfaces/traders/IAlgebraSwapQuoter.sol";
 import { IAlgebraSwapRouter } from "../interfaces/traders/IAlgebraSwapRouter.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
@@ -43,16 +45,17 @@ contract ArchTrader is AggregatorTraderBase {
     // ============ Storage ============
 
     IAlgebraSwapRouter immutable public ARCH_SWAP_ROUTER; // solhint-disable-line
+    IAlgebraSwapQuoter immutable public ARCH_SWAP_QUOTER; // solhint-disable-line
 
     // ============ Constructor ============
 
     constructor(
         address _archSwapRouter,
+        address _archSwapQuoter,
         address _dolomiteMargin
-    )
-        AggregatorTraderBase(_dolomiteMargin)
-    {
+    ) AggregatorTraderBase(_dolomiteMargin) {
         ARCH_SWAP_ROUTER = IAlgebraSwapRouter(_archSwapRouter);
+        ARCH_SWAP_QUOTER = IAlgebraSwapQuoter(_archSwapQuoter);
     }
 
     // ============ Public Functions ============
