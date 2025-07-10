@@ -124,7 +124,9 @@ describe('IsolationModeTokenVaultV1', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize(
+      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+    );
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -293,7 +295,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should work normally when depositing other asset', async () => {
       await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
       await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
+
       await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
         isolationModeMarketId,
         borrowAccountNumber,
@@ -307,7 +309,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when depositing other asset into account number 0', async () => {
       await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
       await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
+
       await expectThrow(
         core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
           isolationModeMarketId,
@@ -324,7 +326,7 @@ describe('IsolationModeTokenVaultV1', () => {
       await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
       await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
       await factory.setAllowableCollateralMarketIds([core.marketIds.weth]);
-      
+
       await expectThrow(
         core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
           isolationModeMarketId,
@@ -356,7 +358,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should work normally when withdrawing other asset from borrow account', async () => {
       await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
       await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, otherAmountWei);
-      
+
       await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
         isolationModeMarketId,
         borrowAccountNumber,

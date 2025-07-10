@@ -3067,7 +3067,7 @@
       "isVerified": true
     }
   },
-  "GLPIsolationModeTokenVaultV11Paused": {
+  "GLPIsolationModeTokenVaultV3PausedV1": {
     "42161": {
       "address": "0x99dF3634a3534e88B2fA480c1c595ec9b1fC93b1",
       "transaction": "0xb68a2c25a723f624d92ee1d45238629ecdf99b849c0f45eefcf34af50256e665",

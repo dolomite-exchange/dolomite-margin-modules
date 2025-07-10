@@ -127,7 +127,9 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize(
+      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+    );
 
     solidUser = core.hhUser5;
 
