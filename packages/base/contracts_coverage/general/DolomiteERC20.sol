@@ -544,7 +544,6 @@ contract DolomiteERC20 is
         IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(CHAIN_ID, _marketId);
         if (!maxSupplyWei.isZero()) {
             uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei, _marketId);
-
             if (excessTokens > remainingSupplyAvailable) {
                 // Increase the supply cap temporarily so the admin can deposit
                 _ownerSetMaxSupplyWei(0, _marketId);
@@ -672,8 +671,9 @@ contract DolomiteERC20 is
         /*assert(_maxSupplyWei.isPositive());*/
 
         IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
+        IDolomiteStructs.Wei memory remainingSupplyWei = _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar));
 
-        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
+        return remainingSupplyWei.sign ? remainingSupplyWei.value : 0;
     }
 
     /**

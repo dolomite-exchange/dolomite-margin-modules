@@ -5,6 +5,8 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteOwner } from "@dolomite-exchange/modules-admin/contracts/interfaces/IDolomiteOwner.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
@@ -12,18 +14,15 @@ import { IDolomiteERC20 } from "../interfaces/IDolomiteERC20.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteERC20
@@ -365,7 +364,6 @@ contract DolomiteERC20 is
         uint256 actionsCursor = 0;
         uint256 _marketId = marketId();
         bool isLossy = _getIsLossy(_from, _to, _amount);
-        console.log("isLossy: ", isLossy);
         bool dolomiteOwnerZeroBalance = _isOwnerBalanceZeroOrNegative();
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(_from, _to, isLossy);
@@ -544,7 +542,6 @@ contract DolomiteERC20 is
         IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(CHAIN_ID, _marketId);
         if (!maxSupplyWei.isZero()) {
             uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei, _marketId);
-
             if (excessTokens > remainingSupplyAvailable) {
                 // Increase the supply cap temporarily so the admin can deposit
                 _ownerSetMaxSupplyWei(0, _marketId);
@@ -672,8 +669,11 @@ contract DolomiteERC20 is
         assert(_maxSupplyWei.isPositive());
 
         IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
+        IDolomiteStructs.Wei memory remainingSupplyWei = _maxSupplyWei.sub(
+            DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)
+        );
 
-        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
+        return remainingSupplyWei.sign ? remainingSupplyWei.value : 0;
     }
 
     /**

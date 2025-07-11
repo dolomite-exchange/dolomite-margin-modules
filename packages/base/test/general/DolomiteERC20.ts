@@ -13,6 +13,7 @@ import {
   ADDRESS_ZERO,
   MAX_UINT_256_BI,
   Network,
+  ONE_BI,
   ONE_DAY_SECONDS,
   ONE_ETH_BI,
   ZERO_BI,
@@ -231,13 +232,10 @@ describe('DolomiteERC20', () => {
       await expectNotEvent(core.dolomiteMargin, result, 'LogSetMaxWei');
     });
 
-    it.only('should work when lossy and owner deposit exceeds supply cap', async () => {
-      const assets = await core.dTokens.usdc.totalSupply();
-      console.log('assets: ', assets);
-      const ownerUsdc = BigNumber.from('1000000000');
+    it('should work when lossy and owner deposit exceeds supply cap', async () => {
       await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
         core.marketIds.usdc,
-        assets.add(ownerUsdc.sub(1)),
+        ONE_BI,
       );
 
       const transferAmount = parValue.div(3);
@@ -251,8 +249,8 @@ describe('DolomiteERC20', () => {
         .to.eq(transferAmount);
 
       const maxWeiBefore = await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc);
-      expect(maxWeiBefore.value).to.eq(assets.add(ownerUsdc.sub(1)));
-      await expectProtocolBalanceIsGreaterThan(core, dolomiteOwnerAccount, core.marketIds.usdc, ownerUsdc, 0);
+      expect(maxWeiBefore.value).to.eq(ONE_BI);
+      await expectProtocolBalanceIsGreaterThan(core, dolomiteOwnerAccount, core.marketIds.usdc, ONE_BI, 0);
 
       await expectEvent(core.dolomiteMargin, result, 'LogWithdrawExcessTokens', {
         token: core.tokens.usdc.address,
@@ -268,11 +266,11 @@ describe('DolomiteERC20', () => {
     });
 
     it('should work when lossy and owner deposit DOES NOT exceed supply cap', async () => {
-      const assets = await token.totalAssets();
       const numExcessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
+      const tenMillionUsdc = BigNumber.from('100000000000000');
       await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
         core.marketIds.usdc,
-        assets.add(numExcessTokens.value),
+        tenMillionUsdc,
       );
 
       const transferAmount = parValue.div(3);
@@ -286,7 +284,7 @@ describe('DolomiteERC20', () => {
         .to.eq(transferAmount);
 
       expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc)).value)
-        .to.eq(assets.add(numExcessTokens.value));
+        .to.eq(tenMillionUsdc);
       await expectProtocolBalance(
         core,
         dolomiteOwner,
@@ -334,7 +332,7 @@ describe('DolomiteERC20', () => {
 
     it('should fail if invalid receiver', async () => {
       const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
-      await core.dolomiteAccountRegistry.ownerSetRestrictedAccount(core.hhUser2.address, true);
+      await core.dolomiteAccountRegistry.connect(dolomiteOwnerImpersonator).ownerSetRestrictedAccount(core.hhUser2.address, true);
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue),
         'ERC20: Transfers can only be made to valid receivers',
@@ -436,7 +434,10 @@ describe('DolomiteERC20', () => {
 
   describe('#unscaledBalanceOf', () => {
     it('should work normally', async () => {
-      await enableInterestAccrual(core, core.marketIds.usdc);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetInterestSetter(
+        core.marketIds.usdc,
+        core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
+      );
       const weiAmount = await core.dolomiteMargin.getAccountWei(accountInfo, core.marketIds.usdc);
       expect(await token.unscaledBalanceOf(core.hhUser1.address)).to.eq(weiAmount.value);
       await increase(ONE_DAY_SECONDS);
