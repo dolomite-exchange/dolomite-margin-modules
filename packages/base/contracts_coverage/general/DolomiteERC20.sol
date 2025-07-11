@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteOwner } from "@dolomite-exchange/modules-admin/contracts/interfaces/IDolomiteOwner.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
@@ -17,6 +18,10 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 /**
@@ -35,8 +40,10 @@ contract DolomiteERC20 is
     using AccountActionLib for IDolomiteMargin;
     using DolomiteMarginMath for uint256;
     using InterestIndexLib for IDolomiteMargin;
+    using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using TypesLib for IDolomiteStructs.Par;
     using TypesLib for IDolomiteStructs.Wei;
+    using SafeERC20 for IERC20;
 
     bytes32 private constant _FILE = "DolomiteERC20";
 
@@ -48,6 +55,18 @@ contract DolomiteERC20 is
     bytes32 private constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.underlyingToken")) - 1);
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
+    uint256 private constant _FROM_ACCOUNT_ID = 0;
+    uint256 private constant _THIS_ACCOUNT_ID = 1;
+    uint256 private constant _TO_ACCOUNT_ID = 2;
+    uint256 private constant _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID = 3;
+
+    uint256 public immutable CHAIN_ID;
+
+    constructor(
+        uint256 _chainId
+    ) {
+        CHAIN_ID = _chainId;
+    }
 
     function initialize(
         string calldata _name,
@@ -303,6 +322,10 @@ contract DolomiteERC20 is
         return _getUint256InNestedMap(_ALLOWANCES_SLOT, _owner, _spender);
     }
 
+    function asset() public view returns (address) {
+        return DOLOMITE_MARGIN().getMarketTokenAddress(marketId());
+    }
+
     /**
      * @dev Moves `_amount` of tokens from `_from` to `_to`.
      *
@@ -340,16 +363,54 @@ contract DolomiteERC20 is
             "ERC20: Transfers can only be made to valid receivers"
         );
 
-        DOLOMITE_MARGIN().transfer(
-            _from,
-            _DEFAULT_ACCOUNT_NUMBER,
-            _to,
-            _DEFAULT_ACCOUNT_NUMBER,
-            marketId(),
-            IDolomiteStructs.AssetDenomination.Par,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
+        uint256 actionsCursor = 0;
+        uint256 _marketId = marketId();
+        bool isLossy = _getIsLossy(_from, _to, _amount);
+        bool dolomiteOwnerZeroBalance = _isOwnerBalanceZeroOrNegative();
+
+        IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(_from, _to, isLossy);
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            _getActionsLength(isLossy, dolomiteOwnerZeroBalance)
         );
+        actionsCursor = _appendTransferActions(actions, actionsCursor, _amount);
+
+        uint256 maxSupplyWeiBefore = _handleIsLossy(
+            actions,
+            actionsCursor,
+            isLossy,
+            dolomiteOwnerZeroBalance
+        );
+
+        DOLOMITE_MARGIN().operate(accounts, actions);
+
+        AccountBalanceLib.verifyBalanceIsNonNegative(
+            DOLOMITE_MARGIN(),
+            accounts[_FROM_ACCOUNT_ID].owner,
+            accounts[_FROM_ACCOUNT_ID].number,
+            _marketId
+        );
+        AccountBalanceLib.verifyBalanceIsNonNegative(
+            DOLOMITE_MARGIN(),
+            accounts[_TO_ACCOUNT_ID].owner,
+            accounts[_TO_ACCOUNT_ID].number,
+            _marketId
+        );
+
+        if (isLossy) {
+            AccountBalanceLib.verifyBalanceIsNonNegative(
+                DOLOMITE_MARGIN(),
+                accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].owner,
+                accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].number,
+                _marketId
+            );
+        }
+
+        /*assert(IERC20(asset()).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);*/
+
+        if (maxSupplyWeiBefore != 0) {
+            _ownerSetMaxSupplyWei(maxSupplyWeiBefore, _marketId);
+        }
 
         emit Transfer(_from, _to, _amount);
     }
@@ -410,11 +471,261 @@ contract DolomiteERC20 is
         }
     }
 
+    function _getActionsLength(bool _isLossy, bool _dolomiteOwnerZeroBalance) internal pure returns (uint256) {
+        if (_isLossy && _dolomiteOwnerZeroBalance) {
+            return 4;
+        } else if (_isLossy) {
+            return 3;
+        } else {
+            return 2;
+        }
+    }
+
+    /**
+     * @return  The max supply wei before the update occurred. 0 if it was unchanged or was "unlimited" beforehand.
+     */
+    function _handleIsLossy(
+        IDolomiteStructs.ActionArgs[] memory _actions,
+        uint256 _actionsCursor,
+        bool _isLossy,
+        bool _dolomiteOwnerZeroBalance
+    ) internal returns (uint256) {
+        if (!_isLossy) {
+            return 0;
+        }
+
+        // transfer from dolomite margin owner to dToken. primaryAccount is dToken
+        // if dolomite margin owner does not have enough funds, do a withdrawExcessTokens and deposit
+        uint256 _marketId = marketId();
+        IDolomiteStructs.AssetAmount memory transferAmount = IDolomiteStructs.AssetAmount({
+            sign: true,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: 1
+        });
+        _actions[_actionsCursor++] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Transfer,
+            accountId: _THIS_ACCOUNT_ID,
+            amount: transferAmount,
+            primaryMarketId: _marketId,
+            secondaryMarketId: 0,
+            otherAddress: address(0),
+            otherAccountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
+            data: bytes("")
+        });
+
+        if (!_dolomiteOwnerZeroBalance) {
+            return 0;
+        }
+
+        uint256 balanceBefore = IERC20(asset()).balanceOf(address(this));
+        _ownerWithdrawExcessTokens();
+        uint256 excessTokens = IERC20(asset()).balanceOf(address(this)) - balanceBefore;
+
+        IDolomiteStructs.AssetAmount memory depositAmount = IDolomiteStructs.AssetAmount({
+            sign: true,
+            denomination: IDolomiteStructs.AssetDenomination.Wei,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: excessTokens
+        });
+        _actions[_actionsCursor++] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Deposit,
+            accountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
+            amount: depositAmount,
+            primaryMarketId: _marketId,
+            secondaryMarketId: _marketId,
+            otherAddress: address(this),
+            otherAccountId: 0,
+            data: bytes("")
+        });
+
+        IERC20(asset()).safeApprove(address(DOLOMITE_MARGIN()), excessTokens);
+
+        IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(CHAIN_ID, _marketId);
+        if (!maxSupplyWei.isZero()) {
+            uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei, _marketId);
+
+            if (excessTokens > remainingSupplyAvailable) {
+                // Increase the supply cap temporarily so the admin can deposit
+                _ownerSetMaxSupplyWei(0, _marketId);
+                return maxSupplyWei.value;
+            }
+        }
+
+        return 0;
+    }
+
+    function _appendTransferActions(
+        IDolomiteStructs.ActionArgs[] memory _actions,
+        uint256 _actionsCursor,
+        uint256 _amount
+    ) internal view returns (uint256) {
+        uint256 _marketId = marketId();
+
+        IDolomiteStructs.AssetAmount memory assetAmount0 = IDolomiteStructs.AssetAmount({
+            sign: false,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: _amount
+        });
+        _actions[_actionsCursor++] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Transfer,
+            accountId: _FROM_ACCOUNT_ID,
+            amount: assetAmount0,
+            primaryMarketId: _marketId,
+            secondaryMarketId: 0,
+            otherAddress: address(0),
+            otherAccountId: _THIS_ACCOUNT_ID,
+            data: bytes("")
+        });
+
+        IDolomiteStructs.AssetAmount memory assetAmount1 = IDolomiteStructs.AssetAmount({
+            sign: true,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: _amount
+        });
+        _actions[_actionsCursor++] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Transfer,
+            accountId: _TO_ACCOUNT_ID,
+            amount: assetAmount1,
+            primaryMarketId: _marketId,
+            secondaryMarketId: 0,
+            otherAddress: address(0),
+            otherAccountId: _THIS_ACCOUNT_ID,
+            data: bytes("")
+        });
+
+        return _actionsCursor;
+    }
+
+    function _ownerWithdrawExcessTokens() internal {
+        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+            address(DOLOMITE_MARGIN()),
+            abi.encodeWithSelector(
+                IDolomiteMarginAdmin.ownerWithdrawExcessTokens.selector,
+                marketId(),
+                address(this)
+            )
+        );
+    }
+
+    function _ownerSetMaxSupplyWei(uint256 _maxSupplyWei, uint256 _marketId) internal {
+        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+            address(DOLOMITE_MARGIN()),
+            DolomiteMarginVersionWrapperLib.encodeVersionedOwnerSetMaxSupplyWei(
+                CHAIN_ID,
+                _marketId,
+                _maxSupplyWei
+            )
+        );
+    }
+
+
+    function _getAccounts(
+        address _from,
+        address _to,
+        bool _isLossy
+    ) internal view returns (IDolomiteStructs.AccountInfo[] memory) {
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](_isLossy ? 4 : 3);
+
+        accounts[_FROM_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: _from,
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+        accounts[_THIS_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+        accounts[_TO_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: _to,
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+
+        if (_isLossy) {
+            accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+                owner: DOLOMITE_MARGIN_OWNER(),
+                number: _DEFAULT_ACCOUNT_NUMBER
+            });
+        }
+
+        return accounts;
+    }
+
+
+    function _isOwnerBalanceZeroOrNegative() internal view returns (bool) {
+        IDolomiteStructs.Par memory dolomiteOwnerPar = DOLOMITE_MARGIN().getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: DOLOMITE_MARGIN_OWNER(),
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+
+        return dolomiteOwnerPar.isZero() || !dolomiteOwnerPar.sign;
+    }
+
+    function _getRemainingSupplyAvailable(
+        IDolomiteStructs.Wei memory _maxSupplyWei,
+        uint256 _marketId
+    ) internal view returns (uint256) {
+        /*assert(_maxSupplyWei.isPositive());*/
+
+        IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
+
+        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
+    }
+
+    /**
+     * @return  True if the transfer will make `address(this)` go negative due to a rounding error
+     */
+    function _getIsLossy(address _from, address _to, uint256 _amount) internal view returns (bool) {
+        // Step 1:  we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
+        // Step 2:  we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei
+        //          from doing the second transfer
+        // Step 3:  needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.Par memory deltaPar = _toPar(/* _sign = */ true, _amount);
+
+        // @dev Calculate the first delta wei
+        IDolomiteStructs.Par memory fromPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _from,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(marketId(), fromPar);
+        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(dolomiteMargin.parToWei(marketId(), fromPar.sub(deltaPar)));
+
+        // @dev Calculate the second delta wei
+        IDolomiteStructs.Par memory toPar = dolomiteMargin.getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _to,
+                number: _DEFAULT_ACCOUNT_NUMBER
+            }),
+            marketId()
+        );
+        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(marketId(), toPar);
+        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(marketId(), toPar.add(deltaPar)).sub(toWei);
+
+        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(marketId(), deltaWei1.sub(deltaWei2));
+
+        return finalPar.value != 0;
+    }
+
     function _setMetadataStruct(MetadataStruct memory _metadata) internal {
         MetadataStruct storage metadata = _getMetadataSlot();
         metadata.name = _metadata.name;
         metadata.symbol = _metadata.symbol;
         metadata.decimals = _metadata.decimals;
+    }
+
+    function _toPar(bool _sign, uint256 _value) internal pure returns (IDolomiteStructs.Par memory) {
+        return IDolomiteStructs.Par({
+            sign: _sign,
+            value: _value.to128()
+        });
     }
 
     function _getMetadataSlot() internal pure returns (MetadataStruct storage metadata) {

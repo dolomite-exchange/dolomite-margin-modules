@@ -402,7 +402,6 @@ library AccountActionLib {
         uint256 _primaryMarketId,
         uint256 _secondaryMarketId,
         address _traderAddress,
-        uint256 _amountInPar,
         uint256 _chainId,
         bool _calculateAmountWithMakerAccount,
         bytes memory _orderData
@@ -432,7 +431,6 @@ library AccountActionLib {
         uint256 _primaryMarketId,
         uint256 _secondaryMarketId,
         address _traderAddress,
-        uint256 _amountInPar,
         uint256 _chainId,
         bool _calculateAmountWithMakerAccount,
         bytes memory _orderData

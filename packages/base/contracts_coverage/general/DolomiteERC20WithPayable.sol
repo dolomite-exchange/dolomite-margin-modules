@@ -40,7 +40,7 @@ contract DolomiteERC20WithPayable is
 
     IWETH private immutable _WETH;
 
-    constructor(address _weth) {
+    constructor(address _weth, uint256 _chainId) DolomiteERC20(_chainId) {
         _WETH = IWETH(_weth);
     }
 
