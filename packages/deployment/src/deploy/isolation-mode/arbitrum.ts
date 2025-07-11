@@ -55,7 +55,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   [DFS_GLP_MAP[network].marketId]: {
     contractName: 'GLPIsolationModeTokenVaultV2',
     contractRenameWithoutVersion: 'GLPIsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GLPIsolationModeTokenVault', network),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GLPIsolationModeTokenVaultV3Paused', network),
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,

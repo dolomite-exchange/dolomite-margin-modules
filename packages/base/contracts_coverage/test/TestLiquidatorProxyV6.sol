@@ -22,16 +22,16 @@ pragma solidity ^0.8.9;
 
 import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { LiquidatorProxyV5 } from "../proxies/LiquidatorProxyV5.sol";
+import { LiquidatorProxyV6 } from "../proxies/LiquidatorProxyV6.sol";
 
 
 /**
- * @title   TestLiquidatorProxyV5
+ * @title   TestLiquidatorProxyV6
  * @author  Dolomite
  *
- * @notice  Contract for testing the LiquidatorProxyV5
+ * @notice  Contract for testing the LiquidatorProxyV6
  */
-contract TestLiquidatorProxyV5 is LiquidatorProxyV5 {
+contract TestLiquidatorProxyV6 is LiquidatorProxyV6 {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
@@ -40,7 +40,7 @@ contract TestLiquidatorProxyV5 is LiquidatorProxyV5 {
         address _dolomiteMargin,
         address _dolomiteRegistry,
         address _liquidatorAssetRegistry
-    ) LiquidatorProxyV5(
+    ) LiquidatorProxyV6(
         _chainId,
         _expiry,
         _dolomiteMargin,
