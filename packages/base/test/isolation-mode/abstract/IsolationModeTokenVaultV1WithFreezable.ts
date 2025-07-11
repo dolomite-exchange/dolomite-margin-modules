@@ -135,7 +135,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
+    await factory.connect(core.governance).ownerInitialize(
+      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+    );
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -223,7 +225,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
-      
+
       await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
       await expectWalletBalance(userVault, underlyingToken, amountWei);
 
@@ -344,7 +346,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
-    }); 
+    });
 
     it('should fail if vault is frozen', async () => {
       await freezeVault();

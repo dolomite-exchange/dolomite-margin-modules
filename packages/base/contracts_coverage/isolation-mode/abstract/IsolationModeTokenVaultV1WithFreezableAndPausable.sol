@@ -21,24 +21,25 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithAsyncFreezable } from "./IsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "./IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVaultV1WithPausable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
-import { IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
+import "hardhat/console.sol";
 
 /**
- * @title   IsolationModeTokenVaultV1WithAsyncFreezableAndPausable
+ * @title   IsolationModeTokenVaultV1WithFreezableAndPausable
  * @author  Dolomite
  *
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
  *          if vault is frozen or borrows if the ecosystem integration is paused
  */
-abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
-    IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
-    IsolationModeTokenVaultV1WithAsyncFreezable,
+abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
+    IIsolationModeTokenVaultV1WithFreezableAndPausable,
+    IsolationModeTokenVaultV1WithFreezable,
     IsolationModeTokenVaultV1WithPausable
 {
 
@@ -48,9 +49,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_toAccountNumber)
-        _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, _amountWei)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
+        _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
     {
         IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(
             _toAccountNumber,
@@ -64,8 +65,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_fromAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
         _withdrawFromVaultForDolomiteMarginPausableValidator(_fromAccountNumber)
     {
         IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(
@@ -81,8 +82,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _openBorrowPositionAsyncFreezableValidator(_fromAccountNumber, _toAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _openBorrowPositionFreezableValidator()
         _openBorrowPositionPausableValidator(
             _fromAccountNumber,
             _toAccountNumber,
@@ -102,8 +103,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
-        _closeBorrowPositionWithUnderlyingVaultTokenAsyncFreezableValidator(_borrowAccountNumber, _toAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator(_borrowAccountNumber)
     {
         IsolationModeTokenVaultV1._closeBorrowPositionWithUnderlyingVaultToken(
             _borrowAccountNumber,
@@ -118,8 +119,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _closeBorrowPositionWithOtherTokensAsyncFreezableValidator(_borrowAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _closeBorrowPositionWithOtherTokensFreezableValidator(_borrowAccountNumber)
         _closeBorrowPositionWithOtherTokensPausableValidator(
             _borrowAccountNumber,
             _toAccountNumber,
@@ -140,8 +141,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _transferIntoPositionWithUnderlyingTokenAsyncFreezableValidator(_fromAccountNumber, _borrowAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _transferIntoPositionWithUnderlyingTokenFreezableValidator()
         _transferIntoPositionWithUnderlyingTokenPausableValidator(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -164,8 +165,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
-        _transferIntoPositionWithOtherTokenAsyncFreezableValidator(_borrowAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _transferIntoPositionWithOtherTokenFreezableValidator()
     {
         IsolationModeTokenVaultV1._transferIntoPositionWithOtherToken(
             _fromAccountNumber,
@@ -183,8 +184,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _transferFromPositionWithUnderlyingTokenAsyncFreezableValidator(_borrowAccountNumber, _toAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _transferFromPositionWithUnderlyingTokenFreezableValidator(_borrowAccountNumber)
         _transferFromPositionWithUnderlyingTokenPausableValidator(_borrowAccountNumber, _toAccountNumber, _amountWei)
     {
         IsolationModeTokenVaultV1._transferFromPositionWithUnderlyingToken(
@@ -203,8 +204,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _transferFromPositionWithOtherTokenAsyncFreezableValidator(_borrowAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _transferFromPositionWithOtherTokenFreezableValidator(_borrowAccountNumber)
         _transferFromPositionWithOtherTokenPausableValidator(
             _borrowAccountNumber,
             _toAccountNumber,
@@ -230,8 +231,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
-        _repayAllForBorrowPositionAsyncFreezableValidator(_borrowAccountNumber)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _repayAllForBorrowPositionFreezableValidator()
     {
         IsolationModeTokenVaultV1._repayAllForBorrowPosition(
             _fromAccountNumber,
@@ -253,14 +254,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
-            _fromAccountNumber,
-            _borrowAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei
-        )
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _addCollateralAndSwapExactInputForOutputFreezableValidator()
     {
         IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -286,13 +281,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _swapExactInputForOutputAndRemoveCollateralAsyncFreezableValidator(
-            _borrowAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei
-        )
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator()
         _swapExactInputForOutputAndRemoveCollateralPausableValidator(
             _borrowAccountNumber
         )
@@ -314,13 +304,8 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _swapExactInputForOutputAsyncFreezableValidator(
-            _params.tradeAccountNumber,
-            _params.marketIdsPath,
-            _params.inputAmountWei,
-            _params.minOutputAmountWei
-        )
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _swapExactInputForOutputFreezableValidator()
         _swapExactInputForOutputPausableValidator(
             _params.tradeAccountNumber,
             _params.marketIdsPath,
@@ -336,9 +321,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
         view
-        _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_accountNumber)
         _depositIntoVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
     {
         IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
@@ -350,9 +335,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     )
         internal
         virtual
-        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
         view
-        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_accountNumber)
         _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
     {
         IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
