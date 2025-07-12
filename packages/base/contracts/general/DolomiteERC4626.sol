@@ -863,8 +863,11 @@ contract DolomiteERC4626 is
         assert(_maxSupplyWei.isPositive());
 
         IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
+        IDolomiteStructs.Wei memory remainingSupplyWei = _maxSupplyWei.sub(
+            DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)
+        );
 
-        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
+        return remainingSupplyWei.sign ? remainingSupplyWei.value : 0;
     }
 
     /**
