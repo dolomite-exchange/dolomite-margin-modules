@@ -274,8 +274,6 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
     this.depositWithdrawalRouter = params.depositWithdrawalRouter;
-    // 1b576f726c64204c
-    // 6962657274792046696e616e6369616c20555344
     this.deployedVaults = params.deployedVaults;
     this.deployedVaultsMap = params.marketIdToDeployedVaultMap;
     this.dolomiteMargin = params.dolomiteMargin;
