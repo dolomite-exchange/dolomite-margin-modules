@@ -63,7 +63,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   ylStEth: IERC20;
 }
 
-export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomiteTokens<Network.Berachain> {
+export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomiteTokens {
   beraEth: DolomiteERC4626;
   deUsd: DolomiteERC4626;
   eBtc: DolomiteERC4626;

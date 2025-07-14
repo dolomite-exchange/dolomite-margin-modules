@@ -114,7 +114,8 @@ import {
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
-  DPT_GLP_MAR_2024_MAP, DPT_GLP_SEP_2024_MAP,
+  DPT_GLP_MAR_2024_MAP,
+  DPT_GLP_SEP_2024_MAP,
   DPT_R_ETH_JUN_2025_MAP,
   DPT_RS_ETH_SEP_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
@@ -316,20 +317,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Berachain
-      ? CoreProtocolConfigBerachain
-      : T extends Network.Botanix
-        ? CoreProtocolConfigBotanix
-        : T extends Network.Ethereum
-          ? CoreProtocolConfigEthereum
-          : T extends Network.Mantle
-            ? CoreProtocolConfigMantle
-            : T extends Network.PolygonZkEvm
-              ? CoreProtocolConfigPolygonZkEvm
-              : T extends Network.XLayer
-                ? CoreProtocolConfigXLayer
-                : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Botanix
+  ? CoreProtocolConfigBotanix
+  : T extends Network.Ethereum
+  ? CoreProtocolConfigEthereum
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -762,20 +763,20 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Botanix
-        ? CoreProtocolBotanix
-        : T extends Network.Ethereum
-          ? CoreProtocolEthereum
-          : T extends Network.Mantle
-            ? CoreProtocolMantle
-            : T extends Network.PolygonZkEvm
-              ? CoreProtocolPolygonZkEvm
-              : T extends Network.XLayer
-                ? CoreProtocolXLayer
-                : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Botanix
+  ? CoreProtocolBotanix
+  : T extends Network.Ethereum
+  ? CoreProtocolEthereum
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -1165,6 +1166,14 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     },
     dTokens: {
       all: await gatherAllDolomite4626TokenContracts(config, hhUser1),
+      implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
+        'DolomiteERC4626Implementation',
+        config.network,
+      ),
+      payableImplementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
+        'DolomiteERC4626WithPayableImplementation',
+        config.network,
+      ),
     },
     marketIds: {
       usdc: USDC_MAP[config.network].marketId,
@@ -1617,10 +1626,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         stBtc: ST_BTC_MAP[typedConfig.network].marketId,
         usdc: USDC_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
-        stablecoins: [
-          ...coreProtocolParams.marketIds.stablecoins,
-          USDT_MAP[typedConfig.network].marketId,
-        ],
+        stablecoins: [...coreProtocolParams.marketIds.stablecoins, USDT_MAP[typedConfig.network].marketId],
       },
       tokens: {
         ...coreProtocolParams.tokens,

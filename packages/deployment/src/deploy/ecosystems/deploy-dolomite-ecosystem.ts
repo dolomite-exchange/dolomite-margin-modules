@@ -162,12 +162,12 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'DolomiteERC4626',
     await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 3),
   );
   await deployContractAndSave(
     'DolomiteERC4626WithPayable',
     await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 3),
   );
 
   const genericTraderProxyV2LibAddress = await deployContractAndSave(
