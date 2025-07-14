@@ -2,11 +2,10 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkSupplyCap } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -19,7 +18,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [await encodeSetSupplyCapWithMagic(core, core.marketIds.magic, 250_000)];
+  const glpActionsLib = await deployContractAndSave('GLPActionsLib', []);
+
+  const vaultAddress = await deployContractAndSave(
+    'GLPIsolationModeTokenVaultV3Paused',
+    [],
+    'GLPIsolationModeTokenVaultV11Paused',
+    { ...core.libraries.tokenVaultActionsImpl, GLPActionsLib: glpActionsLib },
+  );
+
+  const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxEcosystem.live, 'dGlp', 'setUserVaultImplementation', [
+      vaultAddress,
+    ]),
+  ];
 
   return {
     core,
@@ -34,9 +46,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-      await checkSupplyCap(core, core.marketIds.magic, parseEther(`${250_000}`));
-    },
+    invariants: async () => {},
   };
 }
 

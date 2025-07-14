@@ -1,10 +1,9 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { checkSupplyCap } from '../../../../utils/invariant-utils';
 
@@ -19,7 +18,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [await encodeSetSupplyCapWithMagic(core, core.marketIds.magic, 250_000)];
+  const transactions: EncodedTransaction[] = [await encodeSetSupplyCap(core, core.marketIds.dfsGlp, ONE_BI)];
 
   return {
     core,
@@ -35,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkSupplyCap(core, core.marketIds.magic, parseEther(`${250_000}`));
+      await checkSupplyCap(core, core.marketIds.dfsGlp, ONE_BI);
     },
   };
 }
