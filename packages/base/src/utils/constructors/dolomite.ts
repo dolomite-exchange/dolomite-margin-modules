@@ -393,6 +393,18 @@ export function getDolomiteMigratorConstructorParams<T extends DolomiteNetwork>(
   return [dolomiteRegistry.address, handler, dolomiteMargin.address];
 }
 
+export function getDolomiteErc20ImplementationConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+): any[] {
+  return [core.network];
+}
+
+export function getDolomiteErc20PayableImplementationConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+): any[] {
+  return [core.tokens.payableToken.address, core.network];
+}
+
 export async function getDolomiteErc20ProxyConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   implementation: DolomiteERC20,

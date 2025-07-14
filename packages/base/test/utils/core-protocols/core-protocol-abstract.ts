@@ -99,7 +99,9 @@ export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   stablecoins: IERC20[];
 }
 
-export interface CoreProtocolDolomiteTokens<T extends DolomiteNetwork> {
+export interface CoreProtocolDolomiteTokens {
+  implementationAddress: string;
+  payableImplementationAddress: string;
   all: (DolomiteERC4626 | DolomiteERC4626WithPayable)[];
 }
 
@@ -142,7 +144,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
-  dTokens: CoreProtocolDolomiteTokens<T>;
+  dTokens: CoreProtocolDolomiteTokens;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV2;
@@ -209,7 +211,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
-  public readonly dolomiteTokens: CoreProtocolDolomiteTokens<T>;
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokens;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
