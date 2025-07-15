@@ -5215,6 +5215,13 @@
       "isVerified": true
     }
   },
+  "JonesUSDCV2IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x52313016C024793F9d8383A5538485C6471e2e94",
+      "transaction": "0xb65bacc8e868c5b88a35021fad549c8f022c72b6778d0c717852c412ca74d21a",
+      "isVerified": true
+    }
+  },
   "JonesUSDCV2IsolationModeUnwrapperTraderForLiquidationV2": {
     "42161": {
       "address": "0x8BA70C0FC026B2324face4c9A052488DdD48AA7c",

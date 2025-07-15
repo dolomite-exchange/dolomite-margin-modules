@@ -65,7 +65,7 @@ contract JonesUSDCIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
-    function isExternalRedemptionPaused() public override view returns (bool) {
+    function isExternalRedemptionPaused() public virtual override view returns (bool) {
         IJonesWhitelistControllerV2 whitelistController = registry().whitelistController();
         address unwrapperTrader = registry().unwrapperTraderForLiquidation();
         bytes32 unwrapperRole = whitelistController.getUserRole(unwrapperTrader);

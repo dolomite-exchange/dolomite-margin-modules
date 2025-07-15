@@ -94,6 +94,13 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const BYUSD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x688e72142674041f8f6af4c808a4045ca1d6ac82',
+    marketId: 40,
+  },
+};
+
 export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Network.Base, string> = {
   [Network.ArbitrumOne]: '0x37D9dC70bfcd8BC77Ec2858836B923c560E891D1',
   [Network.Base]: '0xE226D5aCae908252CcA3F6CEFa577527650a9e1e',
@@ -583,7 +590,7 @@ export const HONEY_MAP: Record<Network.Berachain, TokenWithMarketId> = {
 export const JONES_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x10393c20975cF177a3513071bC110f7962CD67da',
-    marketId: -1,
+    marketId: 25,
   },
 };
 
@@ -2880,6 +2887,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     },
     [BTC_PLACEHOLDER_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
+    },
+    [BYUSD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x4cEC96A68cb9A979621b104F3C94884be1a66da0',
     },
     [DE_USD_MAP[Network.Berachain].address]: {
       aggregatorAddress: '', // TODO

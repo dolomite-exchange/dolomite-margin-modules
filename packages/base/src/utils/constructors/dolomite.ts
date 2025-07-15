@@ -82,6 +82,16 @@ export enum TargetCollateralization {
   _111 = '1.111111111111111111',
 
   /**
+   * 109% collateralization || 91% LTV
+   */
+  _109 = '1.098901098901098901',
+
+  /**
+   * 108% collateralization || 92% LTV
+   */
+  _108 = '1.086956521739130434',
+
+  /**
    * 107% collateralization || 93% LTV
    */
   _107 = '1.071428571428571428',

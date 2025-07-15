@@ -24,6 +24,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   beraEth: IERC20;
   bgt: IBGT;
   btcPlaceholder: IERC20;
+  byusd: IERC20;
   deUsd: IERC20;
   diBgt: IERC20;
   dolo: IERC20;
@@ -36,6 +37,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   lbtc: IERC20;
   nect: IERC20;
   ohm: IERC20;
+  polRUsd: IERC20;
   pumpBtc: IERC20;
   rsEth: IERC20;
   rswEth: IERC20;
@@ -101,6 +103,7 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
 
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   beraEth: BigNumberish;
+  byusd: BigNumberish;
   deUsd: BigNumberish;
   diBgt: BigNumberish;
   dolo: BigNumberish;
@@ -112,6 +115,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   lbtc: BigNumberish;
   nect: BigNumberish;
   ohm: BigNumberish;
+  polRUsd: BigNumberish;
   pumpBtc: BigNumberish;
   rsEth: BigNumberish;
   rswEth: BigNumberish;

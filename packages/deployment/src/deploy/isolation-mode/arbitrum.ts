@@ -260,7 +260,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     tokenAddress: DPT_WE_ETH_JUN_2024_MAP[network].address,
   },
   [DJ_USDC_V2[network].marketId]: {
-    contractName: 'JonesUSDCIsolationModeTokenVaultV1',
+    contractName: 'JonesUSDCIsolationModeTokenVaultV3',
     contractRenameWithoutVersion: 'JonesUSDCV2IsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('JonesUSDCV2IsolationModeTokenVault', network),
     constructorParams: [],
@@ -365,7 +365,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     tokenAddress: D_GM_DOGE_USD_MAP[network].address,
   },
   [D_GM_GMX_USD_MAP[network].marketId]: {
-    contractName: 'GmxV2IsolationModeTokenVaultV2', // TODO: do the others?
+    contractName: 'GmxV2IsolationModeTokenVaultV1',
     contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       GMX_V2_TOKEN_VAULT_RENAME,
