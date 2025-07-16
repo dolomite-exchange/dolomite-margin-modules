@@ -709,6 +709,13 @@ export const OHM_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const ORI_BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x69f1E971257419B1E9C405A553f252c64A29A30a',
+    marketId: -1,
+  },
+};
+
 export const P_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
   [Network.Botanix]: {
     address: '0x42725b4D9270CFe24F6852401fdDa88248CB4dE9',

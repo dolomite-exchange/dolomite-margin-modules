@@ -10,7 +10,6 @@ import { TokenInfo } from '../src';
 import { ERC4626PriceOracle, ERC4626PriceOracle__factory, IERC4626, IERC4626__factory } from '../src/types';
 
 const ORI_BGT_PRICE = BigNumber.from('4095315751369824094'); // ~ $4
-const ORI_BGT = '0x69f1E971257419B1E9C405A553f252c64A29A30a';
 
 describe('ERC4626PriceOracle', () => {
   let snapshotId: string;
@@ -28,14 +27,14 @@ describe('ERC4626PriceOracle', () => {
     oracle = await createContractWithAbi<ERC4626PriceOracle>(
       ERC4626PriceOracle__factory.abi,
       ERC4626PriceOracle__factory.bytecode,
-      [ORI_BGT, core.dolomiteMargin.address],
+      [core.tokens.oriBgt.address, core.dolomiteMargin.address],
     );
-    vault = IERC4626__factory.connect(ORI_BGT, core.hhUser1);
+    vault = IERC4626__factory.connect(core.tokens.oriBgt.address, core.hhUser1);
 
     const tokenInfo: TokenInfo = {
       oracleInfos: [{ oracle: oracle.address, tokenPair: core.tokens.iBgt.address, weight: 100 }],
       decimals: 18,
-      token: ORI_BGT,
+      token: core.tokens.oriBgt.address,
     };
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(tokenInfo);
 
@@ -48,7 +47,7 @@ describe('ERC4626PriceOracle', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await oracle.VAULT()).to.eq(ORI_BGT);
+      expect(await oracle.VAULT()).to.eq(core.tokens.oriBgt.address);
       expect(await oracle.VAULT_DECIMALS()).to.eq(18);
       expect(await oracle.ASSET()).to.eq(core.tokens.iBgt.address);
       expect(await oracle.ASSET_DECIMALS()).to.eq(18);
@@ -58,12 +57,12 @@ describe('ERC4626PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('should work normally to get iBgt asset amount', async () => {
-      const price = await oracle.getPrice(ORI_BGT);
+      const price = await oracle.getPrice(core.tokens.oriBgt.address);
       expect(price.value).to.eq(await vault.convertToAssets(ONE_ETH_BI));
     });
 
     it('should work normally with oracle aggregator', async () => {
-      const price = await core.oracleAggregatorV2.getPrice(ORI_BGT);
+      const price = await core.oracleAggregatorV2.getPrice(core.tokens.oriBgt.address);
       expect(price.value).to.eq(ORI_BGT_PRICE);
     });
 
