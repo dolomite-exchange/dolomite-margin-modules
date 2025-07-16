@@ -9778,6 +9778,51 @@
     }
   },
   "TestPriceOracleForAdmin": {
+    "1": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0x2291835309172512e821883e8f56c280c23f67e8aab857ef5112e7afcaab7797",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0x9219407492c736579bd6ea33e6b78f74a62a8eb6b7bb98a201894125911e9718",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0x6b13574a80e575b6ea1af4af90c5070778dd71d1955baa5eb09f8c3fb0a707cc",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0x0e810e6ba58676e7c8da98cdb123b550ed912e62556c039e4a8fd228ecf8917d",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0x4a6f06b9f7e1347e29ee5ee6e084db019fab7dcf50cf84f59e7cdf2bd30fa376",
+      "isVerified": true
+    },
+    "5330": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0xcf56dad1ec6311cb3dc6ae7aac213566bb27e01eb9b6df86eafa8dc95a6ee0d6",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0xe45c0cd7f2c3c62cd098829e12c4f1537c6412beb43a18e226a6dc3d35de35b8",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0xbca6bb667cf492fd6c1c458767018ed1ae0519e7c149c01bbd576d3a64a925de",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0xee969da82358be226f7921b886687c3930672a94dfda941f993f590e31a1f7a8",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
       "transaction": "0xd0a1dd6b44bbab93d29a4a1b5cccdc11866eef0b01e0949164e3f4ddcf3e9025",

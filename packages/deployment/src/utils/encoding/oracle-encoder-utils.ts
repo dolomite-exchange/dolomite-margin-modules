@@ -33,8 +33,8 @@ import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety, setMostRecentTokenDecimals } from './base-encoder-utils';
 import { encodeSetIsCollateralOnly, encodeSetSupplyCap } from './dolomite-margin-core-encoder-utils';
 
-export async function encodeTestOracleAndDisableSupply(
-  core: CoreProtocolBerachain,
+export async function encodeTestOracleAndDisableSupply<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
   token: IERC20,
   price: BigNumberish,
 ): Promise<EncodedTransaction[]> {

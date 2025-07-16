@@ -10,6 +10,8 @@ export async function deployDolomiteAdminContracts<T extends DolomiteNetwork>(
   dolomiteRegistry: IDolomiteRegistry,
   hhUser1: SignerWithAddressWithSafety,
 ) {
+  await deployContractAndSave('TestPriceOracleForAdmin', [dolomiteMargin.address]);
+
   const adminClaimExcessTokensAddress = await deployContractAndSave(
     'AdminClaimExcessTokens',
     [dolomiteRegistry.address, dolomiteMargin.address],
