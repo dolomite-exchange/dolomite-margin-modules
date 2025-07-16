@@ -85,6 +85,13 @@ contract ERC4626PriceOracle is IDolomitePriceOracle, OnlyDolomiteMargin {
      * 
      * @dev _tokenAmount is in token decimals. To get (36 - _tokenDecimals) we need to multiply
      *      by 10 ** (36 - _tokenDecimals * 2)
+     * 
+     *      Ex: USDC
+     *      _tokenDecimals = 6
+     *      returned price should be in 36 - 6 = 30 decimals
+
+     *      tokenDecimalsFactor = 10 ** (36 - 6 * 2) = 10 ** 24
+     *      return = 6 decimals * (10 ** 24) = 30 decimals
      */
     function standardizeNumberOfDecimals(
         uint8 _tokenDecimals,
@@ -94,8 +101,7 @@ contract ERC4626PriceOracle is IDolomitePriceOracle, OnlyDolomiteMargin {
         pure
         returns (uint)
     {
-        uint256 tokenDecimalsFactor = 10 ** (uint256(_tokenDecimals) * 2);
-        uint256 priceFactor = _ONE_DOLLAR / tokenDecimalsFactor;
-        return _tokenAmount * priceFactor;
+        uint256 tokenDecimalsFactor = 10 ** (36 - _tokenDecimals * 2);
+        return _tokenAmount * tokenDecimalsFactor;
     }
 }
