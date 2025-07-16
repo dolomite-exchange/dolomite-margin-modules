@@ -14,6 +14,7 @@ interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum
   aave: IERC20;
   crv: IERC20;
   link: IERC20;
+  mEth: IERC20;
   rUsd: IERC20;
   srUsd: IERC20;
   sUsde: IERC20;
@@ -28,6 +29,7 @@ interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   aave: BigNumberish;
   crv: BigNumberish;
   link: BigNumberish;
+  mEth: BigNumberish;
   rUsd: BigNumberish;
   srUsd: BigNumberish;
   sUsde: BigNumberish;
