@@ -681,7 +681,11 @@ export const MIM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+export const METH_MAP: Record<Network.Ethereum | Network.Mantle, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa',
+    marketId: 12,
+  },
   [Network.Mantle]: {
     address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
     marketId: 5,
@@ -2600,6 +2604,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
     [LINK_MAP[Network.Ethereum]!.address]: {
       aggregatorAddress: '0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c',
+    },
+    [METH_MAP[Network.Ethereum]!.address]: {
+      aggregatorAddress: '0x5b563107C8666d2142C216114228443B94152362',
+      tokenPairAddress: WETH_MAP[Network.Ethereum].address,
     },
     [S_USDE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099',
