@@ -32,17 +32,18 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   PancakeV3PriceOracle
+ * @title   PancakeV3PriceOracleNoTokenCheck
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
+ * An implementation of the ITWAPPriceOracleV1 interface that makes gets the TWAP from an LP pool. Skips checks in
+ * `getPrice` so more than one token price be retrieved.
  */
-contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "PancakeV3PriceOracle";
+    bytes32 private constant _FILE = "PancakeV3PriceOracleNoTokenCheck";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
@@ -87,25 +88,18 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     // ========================= Public Functions =========================
 
     function getPrice(
-        address _token
+        address /* _token */
     )
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            _token == TOKEN,
-            _FILE,
-            "Invalid token",
-            _token
-        );
-
         IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
 
         address poolToken0 = currentPair.token0();
-        address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
+        address outputToken = poolToken0 == TOKEN ? currentPair.token1() : poolToken0;
 
         int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
-        uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
+        uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), TOKEN, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
