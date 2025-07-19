@@ -2684,6 +2684,13 @@
       "isVerified": true
     }
   },
+  "ERC4626PriceOracleV1": {
+    "80094": {
+      "address": "0xBa8741A77f5917366C79F95Fd414f233690eFCF0",
+      "transaction": "0xe02776ac9454777bb66ed975c3c3e3265c22801a24ca43e3c8f37e6981f03a0d",
+      "isVerified": true
+    }
+  },
   "EsGmxReader": {
     "42161": {
       "address": "0x8B7D8e6a48b627ff77Bb734C42355f74821219Fc",

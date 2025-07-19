@@ -96,7 +96,7 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
 
 export const BYUSD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '0x688e72142674041f8f6af4c808a4045ca1d6ac82',
+    address: '0x688e72142674041f8f6Af4c808a4045cA1D6aC82',
     marketId: 40,
   },
 };

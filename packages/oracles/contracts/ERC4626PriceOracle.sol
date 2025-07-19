@@ -46,11 +46,11 @@ contract ERC4626PriceOracle is IERC4626PriceOracle, OnlyDolomiteMargin {
     // ============================ Constructor ============================
 
     constructor(
-        address[] memory _tokens,
+        address[] memory _initialTokens,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            _ownerInsertOrUpdateToken(_tokens[i], true);
+        for (uint256 i = 0; i < _initialTokens.length; i++) {
+            _ownerInsertOrUpdateToken(_initialTokens[i], true);
         }
     }
 
@@ -84,10 +84,10 @@ contract ERC4626PriceOracle is IERC4626PriceOracle, OnlyDolomiteMargin {
 
     /**
      * Standardizes `value` to have `ONE_DOLLAR.decimals` - `tokenDecimals` number of decimals.
-     * 
+     *
      * @dev _tokenAmount is in token decimals. To get (36 - _tokenDecimals) we need to multiply
      *      by 10 ** (36 - _tokenDecimals * 2)
-     * 
+     *
      *      Ex: USDC
      *      _tokenDecimals = 6
      *      returned price should be in 36 - 6 = 30 decimals
