@@ -116,6 +116,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   lbtc: BigNumberish;
   nect: BigNumberish;
   ohm: BigNumberish;
+  oriBgt: BigNumberish;
   polRUsd: BigNumberish;
   pumpBtc: BigNumberish;
   rsEth: BigNumberish;

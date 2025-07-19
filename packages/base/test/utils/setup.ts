@@ -1538,6 +1538,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         lbtc: LBTC_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
         ohm: OHM_MAP[typedConfig.network].marketId,
+        oriBgt: ORI_BGT_MAP[typedConfig.network].marketId,
         polRUsd: POL_R_USD_MAP[typedConfig.network].marketId,
         pumpBtc: PUMP_BTC_MAP[typedConfig.network].marketId,
         rsEth: RS_ETH_MAP[typedConfig.network].marketId,

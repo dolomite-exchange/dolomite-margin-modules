@@ -22,7 +22,7 @@ import { checkSupplyCap, printPriceForVisualCheck } from 'packages/deployment/sr
 /**
  * This script encodes the following transactions:
  * - Deploys the ERC4626PriceOracle
- * - List the ORI_BGT market
+ * - List the oriBGT market
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
