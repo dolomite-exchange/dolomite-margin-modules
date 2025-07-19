@@ -2684,6 +2684,13 @@
       "isVerified": true
     }
   },
+  "ERC4626PriceOracleV1": {
+    "80094": {
+      "address": "0xBa8741A77f5917366C79F95Fd414f233690eFCF0",
+      "transaction": "0xe02776ac9454777bb66ed975c3c3e3265c22801a24ca43e3c8f37e6981f03a0d",
+      "isVerified": true
+    }
+  },
   "EsGmxReader": {
     "42161": {
       "address": "0x8B7D8e6a48b627ff77Bb734C42355f74821219Fc",
@@ -4597,6 +4604,27 @@
     "42161": {
       "address": "0x1371e3B6c4B19919a86Bc6824Ec408c70668bFd7",
       "transaction": "0x4a8f374e693e629a86d2a6bc485837767d52e32456a195132ef613cb8cc990e9",
+      "isVerified": true
+    }
+  },
+  "HenloTWAPPriceOracleV2": {
+    "80094": {
+      "address": "0x11bEa8ee225EF0c854879eC74935EC33d8B93A58",
+      "transaction": "0xe53255571682c52017e2358166f7bbe18bb31a8bf7235f4292cb068674beec71",
+      "isVerified": true
+    }
+  },
+  "iBeraTWAPPriceOracleV2": {
+    "80094": {
+      "address": "0xB67f7e40223b4A0400dA600543e1238E86e01274",
+      "transaction": "0xbc82147fb696b107079bf02d1ac7d1a34c62f45af66ed60fd8bfdc83b8a47f2a",
+      "isVerified": true
+    }
+  },
+  "iBgtTWAPPriceOracleV2": {
+    "80094": {
+      "address": "0xE6B104b9f8480800645dA7297008c733238161fb",
+      "transaction": "0x7c5bed49a2d8130f8f0f21ada1487d923096c903297802aa8f47f8e453ad8e01",
       "isVerified": true
     }
   },

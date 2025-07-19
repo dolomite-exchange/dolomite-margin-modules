@@ -13,7 +13,12 @@ import {
   IChronicleScribe__factory,
   TWAPPriceOracleV2,
 } from 'packages/oracles/src/types';
-import { IERC20, IERC20Metadata__factory, TestPriceOracleForAdmin__factory } from '../../../../base/src/types';
+import {
+  IDolomitePriceOracle,
+  IERC20,
+  IERC20Metadata__factory,
+  TestPriceOracleForAdmin__factory,
+} from '../../../../base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINSIGHT_KEYS_MAP,
@@ -517,6 +522,15 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
   twapOracle: TWAPPriceOracleV2,
   tokenPair: IERC20 | undefined,
 ): Promise<EncodedTransaction[]> {
+  return encodeInsertOracle(core, token, twapOracle, tokenPair);
+}
+
+export async function encodeInsertOracle<T extends DolomiteNetwork>(
+  core: CoreProtocolWithRedstone<T>,
+  token: IERC20,
+  oracle: IDolomitePriceOracle,
+  tokenPair: IERC20 | undefined,
+): Promise<EncodedTransaction[]> {
   const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
   return [
     await prettyPrintEncodedDataWithTypeSafety(
@@ -530,7 +544,7 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
           decimals: tokenDecimals,
           oracleInfos: [
             {
-              oracle: twapOracle.address,
+              oracle: oracle.address,
               tokenPair: tokenPair?.address ?? ADDRESS_ZERO,
               weight: 100,
             },
