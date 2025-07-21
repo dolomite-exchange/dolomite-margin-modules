@@ -4,7 +4,7 @@ import {
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { deployContractAndSave } from '../../utils/deploy-utils';
+import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../utils/deploy-utils';
 
 async function main() {
   const network = await getAnyNetwork();
@@ -16,6 +16,7 @@ async function main() {
   await deployContractAndSave(
     'OdosAggregatorTrader',
     getOdosAggregatorTraderConstructorParams(core),
+    getMaxDeploymentVersionNameByDeploymentKey('OdosAggregatorTrader', 2),
   );
 }
 

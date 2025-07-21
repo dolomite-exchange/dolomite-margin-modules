@@ -26,6 +26,7 @@ import { IOdosRouter } from "../interfaces/traders/IOdosRouter.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   OdosAggregatorTrader
@@ -90,7 +91,11 @@ contract OdosAggregatorTrader is AggregatorTraderBase {
                 _inputAmount,
                 tokenInfo.outputQuote
             );
-            tokenInfo.outputMin = minAmountOutWei;
+            tokenInfo.outputMin = _getScaledExpectedOutputAmount(
+                tokenInfo.inputAmount,
+                _inputAmount,
+                tokenInfo.outputMin
+            );
             tokenInfo.inputAmount = _inputAmount;
 
             outputAmount = ODOS_ROUTER.swap(
@@ -101,8 +106,12 @@ contract OdosAggregatorTrader is AggregatorTraderBase {
             );
         }
 
-        // Panic if the output amount is insufficient
-        /*assert(outputAmount >= minAmountOutWei);*/
+        if (outputAmount >= minAmountOutWei) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputAmount >= minAmountOutWei,
+            _FILE,
+            "Output amount is insufficient"
+        );
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 

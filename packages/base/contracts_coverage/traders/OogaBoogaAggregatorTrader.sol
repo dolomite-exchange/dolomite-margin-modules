@@ -89,7 +89,11 @@ contract OogaBoogaAggregatorTrader is AggregatorTraderBase {
                 _inputAmount,
                 tokenInfo.outputQuote
             );
-            tokenInfo.outputMin = minAmountOutWei;
+            tokenInfo.outputMin = _getScaledExpectedOutputAmount(
+                tokenInfo.inputAmount,
+                _inputAmount,
+                tokenInfo.outputMin
+            );
             tokenInfo.inputAmount = _inputAmount;
 
             outputAmount = OOGA_BOOGA_ROUTER.swap(

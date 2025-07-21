@@ -90,7 +90,11 @@ contract OdosAggregatorTrader is AggregatorTraderBase {
                 _inputAmount,
                 tokenInfo.outputQuote
             );
-            tokenInfo.outputMin = minAmountOutWei;
+            tokenInfo.outputMin = _getScaledExpectedOutputAmount(
+                tokenInfo.inputAmount,
+                _inputAmount,
+                tokenInfo.outputMin
+            );
             tokenInfo.inputAmount = _inputAmount;
 
             outputAmount = ODOS_ROUTER.swap(
@@ -101,8 +105,11 @@ contract OdosAggregatorTrader is AggregatorTraderBase {
             );
         }
 
-        // Panic if the output amount is insufficient
-        assert(outputAmount >= minAmountOutWei);
+        Require.that(
+            outputAmount >= minAmountOutWei,
+            _FILE,
+            "Output amount is insufficient"
+        );
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 

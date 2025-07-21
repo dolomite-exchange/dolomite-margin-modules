@@ -11,6 +11,7 @@ import {
 } from '../utils';
 import {
   expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
 } from '../utils/assertions';
@@ -73,15 +74,131 @@ describe('OogaBoogaAggregatorTrader', () => {
       await doSwapAndCheckResults(calldata, outputAmount);
     });
 
-    it('should succeed for normal swap when inputAmount is different', async () => {
+    it('should succeed for normal swap when inputAmount is higher', async () => {
+      const inputAmount = amountIn.div(2);
       const { calldata, outputAmount } = await getCalldataForOogaBooga(
         core.tokens.wbera,
-        amountIn.mul(9).div(10),
+        inputAmount,
         core.tokens.usdc,
         trader
       );
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          outputAmount,
+          calldata,
+        ],
+      );
+      const newInputAmount = inputAmount.mul(11).div(10);
+      await core.dolomiteMargin.connect(core.hhUser1).operate(
+        [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+        [
+          {
+            actionType: ActionType.Sell,
+            primaryMarketId: core.marketIds.wbera,
+            secondaryMarketId: core.marketIds.usdc,
+            accountId: 0,
+            otherAccountId: 0,
+            amount: {
+              sign: false,
+              denomination: AmountDenomination.Wei,
+              ref: AmountReference.Delta,
+              value: newInputAmount
+            },
+            otherAddress: trader.address,
+            data: actualOrderData,
+          },
+        ],
+        { gasLimit: 10000000 },
+      );
+      expect(await core.tokens.wbera.balanceOf(trader.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        defaultAccount,
+        core.marketIds.wbera,
+        amountIn.sub(newInputAmount).sub(1),
+        0,
+      );
+      await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, outputAmount, 0);
+    });
 
-      await doSwapAndCheckResults(calldata, outputAmount);
+    it('should succeed for normal swap when inputAmount is lower but output is still sufficient', async () => {
+      const { calldata, outputAmount } = await getCalldataForOogaBooga(
+        core.tokens.wbera,
+        amountIn,
+        core.tokens.usdc,
+        trader
+      );
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          outputAmount,
+          calldata,
+        ],
+      );
+      await core.dolomiteMargin.connect(core.hhUser1).operate(
+        [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+        [
+          {
+            actionType: ActionType.Sell,
+            primaryMarketId: core.marketIds.wbera,
+            secondaryMarketId: core.marketIds.usdc,
+            accountId: 0,
+            otherAccountId: 0,
+            amount: {
+              sign: false,
+              denomination: AmountDenomination.Wei,
+              ref: AmountReference.Delta,
+              value: amountIn.mul(99999).div(100000)
+            },
+            otherAddress: trader.address,
+            data: actualOrderData,
+          },
+        ],
+        { gasLimit: 10000000 },
+      );
+      expect(await core.tokens.wbera.balanceOf(trader.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+      await expectProtocolBalanceDustyOrZero(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera);
+      await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, outputAmount, 0);
+    });
+
+    it('should succeed for normal swap when inputAmount is lower and output is not sufficient', async () => {
+      const { calldata, outputAmount } = await getCalldataForOogaBooga(
+        core.tokens.wbera,
+        amountIn,
+        core.tokens.usdc,
+        trader
+      );
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          outputAmount,
+          calldata,
+        ],
+      );
+      await expectThrow(core.dolomiteMargin.connect(core.hhUser1).operate(
+        [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+        [
+          {
+            actionType: ActionType.Sell,
+            primaryMarketId: core.marketIds.wbera,
+            secondaryMarketId: core.marketIds.usdc,
+            accountId: 0,
+            otherAccountId: 0,
+            amount: {
+              sign: false,
+              denomination: AmountDenomination.Wei,
+              ref: AmountReference.Delta,
+              value: amountIn.div(2)
+            },
+            otherAddress: trader.address,
+            data: actualOrderData,
+          },
+        ],
+        { gasLimit: 10000000 },
+      )); // throws with error SlippageExceeded(uint256 amountOut, uint256 outputMin);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
@@ -133,6 +250,7 @@ describe('OogaBoogaAggregatorTrader', () => {
               data: actualOrderData,
             },
           ],
+          { gasLimit: 10000000 },
         ),
       );
     });
@@ -172,6 +290,7 @@ describe('OogaBoogaAggregatorTrader', () => {
           data: actualOrderData,
         },
       ],
+      { gasLimit: 10000000 },
     );
     expect(await core.tokens.wbera.balanceOf(trader.address)).to.eq(ZERO_BI);
     expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
