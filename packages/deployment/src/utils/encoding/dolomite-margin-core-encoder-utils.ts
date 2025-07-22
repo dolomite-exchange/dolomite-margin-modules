@@ -224,7 +224,7 @@ export async function encodeSetInterestSetterData<T extends Network.Ethereum>(
   return prettyPrintEncodedDataWithTypeSafety(
     core,
     core.interestSetters as InterestSettersModular,
-    'modularLinearInterestSetter',
+    'modularInterestSetter',
     'ownerSetSettingsByToken',
     [
       await core.dolomiteMargin.getMarketTokenAddress(marketId),

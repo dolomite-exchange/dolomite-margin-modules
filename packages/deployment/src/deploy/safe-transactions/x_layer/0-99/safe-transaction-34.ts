@@ -2,13 +2,12 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { deployContractAndSave } from '../../../../utils/deploy-utils';
+import { parseEther } from 'ethers/lib/utils';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { ILinearStepFunctionInterestSetter__factory } from 'packages/interest-setters/src/types';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { ILinearStepFunctionInterestSetter__factory, IModularLinearStepFunctionInterestSetter__factory } from 'packages/interest-setters/src/types';
-import { parseEther } from 'ethers/lib/utils';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 /**
  * This script encodes the following transactions:
@@ -21,13 +20,6 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
-
-  const modularInterestSetterAddress = await deployContractAndSave(
-    'ModularLinearStepFunctionInterestSetter',
-    [core.dolomiteMargin.address],
-    'ModularLinearStepFunctionInterestSetter',
-  );
-  const modularInterestSetter = IModularLinearStepFunctionInterestSetter__factory.connect(modularInterestSetterAddress, core.hhUser1);
 
   const transactions: EncodedTransaction[] = [];
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
@@ -44,27 +36,24 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
     const upperOptimalPercent = await interestSetter.UPPER_OPTIMAL_PERCENT();
 
     let optimalUtilization;
-    if (interestSetter.address === core.interestSetters.linearStepFunction6L94U90OInterestSetter.address) {
-      optimalUtilization = parseEther('0.9'); // This interest setter hardcodes optimal utilization to 90%
-    } else {
+    try {
       optimalUtilization = await interestSetter.OPTIMAL_UTILIZATION();
+    } catch (e) {
+      optimalUtilization = parseEther('0.9'); // This interest setter hardcodes optimal utilization to 90%
     }
 
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        { modularInterestSetter },
+        core.interestSetters,
         'modularInterestSetter',
         'ownerSetSettingsByToken',
-        [market.token, lowerOptimalPercent, upperOptimalPercent, optimalUtilization]
+        [market.token, lowerOptimalPercent, upperOptimalPercent, optimalUtilization],
       ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        core,
-        'dolomiteMargin',
-        'ownerSetInterestSetter',
-        [i, modularInterestSetterAddress]
-      )
+      await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetInterestSetter', [
+        i,
+        core.interestSetters.modularInterestSetter.address,
+      ]),
     );
   }
 
@@ -83,10 +72,11 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       for (let i = 0; i < numMarkets.toNumber(); i++) {
-        const interestSetter = await core.dolomiteMargin.getMarketInterestSetter(i);
+        const interestSetterAddress = await core.dolomiteMargin.getMarketInterestSetter(i);
         assertHardhatInvariant(
-          interestSetter === modularInterestSetterAddress || interestSetter === core.interestSetters.alwaysZeroInterestSetter.address,
-          'Invalid interest setter for market: ' + i
+          interestSetterAddress === core.interestSetters.modularInterestSetter.address ||
+          interestSetterAddress === core.interestSetters.alwaysZeroInterestSetter.address,
+          `Invalid interest setter for market: ${i}`,
         );
       }
     },
