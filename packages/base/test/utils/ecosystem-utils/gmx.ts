@@ -146,6 +146,7 @@ import {
   GMX_ORDI_USD_MARKET_TOKEN_MAP,
   GMX_STX_USD_MARKET_TOKEN_MAP,
   GMX_TAO_USD_MARKET_TOKEN_MAP,
+  GMX_ARB_SINGLE_SIDED_MARKET_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -216,6 +217,7 @@ export interface GmxV2Ecosystem {
   gmTokens: {
     aaveUsd: GmToken;
     adaUsd: GmToken;
+    arb: GmToken;
     arbUsd: GmToken;
     atomUsd: GmToken;
     beraUsd: GmToken;
@@ -406,6 +408,14 @@ export async function createGmxEcosystemV2(
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: WBTC_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      arb: {
+        marketToken: getContract(GMX_ARB_SINGLE_SIDED_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        longMarketId: ARB_MAP[network].marketId,
+        shortMarketId: ARB_MAP[network].marketId,
       },
       arbUsd: {
         marketToken: getContract(GMX_ARB_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
