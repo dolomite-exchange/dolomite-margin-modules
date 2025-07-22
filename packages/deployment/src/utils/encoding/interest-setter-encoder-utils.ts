@@ -19,7 +19,7 @@ export async function encodeModularInterestSetterParams(
   return prettyPrintEncodedDataWithTypeSafety(
     core,
     core.interestSetters,
-    'modularLinearInterestSetter',
+    'modularInterestSetter',
     'ownerSetSettingsByToken',
     [token.address, parseEther(lower), parseEther(upper), parseEther(optimalUtilizationRate)],
   );

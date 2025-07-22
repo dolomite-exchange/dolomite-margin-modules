@@ -48,7 +48,7 @@ async function encodeSimpleListing(
       core.oracleAggregatorV2,
       interestSetter === InterestSetter.AlwaysZero
         ? interestSetters.alwaysZeroInterestSetter
-        : interestSetters.modularLinearInterestSetter,
+        : interestSetters.modularInterestSetter,
       targetCollateralization,
       targetLiquidationPremium,
       maxSupplyWei,

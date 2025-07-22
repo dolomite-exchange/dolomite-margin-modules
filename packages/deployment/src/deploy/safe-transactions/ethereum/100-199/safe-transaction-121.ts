@@ -47,7 +47,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
       core,
       core.tokens.rUsd,
       core.oracleAggregatorV2,
-      core.interestSetters.modularLinearInterestSetter,
+      core.interestSetters.modularInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._8_5,
       parseEther(`${75_000_000}`),
