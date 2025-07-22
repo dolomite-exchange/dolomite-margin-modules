@@ -3,7 +3,12 @@ import {
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  Network,
+  ONE_DAY_SECONDS,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -18,11 +23,13 @@ import {
   ChainlinkPriceOracleV3__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
-  PancakeV3PriceOracle,
-  PancakeV3PriceOracle__factory,
+  PancakeV3PriceOracleWithModifiers,
+  PancakeV3PriceOracleWithModifiers__factory,
 } from '../src/types';
 
 const CAKE_PRICE_USDC_POOL = BigNumber.from('4051451897684840000');
+const CAKE_FLOOR_PRICE_USDC_POOL = BigNumber.from('5000000000000000000');
+const CAKE_PRICE_WITH_FLOOR = BigNumber.from('5000713300000000000');
 const MATIC_WETH_PRICE = BigNumber.from('293570325619366');
 const MATIC_PRICE = BigNumber.from('1016261890000000000');
 const FIFTEEN_MINUTES = BigNumber.from('900');
@@ -33,12 +40,12 @@ const LEGACY_USDC = '0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035';
 const CAKE_USDC_PAIR = '0xb4BAB40e5a869eF1b5ff440a170A57d9feb228e9';
 const WETH_MATIC_PAIR = '0xaE30fcdEE41dC9eC265e841D8185d055B87d1B7a';
 
-describe('PancakeV3PriceOracle', () => {
+describe('PancakeV3PriceOracleWithModifiers', () => {
   let snapshotId: string;
 
   let core: CoreProtocolPolygonZkEvm;
-  let oracle: PancakeV3PriceOracle;
-  let maticOracle: PancakeV3PriceOracle;
+  let oracle: PancakeV3PriceOracleWithModifiers;
+  let maticOracle: PancakeV3PriceOracleWithModifiers;
   let chainlinkOracle: ChainlinkPriceOracleV3;
   let oracleAggregator: OracleAggregatorV2;
 
@@ -56,9 +63,9 @@ describe('PancakeV3PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
 
-    oracle = await createContractWithAbi<PancakeV3PriceOracle>(
-      PancakeV3PriceOracle__factory.abi,
-      PancakeV3PriceOracle__factory.bytecode,
+    oracle = await createContractWithAbi<PancakeV3PriceOracleWithModifiers>(
+      PancakeV3PriceOracleWithModifiers__factory.abi,
+      PancakeV3PriceOracleWithModifiers__factory.bytecode,
       [
         CAKE_TOKEN,
         CAKE_USDC_PAIR,
@@ -66,9 +73,9 @@ describe('PancakeV3PriceOracle', () => {
         core.dolomiteMargin.address,
       ],
     );
-    maticOracle = await createContractWithAbi<PancakeV3PriceOracle>(
-      PancakeV3PriceOracle__factory.abi,
-      PancakeV3PriceOracle__factory.bytecode,
+    maticOracle = await createContractWithAbi<PancakeV3PriceOracleWithModifiers>(
+      PancakeV3PriceOracleWithModifiers__factory.abi,
+      PancakeV3PriceOracleWithModifiers__factory.bytecode,
       [
         core.tokens.matic.address,
         WETH_MATIC_PAIR,
@@ -136,6 +143,7 @@ describe('PancakeV3PriceOracle', () => {
       expect(await oracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await oracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
+      expect(await oracle.floorPrice()).to.eq(ZERO_BI);
       expect(await oracle.PAIR()).to.eq(CAKE_USDC_PAIR);
     });
   });
@@ -148,9 +156,9 @@ describe('PancakeV3PriceOracle', () => {
 
     // Using MATIC and WETH pool to test with token0 as output token
     it('should work normally when output token is token0', async () => {
-      const otherOracle = await createContractWithAbi<PancakeV3PriceOracle>(
-        PancakeV3PriceOracle__factory.abi,
-        PancakeV3PriceOracle__factory.bytecode,
+      const otherOracle = await createContractWithAbi<PancakeV3PriceOracleWithModifiers>(
+        PancakeV3PriceOracleWithModifiers__factory.abi,
+        PancakeV3PriceOracleWithModifiers__factory.bytecode,
         [core.tokens.matic.address, WETH_MATIC_PAIR, core.dolomiteRegistry.address, core.dolomiteMargin.address],
       );
       const price = (await otherOracle.getPrice(core.tokens.matic.address)).value;
@@ -160,11 +168,9 @@ describe('PancakeV3PriceOracle', () => {
       expect(dolomitePrice).to.eq(MATIC_PRICE);
     });
 
-    it('should fail if invalid input token', async () => {
-      await expectThrow(
-        oracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
-        `PancakeV3PriceOracle: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
-      );
+    it('should work if invalid input token is passed (input token is ignored)', async () => {
+      const price = await oracle.getPrice(core.tokens.weth.address);
+      expect(price.value).to.eq('4050874000000000000');
     });
   });
 
@@ -178,6 +184,23 @@ describe('PancakeV3PriceOracle', () => {
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerSetObservationInterval(ONE_DAY_SECONDS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetFloorPrice', () => {
+    it('works normally', async () => {
+      await oracle.connect(core.governance).ownerSetFloorPrice(CAKE_FLOOR_PRICE_USDC_POOL);
+      expect(await oracle.floorPrice()).to.eq(CAKE_FLOOR_PRICE_USDC_POOL);
+
+      const price = await oracleAggregator.getPrice(CAKE_TOKEN);
+      expect(price.value).to.eq(CAKE_PRICE_WITH_FLOOR);
+    });
+
+    it('fails when invoked by non-admin', async () => {
+      await expectThrow(
+        oracle.connect(core.hhUser1).ownerSetFloorPrice(ONE_DAY_SECONDS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
