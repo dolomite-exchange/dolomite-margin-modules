@@ -37,6 +37,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   lbtc: IERC20;
   nect: IERC20;
   ohm: IERC20;
+  oriBgt: IERC20;
   polRUsd: IERC20;
   pumpBtc: IERC20;
   rsEth: IERC20;
@@ -115,6 +116,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   lbtc: BigNumberish;
   nect: BigNumberish;
   ohm: BigNumberish;
+  oriBgt: BigNumberish;
   polRUsd: BigNumberish;
   pumpBtc: BigNumberish;
   rsEth: BigNumberish;
