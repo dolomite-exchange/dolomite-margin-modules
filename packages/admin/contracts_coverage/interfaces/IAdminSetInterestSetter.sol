@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+/*
+
+    Copyright 2025 Dolomite
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+pragma solidity ^0.8.9;
+
+
+/**
+ * @title   IAdminSetInterestSetter
+ * @author  Dolomite
+ *
+ * @notice  Interface for the AdminSetInterestSetter contract
+ */
+interface IAdminSetInterestSetter {
+    event IsTrustedSet(address indexed interestSetter, bool isTrusted);
+
+    // ========================================================
+    // ==================== Admin Functions ===================
+    // ========================================================
+
+    function ownerSetIsTrusted(address[] memory _interestSetter, bool[] memory _isTrusted) external;
+
+    // ========================================================
+    // ==================== Public Functions ==================
+    // ========================================================
+
+    function setInterestSetter(uint256 _marketId, address _interestSetter) external;
+    function setInterestSettingsByToken(
+        address _interestSetter,
+        address _token,
+        uint256 _lowerOptimalPercent,
+        uint256 _upperOptimalPercent,
+        uint256 _optimalUtilization
+    ) external;
+}
