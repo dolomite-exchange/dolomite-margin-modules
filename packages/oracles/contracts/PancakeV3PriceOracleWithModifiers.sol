@@ -32,14 +32,18 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   PancakeV3PriceOracleNoTokenCheck
+ * @title   PancakeV3PriceOracleWithModifiers
  * @author  Dolomite
  *
  * An implementation of the ITWAPPriceOracleV1 interface that makes gets the TWAP from an LP pool. Skips checks in
- * `getPrice` so more than one token price be retrieved.
+ * `getPrice` so more than one token price be retrieved. Can also have a minimum price for the `TOKEN`
  */
-contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract PancakeV3PriceOracleWithModifiers is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    // ========================= Events =========================
+
+    event FloorPriceUpdated(uint256 floorPrice);
 
     // ========================= Constants =========================
 
@@ -50,6 +54,7 @@ contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMar
     // ========================= Storage =========================
 
     uint32 public observationInterval;
+    uint256 public floorPrice;
 
     address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable PAIR;
@@ -67,6 +72,7 @@ contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMar
         TOKEN = _token;
         PAIR = _pair;
         _ownerSetObservationInterval(15 minutes);
+        _ownerSetFloorPrice(0);
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
@@ -83,6 +89,15 @@ contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMar
         onlyDolomiteMarginOwner(msg.sender)
     {
         _ownerSetObservationInterval(_observationInterval);
+    }
+
+    function ownerSetFloorPrice(
+        uint256 _floorPrice
+    )
+        external
+        onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerSetFloorPrice(_floorPrice);
     }
 
     // ========================= Public Functions =========================
@@ -105,9 +120,14 @@ contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMar
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
         assert(outputTokenDecimals > 0);
 
-        return IDolomiteStructs.MonetaryPrice({
+        IDolomiteStructs.MonetaryPrice memory price = IDolomiteStructs.MonetaryPrice({
             value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
         });
+
+        if (price.value < floorPrice) {
+            price.value = floorPrice;
+        }
+        return price;
     }
 
     // ========================= Internal Functions =========================
@@ -118,6 +138,14 @@ contract PancakeV3PriceOracleNoTokenCheck is ITWAPPriceOracleV1, OnlyDolomiteMar
     internal {
         observationInterval = _observationInterval;
         emit ObservationIntervalUpdated(_observationInterval);
+    }
+
+    function _ownerSetFloorPrice(
+        uint256 _floorPrice
+    )
+    internal {
+        floorPrice = _floorPrice;
+        emit FloorPriceUpdated(_floorPrice);
     }
 
     function _standardizeNumberOfDecimals(

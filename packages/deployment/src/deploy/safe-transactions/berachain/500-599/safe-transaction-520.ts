@@ -49,7 +49,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core,
       core.tokens.byusd,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction7L93U90OInterestSetter,
+      core.interestSetters.modularInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseUsdc(`${40_000_000}`),
