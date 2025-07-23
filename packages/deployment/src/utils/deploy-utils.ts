@@ -709,8 +709,9 @@ export async function deployGmxV2GmTokenSystem(
     stablecoins[shortIndex] = firstValue;
   }
 
+  const badDebtMarketIds = [46, 13, 74, 48]; // GRAI, MIM, sUSDS, sUSDM @follow-up Corey please check this
   const longMarketId = BigNumber.from(gmToken.longMarketId);
-  const debtMarketIds = [...stablecoins];
+  const debtMarketIds = stablecoins.filter((m) => !badDebtMarketIds.includes(m as any));
   const collateralMarketIds = [...stablecoins];
   if (!longMarketId.eq(-1)) {
     debtMarketIds.unshift(longMarketId);

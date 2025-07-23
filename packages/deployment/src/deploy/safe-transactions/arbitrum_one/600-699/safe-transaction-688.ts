@@ -55,7 +55,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
       const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(gmArbMarketId);
       assertHardhatInvariant(
-        liquidators[0] === core.liquidatorProxyV4.address && liquidators[1] === core.freezableLiquidatorProxy.address,
+        liquidators[0] === core.liquidatorProxyV6.address && liquidators[1] === core.freezableLiquidatorProxy.address,
         'Invalid whitelisted liquidators',
       );
       assertHardhatInvariant(
