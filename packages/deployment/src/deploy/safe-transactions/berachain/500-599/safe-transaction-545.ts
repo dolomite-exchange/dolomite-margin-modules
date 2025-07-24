@@ -2,18 +2,14 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  LowerPercentage,
-  OptimalUtilizationRate,
-  UpperPercentage,
-} from '../../../../../../base/src/utils/constructors/dolomite';
+import { deployDolomiteErc4626Token } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetupDolomite4626Token } from '../../../../utils/encoding/dolomite-4626-token-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Updates the interest rate kinks and utilization levels for stables + major assets
+ * - Create and list Dolomite token for BYUSD
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -22,75 +18,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const tokens = core.tokens;
-  const transactions: EncodedTransaction[] = [
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.honey,
-      LowerPercentage._7,
-      UpperPercentage._50,
-      OptimalUtilizationRate._91,
-    ),
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.usdc,
-      LowerPercentage._7,
-      UpperPercentage._50,
-      OptimalUtilizationRate._91,
-    ),
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.usde,
-      LowerPercentage._7,
-      UpperPercentage._50,
-      OptimalUtilizationRate._90,
-    ),
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.usdt,
-      LowerPercentage._7,
-      UpperPercentage._50,
-      OptimalUtilizationRate._90,
-    ),
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.byusd,
-      LowerPercentage._7,
-      UpperPercentage._60,
-      OptimalUtilizationRate._90,
-    ),
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.rUsd,
-      LowerPercentage._7,
-      UpperPercentage._30,
-      OptimalUtilizationRate._95,
-    ),
+  const dToken = await deployDolomiteErc4626Token(core, 'Byusd', core.marketIds.byusd);
 
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.wbera,
-      LowerPercentage._45,
-      UpperPercentage._100,
-      OptimalUtilizationRate._75,
-    ),
-
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.weth,
-      LowerPercentage._3_9,
-      UpperPercentage._60,
-      OptimalUtilizationRate._90,
-    ),
-
-    await encodeModularInterestSetterParams(
-      core,
-      tokens.wbtc,
-      LowerPercentage._4,
-      UpperPercentage._80,
-      OptimalUtilizationRate._90,
-    ),
-  ];
+  const transactions: EncodedTransaction[] = await encodeSetupDolomite4626Token(core, dToken);
 
   return {
     core,
