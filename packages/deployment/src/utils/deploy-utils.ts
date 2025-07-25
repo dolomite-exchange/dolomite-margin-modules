@@ -195,7 +195,7 @@ export async function verifyContract(
 
     console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
-    const verificationStatus = await instance.getVerificationStatus(guid);
+    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 10_000, 3);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
@@ -709,9 +709,8 @@ export async function deployGmxV2GmTokenSystem(
     stablecoins[shortIndex] = firstValue;
   }
 
-  const badDebtMarketIds = [46, 13, 74, 48]; // GRAI, MIM, sUSDS, sUSDM @follow-up Corey please check this
   const longMarketId = BigNumber.from(gmToken.longMarketId);
-  const debtMarketIds = stablecoins.filter((m) => !badDebtMarketIds.includes(m as any));
+  const debtMarketIds = [core.marketIds.weth, core.marketIds.wbtc, ...stablecoins];
   const collateralMarketIds = [...stablecoins];
   if (!longMarketId.eq(-1)) {
     debtMarketIds.unshift(longMarketId);

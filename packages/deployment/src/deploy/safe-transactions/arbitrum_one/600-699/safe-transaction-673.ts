@@ -34,9 +34,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       gmArbTokenSystem.wrapper,
       core.gmxV2Ecosystem.live.registry,
       gmArbMarketId,
-      TargetCollateralization._125, // @follow-up @Corey double check these values
+      TargetCollateralization._120,
       TargetLiquidationPenalty.Base,
-      parseEther(`${1_000_000}`),
+      parseEther(`${10_000}`),
     )),
   ];
 
