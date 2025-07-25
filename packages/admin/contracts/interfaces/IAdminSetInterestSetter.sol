@@ -28,6 +28,7 @@ pragma solidity ^0.8.9;
  * @notice  Interface for the AdminSetInterestSetter contract
  */
 interface IAdminSetInterestSetter {
+    event ModularInterestSetterSet(address interestSetter);
     event IsTrustedSet(address indexed interestSetter, bool isTrusted);
 
     // ========================================================
@@ -36,13 +37,17 @@ interface IAdminSetInterestSetter {
 
     function ownerSetIsTrusted(address[] memory _interestSetter, bool[] memory _isTrusted) external;
 
+    function ownerSetModularInterestSetter(address _modularInterestSetter) external;
+
     // ========================================================
     // ==================== Public Functions ==================
     // ========================================================
 
-    function setInterestSetter(uint256 _marketId, address _interestSetter) external;
+    function setInterestSetterByMarketId(uint256 _marketId, address _interestSetter) external;
+
+    function setModularInterestSetterByMarketId(uint256 _marketId) external;
+
     function setInterestSettingsByToken(
-        address _interestSetter,
         address _token,
         uint256 _lowerOptimalPercent,
         uint256 _upperOptimalPercent,

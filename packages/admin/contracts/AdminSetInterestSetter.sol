@@ -51,18 +51,21 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
     // ===================================================================
 
     mapping(address => bool) public isTrusted;
+    address public modularInterestSetter;
 
     // ===================================================================
     // ========================== Constructor ============================
     // ===================================================================
 
     constructor(
+        address _modularInterestSetter,
         address[] memory _trustedCallers,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
 
+        _ownerSetModularInterestSetter(_modularInterestSetter);
         for (uint256 i = 0; i < _trustedCallers.length; i++) {
             _ownerSetIsTrusted(_trustedCallers[i], true);
         }
@@ -94,11 +97,17 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
         }
     }
 
+    function ownerSetModularInterestSetter(
+        address _modularInterestSetter
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetModularInterestSetter(_modularInterestSetter);
+    }
+
     // ===================================================================
     // ========================= Public Functions ========================
     // ===================================================================
 
-    function setInterestSetter(uint256 _marketId, address _interestSetter) external onlyTrusted(msg.sender) {
+    function setInterestSetterByMarketId(uint256 _marketId, address _interestSetter) external onlyTrusted(msg.sender) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
@@ -109,15 +118,25 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
         );
     }
 
+    function setModularInterestSetterByMarketId(uint256 _marketId) external onlyTrusted(msg.sender) {
+        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+            address(DOLOMITE_MARGIN()),
+            abi.encodeWithSelector(
+                IDolomiteMarginAdmin.ownerSetInterestSetter.selector,
+                _marketId,
+                modularInterestSetter
+            )
+        );
+    }
+
     function setInterestSettingsByToken(
-        address _interestSetter,
         address _token,
         uint256 _lowerOptimalPercent,
         uint256 _upperOptimalPercent,
         uint256 _optimalUtilization
     ) external onlyTrusted(msg.sender) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
-            _interestSetter,
+            modularInterestSetter,
             abi.encodeWithSelector(
                 IModularLinearStepFunctionInterestSetter.ownerSetSettingsByToken.selector,
                 _token,
@@ -131,6 +150,11 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
     // ===================================================================
     // ========================= Internal Functions ======================
     // ===================================================================
+
+    function _ownerSetModularInterestSetter(address _modularInterestSetter) internal {
+        modularInterestSetter = _modularInterestSetter;
+        emit ModularInterestSetterSet(_modularInterestSetter);
+    }
 
     function _ownerSetIsTrusted(address _interestSetter, bool _isTrusted) internal {
         isTrusted[_interestSetter] = _isTrusted;
