@@ -1484,6 +1484,13 @@
       "isVerified": true
     }
   },
+  "DolomiteByusd4626Token": {
+    "80094": {
+      "address": "0x2948609CdD0ac4110b63165be9D4AADe66bF40F6",
+      "transaction": "0x79d6a2da826bcea56dcc50d1aa2e5aa4bf4792443ba381fd58f44b3c9c946535",
+      "isVerified": true
+    }
+  },
   "DolomiteDai4626Token": {
     "42161": {
       "address": "0x73D25BF215A7487badC695d7ADa30f1Ad509D642",
