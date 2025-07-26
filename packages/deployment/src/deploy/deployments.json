@@ -4355,6 +4355,13 @@
       "isVerified": true
     }
   },
+  "GmxV2SingleSidedARBIsolationModeVaultFactory": {
+    "42161": {
+      "address": "0x1511e764f67aB2d7099fEa53Cab9CaBA1C0dF1FB",
+      "transaction": "0xca5ca9404b57e94258dc0517343d04a0e48857644ed0903a0c35b0badde85ee3",
+      "isVerified": false
+    }
+  },
   "GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2": {
     "42161": {
       "address": "0x71FCbbD889594639EA29a859B84265E41d1157C4",

@@ -109,15 +109,6 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
     function _ownerSetAllowableDebtMarketIds(
         uint256[] memory _newAllowableDebtMarketIds
     ) internal virtual {
-        uint256 len = _newAllowableDebtMarketIds.length;
-        for (uint256 i; i < len; i++) {
-            Require.that(
-                !DOLOMITE_MARGIN().getMarketIsClosing(_newAllowableDebtMarketIds[i]),
-                _FILE,
-                "Market cannot be closing"
-            );
-        }
-
         _allowableDebtMarketIds = _newAllowableDebtMarketIds;
         emit AllowableDebtMarketIdsSet(_newAllowableDebtMarketIds);
     }

@@ -122,14 +122,6 @@ describe('SimpleIsolationModeVaultFactory', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${solidAccount.address.toLowerCase()}>`,
       );
     });
-
-    it('should not work with closing market', async () => {
-      await core.dolomiteMargin.connect(core.governance).ownerSetIsClosing(4, true);
-      await expectThrow(
-        factory.connect(core.governance).ownerSetAllowableDebtMarketIds([4, 5]),
-        'SimpleIsolationModeVaultFactory: Market cannot be closing',
-      );
-    });
   });
 
   describe('#ownerSetAllowableCollateralMarketIds', () => {
