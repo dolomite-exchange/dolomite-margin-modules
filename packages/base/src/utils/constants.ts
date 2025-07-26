@@ -826,6 +826,13 @@ export const R_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMa
   },
 };
 
+export const S_WBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x118D2cEeE9785eaf70C15Cd74CD84c9f8c3EeC9a',
+    marketId: 42,
+  },
+};
+
 export const SIZE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',
