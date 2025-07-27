@@ -152,6 +152,11 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
     // ===================================================================
 
     function _ownerSetModularInterestSetter(address _modularInterestSetter) internal {
+        Require.that(
+            _modularInterestSetter != address(0),
+            _FILE,
+            "Invalid modular interest setter"
+        );
         modularInterestSetter = _modularInterestSetter;
         emit ModularInterestSetterSet(_modularInterestSetter);
     }

@@ -59,7 +59,7 @@ describe('AdminSetInterestSetter', () => {
     );
     await core.ownerAdapterV2.connect(core.governance).ownerAddRoleAddresses(
       adminSetInterestSetterRole,
-      [core.interestSetters.modularLinearInterestSetter.address],
+      [core.interestSetters.modularInterestSetter.address],
     );
 
     snapshotId = await snapshot();
@@ -116,9 +116,9 @@ describe('AdminSetInterestSetter', () => {
     });
   });
 
-  describe('#setInterestSetter', () => {
+  describe('#setInterestSetterByMarketId', () => {
     it('should work normally when called by trusted caller', async () => {
-      await adminSetInterestSetter.connect(core.hhUser4).setInterestSetter(
+      await adminSetInterestSetter.connect(core.hhUser4).setInterestSetterByMarketId(
         core.marketIds.usdc,
         core.interestSetters.alwaysZeroInterestSetter.address
       );
@@ -129,7 +129,7 @@ describe('AdminSetInterestSetter', () => {
 
     it('should fail when called by untrusted caller', async () => {
       await expectThrow(
-        adminSetInterestSetter.connect(core.hhUser1).setInterestSetter(
+        adminSetInterestSetter.connect(core.hhUser1).setInterestSetterByMarketId(
           core.marketIds.usdc,
           ADDRESS_ZERO
         ),
@@ -141,14 +141,13 @@ describe('AdminSetInterestSetter', () => {
   describe('#setInterestSettingsByToken', () => {
     it('should work normally when called by trusted caller', async () => {
       await adminSetInterestSetter.connect(core.hhUser4).setInterestSettingsByToken(
-        core.interestSetters.modularLinearInterestSetter.address,
         core.tokens.usdc.address,
         parseEther('0.05'), // 5% lower optimal
         parseEther('0.10'), // 10% upper optimal
         parseEther('0.80'), // 80% optimal utilization
       );
 
-      const settings = await core.interestSetters.modularLinearInterestSetter.getSettingsByToken(
+      const settings = await core.interestSetters.modularInterestSetter.getSettingsByToken(
         core.tokens.usdc.address
       );
       expect(settings.lowerOptimalPercent).to.equal(parseEther('0.05'));
@@ -159,7 +158,6 @@ describe('AdminSetInterestSetter', () => {
     it('should fail when called by untrusted caller', async () => {
       await expectThrow(
         adminSetInterestSetter.connect(core.hhUser1).setInterestSettingsByToken(
-          core.interestSetters.modularLinearInterestSetter.address,
           core.tokens.usdc.address,
           parseEther('0.00'),
           parseEther('0.00'),
