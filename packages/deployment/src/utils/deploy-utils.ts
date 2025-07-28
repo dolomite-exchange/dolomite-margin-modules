@@ -24,9 +24,7 @@ import {
   NETWORK_TO_NETWORK_NAME_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -181,14 +179,16 @@ export async function verifyContract(
     }, {});
 
     console.log('\tSubmitting verification...');
+    console.log('\tConstructor: ', factory.interface.encodeDeploy(constructorArguments).slice(2));
     const { message: guid } = await retryWithTimeout(
-      () => instance.verify(
-        address,
-        JSON.stringify(buildInfo!.input),
-        contractName,
-        `v${buildInfo!.solcLongVersion}`,
-        factory.interface.encodeDeploy(constructorArguments).slice(2),
-      ),
+      () =>
+        instance.verify(
+          address,
+          JSON.stringify(buildInfo!.input),
+          contractName,
+          `v${buildInfo!.solcLongVersion}`,
+          factory.interface.encodeDeploy(constructorArguments).slice(2),
+        ),
       10_000,
       3,
     );
@@ -215,30 +215,27 @@ export async function verifyContract(
   }
 }
 
-async function retryWithTimeout<T>(
-  fn: () => Promise<T>,
-  timeoutMs: number,
-  retries: number,
-): Promise<T> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
+async function retryWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number, retries: number): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await Promise.race([
         fn(),
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject('Timeout exceeded'), timeoutMs),
-        ),
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Timeout exceeded')), timeoutMs)),
       ]);
     } catch (err: any) {
       const message = err.message ?? '';
-      if (attempt === retries) {
-        throw err;
-      }
       console.warn(`Attempt ${attempt + 1} failed:`, message || err);
+      console.log('');
+
+      if (attempt + 1 === retries) {
+        return Promise.reject(err);
+      }
       if (message.includes('does not have bytecode')) {
         await sleep(timeoutMs);
       }
     }
   }
+
   return Promise.reject(new Error('All retries failed'));
 }
 
@@ -710,7 +707,7 @@ export async function deployGmxV2GmTokenSystem(
   }
 
   const longMarketId = BigNumber.from(gmToken.longMarketId);
-  const debtMarketIds = [core.marketIds.weth, core.marketIds.wbtc, ...stablecoins];
+  const debtMarketIds = [...stablecoins];
   const collateralMarketIds = [...stablecoins];
   if (!longMarketId.eq(-1)) {
     debtMarketIds.unshift(longMarketId);

@@ -4355,11 +4355,32 @@
       "isVerified": true
     }
   },
+  "GmxV2SingleSidedARBAsyncIsolationModeUnwrapperTraderProxyV2": {
+    "42161": {
+      "address": "0xCE30f700F7e92478eFd134bd513f9B7E1cd24180",
+      "transaction": "0x4ebfdf6b2315c8a7f46dd132957bd86dc39c4c3fab46c12644b7061a36077343",
+      "isVerified": true
+    }
+  },
+  "GmxV2SingleSidedARBAsyncIsolationModeWrapperTraderProxyV2": {
+    "42161": {
+      "address": "0xfC8835d1698dCB2CBFE662c14852155e18c9AAeb",
+      "transaction": "0x96599258282bdab4af90452d6be5dec237a95144f3b76d1b20407f62b6bac170",
+      "isVerified": true
+    }
+  },
   "GmxV2SingleSidedARBIsolationModeVaultFactory": {
     "42161": {
       "address": "0x1511e764f67aB2d7099fEa53Cab9CaBA1C0dF1FB",
       "transaction": "0xca5ca9404b57e94258dc0517343d04a0e48857644ed0903a0c35b0badde85ee3",
       "isVerified": false
+    }
+  },
+  "GmxV2SingleSidedARBIsolationModeVaultFactoryDeadProxy": {
+    "42161": {
+      "address": "0x5F6061F247700f91B7C8CC72C495f93aC8EF6347",
+      "transaction": "0xca5ca9404b57e94258dc0517343d04a0e48857644ed0903a0c35b0badde85ee3",
+      "isVerified": true
     }
   },
   "GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2": {
@@ -8549,7 +8570,7 @@
     "5000": {
       "address": "0x001749056600bF1C1C9F163B4dF19de70EB4a9d1",
       "transaction": "0xa4c8e326acd6c9b0ec70e7bbd603008add9d0622ffd601716c44345df4714e37",
-      "isVerified": false
+      "isVerified": true
     }
   },
   "PendlePtUSDeDec2024IsolationModeTokenVaultV6": {
@@ -9771,13 +9792,6 @@
       "isVerified": true
     }
   },
-  "RegistryProxy": {
-    "80094": {
-      "address": "0xeC938BEc467262A904d6723579E52039c97b3393",
-      "transaction": "0xd83ad655f4dd7c89c421e50ac9305f9ff7a931e840c850b3fb4f99175bafdd6a",
-      "isVerified": false
-    }
-  },
   "RegularAirdropImplementationV1": {
     "80094": {
       "address": "0xD50230c1f75e08492be2D96C3b1Fdddf3daE97Ec",
@@ -10164,7 +10178,7 @@
     "5000": {
       "address": "0xd99D2eA77a54535Cc8bD6969E0DE181ce81D5DC2",
       "transaction": "0x0502d923957c3ce11db727499ec93690ed54fef7dcf0382a431a9395d3144dda",
-      "isVerified": false
+      "isVerified": true
     }
   }
 }
