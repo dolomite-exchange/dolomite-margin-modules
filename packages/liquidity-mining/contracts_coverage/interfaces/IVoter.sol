@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+
+/**
+ * @title   IVoter
+ * @author  Dolomite
+ *
+ * Interface for the voter contract responsible for tracking vote status for a ve token
+ */
 interface IVoter {
+
     function _ve() external view returns (address);
 
     function governor() external view returns (address);
