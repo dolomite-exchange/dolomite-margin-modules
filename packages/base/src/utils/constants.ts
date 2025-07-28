@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { ADDRESS_ZERO, DolomiteNetwork, Network } from './no-deps-constants';
+import { DolomiteNetwork, Network } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -1402,6 +1402,10 @@ export const GMX_AAVE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
 
 export const GMX_ADA_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xcaCb964144f9056A8f99447a303E60b4873Ca9B4',
+};
+
+export const GMX_ARB_SINGLE_SIDED_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x672fEA44f4583DdaD620d60C1Ac31021F47558Cb',
 };
 
 export const GMX_ARB_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {

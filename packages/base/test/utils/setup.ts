@@ -348,7 +348,7 @@ export async function enableInterestAccrual<T extends DolomiteNetworkNoBotanixOr
 ) {
   return core.dolomiteMargin.ownerSetInterestSetter(
     marketId,
-    core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
+    ModuleDeployments.LinearStepFunction8L92U90OInterestSetter[core.network].address,
   );
 }
 
@@ -1346,19 +1346,14 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
           DAI_MAP[typedConfig.network]!.marketId,
-          GRAI_MAP[typedConfig.network].marketId,
-          MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
-          S_USDS_MAP[typedConfig.network].marketId,
           USDE_MAP[typedConfig.network].marketId,
           USDS_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
-          W_USDM_MAP[typedConfig.network].marketId,
         ],
         stablecoinsWithUnifiedInterestRateModels: [
           ...coreProtocolParams.marketIds.stablecoins,
           DAI_MAP[typedConfig.network]!.marketId,
-          MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
           USDE_MAP[typedConfig.network].marketId,
           USDS_MAP[typedConfig.network].marketId,
