@@ -62,6 +62,7 @@ import {
   createVotingEscrow,
 } from './tokenomics-ecosystem-utils';
 import { convertToNearestWeek, expectEmptyExternalVesterPosition } from './tokenomics-utils';
+import { createAndUpgradeDolomiteRegistry } from 'packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
@@ -110,6 +111,7 @@ describe('VeExternalVesterV1', () => {
   let rewardToken: IERC20;
   let veToken: VotingEscrow;
   let owner: SignerWithAddressWithSafety;
+  let dao: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -119,6 +121,9 @@ describe('VeExternalVesterV1', () => {
     dolo = await createDOLO(core, core.gnosisSafe.address);
 
     await dolo.connect(core.gnosisSafe).transfer(core.hhUser1.address, INITIAL_PAIR_BALANCE);
+
+    await createAndUpgradeDolomiteRegistry(core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDao(core.daoAddress!);
 
     pairToken = dolo;
     paymentToken = core.tokens.weth;
@@ -205,9 +210,9 @@ describe('VeExternalVesterV1', () => {
     await setupWETHBalance(core, core.hhUser2, MAX_PAYMENT_AMOUNT, vester);
 
     // Reward token
-    await dolo.connect(core.gnosisSafe).transfer(owner.address, TOTAL_REWARD_AMOUNT);
-    await dolo.connect(owner).approve(vester.address, TOTAL_REWARD_AMOUNT);
-    await vester.connect(owner).ownerDepositRewardToken(TOTAL_REWARD_AMOUNT);
+    dao = await impersonate(core.daoAddress!, true);
+    await dolo.connect(core.gnosisSafe).transfer(core.daoAddress!, TOTAL_REWARD_AMOUNT);
+    await dolo.connect(dao).approve(vester.address, TOTAL_REWARD_AMOUNT);
 
     await expectWalletBalance(owner, oToken, ZERO_BI);
     await expectWalletBalance(owner, pairToken, ZERO_BI);
@@ -216,9 +221,9 @@ describe('VeExternalVesterV1', () => {
 
     await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, ZERO_BI);
 
-    await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT);
+    await expectWalletBalance(vester, pairToken, ZERO_BI);
+    await expectWalletBalance(dao, rewardToken, TOTAL_REWARD_AMOUNT);
     await expectWalletBalance(vester, paymentToken, ZERO_BI);
-    await expectWalletBalance(vester, rewardToken, TOTAL_REWARD_AMOUNT);
 
     await expectProtocolBalance(core, vester, defaultAccountNumber, paymentMarketId, ZERO_BI);
 
@@ -311,7 +316,7 @@ describe('VeExternalVesterV1', () => {
 
       expect(await vester.ownerOf(NFT_ID)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester, oToken, O_TOKEN_AMOUNT);
-      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.add(PAIR_AMOUNT));
+      await expectWalletBalance(vester, pairToken, PAIR_AMOUNT);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(REWARD_AMOUNT);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
@@ -398,10 +403,9 @@ describe('VeExternalVesterV1', () => {
       await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT.add(LOCK_AMOUNT));
 
       // Account for the pair amount being returned PLUS the REWARD_AMOUNT
-      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+      await expectWalletBalance(dao, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
 
-      await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, paymentAmount);
-      await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
+      await expectProtocolBalance(core, dao, defaultAccountNumber, paymentMarketId, paymentAmount);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
@@ -438,10 +442,9 @@ describe('VeExternalVesterV1', () => {
       await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT);
 
       // Account for the pair amount being returned PLUS the REWARD_AMOUNT
-      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+      await expectWalletBalance(dao, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
 
-      await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, paymentAmount);
-      await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
+      await expectProtocolBalance(core, dao, defaultAccountNumber, paymentMarketId, paymentAmount);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
@@ -758,7 +761,7 @@ describe('VeExternalVesterV1', () => {
     });
   });
 
-  describe('#ownerDepositRewardToken', () => {
+  xdescribe('#ownerDepositRewardToken', () => {
     it('should work normally', async () => {
       await dolo.connect(core.gnosisSafe).transfer(owner.address, REWARD_AMOUNT);
       await dolo.connect(owner).approve(vester.address, REWARD_AMOUNT);
@@ -781,6 +784,7 @@ describe('VeExternalVesterV1', () => {
   });
 
   describe('#ownerWithdrawRewardToken', () => {
+    // @todo This doesn't work anymore because change
     it('should work normally when bypasses available amount', async () => {
       await increaseByTimeDelta(ONE_DAY_SECONDS);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);

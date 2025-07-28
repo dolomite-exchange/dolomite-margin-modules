@@ -381,14 +381,7 @@ contract VeExternalVesterImplementationV1 is
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), _amount);
-        _depositIntoDolomite(
-            /* _toAccountOwner = */ address(this),
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            REWARD_TOKEN,
-            REWARD_MARKET_ID,
-            _amount
-        );
+        // NO-OP
     }
 
     function ownerWithdrawRewardToken(
@@ -416,9 +409,7 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
-        assert(REWARD_MARKET_ID == _NO_MARKET_ID);
-
-        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
+        // NO-OP
     }
 
 
@@ -515,7 +506,7 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function pushedTokens() public view returns (uint256) {
-        return _getUint256(_PUSHED_TOKENS_SLOT);
+        return REWARD_TOKEN.balanceOf(DOLOMITE_REGISTRY.dao());
     }
 
     function discountCalculator() public view returns (IVesterDiscountCalculator) {
@@ -724,14 +715,6 @@ contract VeExternalVesterImplementationV1 is
         uint256 _marketId,
         uint256 _amount
     ) internal {
-        if (
-            _toAccountOwner == address(this) &&
-            _toAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
-            _marketId == REWARD_MARKET_ID
-        ) {
-            _setPushedTokens(pushedTokens() + _amount);
-        }
-
         if (_marketId == _NO_MARKET_ID) {
             // Guard statement for _NO_MARKET_ID
             if (_toAccountOwner == DOLOMITE_MARGIN_OWNER()) {
@@ -772,7 +755,7 @@ contract VeExternalVesterImplementationV1 is
             _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
             _token == REWARD_TOKEN
         ) {
-            _setPushedTokens(pushedTokens() - _amount);
+            _token.safeTransferFrom(DOLOMITE_REGISTRY.dao(), address(this), _amount);
         }
 
         if (_marketId == _NO_MARKET_ID) {

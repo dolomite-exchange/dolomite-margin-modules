@@ -1638,7 +1638,7 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
 };
 
 export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: undefined,
+  [Network.ArbitrumOne]:  '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682', // @todo remove
   [Network.Base]: undefined,
   [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Botanix]: '0xaf50c534F927F00A1a62c886939F622901cAb7b5',
