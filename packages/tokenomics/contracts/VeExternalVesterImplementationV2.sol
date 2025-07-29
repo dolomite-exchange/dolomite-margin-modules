@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
 
-    Copyright 2023 Dolomite.
+    Copyright 2025 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,24 +34,25 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
-import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
+import { IVeExternalVesterV2 } from "./interfaces/IVeExternalVesterV2.sol";
 import { IVeToken } from "./interfaces/IVeToken.sol";
 import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 
 
 /**
- * @title   VeExternalVesterImplementationV1
+ * @title   VeExternalVesterImplementationV2
  * @author  Dolomite
  *
- * @notice  An implementation of the IVeExternalVesterV1 interface that allows users to buy PAIR_TOKEN at a discount if
- *          they vest PAIR_TOKEN and oToken for a certain amount of time.
+ * @notice  An implementation of the IVeExternalVesterV2 interface that allows users to buy PAIR_TOKEN at a discount if
+ *          they vest PAIR_TOKEN and oToken for a certain amount of time. This version pulls the reward token (DOLO)
+ *          from the DAO.
  */
-contract VeExternalVesterImplementationV1 is
+contract VeExternalVesterImplementationV2 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuardUpgradeable,
     ERC721EnumerableUpgradeable,
-    IVeExternalVesterV1
+    IVeExternalVesterV2
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
@@ -60,7 +61,7 @@ contract VeExternalVesterImplementationV1 is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VeExternalVesterImplementationV1";
+    bytes32 private constant _FILE = "VeExternalVesterImplementationV2";
     uint256 private constant _BASE = 10_000;
     uint256 private constant _ONE_ETH_BASE = 1 ether;
     uint256 private constant _NO_MARKET_ID = type(uint256).max;
@@ -376,52 +377,6 @@ contract VeExternalVesterImplementationV1 is
     // ======================= Admin Functions ==========================
     // ==================================================================
 
-    function ownerDepositRewardToken(
-        uint256 _amount
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), _amount);
-        _depositIntoDolomite(
-            /* _toAccountOwner = */ address(this),
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            REWARD_TOKEN,
-            REWARD_MARKET_ID,
-            _amount
-        );
-    }
-
-    function ownerWithdrawRewardToken(
-        address _toAccount,
-        uint256 _amount,
-        bool _shouldBypassAvailableAmounts
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        if (!_shouldBypassAvailableAmounts) {
-            Require.that(
-                _amount <= availableTokens(),
-                _FILE,
-                "Insufficient available tokens"
-            );
-        }
-        _withdrawFromDolomite(
-            _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccount */ _toAccount,
-            REWARD_TOKEN,
-            REWARD_MARKET_ID,
-            _amount,
-            /* _withdrawAllIfPossible = */ false
-        );
-    }
-
-    function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
-        assert(REWARD_MARKET_ID == _NO_MARKET_ID);
-
-        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
-    }
-
-
     function ownerAccrueRewardTokenInterest(address _toAccount) external onlyDolomiteMarginOwner(msg.sender) {
         // all tokens have been spent
         Require.that(
@@ -515,7 +470,16 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function pushedTokens() public view returns (uint256) {
-        return _getUint256(_PUSHED_TOKENS_SLOT);
+        address dao = DOLOMITE_REGISTRY.dao();
+        uint256 bal = REWARD_TOKEN.balanceOf(dao);
+        Require.that(
+            bal > 0,
+            _FILE,
+            "No DOLO balance in DAO"
+        );
+
+        uint256 allowed = REWARD_TOKEN.allowance(dao, address(this));
+        return bal < allowed ? bal : allowed;
     }
 
     function discountCalculator() public view returns (IVesterDiscountCalculator) {
@@ -724,14 +688,6 @@ contract VeExternalVesterImplementationV1 is
         uint256 _marketId,
         uint256 _amount
     ) internal {
-        if (
-            _toAccountOwner == address(this) &&
-            _toAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
-            _marketId == REWARD_MARKET_ID
-        ) {
-            _setPushedTokens(pushedTokens() + _amount);
-        }
-
         if (_marketId == _NO_MARKET_ID) {
             // Guard statement for _NO_MARKET_ID
             if (_toAccountOwner == DOLOMITE_MARGIN_OWNER()) {
@@ -772,7 +728,7 @@ contract VeExternalVesterImplementationV1 is
             _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
             _token == REWARD_TOKEN
         ) {
-            _setPushedTokens(pushedTokens() - _amount);
+            _token.safeTransferFrom(DOLOMITE_REGISTRY.dao(), address(this), _amount);
         }
 
         if (_marketId == _NO_MARKET_ID) {
