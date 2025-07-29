@@ -1,4 +1,4 @@
-import { MAX_UINT_256_BI, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ONE_WEEK_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
@@ -8,6 +8,9 @@ import { expect } from 'chai';
 import { VeExternalVesterImplementationV2, VeExternalVesterImplementationV2__factory } from '../src/types';
 import { defaultAbiCoder } from 'ethers/lib/utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+
+const PAIR_AMOUNT = ONE_ETH_BI;
+const MAX_PAIR_AMOUNT = PAIR_AMOUNT.mul(11).div(10); // 10% increase
 
 describe('VeExternalVesterV2', () => {
   let snapshotId: string;
@@ -62,6 +65,13 @@ describe('VeExternalVesterV2', () => {
     );
 
     dao = await impersonate(core.daoAddress!, true);
+    await core.tokens.dolo.connect(dao).approve(vester.address, pushedTokens);
+    expect(await vester.pushedTokens()).to.eq(pushedTokens);
+
+    // Transfer DOLO and oDOLO to core.hhUser1
+    await core.tokens.dolo.connect(dao).transfer(core.hhUser1.address, PAIR_AMOUNT);
+    const rollingClaimsImpersonator = await impersonate(core.tokenomics.rollingClaims.address, true);
+    await core.tokenomics.oDolo.connect(rollingClaimsImpersonator).transfer(core.hhUser1.address, PAIR_AMOUNT);
 
     snapshotId = await snapshot();
   });
@@ -108,10 +118,14 @@ describe('VeExternalVesterV2', () => {
 
   describe('#vest', () => {
     it('should work normally', async () => {
-      const preBal = await core.tokens.dolo.balanceOf(core.daoAddress!);
-      await core.tokens.dolo.connect(dao).approve(vester.address, MAX_UINT_256_BI);
-      const pushedTokens = await vester.pushedTokens();
-      expect(pushedTokens).to.eq(preBal);
+      await core.tokens.dolo.connect(core.hhUser1).approve(vester.address, PAIR_AMOUNT);
+      await core.tokenomics.oDolo.connect(core.hhUser1).approve(vester.address, PAIR_AMOUNT);
+
+      const promisedTokens = await vester.promisedTokens();
+      const availableTokens = await vester.availableTokens();
+      await vester.connect(core.hhUser1).vest(ONE_WEEK_SECONDS, PAIR_AMOUNT, MAX_PAIR_AMOUNT);
+      expect(await vester.promisedTokens()).to.eq(promisedTokens.add(PAIR_AMOUNT));
+      expect(await vester.availableTokens()).to.eq(availableTokens.sub(PAIR_AMOUNT));
     });
   });
 
