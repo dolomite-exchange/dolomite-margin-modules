@@ -30,12 +30,12 @@ describe('VeExternalVesterV2', () => {
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
-        core.tokenomics.veExternalVester.PAIR_TOKEN(), // dolo
-        core.tokenomics.veExternalVester.PAIR_MARKET_ID(),
-        core.tokenomics.veExternalVester.PAYMENT_TOKEN(), // usdc
-        core.tokenomics.veExternalVester.PAYMENT_MARKET_ID(),
-        core.tokenomics.veExternalVester.REWARD_TOKEN(), // dolo
-        core.tokenomics.veExternalVester.REWARD_MARKET_ID(),
+        await core.tokenomics.veExternalVester.PAIR_TOKEN(), // dolo
+        await core.tokenomics.veExternalVester.PAIR_MARKET_ID(),
+        await core.tokenomics.veExternalVester.PAYMENT_TOKEN(), // usdc
+        await core.tokenomics.veExternalVester.PAYMENT_MARKET_ID(),
+        await core.tokenomics.veExternalVester.REWARD_TOKEN(), // dolo
+        await core.tokenomics.veExternalVester.REWARD_MARKET_ID(),
       ]
     );
 
