@@ -2,8 +2,6 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import {
   LowerPercentage,
   OptimalUtilizationRate,
@@ -12,7 +10,6 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkInterestSetter } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -30,7 +27,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core,
       core.tokens.wbera,
       LowerPercentage._50,
-      UpperPercentage._125,
+      UpperPercentage._200,
+      OptimalUtilizationRate._75,
+    ),
+    await encodeModularInterestSetterParams(
+      core,
+      core.tokens.iBera,
+      LowerPercentage._50,
+      UpperPercentage._200,
       OptimalUtilizationRate._75,
     ),
   ];

@@ -30,7 +30,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core,
       core.tokens.wbera,
       LowerPercentage._50,
-      UpperPercentage._125,
+      UpperPercentage._175,
+      OptimalUtilizationRate._75,
+    ),
+    await encodeModularInterestSetterParams(
+      core,
+      core.tokens.iBera,
+      LowerPercentage._50,
+      UpperPercentage._175,
       OptimalUtilizationRate._75,
     ),
   ];

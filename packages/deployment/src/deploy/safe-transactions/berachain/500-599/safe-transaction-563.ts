@@ -2,21 +2,29 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import {
   LowerPercentage,
   OptimalUtilizationRate,
   UpperPercentage,
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkInterestSetter } from '../../../../utils/invariant-utils';
+
+const ORIGINAL_ADDRESSES = [
+  '0x2a6334C30f36D1EEfd64689c590Dd199D3475972',
+  '0xAF4b80f380A920596fBD3465f8961B2246025b4C',
+];
+const NEW_ADDRESSES = [
+  '0xb6Be1231C7402F2AdB2f7F6888aB991eF8583bD3',
+  '0x473F13c81Fc12C10c27eC08294a9D2B921827D96',
+];
 
 /**
  * This script encodes the following transactions:
  * - Adjust BERA interest rate model
+ * - Add remapping for a user's air drop
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -29,8 +37,15 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeModularInterestSetterParams(
       core,
       core.tokens.wbera,
-      LowerPercentage._50,
-      UpperPercentage._125,
+      LowerPercentage._70,
+      UpperPercentage._200,
+      OptimalUtilizationRate._75,
+    ),
+    await encodeModularInterestSetterParams(
+      core,
+      core.tokens.iBera,
+      LowerPercentage._70,
+      UpperPercentage._200,
       OptimalUtilizationRate._75,
     ),
   ];

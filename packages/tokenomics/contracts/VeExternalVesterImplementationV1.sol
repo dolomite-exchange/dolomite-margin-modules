@@ -418,7 +418,7 @@ contract VeExternalVesterImplementationV1 is
     function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
         assert(REWARD_MARKET_ID == _NO_MARKET_ID);
 
-        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
+        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)) - promisedTokens());
     }
 
 
@@ -707,7 +707,7 @@ contract VeExternalVesterImplementationV1 is
         pairTokenTax = _position.pairAmount * _taxNumerator / _BASE;
         if (pairTokenTax > 0) {
             _depositIntoDolomite(
-                /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+                /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 PAIR_TOKEN,
                 PAIR_MARKET_ID,
