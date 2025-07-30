@@ -21,10 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IModularLinearStepFunctionInterestSetter } from "@dolomite-exchange/modules-interest-setters/contracts/interfaces/IModularLinearStepFunctionInterestSetter.sol"; // solhint-disable-line max-line-length
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminSetInterestSetter } from "./interfaces/IAdminSetInterestSetter.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 
@@ -35,22 +35,14 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  AdminSetInterestSetter contract that enables an admin to set the interest setter for a market
  */
-contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
-
-    // ===================================================================
-    // ============================ Constants ============================
-    // ===================================================================
+contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSetInterestSetter {
 
     bytes32 private constant _FILE = "AdminSetInterestSetter";
-    bytes32 public constant ADMIN_SET_INTEREST_SETTER_ROLE = keccak256("AdminSetInterestSetter");
-
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ===================================================================
     // ======================= Field Variables ===========================
     // ===================================================================
 
-    mapping(address => bool) public isTrusted;
     address public modularInterestSetter;
 
     // ===================================================================
@@ -59,43 +51,15 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
 
     constructor(
         address _modularInterestSetter,
-        address[] memory _trustedCallers,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_dolomiteRegistry) {
         _ownerSetModularInterestSetter(_modularInterestSetter);
-        for (uint256 i = 0; i < _trustedCallers.length; i++) {
-            _ownerSetIsTrusted(_trustedCallers[i], true);
-        }
-    }
-
-    // ===================================================================
-    // ========================== Modifiers =============================
-    // ===================================================================
-
-    modifier onlyTrusted(address _interestSetter) {
-        Require.that(
-            isTrusted[_interestSetter],
-            _FILE,
-            "Caller is not trusted"
-        );
-        _;
     }
 
     // ===================================================================
     // ========================= Admin Functions =========================
     // ===================================================================
-
-    function ownerSetIsTrusted(
-        address[] memory _interestSetter,
-        bool[] memory _isTrusted
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        for (uint256 i = 0; i < _interestSetter.length; i++) {
-            _ownerSetIsTrusted(_interestSetter[i], _isTrusted[i]);
-        }
-    }
 
     function ownerSetModularInterestSetter(
         address _modularInterestSetter
@@ -107,7 +71,10 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
     // ========================= Public Functions ========================
     // ===================================================================
 
-    function setInterestSetterByMarketId(uint256 _marketId, address _interestSetter) external onlyTrusted(msg.sender) {
+    function setInterestSetterByMarketId(
+        uint256 _marketId,
+        address _interestSetter
+    ) external checkPermission(this.setInterestSetterByMarketId.selector) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
@@ -118,7 +85,9 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
         );
     }
 
-    function setModularInterestSetterByMarketId(uint256 _marketId) external onlyTrusted(msg.sender) {
+    function setModularInterestSetterByMarketId(
+        uint256 _marketId
+    ) external checkPermission(this.setModularInterestSetterByMarketId.selector) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
@@ -134,7 +103,7 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
         uint256 _lowerOptimalPercent,
         uint256 _upperOptimalPercent,
         uint256 _optimalUtilization
-    ) external onlyTrusted(msg.sender) {
+    ) external checkPermission(this.setInterestSettingsByToken.selector) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             modularInterestSetter,
             abi.encodeWithSelector(
@@ -159,10 +128,5 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, IAdminSetInterestSetter {
         );
         modularInterestSetter = _modularInterestSetter;
         emit ModularInterestSetterSet(_modularInterestSetter);
-    }
-
-    function _ownerSetIsTrusted(address _interestSetter, bool _isTrusted) internal {
-        isTrusted[_interestSetter] = _isTrusted;
-        emit IsTrustedSet(_interestSetter, _isTrusted);
     }
 }

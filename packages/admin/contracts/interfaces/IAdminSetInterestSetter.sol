@@ -29,13 +29,10 @@ pragma solidity ^0.8.9;
  */
 interface IAdminSetInterestSetter {
     event ModularInterestSetterSet(address interestSetter);
-    event IsTrustedSet(address indexed interestSetter, bool isTrusted);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
-
-    function ownerSetIsTrusted(address[] memory _interestSetter, bool[] memory _isTrusted) external;
 
     function ownerSetModularInterestSetter(address _modularInterestSetter) external;
 

@@ -21,12 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol"; // solhint-disable-line max-line-length
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IModularLinearStepFunctionInterestSetter } from "@dolomite-exchange/modules-interest-setters/contracts/interfaces/IModularLinearStepFunctionInterestSetter.sol"; // solhint-disable-line max-line-length
-import { IAdminSetInterestSetter } from "./interfaces/IAdminSetInterestSetter.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
 
@@ -38,10 +32,6 @@ import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
  * @notice  AdminRegistry contract to track roles and permissions across Dolomite admin contracts
  */
 contract AdminRegistry is AccessControl, OnlyDolomiteMargin, IAdminRegistry {
-
-    // ===================================================================
-    // ============================ Constants ============================
-    // ===================================================================
 
     bytes32 private constant _FILE = "AdminRegistry";
 

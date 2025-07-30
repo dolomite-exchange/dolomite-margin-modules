@@ -33,10 +33,6 @@ import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
  */
 abstract contract AdminRegistryHelper {
 
-    // ===================================================================
-    // ============================ Constants ============================
-    // ===================================================================
-
     bytes32 private constant _FILE = "AdminRegistryHelper";
 
     // ===================================================================
