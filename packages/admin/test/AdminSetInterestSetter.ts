@@ -28,6 +28,7 @@ describe('AdminSetInterestSetter', () => {
       AdminSetInterestSetter__factory.abi,
       AdminSetInterestSetter__factory.bytecode,
       [
+        core.interestSetters.modularInterestSetter.address,
         [core.hhUser4.address], // trusted callers
         core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
