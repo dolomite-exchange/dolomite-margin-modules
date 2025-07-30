@@ -418,7 +418,7 @@ contract VeExternalVesterImplementationV1 is
     function ownerSyncRewardToken() external onlyDolomiteMarginOwner(msg.sender) {
         assert(REWARD_MARKET_ID == _NO_MARKET_ID);
 
-        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)));
+        _setPushedTokens(REWARD_TOKEN.balanceOf(address(this)) - promisedTokens());
     }
 
 
