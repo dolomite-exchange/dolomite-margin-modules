@@ -233,7 +233,7 @@ async function retryWithTimeout<T>(
       if (attempt === retries) {
         throw err;
       }
-      console.warn(`Attempt ${attempt + 1} failed:`, message || err);
+      console.warn(`\tAttempt ${attempt + 1} failed:`, message || err);
       if (message.includes('does not have bytecode')) {
         await sleep(timeoutMs);
       }
