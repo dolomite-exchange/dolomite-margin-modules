@@ -51,9 +51,9 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
 
     constructor(
         address _modularInterestSetter,
-        address _dolomiteRegistry,
+        address _adminRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_dolomiteRegistry) {
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
         _ownerSetModularInterestSetter(_modularInterestSetter);
     }
 
@@ -74,7 +74,9 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
     function setInterestSetterByMarketId(
         uint256 _marketId,
         address _interestSetter
-    ) external checkPermission(this.setInterestSetterByMarketId.selector) {
+    )
+    external
+    checkPermission(this.setInterestSetterByMarketId.selector, msg.sender) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
@@ -87,7 +89,9 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
 
     function setModularInterestSetterByMarketId(
         uint256 _marketId
-    ) external checkPermission(this.setModularInterestSetterByMarketId.selector) {
+    )
+    external
+    checkPermission(this.setModularInterestSetterByMarketId.selector, msg.sender) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
@@ -103,7 +107,9 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
         uint256 _lowerOptimalPercent,
         uint256 _upperOptimalPercent,
         uint256 _optimalUtilization
-    ) external checkPermission(this.setInterestSettingsByToken.selector) {
+    )
+    external
+    checkPermission(this.setInterestSettingsByToken.selector, msg.sender) {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             modularInterestSetter,
             abi.encodeWithSelector(

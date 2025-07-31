@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
 
 
@@ -31,9 +31,12 @@ import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
  *
  * @notice  AdminRegistry contract to track roles and permissions across Dolomite admin contracts
  */
-contract AdminRegistry is AccessControl, OnlyDolomiteMargin, IAdminRegistry {
+contract AdminRegistry is AccessControlUpgradeable, OnlyDolomiteMargin, IAdminRegistry {
 
     bytes32 private constant _FILE = "AdminRegistry";
+
+    // @dev This function selector means the user can call any function on the specified contract
+    bytes4 public constant ADMIN_FUNCTION_SELECTOR = 0x11111111;
 
     // ===================================================================
     // ========================== Constructor ============================
@@ -42,6 +45,11 @@ contract AdminRegistry is AccessControl, OnlyDolomiteMargin, IAdminRegistry {
     constructor(
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
+        _disableInitializers();
+    }
+
+    function initialize() external initializer {
+        __AccessControl_init();
     }
 
     // ===================================================================
@@ -73,6 +81,7 @@ contract AdminRegistry is AccessControl, OnlyDolomiteMargin, IAdminRegistry {
     }
 
     function hasPermission(bytes4 _selector, address _contract, address _account) external view returns (bool) {
-        return hasRole(role(_selector, _contract), _account);
+        return hasRole(role(ADMIN_FUNCTION_SELECTOR, _contract), _account) ||
+            hasRole(role(_selector, _contract), _account);
     }
 }

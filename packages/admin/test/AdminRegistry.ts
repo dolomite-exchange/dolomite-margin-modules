@@ -6,10 +6,18 @@ import { expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { AdminRegistry, AdminRegistry__factory } from '../src/types';
+import { RegistryProxy__factory } from 'packages/base/src/types/factories/contracts/general/RegistryProxy__factory';
+import { RegistryProxy } from 'packages/base/src/types';
+import { createAdminRegistry } from 'packages/base/test/utils/dolomite';
 
+const ADMIN_SELECTOR = '0x11111111';
 const TEST_SELECTOR = '0x12345678';
+const TEST_SELECTOR_2 = '0x87654321';
+
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+
 const TEST_ROLE = '0x1234567800000000000000001234567812345678123456781234567812345678';
+const ADMIN_ROLE = '0x1111111100000000000000001234567812345678123456781234567812345678';
 
 describe('AdminRegistry', () => {
   let snapshotId: string;
@@ -23,11 +31,7 @@ describe('AdminRegistry', () => {
       blockNumber: 8_436_000,
     });
 
-    adminRegistry = await createContractWithAbi<AdminRegistry>(
-      AdminRegistry__factory.abi,
-      AdminRegistry__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
+    adminRegistry = await createAdminRegistry(core);
 
     snapshotId = await snapshot();
   });
@@ -42,6 +46,15 @@ describe('AdminRegistry', () => {
     });
   });
 
+  describe('#initialize', () => {
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        adminRegistry.connect(core.hhUser1).initialize(),
+        'Initializable: contract is already initialized'
+      );
+    });
+  });
+
   describe('#grantPermission', () => {
     it('should work normally', async () => {
       await adminRegistry.connect(core.governance).grantPermission(
@@ -52,6 +65,18 @@ describe('AdminRegistry', () => {
 
       expect(await adminRegistry.hasRole(TEST_ROLE, core.hhUser1.address)).to.be.true;
       expect(await adminRegistry.hasPermission(TEST_SELECTOR, OTHER_ADDRESS, core.hhUser1.address)).to.be.true;
+    });
+
+    it('should work normally for admin selector', async () => {
+      await adminRegistry.connect(core.governance).grantPermission(
+        ADMIN_SELECTOR,
+        OTHER_ADDRESS,
+        core.hhUser1.address
+      );
+
+      expect(await adminRegistry.hasRole(ADMIN_ROLE, core.hhUser1.address)).to.be.true;
+      expect(await adminRegistry.hasPermission(TEST_SELECTOR, OTHER_ADDRESS, core.hhUser1.address)).to.be.true;
+      expect(await adminRegistry.hasPermission(TEST_SELECTOR_2, OTHER_ADDRESS, core.hhUser1.address)).to.be.true;
     });
 
     it('should fail when not called by dolomite margin owner', async () => {

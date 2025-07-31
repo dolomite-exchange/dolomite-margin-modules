@@ -6,7 +6,7 @@ import { expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { AdminRegistry, AdminRegistry__factory, TestAdminRegistryHelper, TestAdminRegistryHelper__factory } from '../src/types';
-import { createAndUpgradeDolomiteRegistry } from 'packages/base/test/utils/dolomite';
+import { createAdminRegistry, createAndUpgradeDolomiteRegistry } from 'packages/base/test/utils/dolomite';
 
 const DO_SOMETHING_SELECTOR = '0x82692679';
 
@@ -22,19 +22,13 @@ describe('AdminRegistryHelper', () => {
       network: Network.Berachain,
       blockNumber: 8_436_000,
     });
-    await createAndUpgradeDolomiteRegistry(core);
 
-    adminRegistry = await createContractWithAbi<AdminRegistry>(
-      AdminRegistry__factory.abi,
-      AdminRegistry__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    await core.dolomiteRegistry.ownerSetAdminRegistry(adminRegistry.address);
+    adminRegistry = await createAdminRegistry(core);
 
     adminRegistryHelper = await createContractWithAbi<TestAdminRegistryHelper>(
       TestAdminRegistryHelper__factory.abi,
       TestAdminRegistryHelper__factory.bytecode,
-      [core.dolomiteRegistry.address],
+      [adminRegistry.address],
     );
 
     snapshotId = await snapshot();
@@ -46,7 +40,7 @@ describe('AdminRegistryHelper', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await adminRegistryHelper.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
+      expect(await adminRegistryHelper.ADMIN_REGISTRY()).to.eq(adminRegistry.address);
     });
   });
 
@@ -66,7 +60,7 @@ describe('AdminRegistryHelper', () => {
       );
       await expectThrow(
         adminRegistryHelper.connect(core.hhUser1).doSomething(),
-        'AdminRegistryHelper: Caller does not have permission'
+        `AdminRegistryHelper: Caller does not have permission <${core.hhUser1.address.toLowerCase()}>`
       );
     });
   });

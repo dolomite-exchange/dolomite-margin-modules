@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
 
@@ -39,24 +38,24 @@ abstract contract AdminRegistryHelper {
     // ======================= Field Variables ===========================
     // ===================================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+    IAdminRegistry public immutable ADMIN_REGISTRY;
 
     // ===================================================================
     // ========================== Constructor ============================
     // ===================================================================
 
     constructor(
-        address _dolomiteRegistry
+        address _adminRegistry
     ) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+        ADMIN_REGISTRY = IAdminRegistry(_adminRegistry);
     }
 
     // ===================================================================
     // ========================== Modifiers =============================
     // ===================================================================
 
-    modifier checkPermission(bytes4 _selector) {
-        _checkPermission(_selector);
+    modifier checkPermission(bytes4 _selector, address _caller) {
+        _checkPermission(_selector, _caller);
         _;
     }
 
@@ -64,13 +63,13 @@ abstract contract AdminRegistryHelper {
     // ========================= Internal Functions ======================
     // ===================================================================
 
-    function _checkPermission(bytes4 _selector) internal view {
-        IAdminRegistry adminRegistry = IAdminRegistry(DOLOMITE_REGISTRY.adminRegistry());
-        if (adminRegistry.hasPermission(_selector, address(this), msg.sender)) { /* FOR COVERAGE TESTING */ }
+    function _checkPermission(bytes4 _selector, address _caller) internal view {
+        if (ADMIN_REGISTRY.hasPermission(_selector, address(this), _caller)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            adminRegistry.hasPermission(_selector, address(this), msg.sender),
+            ADMIN_REGISTRY.hasPermission(_selector, address(this), _caller),
             _FILE,
-            "Caller does not have permission"
+            "Caller does not have permission",
+            _caller
         );
     }
 }
