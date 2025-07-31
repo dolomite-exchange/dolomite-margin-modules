@@ -195,7 +195,7 @@ export async function verifyContract(
 
     console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
-    const verificationStatus = await instance.getVerificationStatus(guid);
+    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 10_000, 3);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
@@ -800,7 +800,7 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
 ): Promise<PendlePtSystem> {
   const officialPtName = await IERC20Metadata__factory.connect(ptToken.address, ptToken.signer).name();
   const [syOfficial, ptOfficial] = await ptMarket.readTokens();
-  const syTokensIn = await syToken.getTokensIn();
+  const syTokensIn: string[] = await syToken.getTokensIn();
   const ptNamePart = ptName.substring(0, ptName.length - 7);
   if (!officialPtName.toUpperCase().includes(ptNamePart.toUpperCase())) {
     return Promise.reject(
@@ -815,7 +815,7 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   if (ptOfficial !== ptToken.address) {
     return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
   }
-  if (!syTokensIn.some((t) => t === underlyingToken.address)) {
+  if (!syTokensIn.some(t => t === underlyingToken.address)) {
     return Promise.reject(
       new Error(
         `Underlying does not match official underlying on chain: underlying=[${
