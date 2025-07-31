@@ -31,6 +31,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IAdminClaimExcessTokens } from "./interfaces/IAdminClaimExcessTokens.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 
 
 /**
@@ -39,7 +40,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  AdminClaimExcessTokens contract that enables an admin to claim excess tokens from the protocol
  */
-contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
+contract AdminClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IAdminClaimExcessTokens {
     using SafeERC20 for IERC20;
 
     // ===================================================================
@@ -50,42 +51,33 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
     bytes32 public constant ADMIN_CLAIM_EXCESS_TOKENS_ROLE = keccak256("AdminClaimExcessTokens");
 
     // ===================================================================
-    // ====================== Immutable Variables ========================
-    // ===================================================================
-
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-
-    // ===================================================================
     // ========================== Constructor ============================
     // ===================================================================
 
     constructor(
-        address _dolomiteRegistry,
+        address _adminRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
     }
 
     // ===================================================================
     // ========================= Admin Functions =========================
     // ===================================================================
 
-    function claimExcessTokens(address _token, bool _depositIntoDolomite) external {
-        address treasury = DOLOMITE_REGISTRY.treasury();
-        if (msg.sender == treasury) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            msg.sender == treasury,
-            _FILE,
-            "Sender is not treasury"
-        );
-
+    function claimExcessTokens(
+        address _token,
+        address _receiver,
+        bool _depositIntoDolomite
+    )
+    external
+    checkPermission(this.claimExcessTokens.selector, msg.sender) {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerWithdrawExcessTokens.selector,
                 marketId,
-                _depositIntoDolomite ? address(this) : treasury
+                _depositIntoDolomite ? address(this) : _receiver
             )
         );
 
@@ -94,7 +86,7 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
             IERC20(_token).safeApprove(address(DOLOMITE_MARGIN()), balance);
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
-                /* accountOwner = */ treasury,
+                /* accountOwner = */ _receiver,
                 /* fromAccount = */ address(this),
                 /* toAccountNumber = */ 0,
                 marketId,

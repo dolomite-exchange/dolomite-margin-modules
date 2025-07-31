@@ -38,6 +38,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSetInterestSetter {
 
     bytes32 private constant _FILE = "AdminSetInterestSetter";
+    bytes32 public constant ADMIN_SET_INTEREST_SETTER_ROLE = keccak256("ADMIN_SET_INTEREST_SETTER_ROLE");
 
     // ===================================================================
     // ======================= Field Variables ===========================

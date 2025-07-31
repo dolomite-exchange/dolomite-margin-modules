@@ -30,6 +30,7 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
  * @notice  Interface for the PartnerClaimExcessTokens contract
  */
 interface IPartnerClaimExcessTokens {
+    event FeeReceiverSet(address indexed feeReceiver);
 
     // ========================================================
     // ======================== Structs =======================
