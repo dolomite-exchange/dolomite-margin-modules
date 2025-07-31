@@ -1,11 +1,6 @@
-import {
-  DolomiteNetwork,
-  DolomiteV2Network,
-  MAX_UINT_256_BI,
-  Network,
-} from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, MAX_UINT_256_BI, Network } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
-import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, VotingEscrow } from './types';
+import { IERC20, IVotingEscrow, MockVotingEscrow, VotingEscrow } from './types';
 import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 
@@ -14,20 +9,20 @@ const NO_MARKET_ID = MAX_UINT_256_BI;
 export function getBuybackPoolConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
-  oDolo: IERC20
+  oDolo: IERC20,
 ): any[] {
   return [dolo.address, oDolo.address, core.dolomiteMargin.address];
 }
 
 export function getDOLOConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
-  treasury: string
+  treasury: string,
 ): any[] {
   return [core.dolomiteMargin.address, treasury];
 }
 
 export function getODOLOConstructorParams<T extends DolomiteNetwork>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
 ): any[] {
   return [core.dolomiteMargin.address, 'oDOLO Token', 'oDOLO'];
 }
@@ -35,19 +30,19 @@ export function getODOLOConstructorParams<T extends DolomiteNetwork>(
 export function getDOLOBuybackPoolConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
-  oDolo: IERC20
+  oDolo: IERC20,
 ): any[] {
   return [dolo.address, oDolo.address, core.dolomiteMargin.address];
 }
 
 export function getVeFeeCalculatorConstructorParams<T extends DolomiteNetwork>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
 ): any[] {
   return [core.dolomiteMargin.address];
 }
 
 export function getExternalVesterDiscountCalculatorConstructorParams(
-  veToken: VotingEscrow | IVotingEscrow
+  veToken: VotingEscrow | IVotingEscrow,
 ): any[] {
   return [veToken.address];
 }
