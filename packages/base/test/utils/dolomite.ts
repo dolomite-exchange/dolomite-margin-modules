@@ -36,6 +36,7 @@ import {
   TestDepositWithdrawalRouter__factory,
 } from '../../src/types';
 import {
+  getAdminRegistryProxyConstructorParams,
   getDolomiteErc20ProxyConstructorParams,
   getDolomiteErc4626ProxyConstructorParams,
   getDolomiteErc4626WithPayableProxyConstructorParams,
@@ -196,11 +197,10 @@ export async function createAdminRegistry<T extends DolomiteNetwork>(
     AdminRegistry__factory.bytecode,
     [core.dolomiteMargin.address],
   );
-  const transaction = await implementation.populateTransaction.initialize();
   const proxy = await createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, transaction.data],
+    await getAdminRegistryProxyConstructorParams(core, implementation),
   );
   return AdminRegistry__factory.connect(proxy.address, core.governance) as AdminRegistry;
 }

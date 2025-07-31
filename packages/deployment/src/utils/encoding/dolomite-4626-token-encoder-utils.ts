@@ -58,7 +58,7 @@ export async function encodeSetupDolomite4626Token<T extends DolomiteNetwork>(
     ...(await encodeGrantRoleIfNecessary(core, D_TOKEN_ROLE, dToken)),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { 'dolomiteRegistry': core.dolomiteRegistry },
+      { dolomiteRegistry: core.dolomiteRegistry },
       'dolomiteRegistry',
       'ownerSetMarketIdToDToken',
       [(await dToken.marketId()), dToken.address],
