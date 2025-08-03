@@ -7,6 +7,7 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { deployBerachainPOLSystem } from 'packages/deployment/src/utils/deploy-utils';
 import { encodeAddPOLIsolationModeMarket } from 'packages/deployment/src/utils/encoding/add-market-encoder-utils';
