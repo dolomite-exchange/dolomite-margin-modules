@@ -4,13 +4,11 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumber } from 'ethers';
 import {
-  AccountRiskOverrideCategory,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
-  encodeSetAccountRiskOverrideCategorySettings,
   encodeSetBorrowCapWithMagic,
   encodeSetIsCollateralOnly,
   encodeSetSingleCollateralWithStrictDebtByMarketId,
@@ -38,7 +36,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetSupplyCapWithMagic(core, core.marketIds.eBtc, 1),
     await encodeSetSupplyCapWithMagic(core, core.marketIds.uniBtc, 5),
     await encodeSetSupplyCapWithMagic(core, core.marketIds.solvBtc, 2.5),
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.solvBtc, 2.5),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.xSolvBtc, 2.5),
     await encodeSetSupplyCapWithMagic(core, core.marketIds.nect, 1_000_000),
 
     await encodeSetBorrowCapWithMagic(core, core.marketIds.nect, 950_000),
