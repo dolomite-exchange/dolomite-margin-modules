@@ -23,5 +23,8 @@
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
     "directory": "packages/base"
   },
-  "license": "GPL-2.0"
+  "license": "GPL-2.0",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.3"
+  }
 }
