@@ -1,5 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
+import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
@@ -33,7 +34,6 @@ import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { DolomiteOwnerV1, DolomiteOwnerV2 } from 'packages/admin/src/types';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -51,38 +51,46 @@ export interface ImplementationContracts {
 export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-    ? IWETH
-    : T extends Network.Berachain
-      ? IERC20
-      : T extends Network.Ink
-        ? IWETH
-        : T extends Network.Mantle
-          ? IERC20
-          : T extends Network.PolygonZkEvm
-            ? IWETH
-            : T extends Network.SuperSeed
-              ? IWETH
-              : T extends Network.XLayer
-                ? IERC20
-                : never;
+  ? IWETH
+  : T extends Network.Berachain
+  ? IERC20
+  : T extends Network.Botanix
+  ? IERC20
+  : T extends Network.Ethereum
+  ? IWETH
+  : T extends Network.Ink
+  ? IWETH
+  : T extends Network.Mantle
+  ? IERC20
+  : T extends Network.PolygonZkEvm
+  ? IWETH
+  : T extends Network.SuperSeed
+  ? IWETH
+  : T extends Network.XLayer
+  ? IERC20
+  : never;
 
 export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-    ? DolomiteERC4626WithPayable
-    : T extends Network.Berachain
-      ? DolomiteERC4626
-      : T extends Network.Ink
-        ? DolomiteERC4626WithPayable
-        : T extends Network.Mantle
-          ? DolomiteERC4626
-          : T extends Network.PolygonZkEvm
-            ? DolomiteERC4626WithPayable
-            : T extends Network.SuperSeed
-              ? DolomiteERC4626WithPayable
-              : T extends Network.XLayer
-                ? DolomiteERC4626
-                : never;
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.Botanix
+  ? DolomiteERC4626
+  : T extends Network.Ethereum
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
+  : never;
 
 export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;
@@ -91,7 +99,9 @@ export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   stablecoins: IERC20[];
 }
 
-export interface CoreProtocolDolomiteTokens<T extends DolomiteNetwork> {
+export interface CoreProtocolDolomiteTokens {
+  implementationAddress: string;
+  payableImplementationAddress: string;
   all: (DolomiteERC4626 | DolomiteERC4626WithPayable)[];
 }
 
@@ -104,6 +114,7 @@ export interface CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
+  daoAddress: string | undefined;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
@@ -113,6 +124,8 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   hhUser3: SignerWithAddressWithSafety;
   hhUser4: SignerWithAddressWithSafety;
   hhUser5: SignerWithAddressWithSafety;
+  adminClaimExcessTokens: IAdminClaimExcessTokens;
+  adminPauseMarket: IAdminPauseMarket;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
@@ -131,13 +144,13 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
-  dTokens: CoreProtocolDolomiteTokens<T>;
+  dTokens: CoreProtocolDolomiteTokens;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV2;
   genericTraderRouter: IGenericTraderRouter;
   implementationContracts: ImplementationContracts;
-  interestSetters: InterestSetters;
+  interestSetters: InterestSetters<T>;
   libraries: LibraryMaps;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
@@ -170,6 +183,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
+  public readonly daoAddress: string | undefined;
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
@@ -182,6 +196,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// =========================
   /// Contracts and Ecosystems
   /// =========================
+  public readonly adminClaimExcessTokens: IAdminClaimExcessTokens;
+  public readonly adminPauseMarket: IAdminPauseMarket;
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
   public readonly borrowPositionRouter: IBorrowPositionRouter;
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
@@ -195,7 +211,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
-  public readonly dolomiteTokens: CoreProtocolDolomiteTokens<T>;
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokens;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
@@ -207,7 +223,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly genericTraderProxy: IGenericTraderProxyV2;
   public readonly genericTraderRouter: IGenericTraderRouter;
   public readonly implementationContracts: ImplementationContracts;
-  public readonly interestSetters: InterestSetters;
+  public readonly interestSetters: InterestSetters<T>;
   public readonly libraries: LibraryMaps;
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
@@ -238,6 +254,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
       web3Provider: params.hhUser1.provider!,
       defaultBlockTag: params.config.blockNumber,
     });
+    this.daoAddress = params.daoAddress;
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
@@ -247,6 +264,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.hhUser3 = params.hhUser3;
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
+    this.adminClaimExcessTokens = params.adminClaimExcessTokens;
+    this.adminPauseMarket = params.adminPauseMarket;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
     this.borrowPositionRouter = params.borrowPositionRouter;
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;

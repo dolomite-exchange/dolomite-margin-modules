@@ -1,18 +1,13 @@
-import {
-  DOLO,
-  ODOLO,
-  TestRollingClaims,
-  TestRollingClaims__factory,
-} from '../src/types';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { ODOLO, TestRollingClaims, TestRollingClaims__factory } from '../src/types';
 
 describe('RollingClaims', () => {
   let core: CoreProtocolBerachain;
@@ -29,7 +24,7 @@ describe('RollingClaims', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 4_403_500,
-      network: Network.Berachain
+      network: Network.Berachain,
     });
     odolo = core.tokenomics.oDolo;
 
@@ -40,10 +35,9 @@ describe('RollingClaims', () => {
     const leaves = rewards.map((account) =>
       keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards])),
     );
-    const invalidLeaf = keccak256(defaultAbiCoder.encode(
-      ['address', 'uint256'],
-      [core.hhUser3.address, parseEther('15')]
-    ));
+    const invalidLeaf = keccak256(
+      defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, parseEther('15')]),
+    );
     const tree = new MerkleTree(leaves, keccak256, { sort: true });
 
     merkleRoot = tree.getHexRoot();
@@ -53,7 +47,7 @@ describe('RollingClaims', () => {
     rollingClaims = await createContractWithAbi<TestRollingClaims>(
       TestRollingClaims__factory.abi,
       TestRollingClaims__factory.bytecode,
-      [odolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [odolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await rollingClaims.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await rollingClaims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
@@ -75,6 +69,28 @@ describe('RollingClaims', () => {
       expect(await rollingClaims.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await rollingClaims.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await rollingClaims.ODOLO()).to.eq(core.tokenomics.oDolo.address);
+      expect(await rollingClaims.currentEpoch()).to.eq(ZERO_BI);
+    });
+  });
+
+  describe('#handlerSetClaim', () => {
+    it('should work normally', async () => {
+      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, ONE_BI);
+      expect(await rollingClaims.currentEpoch()).to.eq(ONE_BI);
+    });
+
+    it('should fail when handler is not caller', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser1).handlerSetMerkleRoot(merkleRoot, 0),
+        'BaseClaim: Only handler can call',
+      );
+    });
+
+    it('should fail when epochs do not match', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, 0),
+        'RollingClaims: Invalid epoch',
+      );
     });
   });
 
@@ -85,10 +101,36 @@ describe('RollingClaims', () => {
         distributor: rollingClaims.address,
         user: core.hhUser1.address,
         epoch: 0,
-        amount: parseEther('5')
+        amount: parseEther('5'),
       });
       expect(await rollingClaims.userToClaimAmount(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await rollingClaims.userToClaimEpoch(core.hhUser1.address)).to.eq(ZERO_BI);
       expect(await odolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
+    });
+
+    it('should work normally with remapped address', async () => {
+      await rollingClaims
+        .connect(core.hhUser5)
+        .ownerSetAddressRemapping([core.hhUser4.address], [core.hhUser1.address]);
+
+      const res = await rollingClaims.connect(core.hhUser4).claim(validProof1, parseEther('5'));
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: rollingClaims.address,
+        user: core.hhUser1.address,
+        epoch: 0,
+        amount: parseEther('5'),
+      });
+      expect(await rollingClaims.userToClaimAmount(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await odolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('5'));
+
+      await expectThrow(
+        rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5')),
+        'RollingClaims: No amount to claim',
+      );
+      await expectThrow(
+        rollingClaims.connect(core.hhUser4).claim(validProof1, parseEther('5')),
+        'RollingClaims: No amount to claim',
+      );
     });
 
     it('should work normally with two merkle roots', async () => {
@@ -97,8 +139,10 @@ describe('RollingClaims', () => {
         distributor: rollingClaims.address,
         user: core.hhUser1.address,
         epoch: 0,
-        amount: parseEther('5')
+        amount: parseEther('5'),
       });
+      expect(await rollingClaims.currentEpoch()).to.eq(ZERO_BI);
+      expect(await rollingClaims.userToClaimEpoch(core.hhUser1.address)).to.eq(ZERO_BI);
       expect(await rollingClaims.userToClaimAmount(core.hhUser1.address)).to.eq(parseEther('5'));
       expect(await odolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
 
@@ -119,19 +163,23 @@ describe('RollingClaims', () => {
       await expectEvent(core.eventEmitterRegistry, res2, 'RewardClaimed', {
         distributor: rollingClaims.address,
         user: core.hhUser1.address,
-        epoch: 0,
-        amount: parseEther('15')
+        epoch: ONE_BI,
+        amount: parseEther('15'),
       });
+      expect(await rollingClaims.currentEpoch()).to.eq(ONE_BI);
+      expect(await rollingClaims.userToClaimEpoch(core.hhUser1.address)).to.eq(ONE_BI);
       expect(await rollingClaims.userToClaimAmount(core.hhUser1.address)).to.eq(parseEther('20'));
       expect(await odolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('20'));
 
+      expect(await rollingClaims.userToClaimEpoch(core.hhUser2.address)).to.eq(ZERO_BI);
       const res3 = await rollingClaims.connect(core.hhUser2).claim(newValidProof2, parseEther('25'));
       await expectEvent(core.eventEmitterRegistry, res3, 'RewardClaimed', {
         distributor: rollingClaims.address,
         user: core.hhUser2.address,
-        epoch: 0,
-        amount: parseEther('25')
+        epoch: ONE_BI,
+        amount: parseEther('25'),
       });
+      expect(await rollingClaims.userToClaimEpoch(core.hhUser2.address)).to.eq(ONE_BI);
       expect(await rollingClaims.userToClaimAmount(core.hhUser2.address)).to.eq(parseEther('25'));
       expect(await odolo.balanceOf(core.hhUser2.address)).to.eq(parseEther('25'));
     });
@@ -147,7 +195,7 @@ describe('RollingClaims', () => {
     it('should fail if invalid merkle proof', async () => {
       await expectThrow(
         rollingClaims.connect(core.hhUser3).claim(invalidProof, parseEther('15')),
-        'RollingClaims: Invalid merkle proof'
+        'RollingClaims: Invalid merkle proof',
       );
     });
 
@@ -155,7 +203,7 @@ describe('RollingClaims', () => {
       await rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5'));
       await expectThrow(
         rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5')),
-        'RollingClaims: No amount to claim'
+        'RollingClaims: No amount to claim',
       );
     });
 

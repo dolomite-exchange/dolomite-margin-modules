@@ -199,7 +199,8 @@ interface IVeExternalVesterV1 {
      * @notice  Burns the vested oToken tokens and sends vested and newly purchased ARB to user's dolomite balance
      *
      * @param  _nftId               The id of the position that is fully vested
-     * @param  _veTokenId           The id of the veToken that will receive the reward tokens
+     * @param  _veTokenId           The id of the veToken that will receive the reward tokens. Use `type(uint256).max`
+     *                              to create a new ve token.
      * @param  _lockDuration        The duration to lock the veToken for (if creating a new one)
      * @param  _maxPaymentAmount    The maximum amount of ETH to pay for the position
      */

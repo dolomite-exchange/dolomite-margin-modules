@@ -6,7 +6,11 @@ import {
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../../../base/src/types';
-import { SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL } from '../../../../../base/src/utils/constants';
+import {
+  DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  GNOSIS_SAFE_MAP,
+  SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+} from '../../../../../base/src/utils/constants';
 import { getRegistryProxyConstructorParams } from '../../../../../base/src/utils/constructors/dolomite';
 import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../../../base/src/utils/SignerWithAddressWithSafety';
@@ -23,7 +27,7 @@ export async function deployDolomiteRegistry<T extends DolomiteNetwork>(
   const dolomiteRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 13),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 14),
   );
   const registryImplementation = DolomiteRegistryImplementation__factory.connect(
     dolomiteRegistryImplementationAddress,
@@ -37,6 +41,8 @@ export async function deployDolomiteRegistry<T extends DolomiteNetwork>(
     CoreDeployments.LiquidatorAssetRegistry[network].address,
     eventEmitterProxyAddress,
     dolomiteAccountRegistryProxy.address,
+    GNOSIS_SAFE_MAP[network],
+    DOLOMITE_DAO_GNOSIS_SAFE_MAP[network] ?? GNOSIS_SAFE_MAP[network],
   );
   const dolomiteRegistryAddress = await deployContractAndSave(
     'RegistryProxy',

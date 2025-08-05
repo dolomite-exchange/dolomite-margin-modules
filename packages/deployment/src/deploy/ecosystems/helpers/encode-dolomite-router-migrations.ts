@@ -1,19 +1,11 @@
+import { DepositWithdrawalRouter, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { PAYABLE_TOKEN_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { DeployedVault } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
-import { PAYABLE_TOKEN_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { DepositWithdrawalRouter, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-
-const INITIALIZED_NETWORKS = [
-  Network.ArbitrumOne,
-  Network.Berachain,
-  Network.Mantle,
-  Network.PolygonZkEvm,
-  Network.XLayer,
-];
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
 export async function encodeDolomiteRouterMigrations(
   core: CoreProtocolType<any>,
@@ -29,10 +21,14 @@ export async function encodeDolomiteRouterMigrations(
   );
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
-  if (!INITIALIZED_NETWORKS.some(n => n === core.config.network) && !(core.depositWithdrawalProxy.g_initialized())) {
-    if (numMarkets.gt(ZERO_BI)) {
-      await core.depositWithdrawalProxy.initializePayableMarket(PAYABLE_TOKEN_MAP[core.config.network].address);
-    } else {
+  try {
+    if (!await core.depositWithdrawalProxy.g_initialized()) {
+      const payableTokenAddress = PAYABLE_TOKEN_MAP[core.config.network].address;
+      await core.dolomiteMargin.getMarketIdByTokenAddress(payableTokenAddress);
+      await core.depositWithdrawalProxy.initializePayableMarket(payableTokenAddress);
+    }
+  } catch (e: any) {
+    if (!e.message.includes('invalid ETH sender')) {
       console.warn('\tCould not initialize the depositWithdrawalProxy because not payable market has been added yet');
     }
   }
@@ -68,8 +64,11 @@ export async function encodeDolomiteRouterMigrations(
 
   for (const deployedVault of deployedVaults) {
     for (const routerAddress of routers) {
-      if (!(await deployedVault.factory.isTokenConverterTrusted(routerAddress))) {
-        transactions.push(await deployedVault.encodeSetTrustedTokenConverter(core, routerAddress, true));
+      if (deployedVault.isDepositWithdrawalRouterEnabled || routerAddress !== depositWithdrawalRouter.address) {
+        // Some vaults don't use the deposit/withdrawal router
+        if (!(await deployedVault.factory.isTokenConverterTrusted(routerAddress))) {
+          transactions.push(await deployedVault.encodeSetTrustedTokenConverter(core, routerAddress, true));
+        }
       }
     }
   }

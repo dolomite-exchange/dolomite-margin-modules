@@ -1,3 +1,12 @@
+import { marketToIsolationModeVaultInfoBase } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/base';
+import { marketToIsolationModeVaultInfoBotanix } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/botanix';
+import { marketToIsolationModeVaultInfoEthereum } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ethereum';
+import { marketToIsolationModeVaultInfoInk } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ink';
+import { marketToIsolationModeVaultInfoPolygonZkEvm } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/polygon-zkevm';
+import { marketToIsolationModeVaultInfoSuperSeed } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/super-seed';
+import { marketToIsolationModeVaultInfoXLayer } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/xlayer';
+import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
 import { BigNumber } from 'ethers';
 import { network as hardhatNetwork } from 'hardhat';
 import {
@@ -7,9 +16,10 @@ import {
   IIsolationModeVaultFactoryOld__factory,
 } from 'packages/base/src/types';
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
-import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
+import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain';
 import {
   DeployedVaultInformation,
   IsolationModeVaultType,
@@ -22,11 +32,6 @@ import {
 import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
-import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
-import {
-  prettyPrintEncodedDataWithTypeSafety,
-} from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
-import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain';
 
 export class DeployedVault {
   public contractName: string;
@@ -39,6 +44,7 @@ export class DeployedVault {
   public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld;
   public vaultType: IsolationModeVaultType;
   public isUpgradeable: boolean;
+  public isDepositWithdrawalRouterEnabled: boolean;
 
   constructor(
     marketId: number,
@@ -59,21 +65,30 @@ export class DeployedVault {
     this.factory = factory;
     this.vaultType = info.vaultType;
     this.isUpgradeable = info.vaultType !== IsolationModeVaultType.Migrator;
+    this.isDepositWithdrawalRouterEnabled = info.vaultType !== IsolationModeVaultType.BerachainPol;
   }
 
   public async deployNewVaultAndEncodeUpgradeTransaction<T extends DolomiteNetwork>(
     core: CoreProtocolType<T>,
     newLibraries: Record<string, string>,
+    expectedVersionNumber?: number,
   ): Promise<EncodedTransaction> {
     if (!this.isUpgradeable) {
       return Promise.reject(new Error(`Vault with ID ${this.marketId} is not upgradeable`));
     }
 
-    await this.deployNewVaultImplementation(newLibraries);
+    await this.deployNewVaultImplementation(newLibraries, expectedVersionNumber);
     return this.encodeSetUserVaultImplementation(core);
   }
 
-  public async deployNewVaultImplementation(newLibraries: Record<string, string>): Promise<string> {
+  public async deployNewVaultImplementation(
+    newLibraries: Record<string, string>,
+    expectedVersionNumber?: number,
+  ): Promise<string> {
+    if (expectedVersionNumber !== undefined && this.currentVersionNumber + 1 !== expectedVersionNumber) {
+      const foundVersion = this.currentVersionNumber + 1;
+      return Promise.reject(new Error(`Invalid version, expected ${expectedVersionNumber} but found ${foundVersion}`));
+    }
     if (!this.isUpgradeable) {
       return Promise.reject(new Error(`Vault with ID ${this.marketId} is not upgradeable`));
     }
@@ -103,26 +118,20 @@ export class DeployedVault {
         await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
         core.governance,
       );
-      return prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { factory },
-        'factory',
-        'setIsTokenConverterTrusted',
-        [tokenConverterAddress, isTrustedConverter],
-      );
+      return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'setIsTokenConverterTrusted', [
+        tokenConverterAddress,
+        isTrustedConverter,
+      ]);
     }
 
     const factory = IIsolationModeVaultFactory__factory.connect(
       await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
       core.governance,
     );
-    return prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerSetIsTokenConverterTrusted',
-      [tokenConverterAddress, isTrustedConverter],
-    );
+    return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerSetIsTokenConverterTrusted', [
+      tokenConverterAddress,
+      isTrustedConverter,
+    ]);
   }
 
   public async encodeSetUserVaultImplementation<T extends DolomiteNetwork>(
@@ -171,7 +180,7 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       deployedVaults,
     );
   } else if (config.network === Network.Base) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBase, deployedVaults);
   } else if (config.network === Network.Berachain) {
     skippedMarkets = await initializeVaults(
       config,
@@ -179,28 +188,37 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       marketToIsolationModeVaultInfoBerachain,
       deployedVaults,
     );
+  } else if (config.network === Network.Botanix) {
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBotanix, deployedVaults);
+  } else if (config.network === Network.Ethereum) {
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoEthereum, deployedVaults);
   } else if (config.network === Network.Ink) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoInk, deployedVaults);
   } else if (config.network === Network.Mantle) {
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoMantle, deployedVaults);
+  } else if (config.network === Network.PolygonZkEvm) {
     skippedMarkets = await initializeVaults(
       config,
       governance,
-      marketToIsolationModeVaultInfoMantle,
+      marketToIsolationModeVaultInfoPolygonZkEvm,
       deployedVaults,
     );
-  } else if (config.network === Network.PolygonZkEvm) {
-    // Do nothing
   } else if (config.network === Network.SuperSeed) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(
+      config,
+      governance,
+      marketToIsolationModeVaultInfoSuperSeed,
+      deployedVaults,
+    );
   } else if (config.network === Network.XLayer) {
-    // Do nothing
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoXLayer, deployedVaults);
   } else {
     throw new Error(`Invalid network, found ${config.network}`);
   }
 
   // Add a 1,000 block buffer
   const realBlockNumber = await getRealLatestBlockNumber(false, config.network);
-  if (skippedMarkets > 0 && config.blockNumber < (realBlockNumber - 1_000) && hardhatNetwork.name === 'hardhat') {
+  if (skippedMarkets > 0 && config.blockNumber < realBlockNumber - 1_000 && hardhatNetwork.name === 'hardhat') {
     console.log('\tForked block detected. Skipping market & vault implementation checks.');
     return deployedVaults;
   }

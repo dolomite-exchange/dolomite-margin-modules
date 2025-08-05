@@ -112,7 +112,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   xai: IERC20;
 }
 
-interface CoreProtocolDolomiteTokensArbitrumOne extends CoreProtocolDolomiteTokens<Network.ArbitrumOne> {
+interface CoreProtocolDolomiteTokensArbitrumOne extends CoreProtocolDolomiteTokens {
   bridgedUsdc: DolomiteERC4626;
   dai: DolomiteERC4626;
   usdc: DolomiteERC4626;
@@ -158,6 +158,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dPtEzEthJun2024: BigNumberish;
   dPtEzEthSep2024: BigNumberish;
   dPtGlpMar2024: BigNumberish;
+  dPtGlpSep2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
   dPtWeEthJun2024: BigNumberish;
   dPtWeEthSep2024: BigNumberish;

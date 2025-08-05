@@ -14,7 +14,7 @@ import {
   LiquidatorProxyV6__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { DOLOMITE_DAO_GNOSIS_SAFE_MAP, GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteErc4626ImplementationConstructorParams,
   getDolomiteMigratorConstructorParams,
@@ -82,6 +82,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const [hhUser1] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
+  const daoAddress = DOLOMITE_DAO_GNOSIS_SAFE_MAP[network];
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[network];
   const gnosisSafeSigner = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
   const transactions: EncodedTransaction[] = [];
@@ -117,7 +118,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 6),
   );
   const eventEmitterRegistryImplementation = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,
@@ -161,12 +162,12 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'DolomiteERC4626',
     await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 3),
   );
   await deployContractAndSave(
     'DolomiteERC4626WithPayable',
     await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 3),
   );
 
   const genericTraderProxyV2LibAddress = await deployContractAndSave(
@@ -208,6 +209,12 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, HANDLER_ADDRESS),
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteMigrator', 1),
   );
+
+  await deployContractAndSave(
+    'MultiCallWithExceptionHandler',
+    [],
+  );
+
   const oracleAggregator = await deployOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
   const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
@@ -225,7 +232,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 4),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -298,7 +305,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
-  await deployInterestSetters();
+  await deployInterestSetters(dolomiteMargin);
 
   const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
     dolomiteMargin,
@@ -319,6 +326,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     hhUser1,
     liquidatorAssetRegistry,
     liquidatorProxyV6,
+    daoAddress: daoAddress,
     genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,

@@ -29,12 +29,7 @@ import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBala
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -127,11 +122,13 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([
-      tokenUnwrapper.address,
-      tokenWrapper.address,
-      core.depositWithdrawalRouter.address,
-    ]);
+    await factory.connect(core.governance).ownerInitialize(
+      [
+        tokenUnwrapper.address,
+        tokenWrapper.address,
+        core.depositWithdrawalRouter.address,
+      ],
+    );
 
     solidUser = core.hhUser5;
 

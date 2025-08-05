@@ -7,6 +7,7 @@ export enum Network {
   ArbitrumOne = '42161',
   Base = '8453',
   Berachain = '80094',
+  Botanix = '3637',
   Ethereum = '1',
   Ink = '57073',
   Mantle = '5000',
@@ -18,6 +19,8 @@ export enum Network {
 export type DolomiteV2Network =
   | Network.Base
   | Network.Berachain
+  | Network.Botanix
+  | Network.Ethereum
   | Network.Ink
   | Network.Mantle
   | Network.PolygonZkEvm
@@ -26,10 +29,13 @@ export type DolomiteV2Network =
 
 export type DolomiteNetwork = Network.ArbitrumOne | DolomiteV2Network;
 
+export type DolomiteNetworkNoBotanixOrEthereum = Exclude<DolomiteNetwork, Network.Botanix | Network.Ethereum>;
+
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
   Berachain = 'berachain',
+  Botanix = 'botanix',
   Ethereum = 'ethereum',
   Ink = 'ink',
   Mantle = 'mantle',
@@ -42,6 +48,7 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,
+  [Network.Botanix]: NetworkName.Botanix,
   [Network.Ethereum]: NetworkName.Ethereum,
   [Network.Ink]: NetworkName.Ink,
   [Network.Mantle]: NetworkName.Mantle,
@@ -57,6 +64,7 @@ export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> 
   [Network.ArbitrumOne]: 'arbitrum',
   [Network.Base]: 'base',
   [Network.Berachain]: 'berachain',
+  [Network.Botanix]: undefined,
   [Network.Ethereum]: 'ethereum',
   [Network.Ink]: undefined,
   [Network.Mantle]: 'mantle',
@@ -69,6 +77,7 @@ export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Botanix]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ethereum]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Mantle]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
@@ -86,8 +95,9 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 160822,
-  [Network.Ethereum]: 22_308_000,
-  [Network.Ink]: 0,
+  [Network.Botanix]: 0, // TODO:
+  [Network.Ethereum]: 22_308_000, // TODO:
+  [Network.Ink]: 0, // TODO:
   [Network.Mantle]: 66_804_500,
   [Network.PolygonZkEvm]: 9_860_500,
   [Network.SuperSeed]: 0,

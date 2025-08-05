@@ -55,7 +55,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   [DFS_GLP_MAP[network].marketId]: {
     contractName: 'GLPIsolationModeTokenVaultV2',
     contractRenameWithoutVersion: 'GLPIsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GLPIsolationModeTokenVault', network),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GLPIsolationModeTokenVaultV3Paused', network),
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
@@ -260,7 +260,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     tokenAddress: DPT_WE_ETH_JUN_2024_MAP[network].address,
   },
   [DJ_USDC_V2[network].marketId]: {
-    contractName: 'JonesUSDCIsolationModeTokenVaultV1',
+    contractName: 'JonesUSDCIsolationModeTokenVaultV3',
     contractRenameWithoutVersion: 'JonesUSDCV2IsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('JonesUSDCV2IsolationModeTokenVault', network),
     constructorParams: [],

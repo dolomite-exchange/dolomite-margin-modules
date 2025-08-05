@@ -514,7 +514,7 @@ contract ExternalVesterImplementationV1 is
         return IERC20Mintable(_getAddress(_O_TOKEN_SLOT));
     }
 
-    function owner() public view returns (address) {
+    function owner() public virtual view returns (address) {
         return _getAddress(_OWNER_SLOT);
     }
 
@@ -692,7 +692,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _amount
     ) internal {
         if (_fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER && _marketId == REWARD_MARKET_ID) {
-            _setPushedTokens(pushedTokens() - _amount);
+            _setPushedTokens(_amount == type(uint256).max ? 0 : pushedTokens() - _amount);
         }
 
         IDolomiteStructs.AssetAmount memory assetAmount;

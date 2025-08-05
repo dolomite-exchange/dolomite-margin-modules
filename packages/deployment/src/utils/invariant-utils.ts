@@ -14,7 +14,6 @@ import {
   TargetLiquidationPenalty,
 } from '../../../base/src/utils/constructors/dolomite';
 import { DolomiteNetwork, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
-import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
@@ -90,7 +89,11 @@ function convertInterestSetterToDisplayName<T extends DolomiteNetwork>(
   throw new Error(`Could not find display name for interest setter: ${interestSetter}`);
 }
 
-export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumberish, token: IERC20) {
+export async function checkMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  token: IERC20,
+) {
   let name: string | undefined;
   try {
     const metadata = IERC20Metadata__factory.connect(token.address, token.provider);
@@ -98,14 +101,15 @@ export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumb
 
     const decimals = await metadata.decimals();
     const price = await core.dolomiteMargin.getMarketPrice(marketId);
-    console.log(`\tPrice for ${name}:`, ethers.utils.formatUnits(price.value, 36 - decimals));
+    console.log(`\tPrice for ${name}:`, `$${ethers.utils.formatUnits(price.value, 36 - decimals)}`);
   } catch (e: any) {
     return Promise.reject(new Error(`Could not get price for ${token.address} (${name}) due to error: ${e.message}`));
   }
 
+  const foundAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
   assertHardhatInvariant(
-    (await core.dolomiteMargin.getMarketTokenAddress(marketId)) === token.address,
-    `Invalid token for ${name}`,
+    foundAddress === token.address,
+    `Invalid token for ${name}, found: ${foundAddress}`,
   );
 }
 
@@ -116,7 +120,7 @@ export async function checkIsGlobalOperator<T extends DolomiteNetwork>(
 ) {
   const value = typeof address === 'string' ? address : address.address;
   assertHardhatInvariant(
-    await core.dolomiteMargin.getIsGlobalOperator(value) === isGlobalOperator,
+    (await core.dolomiteMargin.getIsGlobalOperator(value)) === isGlobalOperator,
     `Expected ${value} to be global operator`,
   );
 }
@@ -280,7 +284,7 @@ export async function checkAccountRiskOverrideIsSingleCollateral<T extends Dolom
     const debtMarketIdsSorted = [...s.debtMarketIds].sort((a, b) => a.toNumber() - b.toNumber());
     assertHardhatInvariant(
       debtMarketIdsSorted.length === debtMarketIdsSorted.length &&
-      debtMarketIdsSorted.every(d1 => debtMarketIdsSorted.some(d2 => d1.eq(d2))),
+        debtMarketIdsSorted.every((d1) => debtMarketIdsSorted.some((d2) => d1.eq(d2))),
       'Single collateral params debt markets do not match',
     );
 

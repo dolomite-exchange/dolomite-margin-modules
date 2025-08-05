@@ -5,7 +5,6 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { sleep } from '@openzeppelin/upgrades';
-import { parseEther } from 'ethers/lib/utils';
 import hardhat, { ethers } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getRealLatestBlockNumber, resetForkIfPossible } from 'packages/base/test/utils';
@@ -42,8 +41,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
 
   const bytecodeWithArgs = CREATE3FactoryArtifact.bytecode;
   const gasLimit = ethers.BigNumber.from(hardhat.config.networks[networkName].gas);
-  // const gasPrice = (await ethers.provider.getGasPrice()).mul(4);
-  const gasPrice = ethers.BigNumber.from(1_000_000_000);
+  const gasPrice = (await ethers.provider.getGasPrice()).mul(4);
   const gasCost = (await ethers.provider.estimateGas({ data: bytecodeWithArgs })).mul(2);
   console.log(`\tExpected gas price: ${gasPrice.toString()}`);
   console.log(`\tExpected gas cost: ${gasCost.toString()}`);
@@ -107,21 +105,17 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     // perform a transfer to the deployer wallet
     const balance = await deployerPrivateKey.getBalance();
 
-    const gasLimit = await deployerPrivateKey.provider.estimateGas({
-      to: hhUser1.address,
-      value: balance,
-    });
     const gasPrice = (await deployerPrivateKey.provider.getGasPrice()).mul(11).div(10);
     const totalGasFee = gasPrice.mul(gasLimit);
 
-    if (balance.gt(totalGasFee) && balance.gt(parseEther('0.00001'))) {
+    if (balance.gt(totalGasFee)) {
       console.log(`\tSweeping payable to main deployer: ${deployerPrivateKey.address} --> ${hhUser1.address}`);
       const maxAttempts = 3;
       for (let i = 0; i < maxAttempts; i++) {
         try {
           const result = await deployerPrivateKey.sendTransaction({
-            gasLimit,
             gasPrice,
+            gasLimit: 21_000,
             to: hhUser1.address,
             type: 0,
             value: balance

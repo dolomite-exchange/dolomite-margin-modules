@@ -1,21 +1,20 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
+
+import { BYTES_EMPTY, DolomiteNetwork, DolomiteV2Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import { IDolomiteInterestSetter, IERC20, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
   AccountRiskOverrideRiskFeature,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
+  LowerPercentage,
+  OptimalUtilizationRate,
   SingleCollateralWithStrictDebtParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
+  UpperPercentage,
 } from '../../../../base/src/utils/constructors/dolomite';
-import {
-  BYTES_EMPTY,
-  DolomiteNetwork,
-  DolomiteV2Network,
-  ONE_ETH_BI,
-} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
 import {
@@ -206,6 +205,56 @@ export async function encodeSetLiquidationPenalty<T extends DolomiteNetwork>(
   }
 
   return Promise.reject('Invalid method name for setting liquidation penalty');
+}
+
+export async function encodeSetInterestSetterData<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+  lowerRate: LowerPercentage,
+  upperRate: UpperPercentage,
+  optimalUtilizationRate: OptimalUtilizationRate,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.interestSetters,
+    'modularInterestSetter',
+    'ownerSetSettingsByToken',
+    [
+      token.address,
+      parseEther(lowerRate),
+      parseEther(upperRate).sub(parseEther(lowerRate)),
+      parseEther(optimalUtilizationRate),
+    ],
+  );
+}
+
+export async function encodeUpdateInterestSetterData<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  updates: {
+    lowerRate?: LowerPercentage;
+    upperRate?: UpperPercentage;
+    optimalUtilizationRate?: OptimalUtilizationRate;
+  },
+): Promise<EncodedTransaction> {
+  const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
+  const current = await core.interestSetters.modularInterestSetter.getSettingsByToken(tokenAddress);
+  const previousUpperRate = current.upperOptimalPercent.add(current.lowerOptimalPercent);
+
+  const actualLowerRate = updates.lowerRate ? parseEther(updates.lowerRate) : current.lowerOptimalPercent;
+  const actualUpperRate = updates.upperRate
+    ? parseEther(updates.upperRate).sub(actualLowerRate)
+    : previousUpperRate.sub(actualLowerRate);
+  const actualOptimalUtilization = updates.optimalUtilizationRate
+    ? parseEther(updates.optimalUtilizationRate)
+    : current.optimalUtilization;
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.interestSetters,
+    'modularInterestSetter',
+    'ownerSetSettingsByToken',
+    [tokenAddress, actualLowerRate, actualUpperRate, actualOptimalUtilization],
+  );
 }
 
 export async function encodeSetInterestSetter<T extends DolomiteNetwork>(

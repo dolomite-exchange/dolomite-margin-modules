@@ -536,10 +536,10 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@dolomite-exchange/dolomite-margin@^0.14.1":
-  version "0.14.1"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.14.1.tgz#77b5bd3f8a744054fa73061d09d675a050b92055"
-  integrity sha512-SFEOoX8EcC2voqpNFkYoPgh2dAspebj93fyG5eBjDV/hRlZwqJF4M7vBRumQPnYjyZss5Yn4meP+TdjAwftl+g==
+"@dolomite-exchange/dolomite-margin@^0.14.4":
+  version "0.14.4"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.14.4.tgz#88fe332f12f93c0e4e888d332dbb08f7c016a3e7"
+  integrity sha512-BEz9am9qiWLHpFY7zOCOdSZjorr2ObUf5s2O6+S616+O8SZNLfjWLb6CNhdTtBiDHcfv2GM0qCUPy33Y8zonIA==
   dependencies:
     "@openzeppelin/contracts" "^2.5.1"
     "@types/web3" "1.0.18"

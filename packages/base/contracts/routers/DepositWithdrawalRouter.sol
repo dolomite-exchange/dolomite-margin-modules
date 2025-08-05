@@ -254,7 +254,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 IDolomiteStructs.AssetAmount({
                     sign: false,
                     denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: _amountWei == type(uint256).max 
+                    ref: _amountWei == type(uint256).max
                         ? IDolomiteStructs.AssetReference.Target
                         : IDolomiteStructs.AssetReference.Delta,
                     value: _amountWei == type(uint256).max ? 0 : _amountWei
@@ -327,7 +327,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         marketInfo.factory.enqueueTransferIntoDolomiteMargin(msg.sender, _amountWei);
         marketInfo.token.safeApprove(msg.sender, _amountWei);
 
-        AccountActionLib.deposit(
+        _emitEventIfNecessary(/* _accountOwner = */ msg.sender, _toAccountNumber, _eventFlag);AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
             msg.sender,
             address(this),
@@ -448,10 +448,10 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     /**
      * Deposits wei amount of a token into the sender's account at `_toAccountNumber`. This will
      * automatically deposit into the user's vault if it is an isolation mode token.
-     * 
+     *
      * @dev Par deposit functions will first convert from par to wei then call this function
      * @dev Function will automatically detect if the user has a vault for the provided _isolationModeMarketId
-     * 
+     *
      * @param  _marketInfo              The market info for the token being deposited
      * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
      *                                  (0 if not using isolation mode)
@@ -473,6 +473,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         IERC20(_marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
 
         if (!_marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
+            _emitEventIfNecessary(/* _accountOwner = */ msg.sender, _toAccountNumber, _eventFlag);
+
             // Do an ordinary deposit for the asset into the user's account
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
@@ -527,7 +529,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
 
     /**
      * Wraps a specific amount of the native currency into the wrapped payable token
-     * 
+     *
      * @param  _amountWei   The amount of native currency to wrap
      */
     function _wrap(uint256 _amountWei) internal {
