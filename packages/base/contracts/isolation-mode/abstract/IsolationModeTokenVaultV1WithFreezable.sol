@@ -140,29 +140,29 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ==================================================================
 
     function _depositIntoVaultForDolomiteMargin(
-        address _from,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
         _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
     {
-        super._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
+        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei, _isViaRouter);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
-        address _to,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
         _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
     {
-        super._withdrawFromVaultForDolomiteMargin(_to, _fromAccountNumber, _amountWei);
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, _isViaRouter);
     }
 
     function _openBorrowPosition(

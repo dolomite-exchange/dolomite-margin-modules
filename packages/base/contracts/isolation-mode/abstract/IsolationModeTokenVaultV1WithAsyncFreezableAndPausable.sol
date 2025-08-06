@@ -43,9 +43,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
 {
 
     function _depositIntoVaultForDolomiteMargin(
-        address _from,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
@@ -54,16 +54,16 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, _amountWei)
     {
         IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(
-            _from,
             _toAccountNumber,
-            _amountWei
+            _amountWei,
+            _isViaRouter
         );
     }
 
     function _withdrawFromVaultForDolomiteMargin(
-        address _to,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
@@ -72,9 +72,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         _withdrawFromVaultForDolomiteMarginPausableValidator(_fromAccountNumber)
     {
         IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(
-            _to,
             _fromAccountNumber,
-            _amountWei
+            _amountWei,
+            _isViaRouter
         );
     }
 

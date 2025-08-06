@@ -26,7 +26,7 @@ import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange
 import { AsyncIsolationModeUnwrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GmxV2TraderLibrary } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2TraderLibrary.sol";
 import { IGmxV2IsolationModeVaultFactory } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GlvLibrary } from "./GlvLibrary.sol";
@@ -185,7 +185,7 @@ contract GlvIsolationModeUnwrapperTraderV2 is
     virtual
     override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
-        return GmxV2Library.isValidInputOrOutputToken(
+        return GmxV2TraderLibrary.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _outputToken,
             skipLongToken()

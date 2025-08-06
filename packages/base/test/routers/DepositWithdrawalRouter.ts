@@ -440,7 +440,7 @@ describe('DepositWithdrawalRouter', () => {
           EventFlag.None,
           { value: ONE_ETH_BI.sub(1) }
         ),
-        'DepositWithdrawalRouter: Insufficient ETH sent',
+        'DepositWithdrawalRouter: Insufficient payable sent',
       );
     });
 

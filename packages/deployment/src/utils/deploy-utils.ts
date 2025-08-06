@@ -655,7 +655,7 @@ export async function deployGmxV2GlvTokenSystem(
       longMarketId.eq(-1),
     ),
     `Glv${glvName}IsolationModeVaultFactory`,
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
   const factory = GlvIsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
@@ -747,7 +747,7 @@ export async function deployGmxV2GmTokenSystem(
       longMarketId.eq(-1),
     ),
     `GmxV2${gmName}IsolationModeVaultFactory`,
-    core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+    core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
   );
   const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 

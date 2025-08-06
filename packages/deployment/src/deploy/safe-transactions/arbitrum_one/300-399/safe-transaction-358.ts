@@ -62,13 +62,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV8',
-    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
   const wrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV7',
-    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
 
   const transactions = [];

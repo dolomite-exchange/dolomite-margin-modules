@@ -132,7 +132,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
-        _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
+        _depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei, /* _isViaRouter = */ false);
     }
 
     function routerDepositUnderlyingTokenIntoVault(
@@ -142,14 +142,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyDepositWithdrawalRouter(msg.sender) {
-        _depositIntoVaultForDolomiteMargin(msg.sender, _toAccountNumber, _amountWei);
+        _depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei, /* _isViaRouter = */ true);
     }
 
     function routerDepositOtherTokenIntoVault(
         uint256 _marketId,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) 
+    )
     external
     nonReentrant
     onlyDepositWithdrawalRouter(msg.sender) {
@@ -170,7 +170,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyVaultOwner(msg.sender) {
-        _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
+        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, /* _isViaRouter = */ false);
     }
 
     function routerWithdrawUnderlyingTokenFromVault(
@@ -180,7 +180,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     nonReentrant
     onlyDepositWithdrawalRouter(msg.sender) {
-        _withdrawFromVaultForDolomiteMargin(msg.sender, _fromAccountNumber, _amountWei);
+        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, /* _isViaRouter = */ true);
     }
 
     function routerWithdrawOtherTokenFromVault(
@@ -480,28 +480,28 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _depositIntoVaultForDolomiteMargin(
-        address _from,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) internal virtual {
         IsolationModeTokenVaultV1ActionsImpl.depositIntoVaultForDolomiteMargin(
             /* _vault = */ this,
-            _from,
             _toAccountNumber,
-            _amountWei
+            _amountWei,
+            _isViaRouter
         );
     }
 
     function _withdrawFromVaultForDolomiteMargin(
-        address _to,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) internal virtual {
         IsolationModeTokenVaultV1ActionsImpl.withdrawFromVaultForDolomiteMargin(
             /* _vault = */ this,
-            _to,
             _fromAccountNumber,
-            _amountWei
+            _amountWei,
+            _isViaRouter
         );
     }
 

@@ -254,7 +254,8 @@ contract PendleYtGLPMar2024IsolationModeTokenVaultV1 is
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     ) internal override {
         IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory = IPendleYtGLPMar2024IsolationModeVaultFactory(
             VAULT_FACTORY()
@@ -285,7 +286,8 @@ contract PendleYtGLPMar2024IsolationModeTokenVaultV1 is
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _toWallet
         );
 
         // if account balance is negative, set expiry

@@ -84,16 +84,16 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
     function depositIntoVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
-        address _from,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) public {
         // This implementation requires we deposit into index 0
         _checkToAccountNumberIsZero(_toAccountNumber);
 
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
-        IDepositWithdrawalRouter router = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
-        if (_from == address(router)) {
+        if (_isViaRouter) {
+            IDepositWithdrawalRouter router = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
             router.vaultExecuteDepositUnderlyingToken(
                 _vault.marketId(),
                 _toAccountNumber,
@@ -106,17 +106,16 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
     function withdrawFromVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
-        address _to,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) public {
         // This implementation requires we withdraw from index 0
         _checkFromAccountNumberIsZero(_fromAccountNumber);
 
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
-        IDepositWithdrawalRouter depositWithdrawalRouter = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
-
-        if (_to == address(depositWithdrawalRouter)) {
+        if (_isViaRouter) {
+            IDepositWithdrawalRouter depositWithdrawalRouter = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
             depositWithdrawalRouter.vaultExecuteWithdrawUnderlyingToken(
                 _vault.marketId(),
                 _fromAccountNumber,
