@@ -279,7 +279,8 @@ export interface GmxV2Ecosystem {
     gmUniUsd: LiveGmMarket;
     gmWifUsd: LiveGmMarket;
     gmWstEthUsd: LiveGmMarket;
-    gmxV2LibraryMap: { GmxV2Library: string };
+    gmxV2VaultLibraryMap: { GmxV2VaultLibrary: string };
+    gmxV2TraderLibraryMap: { GmxV2TraderLibrary: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
     tokenVaultImplementation: GmxV2IsolationModeTokenVaultV1;
@@ -371,7 +372,8 @@ export async function createGmxEcosystemV2(
     return Promise.reject(`Invalid network, found ${network}`);
   }
 
-  const gmxV2LibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2Library', network);
+  const gmxV2VaultLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2VaultLibrary', network);
+  const gmxV2TraderLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2TraderLibrary', network);
   const priceOracleAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2MarketTokenPriceOracle', network);
   const tokenVaultImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
     'GmxV2IsolationModeTokenVaultImplementation',
@@ -1079,7 +1081,8 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
-      gmxV2LibraryMap: { GmxV2Library: gmxV2LibraryAddress },
+      gmxV2VaultLibraryMap: { GmxV2VaultLibrary: gmxV2VaultLibraryAddress },
+      gmxV2TraderLibraryMap: { GmxV2TraderLibrary: gmxV2TraderLibraryAddress },
       priceOracle: GmxV2MarketTokenPriceOracle__factory.connect(priceOracleAddress, signer),
       registry: GmxV2Registry__factory.connect(Deployments.GmxV2RegistryProxy['42161'].address, signer),
       registryProxy: RegistryProxy__factory.connect(Deployments.GmxV2RegistryProxy['42161'].address, signer),

@@ -3178,11 +3178,18 @@
       "isVerified": true
     }
   },
-  "GLPActionsLib": {
+  "GLPActionsLibV1": {
     "42161": {
       "address": "0x5777a3BE29F4f215B0E28727499D53c96a5a3195",
       "transaction": "0xe4be5b176170309f7823f4f4997582105db561fc70b2ecc10c3501600a372ff4",
       "isVerified": true
+    }
+  },
+  "GLPActionsLibV2": {
+    "42161": {
+      "address": "TODO DEPLOY ME",
+      "transaction": "",
+      "isVerified": false
     }
   },
   "GLPIsolationModePriceOracleV1": {

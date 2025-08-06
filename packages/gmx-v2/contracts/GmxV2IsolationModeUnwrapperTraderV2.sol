@@ -26,7 +26,7 @@ import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange
 import { AsyncIsolationModeUnwrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
+import { GmxV2TraderLibrary } from "./GmxV2TraderLibrary.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
@@ -96,7 +96,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         _validateVaultExists(factory, /* _vault = */ msg.sender);
 
-        bytes32 withdrawalKey = GmxV2Library.unwrapperExecuteInitiateUnwrapping(
+        bytes32 withdrawalKey = GmxV2TraderLibrary.unwrapperExecuteInitiateUnwrapping(
             factory,
             /* _vault = */ msg.sender,
             _inputAmount,
@@ -119,7 +119,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function initiateCancelWithdrawal(bytes32 _key) external {
-        GmxV2Library.unwrapperInitiateCancelWithdrawal(/* _unwrapper = */ this, _key);
+        GmxV2TraderLibrary.unwrapperInitiateCancelWithdrawal(/* _unwrapper = */ this, _key);
     }
 
     function handleCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
@@ -143,7 +143,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
-        GmxV2Library.validateEventDataForWithdrawal(
+        GmxV2TraderLibrary.validateEventDataForWithdrawal(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _withdrawal.numbers.marketTokenAmount,
             /* _outputTokenAddress = */ _eventData.addressItems.items[0],
@@ -183,7 +183,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     virtual
     override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
-        return GmxV2Library.isValidInputOrOutputToken(
+        return GmxV2TraderLibrary.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _outputToken,
             skipLongToken()

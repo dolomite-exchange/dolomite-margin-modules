@@ -29,13 +29,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV12',
-    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
   const wrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV11',
-    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
 
   const transactions: EncodedTransaction[] = [];
