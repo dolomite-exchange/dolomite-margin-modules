@@ -217,29 +217,29 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     function isExternalRedemptionPaused() public virtual view returns (bool);
 
     function _depositIntoVaultForDolomiteMargin(
-        address _from,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
         _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
     {
-        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_from, _toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei, _isViaRouter);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
-        address _to,
         uint256 _accountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
         _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
     {
-        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_to, _accountNumber, _amountWei);
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_accountNumber, _amountWei, _isViaRouter);
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused

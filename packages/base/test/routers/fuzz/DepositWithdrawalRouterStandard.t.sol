@@ -12,10 +12,14 @@ import { IDolomiteStructs } from "../../../contracts/protocol/interfaces/IDolomi
 import { Require } from "../../../contracts/protocol/lib/Require.sol";
 import { InterestIndexLib } from "../../../contracts/lib/InterestIndexLib.sol";
 import { AccountBalanceLib } from "../../../contracts/lib/AccountBalanceLib.sol";
+import { TypesLib } from "../../../contracts/protocol/lib/TypesLib.sol";
 
 import { SimpleIsolationModeTokenVaultV1 } from "../../../contracts/isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 
 contract DepositWithdrawalRouterStandardTest is Test {
+    using TypesLib for IDolomiteStructs.Par;
+    using TypesLib for IDolomiteStructs.Wei;
+    using InterestIndexLib for IDolomiteMargin;
 
     bytes32 private constant _FILE = "DepositWithdrawalRouterTest";
 
@@ -196,7 +200,6 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
     function test_depositPayable(uint128 _amountWei) public {
         vm.assume(_amountWei > 0);
-
         deal(alice, _amountWei);
 
         vm.startPrank(alice);
@@ -216,6 +219,29 @@ contract DepositWithdrawalRouterStandardTest is Test {
             true,
             /* _marginOfErrorWei */ 1
         );
+    }
+
+    function test_depositParPayable(uint96 _amountPar) public {
+        vm.assume(_amountPar > 0);
+        uint256 weiAmount = _convertParToWei(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            _amountPar
+        );
+        deal(alice, weiAmount);
+
+        vm.startPrank(alice);
+        router.depositParPayable{value: weiAmount}(
+            /* _isolationModeMarketId */ 0,
+            /* _toAccountNumber */ 0,
+            /* _amountPar */ _amountPar,
+            /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+        );
+
+        assertEq(address(router).balance, 0);
+        assertEq(alice.balance, 0);
+        assertProtocolBalancePar(alice, 0, dolomiteMargin.getMarketIdByTokenAddress(address(weth)), _amountPar, true);
     }
 
     // =============================================
@@ -288,6 +314,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
         _withdrawAmount = bound(_withdrawAmount, 1, _amountPar);
         router.withdrawPar(
+            /* _isolationModeMarketId */ 0,
             /* _fromAccountNumber */ 0,
             /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
             /* _amountPar */ _withdrawAmount,
@@ -303,6 +330,88 @@ contract DepositWithdrawalRouterStandardTest is Test {
         );
     }
 
+    function test_withdrawPayable(uint128 _depositAmount, uint256 _withdrawAmount) public {
+        vm.assume(_depositAmount > 0);
+        vm.assume(_withdrawAmount > 0);
+
+        deal(alice, _depositAmount);
+
+        vm.startPrank(alice);
+        router.depositPayable{value: _depositAmount}(
+            /* _isolationModeMarketId */ 0,
+            /* _toAccountNumber */ 0,
+            /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+        );
+        uint256 protocolBalance = assertProtocolBalanceWei(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            _depositAmount,
+            true,
+            /* _marginOfErrorWei */ 1
+        );
+
+        _withdrawAmount = bound(_withdrawAmount, 1, protocolBalance);
+        router.withdrawPayable(
+            /* _isolationModeMarketId */ 0,
+            /* _fromAccountNumber */ 0,
+            /* _amountWei */ _withdrawAmount,
+            /* _balanceCheckFlag */ AccountBalanceLib.BalanceCheckFlag.From
+        );
+        assertEq(alice.balance, _withdrawAmount);
+        assertProtocolBalanceWei(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            protocolBalance - _withdrawAmount,
+            true,
+            /* _marginOfErrorWei */ 2
+        );
+    }
+
+    function test_withdrawParPayable(uint96 _amountPar, uint256 _withdrawAmount) public {
+        vm.assume(_amountPar > 0);
+        vm.assume(_withdrawAmount > 0);
+
+        uint256 weiAmount = _convertParToWei(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            _amountPar
+        );
+        deal(alice, weiAmount);
+
+        vm.startPrank(alice);
+        router.depositParPayable{value: weiAmount}(
+            /* _isolationModeMarketId */ 0,
+            /* _toAccountNumber */ 0,
+            /* _amountPar */ _amountPar,
+            /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
+        );
+        assertProtocolBalancePar(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            _amountPar,
+            true
+        );
+
+        _withdrawAmount = bound(_withdrawAmount, 1, _amountPar);
+        router.withdrawParPayable(
+            /* _isolationModeMarketId */ 0,
+            /* _fromAccountNumber */ 0,
+            /* _amountPar */ _withdrawAmount,
+            /* _balanceCheckFlag */ AccountBalanceLib.BalanceCheckFlag.From
+        );
+        assertProtocolBalancePar(
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
+            _amountPar - _withdrawAmount,
+            true
+        );
+    }
+
     // =============================================
     // ============ Dolomite Assertions ============
     // =============================================
@@ -313,8 +422,8 @@ contract DepositWithdrawalRouterStandardTest is Test {
         uint256 _marketId,
         uint256 _expectedAmount,
         bool _expectedSign
-    ) public view {
-        assertProtocolBalanceWei(
+    ) public view returns (uint256) {
+        return assertProtocolBalanceWei(
             _account,
             _accountNumber,
             _marketId,
@@ -353,7 +462,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         uint256 _expectedAmount,
         bool _expectedSign,
         uint256 _marginOfErrorWei
-    ) public view {
+    ) public view returns (uint256) {
         IDolomiteStructs.AccountInfo memory accountStruct = IDolomiteStructs.AccountInfo({
             owner: _account,
             number: _accountNumber
@@ -372,5 +481,31 @@ contract DepositWithdrawalRouterStandardTest is Test {
         if (_expectedAmount != 0) {
             assertEq(_expectedSign, balance.sign, "balance sign incorrect");
         }
+        return balance.value;
+    }
+
+    /**
+     * Converts the par amount to wei
+     */
+    function _convertParToWei(
+        address _accountOwner,
+        uint256 _accountNumber,
+        uint256 _marketId,
+        uint256 _amountPar
+    ) internal view returns (uint256) {
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
+            owner: _accountOwner,
+            number: _accountNumber
+        });
+        IDolomiteStructs.Par memory parBalance = dolomiteMargin.getAccountPar(accountInfo, _marketId);
+        IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
+            sign: true,
+            value: uint128(_amountPar)
+        });
+        parBalance = parBalance.add(deltaPar);
+
+        IDolomiteStructs.Wei memory weiBalanceBefore = dolomiteMargin.getAccountWei(accountInfo, _marketId);
+        IDolomiteStructs.Wei memory weiBalanceAfter = dolomiteMargin.parToWei(_marketId, parBalance);
+        return weiBalanceAfter.sub(weiBalanceBefore).value;
     }
 }

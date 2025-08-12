@@ -37,6 +37,7 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   DepositWithdrawalRouter
@@ -60,6 +61,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     bytes32 private constant _PAYABLE_MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.payableMarketId")) - 1);
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _PENDING_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendingVault")) - 1);
+    bytes32 private constant _PAYABLE_WITHDRAW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.payableWithdraw")) - 1);
 
     // ========================================================
     // ===================== Modifiers ========================
@@ -82,8 +84,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _FILE,
             "Not pending vault"
         );
-        _;
         _setAddress(_PENDING_VAULT_SLOT, address(0));
+        _;
     }
 
     // ========================================================
@@ -154,7 +156,13 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         EventFlag _eventFlag
     ) external nonReentrant requireInitialized {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        uint256 amountWei = _convertParToWei(msg.sender, _toAccountNumber, _marketId, _amountPar);
+        uint256 amountWei = _convertParToWei(
+            /* _accountOwner = */ msg.sender,
+            _toAccountNumber,
+            _marketId,
+            _amountPar,
+            _isolationModeMarketId
+        );
         marketInfo.token.safeTransferFrom(msg.sender, address(this), amountWei);
 
         _depositWei(
@@ -194,12 +202,18 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 marketId = payableMarketId();
         MarketInfo memory marketInfo = _getMarketInfo(marketId);
 
-        uint256 amountWei = _convertParToWei(msg.sender, _toAccountNumber, marketId, _amountPar);
+        uint256 amountWei = _convertParToWei(
+            /* _accountOwner = */ msg.sender,
+            _toAccountNumber,
+            marketId,
+            _amountPar,
+            _isolationModeMarketId
+        );
         if (msg.value >= amountWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value >= amountWei,
             _FILE,
-            "Insufficient ETH sent"
+            "Insufficient payable sent"
         );
 
         _wrap(amountWei);
@@ -228,93 +242,95 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant requireInitialized {
-        if (_isolationModeMarketId != 0) {
-            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
-            _setAddress(_PENDING_VAULT_SLOT, address(vault));
-
-            if (_isolationModeMarketId == _marketId) {
-                vault.routerWithdrawUnderlyingTokenFromVault(
-                    _fromAccountNumber,
-                    _amountWei
-                );
-            } else {
-                vault.routerWithdrawOtherTokenFromVault(
-                    _marketId,
-                    _fromAccountNumber,
-                    _amountWei,
-                    _balanceCheckFlag
-                );
-            }
-
-            /*assert(_getAddress(_PENDING_VAULT_SLOT) == address(0));*/
-        } else {
-            AccountActionLib.withdraw(
-                DOLOMITE_MARGIN(),
-                msg.sender,
-                _fromAccountNumber,
-                msg.sender,
-                _marketId,
-                IDolomiteStructs.AssetAmount({
-                    sign: false,
-                    denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: _amountWei == type(uint256).max
-                        ? IDolomiteStructs.AssetReference.Target
-                        : IDolomiteStructs.AssetReference.Delta,
-                    value: _amountWei == type(uint256).max ? 0 : _amountWei
-                }),
-                _balanceCheckFlag
-            );
-        }
+        _withdrawWei(
+            _isolationModeMarketId,
+            _fromAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag,
+            /* _toAccount = */ msg.sender
+        );
     }
 
     /// @inheritdoc IDepositWithdrawalRouter
     function withdrawPayable(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant requireInitialized {
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
-            msg.sender,
+        if (_isolationModeMarketId != 0) {
+            _setUint256(_PAYABLE_WITHDRAW_SLOT, 1);
+        }
+
+        _withdrawWei(
+            _isolationModeMarketId,
             _fromAccountNumber,
-            address(this),
             payableMarketId(),
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: _amountWei == type(uint256).max
-                    ? IDolomiteStructs.AssetReference.Target
-                    : IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei == type(uint256).max ? 0 : _amountWei
-            }),
-            _balanceCheckFlag
+            _amountWei,
+            _balanceCheckFlag,
+            /* _toAccount = */ address(this)
         );
+        /*assert(_getUint256(_PAYABLE_WITHDRAW_SLOT) == 0);*/
 
         _unwrapAndSend();
     }
 
     /// @inheritdoc IDepositWithdrawalRouter
     function withdrawPar(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _marketId,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant requireInitialized {
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
-            msg.sender,
+        uint256 amountWei = _convertParToWei(
+            /* _accountOwner = */ msg.sender,
             _fromAccountNumber,
-            msg.sender,
             _marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Par,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountPar
-            }),
-            _balanceCheckFlag
+            _amountPar,
+            _isolationModeMarketId
         );
+
+        _withdrawWei(
+            _isolationModeMarketId,
+            _fromAccountNumber,
+            _marketId,
+            amountWei,
+            _balanceCheckFlag,
+            /* _toAccount = */ msg.sender
+        );
+    }
+
+    function withdrawParPayable(
+        uint256 _isolationModeMarketId,
+        uint256 _fromAccountNumber,
+        uint256 _amountPar,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external nonReentrant requireInitialized {
+        uint256 marketId = payableMarketId();
+        uint256 amountWei = _convertParToWei(
+            /* _accountOwner = */ msg.sender,
+            _fromAccountNumber,
+            marketId,
+            _amountPar,
+            _isolationModeMarketId
+        );
+
+        if (_isolationModeMarketId != 0) {
+            _setUint256(_PAYABLE_WITHDRAW_SLOT, 1);
+        }
+        _withdrawWei(
+            _isolationModeMarketId,
+            _fromAccountNumber,
+            marketId,
+            amountWei,
+            _balanceCheckFlag,
+            /* _toAccount = */ address(this)
+        );
+        /*assert(_getUint256(_PAYABLE_WITHDRAW_SLOT) == 0);*/
+
+        _unwrapAndSend();
     }
 
     // ========================================================
@@ -410,11 +426,13 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external onlyPendingVault(msg.sender) {
         IIsolationModeTokenVaultV1 vault = IIsolationModeTokenVaultV1(msg.sender);
+        bool isPayableWithdraw = _getUint256(_PAYABLE_WITHDRAW_SLOT) == 1;
+
         AccountActionLib.withdraw(
             DOLOMITE_MARGIN(),
             msg.sender,
             _fromAccountNumber,
-            vault.OWNER(),
+            isPayableWithdraw ? address(this) : vault.OWNER(),
             _marketId,
             IDolomiteStructs.AssetAmount({
                 sign: false,
@@ -424,6 +442,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             }),
             _balanceCheckFlag
         );
+        if (isPayableWithdraw) {
+            _setUint256(_PAYABLE_WITHDRAW_SLOT, 0);
+        }
     }
 
     // ========================================================
@@ -477,6 +498,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         IERC20(_marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
 
         if (!_marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
+            _emitEventIfNecessary(/* _accountOwner = */ msg.sender, _toAccountNumber, _eventFlag);
+
             // Do an ordinary deposit for the asset into the user's account
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
@@ -497,6 +520,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
             vault.routerDepositOtherTokenIntoVault(_marketId, _toAccountNumber, _amountWei);
         } else {
             // Deposit the isolation mode token into the user's isolation mode vault
@@ -504,20 +528,69 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(_marketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
+            _emitEventIfNecessary(/* _accountOwner = */ address(vault), _toAccountNumber, _eventFlag);
             vault.routerDepositUnderlyingTokenIntoVault(DEFAULT_ACCOUNT_NUMBER, _amountWei);
 
             if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
-                if (_eventFlag == EventFlag.Borrow) {
-                    if (_toAccountNumber >= 100) { /* FOR COVERAGE TESTING */ }
-                    Require.that(
-                        _toAccountNumber >= 100,
-                        _FILE,
-                        "Invalid toAccountNumber"
-                    );
-                    DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(address(vault), _toAccountNumber);
-                }
                 vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, _amountWei);
             }
+        }
+
+        /*assert(_getAddress(_PENDING_VAULT_SLOT) == address(0));*/
+    }
+
+    function _withdrawWei(
+        uint256 _isolationModeMarketId,
+        uint256 _fromAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        address _toAccount
+    ) internal {
+        if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+            _setAddress(_PENDING_VAULT_SLOT, address(vault));
+
+            if (_isolationModeMarketId == _marketId) {
+                if (_fromAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
+                    vault.transferFromPositionWithUnderlyingToken(
+                        _fromAccountNumber,
+                        DEFAULT_ACCOUNT_NUMBER,
+                        _amountWei
+                    );
+                }
+
+                vault.routerWithdrawUnderlyingTokenFromVault(
+                    DEFAULT_ACCOUNT_NUMBER,
+                    _amountWei
+                );
+            } else {
+                vault.routerWithdrawOtherTokenFromVault(
+                    _marketId,
+                    _fromAccountNumber,
+                    _amountWei,
+                    _balanceCheckFlag
+                );
+            }
+        } else {
+            // @audit Do we need a require here to check if _marketId is not isolation mode
+            AccountActionLib.withdraw(
+                DOLOMITE_MARGIN(),
+                msg.sender,
+                _fromAccountNumber,
+                _toAccount,
+                _marketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: false,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: _amountWei == type(uint256).max
+                        ? IDolomiteStructs.AssetReference.Target
+                        : IDolomiteStructs.AssetReference.Delta,
+                    value: _amountWei == type(uint256).max ? 0 : _amountWei
+                }),
+                _balanceCheckFlag
+            );
         }
 
         /*assert(_getAddress(_PENDING_VAULT_SLOT) == address(0));*/
@@ -548,6 +621,22 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         Address.sendValue(payable(msg.sender), amount);
     }
 
+    function _emitEventIfNecessary(
+        address _accountOwner,
+        uint256 _toAccountNumber,
+        EventFlag _eventFlag
+    ) internal {
+        if (_eventFlag == EventFlag.Borrow) {
+            if (_toAccountNumber >= 100) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _toAccountNumber >= 100,
+                _FILE,
+                "Invalid toAccountNumber"
+            );
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_accountOwner, _toAccountNumber);
+        }
+    }
+
     /**
      * Converts the par amount to wei
      */
@@ -555,8 +644,15 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         address _accountOwner,
         uint256 _accountNumber,
         uint256 _marketId,
-        uint256 _amountPar
-    ) internal view returns (uint256) {
+        uint256 _amountPar,
+        uint256 _isolationModeMarketId
+    ) internal returns (uint256) {
+        if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+            _accountOwner = address(vault);
+        }
+
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
             owner: _accountOwner,
             number: _accountNumber
@@ -579,5 +675,4 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     function _getSenderBalance(IERC20 _token) internal view returns (uint) {
         return _token.balanceOf(msg.sender);
     }
-
 }

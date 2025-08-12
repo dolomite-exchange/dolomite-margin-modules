@@ -89,11 +89,11 @@ interface IDepositWithdrawalRouter is IRouterBase {
     ) external;
 
     /**
-     * Deposits native ETH by wrapping it to WETH first
+     * Deposits native currency by wrapping it to the Payable Token first
      *
      * @param  _isolationModeMarketId     The market ID of the isolation mode token vault
      *                                    (0 if not using isolation mode)
-     * @param  _toAccountNumber           The account number to deposit the wrapped ETH into
+     * @param  _toAccountNumber           The account number to deposit the wrapped Payable Token into
      * @param  _eventFlag                 Flag indicating if this deposit should emit special
      *                                    events (e.g. opening a borrow position)
      */
@@ -104,13 +104,13 @@ interface IDepositWithdrawalRouter is IRouterBase {
     ) external payable;
 
     /**
-     * Deposits native ETH by wrapping it to WETH first
+     * Deposits native currency by wrapping it to the Payable Token first
      *
-     * @dev This function will refund the difference between ETH send and WETH deposited
+     * @dev This function will refund the difference between payable sent and Payable Token deposited
      *
      * @param  _isolationModeMarketId     The market ID of the isolation mode token vault
      *                                    (0 if not using isolation mode)
-     * @param  _toAccountNumber           The account number to deposit the wrapped ETH into
+     * @param  _toAccountNumber           The account number to deposit the wrapped currency into
      * @param  _amountPar                 The par amount of the token to deposit
      * @param  _eventFlag                 Flag indicating if this deposit should emit special
      *                                    events (e.g. opening a borrow position)
@@ -148,14 +148,17 @@ interface IDepositWithdrawalRouter is IRouterBase {
     ) external;
 
     /**
-     * Withdraws WETH and unwraps it to native ETH
+     * Withdraws Payable Token and unwraps it to native currency
      *
+     * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
+     *                                  (0 if not using isolation mode)
      * @param  _fromAccountNumber       The account number to withdraw from
-     * @param  _amountWei               The amount of WETH in Wei to withdraw and unwrap
+     * @param  _amountWei               The amount of Payable Token in Wei to withdraw and unwrap
      * @param  _balanceCheckFlag        Flag indicating how to validate account balances after
      *                                  withdrawal
      */
     function withdrawPayable(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
@@ -165,6 +168,8 @@ interface IDepositWithdrawalRouter is IRouterBase {
      * Withdraws par amount of a token from the sender's account at `_fromAccountNumber`. For isolation
      * mode tokens, this will withdraw from the user's vault
      *
+     * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
+     *                                  (0 if not using isolation mode)
      * @param  _fromAccountNumber       The account number to withdraw from
      * @param  _marketId                The ID of the market being withdrawn
      * @param  _amountPar               The amount in Par units to withdraw
@@ -172,8 +177,27 @@ interface IDepositWithdrawalRouter is IRouterBase {
      *                                  withdrawal
      */
     function withdrawPar(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _marketId,
+        uint256 _amountPar,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
+
+    /**
+     * Withdraws par amount of the payb from the sender's account at `_fromAccountNumber`. For isolation
+     * mode tokens, this will withdraw from the user's vault
+     *
+     * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
+     *                                  (0 if not using isolation mode)
+     * @param  _fromAccountNumber       The account number to withdraw from
+     * @param  _amountPar               The amount in Par units to withdraw
+     * @param  _balanceCheckFlag        Flag indicating how to validate account balances after
+     *                                  withdrawal
+     */
+    function withdrawParPayable(
+        uint256 _isolationModeMarketId,
+        uint256 _fromAccountNumber,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
@@ -251,7 +275,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
     /**
      * Returns the wrapped payable token contract used for payable deposits/withdrawals
      *
-     * @return  The IWETH contract address
+     * @return  The Payable Token contract address
      */
     function wrappedPayableToken() external view returns (IWETH);
 

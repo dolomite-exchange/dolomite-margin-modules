@@ -309,6 +309,7 @@ contract DepositWithdrawalRouterParBerachainTest is Test {
 
         _withdrawAmount = bound(_withdrawAmount, 1, _amountPar);
         router.withdrawPar(
+            /* _isolationModeMarketId */ 0,
             /* _fromAccountNumber */ 0,
             /* _marketId */ dolomiteMargin.getMarketIdByTokenAddress(address(honey)),
             /* _amountPar */ _withdrawAmount,

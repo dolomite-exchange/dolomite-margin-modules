@@ -75,6 +75,7 @@ contract DolomiteRegistryImplementation is
 
     function initialize(
         address _borrowPositionProxy,
+        address _depositWithdrawalRouter,
         address _genericTraderProxy,
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
@@ -85,6 +86,7 @@ contract DolomiteRegistryImplementation is
         address _dao
     ) external initializer {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
+        _ownerSetDepositWithdrawalRouter(_depositWithdrawalRouter);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
