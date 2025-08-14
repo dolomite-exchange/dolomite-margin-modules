@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
@@ -30,6 +29,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 import { IPartnerClaimExcessTokens } from "./interfaces/IPartnerClaimExcessTokens.sol";
 
@@ -40,7 +40,7 @@ import { IPartnerClaimExcessTokens } from "./interfaces/IPartnerClaimExcessToken
  *
  * @notice  PartnerClaimExcessTokens contract that enables a partner to claim excess tokens from the protocol
  */
-contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessTokens {
+contract PartnerClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IPartnerClaimExcessTokens {
     using SafeERC20 for IERC20;
     using DecimalLib for uint256;
 
@@ -53,21 +53,22 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
     uint256 private constant _ONE = 1 ether;
 
     // ===================================================================
-    // ====================== Immutable Variables ========================
+    // ======================== State Variables ==========================
     // ===================================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
     mapping(uint256 => PartnerInfo) public partnerInfo;
+    address public feeReceiver;
 
     // ===================================================================
     // ========================== Constructor ============================
     // ===================================================================
 
     constructor(
-        address _dolomiteRegistry,
+        address _feeReceiver,
+        address _adminRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
+        _ownerSetFeeReceiver(_feeReceiver);
     }
 
     // ===================================================================
@@ -92,6 +93,10 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
         emit PartnerInfoSet(_marketId, _partner, _feeSplitToPartner);
     }
 
+    function ownerSetFeeReceiver(address _feeReceiver) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeReceiver(_feeReceiver);
+    }
+
     function ownerRemovePartnerInfo(uint256 _marketId) external onlyDolomiteMarginOwner(msg.sender) {
         delete partnerInfo[_marketId];
         emit PartnerInfoRemoved(_marketId);
@@ -102,9 +107,7 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
     // ===================================================================
 
     function claimExcessTokens(address _token, bool _depositIntoDolomite) external {
-        address treasury = DOLOMITE_REGISTRY.treasury();
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
-        assert(treasury != address(0));
 
         PartnerInfo memory info = partnerInfo[marketId];
         Require.that(
@@ -112,8 +115,10 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
             _FILE,
             "Partner not set"
         );
+
         Require.that(
-            msg.sender == info.partner || msg.sender == treasury,
+            msg.sender == info.partner
+                || ADMIN_REGISTRY.hasPermission(this.claimExcessTokens.selector, address(this), msg.sender),
             _FILE,
             "Invalid sender"
         );
@@ -138,7 +143,7 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
             IERC20(_token).safeApprove(address(DOLOMITE_MARGIN()), treasuryAmount);
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
-                /* accountOwner = */ treasury,
+                /* accountOwner = */ feeReceiver,
                 /* fromAccount = */ address(this),
                 /* toAccountNumber = */ 0,
                 marketId,
@@ -150,8 +155,18 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
                 })
             );
         } else if (treasuryAmount > 0) {
-            IERC20(_token).safeTransfer(treasury, treasuryAmount);
+            IERC20(_token).safeTransfer(feeReceiver, treasuryAmount);
         }
+    }
+
+    function _ownerSetFeeReceiver(address _feeReceiver) internal {
+        Require.that(
+            _feeReceiver != address(0),
+            _FILE,
+            "Invalid fee receiver"
+        );
+        feeReceiver = _feeReceiver;
+        emit FeeReceiverSet(_feeReceiver);
     }
 
     // ===================================================================

@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+
 
 /**
  * @title   IPartnerClaimExcessTokens
@@ -28,19 +30,47 @@ pragma solidity ^0.8.9;
  * @notice  Interface for the PartnerClaimExcessTokens contract
  */
 interface IPartnerClaimExcessTokens {
+    event FeeReceiverSet(address indexed feeReceiver);
 
-    struct ParnterInfo {
+    // ========================================================
+    // ======================== Structs =======================
+    // ========================================================
+
+    struct PartnerInfo {
         uint256 marketId;
         address partner;
-        uint256 feeSplit;
+        IDolomiteStructs.Decimal feeSplitToPartner;
     }
 
-    event PartnerInfoSet(uint256 indexed marketId, address indexed partner, uint256 feeSplit);
+    // ========================================================
+    // ======================== Events ========================
+    // ========================================================
+
+    event PartnerInfoSet(
+        uint256 indexed marketId,
+        address indexed partner,
+        IDolomiteStructs.Decimal feeSplitToPartner
+    );
+
     event PartnerInfoRemoved(uint256 indexed marketId);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
 
+    function ownerSetPartnerInfo(
+        uint256 _marketId,
+        address _partner,
+        IDolomiteStructs.Decimal calldata _feeSplitToPartner
+    ) external;
+
+    function ownerRemovePartnerInfo(uint256 _marketId) external;
+
+    // ========================================================
+    // ================== External Functions ==================
+    // ========================================================
+
     function claimExcessTokens(address _token, bool _depositIntoDolomite) external;
+
+    function getPartnerInfo(uint256 _marketId) external view returns (PartnerInfo memory);
 }

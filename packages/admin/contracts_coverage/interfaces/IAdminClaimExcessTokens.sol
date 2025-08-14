@@ -33,5 +33,5 @@ interface IAdminClaimExcessTokens {
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function claimExcessTokens(address _token, bool _depositIntoDolomite) external;
+    function claimExcessTokens(address _token, address _receiver, bool _depositIntoDolomite) external;
 }

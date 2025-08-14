@@ -20,18 +20,29 @@
 
 pragma solidity ^0.8.9;
 
+import { AdminRegistryHelper } from "../AdminRegistryHelper.sol";
+
 
 /**
- * @title   IAdminClaimExcessTokens
+ * @title   TestAdminRegistryHelper
  * @author  Dolomite
  *
- * @notice  Interface for the AdminClaimExcessTokens contract
+ * @notice  TestAdminRegistryHelper contract for testing purposes
  */
-interface IAdminClaimExcessTokens {
+contract TestAdminRegistryHelper is AdminRegistryHelper {
 
-    // ========================================================
-    // ==================== Admin Functions ===================
-    // ========================================================
+    bytes32 private constant _FILE = "TestAdminRegistryHelper";
 
-    function claimExcessTokens(address _token, address _receiver, bool _depositIntoDolomite) external;
+    // ===================================================================
+    // ========================== Constructor ============================
+    // ===================================================================
+
+    constructor(
+        address _adminRegistry
+    ) AdminRegistryHelper(_adminRegistry) {
+    }
+
+    function doSomething() external checkPermission(this.doSomething.selector, msg.sender) {
+        // Do something
+    }
 }

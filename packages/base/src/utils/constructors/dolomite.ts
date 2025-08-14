@@ -18,6 +18,7 @@ import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts
 import { BYTES_EMPTY, Network, DolomiteNetwork, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
+import { AdminRegistry } from 'packages/admin/src/types/contracts_coverage/AdminRegistry';
 
 export enum LowerPercentage {
   _1 = '0.01',
@@ -226,6 +227,14 @@ export interface SingleCollateralWithStrictDebtParams {
   debtMarketIds: BigNumberish[];
   marginRatioOverride: TargetCollateralization;
   liquidationRewardOverride: TargetLiquidationPenalty;
+}
+
+export async function getAdminRegistryProxyConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  implementation: AdminRegistry,
+): Promise<any[]> {
+  const transaction = await implementation.populateTransaction.initialize();
+  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export function getRegistryProxyConstructorParams<T extends DolomiteNetwork>(
