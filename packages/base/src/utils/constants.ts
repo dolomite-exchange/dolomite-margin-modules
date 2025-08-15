@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { ADDRESS_ZERO, DolomiteNetwork, Network } from './no-deps-constants';
+import { DolomiteNetwork, Network } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
