@@ -128,7 +128,7 @@ library GmxV2TraderLibrary {
             exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
         }
 
-        IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
+        IGmxExchangeRouter.CreateDepositParamsAddresses memory addresses = IGmxExchangeRouter.CreateDepositParamsAddresses(
             /* receiver = */ address(this),
             /* callbackContract = */ address(this),
             /* uiFeeReceiver = */ address(0),
@@ -136,11 +136,15 @@ library GmxV2TraderLibrary {
             /* initialLongToken = */ _factory.LONG_TOKEN(),
             /* initialShortToken = */ _factory.SHORT_TOKEN(),
             /* longTokenSwapPath = */ new address[](0),
-            /* shortTokenSwapPath = */ new address[](0),
+            /* shortTokenSwapPath = */ new address[](0)
+        );
+        IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
+            /* addresses = */ addresses,
             /* minMarketTokens = */ _minOutputAmount,
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ _registry.callbackGasLimit()
+            /* callbackGasLimit = */ _registry.callbackGasLimit(),
+            /* dataList = */ new bytes32[](0)
         );
 
         return exchangeRouter.createDeposit(depositParams);
@@ -213,23 +217,33 @@ library GmxV2TraderLibrary {
             "minOutputAmount too small"
         );
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
-        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+
+        IGmxExchangeRouter.CreateWithdrawalParamsAddresses memory addresses = IGmxExchangeRouter.CreateWithdrawalParamsAddresses(
             /* receiver = */ address(unwrapper),
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ swapPath[0],
             /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
-            /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
+            /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath
+        );
+        
+        // stack too deep
+        uint256 minOutputAmount = _minOutputAmount;
+        uint256 ethExecutionFee = _ethExecutionFee;
+
+        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+            /* addresses = */ addresses,
+            /* minLongTokenAmount = */ longToken == outputToken ? minOutputAmount : minOtherTokenAmount,
+            /* minShortTokenAmount = */ longToken != outputToken ? minOutputAmount : minOtherTokenAmount,
             /* shouldUnwrapNativeToken = */ false,
-            /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ registry.callbackGasLimit()
+            /* executionFee = */ ethExecutionFee,
+            /* callbackGasLimit = */ registry.callbackGasLimit(),
+            /* dataList = */ new bytes32[](0)
         );
 
         if (longToken == factory.SHORT_TOKEN()) {
-            withdrawalParams.longTokenSwapPath = new address[](0);
-            withdrawalParams.shortTokenSwapPath = new address[](0);
+            addresses.longTokenSwapPath = new address[](0);
+            addresses.shortTokenSwapPath = new address[](0);
         }
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }

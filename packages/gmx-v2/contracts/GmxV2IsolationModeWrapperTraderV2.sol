@@ -45,6 +45,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -93,6 +94,24 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _executeDepositExecution(_key, receivedMarketTokens.value, _deposit.numbers.minMarketTokens);
     }
 
+    function afterDepositExecution(
+        bytes32 _key,
+        GmxEventUtils.EventLogData memory _depositData,
+        GmxEventUtils.EventLogData memory _eventData
+    )
+    external
+    onlyHandler(msg.sender) {
+        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
+        Require.that(
+            keccak256(abi.encodePacked(receivedMarketTokens.key))
+                == keccak256(abi.encodePacked("receivedMarketTokens")),
+            _FILE,
+            "Unexpected receivedMarketTokens"
+        );
+
+        _executeDepositExecution(_key, receivedMarketTokens.value, _depositData.uintItems.get("minMarketTokens"));
+    }
+
     /**
      *
      * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
@@ -101,6 +120,20 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function afterDepositCancellation(
         bytes32 _key,
         GmxDeposit.DepositProps memory /* _deposit */,
+        GmxEventUtils.EventLogData memory /* _eventData */
+    )
+    external
+    onlyHandler(msg.sender) {
+        DepositInfo memory depositInfo = getDepositInfo(_key);
+        depositInfo.isRetryable = true;
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
+
+        _executeDepositCancellation(depositInfo);
+    }
+
+    function afterDepositCancellation(
+        bytes32 _key,
+        GmxEventUtils.EventLogData memory /* _depositData */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external

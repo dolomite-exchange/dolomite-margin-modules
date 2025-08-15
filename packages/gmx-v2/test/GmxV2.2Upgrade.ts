@@ -5,7 +5,7 @@ import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { BYTES_ZERO, Network, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { getBlockTimestamp, getLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -32,17 +32,15 @@ import {
   TestOracleProvider__factory,
 } from '../src/types';
 import {
-  createGmxV22IsolationModeUnwrapperTraderV2Implementation,
-  createGmxV22IsolationModeWrapperTraderV2Implementation,
-  createGmxV22TraderLibrary,
+  createGmxV2IsolationModeUnwrapperTraderV2Implementation,
+  createGmxV2IsolationModeWrapperTraderV2Implementation,
+  createGmxV2TraderLibrary,
   getInitiateWrappingParams,
   getOracleParams,
   getOracleProviderEnabledKey,
   getOracleProviderForTokenKey,
 } from './gmx-v2-ecosystem-utils';
 
-const EXCHANGE_ROUTER_V22 = '0x87d66368cD08a7Ca42252f5ab44B2fb6d1Fb8d15';
-const DEPOSIT_HANDLER_V22 = '0x563E8cDB5Ba929039c2Bb693B78CE12dC0AAfaDa';
 const ORACLE_V22 = '0x7F01614cA5198Ec979B1aAd1DAF0DE7e0a215BDF';
 
 const amountWei = parseEther('100');
@@ -85,14 +83,14 @@ describe('GmxV2.2Upgrade', () => {
     gmxV2Unwrapper = core.gmxV2Ecosystem.live.gmEthUsd.unwrapper.connect(core.hhUser1);
 
     // Upgrade GMXV2 Wrapper/Unwrapper and token vault
-    const traderLibrary = await createGmxV22TraderLibrary();
-    const wrapperImpl = await createGmxV22IsolationModeWrapperTraderV2Implementation(core, traderLibrary);
-    const unwrapperImpl = await createGmxV22IsolationModeUnwrapperTraderV2Implementation(core, traderLibrary);
+    const traderLibrary = await createGmxV2TraderLibrary();
+    const wrapperImpl = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, traderLibrary);
+    const unwrapperImpl = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, traderLibrary);
     await core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy.connect(core.governance).upgradeTo(wrapperImpl.address);
     await core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy.connect(core.governance).upgradeTo(unwrapperImpl.address);
 
     // Update exchange router, deposit handler, and withdrawal handler
-    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(EXCHANGE_ROUTER_V22);
+    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouter.address);
 
     // Set up oracle provider
     const dataStore = core.gmxV2Ecosystem.gmxDataStore;
