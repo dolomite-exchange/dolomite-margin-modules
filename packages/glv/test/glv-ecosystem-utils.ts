@@ -53,6 +53,7 @@ import {
   GlvRegistry,
   GlvRegistry__factory,
   GmxV2Library,
+  GmxV2TraderLibrary,
   IERC20__factory,
   IGlvIsolationModeVaultFactory,
   IGlvRegistry,
@@ -207,13 +208,13 @@ export async function createGlvRegistry(
 export async function createGlvIsolationModeUnwrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
   glvLibrary: GlvLibrary,
-  gmxV2Library: GmxV2Library,
+  gmxV2TraderLibrary: GmxV2TraderLibrary,
 ): Promise<GlvIsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GlvIsolationModeUnwrapperTraderV2>(
     artifact,
-    { GlvLibrary: glvLibrary.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    { GlvLibrary: glvLibrary.address, GmxV2TraderLibrary: gmxV2TraderLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -269,13 +270,13 @@ export async function createTestGlvIsolationModeUnwrapperTraderV2(
 export async function createGlvIsolationModeWrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
   library: GlvLibrary,
-  gmxV2Library: GmxV2Library,
+  gmxV2TraderLibrary: GmxV2TraderLibrary,
 ): Promise<GlvIsolationModeWrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeWrapperTraderV2');
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GlvIsolationModeWrapperTraderV2>(
     artifact,
-    { GlvLibrary: library.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    { GlvLibrary: library.address, GmxV2TraderLibrary: gmxV2TraderLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -385,6 +386,7 @@ export async function getGlvOracleParams(
   controller: SignerWithAddressWithSafety,
   glvToken: GlvToken,
   provider: TestOracleProvider,
+  oracle: string
 ) {
   const tokens = [];
   const providers = [];

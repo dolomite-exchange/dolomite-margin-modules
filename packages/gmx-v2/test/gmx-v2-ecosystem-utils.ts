@@ -631,7 +631,14 @@ export function getDepositObject(
   return { deposit, eventData };
 }
 
-export function getOracleProviderForTokenKey(oracle: string, token: { address: string}) {
+export function getOracleProviderForTokenKey(token: { address: string}) {
+  const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [oracleProviderString, token.address]),
+  );
+}
+
+export function getOracleProviderForTokenKeyWithOracle(oracle: string, token: { address: string}) {
   const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
   return ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(['bytes32', 'address', 'address'], [oracleProviderString, oracle, token.address]),

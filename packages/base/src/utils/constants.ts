@@ -1357,7 +1357,7 @@ export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x105b5aFe50FBCe7759051974fB1710ce331C77B3',
+  [Network.ArbitrumOne]: '0x10Fa5Bd343373101654E896B43Ca38Fd8f3789F9',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
