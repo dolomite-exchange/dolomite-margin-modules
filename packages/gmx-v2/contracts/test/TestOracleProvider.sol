@@ -66,6 +66,14 @@ contract TestOracleProvider {
         ORACLE_AGGREGATOR = IDolomitePriceOracle(_oracleAggregator);
     }
 
+    function shouldAdjustTimestamp() external view returns (bool) {
+        return true;
+    }
+
+    function isChainlinkOnChainProvider() external view returns (bool) {
+        return true;
+    }
+
     function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
         try ORACLE_AGGREGATOR.getPrice(_token) returns (IDolomiteStructs.MonetaryPrice memory price) {
             uint256 priceUint = price.value / GMX_DECIMAL_ADJUSTMENT;

@@ -35,6 +35,10 @@ import {
   GMX_V2_CALLBACK_GAS_LIMIT,
 } from '../src/gmx-v2-constructors';
 import {
+  GmxV22IsolationModeUnwrapperTraderV2,
+  GmxV22IsolationModeWrapperTraderV2,
+  GmxV22TraderLibrary,
+  GmxV22TraderLibrary__factory,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
@@ -47,6 +51,8 @@ import {
   GmxV2MarketTokenPriceOracle__factory,
   GmxV2Registry,
   GmxV2Registry__factory,
+  GmxV2TraderLibrary,
+  GmxV2TraderLibrary__factory,
   IGmxV2IsolationModeVaultFactory,
   IGmxV2Registry,
   TestGmxV2IsolationModeTokenVaultV1,
@@ -54,6 +60,8 @@ import {
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
+import { GmxV2VaultLibrary } from 'packages/glv/src/types';
+import { GmxV2VaultLibrary__factory } from 'packages/glv/src/types';
 
 export async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
@@ -107,6 +115,30 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
   return createContractWithAbi<GmxV2Library>(
     GmxV2Library__factory.abi,
     GmxV2Library__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2VaultLibrary(): Promise<GmxV2VaultLibrary> {
+  return createContractWithAbi<GmxV2VaultLibrary>(
+    GmxV2VaultLibrary__factory.abi,
+    GmxV2VaultLibrary__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2TraderLibrary(): Promise<GmxV2TraderLibrary> {
+  return createContractWithAbi<GmxV2TraderLibrary>(
+    GmxV2TraderLibrary__factory.abi,
+    GmxV2TraderLibrary__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV22TraderLibrary(): Promise<GmxV22TraderLibrary> {
+  return createContractWithAbi<GmxV22TraderLibrary>(
+    GmxV22TraderLibrary__factory.abi,
+    GmxV22TraderLibrary__factory.bytecode,
     [],
   );
 }
@@ -211,6 +243,19 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2Implementation(
   );
 }
 
+export async function createGmxV22IsolationModeUnwrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  library: GmxV22TraderLibrary,
+): Promise<GmxV22IsolationModeUnwrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV22IsolationModeUnwrapperTraderV2');
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GmxV22IsolationModeUnwrapperTraderV2>(
+    artifact,
+    { GmxV22TraderLibrary: library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
   core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
@@ -274,6 +319,19 @@ export async function createGmxV2IsolationModeWrapperTraderV2Implementation(
   return await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
     artifact,
     { GmxV2Library: library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
+export async function createGmxV22IsolationModeWrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  library: GmxV2TraderLibrary,
+): Promise<GmxV22IsolationModeWrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV22IsolationModeWrapperTraderV2');
+  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GmxV22IsolationModeWrapperTraderV2>(
+    artifact,
+    { GmxV22TraderLibrary: library.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -611,10 +669,10 @@ export function getDepositObject(
   return { deposit, eventData };
 }
 
-export function getOracleProviderForTokenKey(token: { address: string}) {
+export function getOracleProviderForTokenKey(oracle: string, token: { address: string}) {
   const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
   return ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [oracleProviderString, token.address]),
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address', 'address'], [oracleProviderString, oracle, token.address]),
   );
 }
 

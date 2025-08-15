@@ -372,8 +372,8 @@ export async function createGmxEcosystemV2(
     return Promise.reject(`Invalid network, found ${network}`);
   }
 
-  const gmxV2VaultLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2VaultLibrary', network);
-  const gmxV2TraderLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2TraderLibrary', network);
+  const gmxV2VaultLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2Library', network);
+  const gmxV2TraderLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2Library', network);
   const priceOracleAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2MarketTokenPriceOracle', network);
   const tokenVaultImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
     'GmxV2IsolationModeTokenVaultImplementation',
