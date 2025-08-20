@@ -10,7 +10,6 @@ import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithA
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from "packages/base/test/utils";
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow, expectWalletBalance } from "packages/base/test/utils/assertions";
 import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { createIsolationModeTokenVaultV1ActionsImpl } from "packages/base/test/utils/dolomite";
 import { setupCoreProtocol, setupGMXBalance, setupUserVaultProxy } from "packages/base/test/utils/setup";
 import { GLPIsolationModeMigrator, GLPIsolationModeMigrator__factory, GLPMathLib, GLPMathLib__factory, GLPRedemptionUnwrapperTraderV2, GLPRedemptionUnwrapperTraderV2__factory, GMXIsolationModeTokenVaultV1, GMXIsolationModeTokenVaultV1__factory, IGLPIsolationModeVaultFactoryOld, IGMXIsolationModeVaultFactory } from "packages/glp/src/types";
 
@@ -111,11 +110,12 @@ describe('GLPIsolationModeMigrator', () => {
       expect(await glpVault.OWNER()).to.eq(user.address);
       expect(await glpVault.VAULT_FACTORY()).to.eq(glpFactory.address);
       expect(await glpVault.USDC()).to.eq(core.tokens.usdc.address);
+      expect(await glpVault.hasSynced()).to.be.true;
     });
   });
 
-  xdescribe('#handlerUnwrapGLP', () => {
-    it('should work normally with default account', async () => {
+  describe('#handlerUnwrapGLP', () => {
+    xit('should work normally with default account', async () => {
       const traderParam: GenericTraderParam = {
         trader: unwrapper.address,
         traderType: GenericTraderType.IsolationModeUnwrapper,
@@ -141,7 +141,7 @@ describe('GLPIsolationModeMigrator', () => {
       )
     });
 
-    it('should work normally with borrow account', async () => {
+    xit('should work normally with borrow account', async () => {
     });
 
     it('should fail if not called by handler', async () => {
@@ -179,7 +179,23 @@ describe('GLPIsolationModeMigrator', () => {
       expect(await core.tokens.weth.balanceOf(user.address)).to.gt(ZERO_BI);
     });
 
-    it.only('should fail if not called by vault owner', async () => {
+    it('should fail if vault is frozen', async () => {
+      await gmxVault.connect(user).requestAccountTransfer(user.address); // freeze the vault
+      await expectThrow(
+        glpVault.connect(user).handleRewards(
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+        ),
+        'GLPIsolationModeMigrator: Vault is frozen'
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).handleRewards(
           true,
@@ -216,6 +232,39 @@ describe('GLPIsolationModeMigrator', () => {
         ZERO_BI,
       );
     });
+
+    it('should fail if vault is frozen', async () => {
+      await gmxVault.connect(user).requestAccountTransfer(user.address); // freeze the vault
+      await expectThrow(
+        glpVault.connect(user).handleRewardsWithSpecificDepositAccountNumber(
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          10
+        ),
+        'GLPIsolationModeMigrator: Vault is frozen'
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).handleRewardsWithSpecificDepositAccountNumber(
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          10
+        ),
+        'GLPIsolationModeMigrator: Only vault owner can call'
+      );
+    });
   });
 
   describe('#stakeEsGmx', () => {
@@ -233,6 +282,21 @@ describe('GLPIsolationModeMigrator', () => {
       await glpVault.connect(user).stakeEsGmx(esGmxAmount);
       expect(await glpVault.esGmxBalanceOf()).to.eq(originalBalance);
       expect(await core.gmxEcosystem.esGmx.balanceOf(glpVault.address)).to.eq(originalBalance.sub(esGmxAmount));
+    });
+
+    it('should fail if vault is frozen', async () => {
+      await gmxVault.connect(user).requestAccountTransfer(user.address); // freeze the vault
+      await expectThrow(
+        glpVault.connect(user).stakeEsGmx(esGmxAmount),
+        'GLPIsolationModeMigrator: Vault is frozen'
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).stakeEsGmx(esGmxAmount),
+        'GLPIsolationModeMigrator: Only vault owner can call'
+      );
     });
   });
 
@@ -255,6 +319,21 @@ describe('GLPIsolationModeMigrator', () => {
 
       await glpVault.connect(user).unstakeEsGmx(esGmxAmount);
       expect(await glpVault.esGmxBalanceOf()).to.eq(originalBalance);
+    });
+
+    it('should fail if vault is frozen', async () => {
+      await gmxVault.connect(user).requestAccountTransfer(user.address); // freeze the vault
+      await expectThrow(
+        glpVault.connect(user).unstakeEsGmx(esGmxAmount),
+        'GLPIsolationModeMigrator: Vault is frozen'
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).unstakeEsGmx(esGmxAmount),
+        'GLPIsolationModeMigrator: Only vault owner can call'
+      );
     });
   });
 
@@ -395,6 +474,21 @@ describe('GLPIsolationModeMigrator', () => {
 
       await expectProtocolBalance(core, gmxVault.address, defaultAccountNumber, core.marketIds.dGmx, gmxAmount.add(ONE_ETH_BI));
     });
+
+    it('should fail if vault is frozen', async () => {
+      await gmxVault.connect(user).requestAccountTransfer(user.address); // freeze the vault
+      await expectThrow(
+        glpVault.connect(gmxVaultImpersonator).sweepGmxTokensIntoGmxVault(),
+        'GLPIsolationModeMigrator: Vault is frozen'
+      );
+    });
+
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        glpVault.connect(user).sweepGmxTokensIntoGmxVault(),
+        'GLPIsolationModeMigrator: Invalid GMX vault'
+      );
+    });
   });
 
   describe('#sync', () => {
@@ -435,6 +529,84 @@ describe('GLPIsolationModeMigrator', () => {
         glpVault.connect(user).executeWithdrawalFromVault(user.address, ONE_ETH_BI),
         'GLPIsolationModeMigrator: Only vault factory can call'
       );
+    });
+  });
+
+  describe('#gmx', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).gmx()).to.eq(core.tokens.gmx.address);
+    });
+  });
+
+  describe('#sGlp', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).sGlp()).to.eq(core.tokens.sGlp.address);
+    });
+  });
+
+  describe('#sGmx', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).sGmx()).to.eq(core.gmxEcosystem.sGmx.address);
+    });
+  });
+
+  describe('#sbfGmx', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).sbfGmx()).to.eq(core.gmxEcosystem.sbfGmx.address);
+    });
+  });
+
+  describe('#vGlp', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).vGlp()).to.eq(core.gmxEcosystem.vGlp.address);
+    });
+  });
+
+  describe('#vGmx', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).vGmx()).to.eq(core.gmxEcosystem.vGmx.address);
+    });
+  });
+
+  describe('#registry', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).registry()).to.eq(core.gmxEcosystem.live.gmxRegistry.address);
+    });
+  });
+
+  describe('#dolomiteRegistry', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+    });
+  });
+
+  describe('#DOLOMITE_MARGIN', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#BORROW_POSITION_PROXY', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).BORROW_POSITION_PROXY()).to.eq(core.borrowPositionProxyV2.address);
+    });
+  });
+
+  describe('#VAULT_FACTORY', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).VAULT_FACTORY()).to.eq(glpFactory.address);
+    });
+  });
+
+  describe('#OWNER', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).OWNER()).to.eq(user.address);
+    });
+  });
+
+  describe('#UNDERLYING_TOKEN', () => {
+    it('should work normally', async () => {
+      expect(await glpVault.connect(user).UNDERLYING_TOKEN()).to.eq(core.gmxEcosystem.fsGlp.address);
     });
   });
 });

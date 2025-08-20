@@ -30,9 +30,9 @@ pragma solidity ^0.8.9;
 interface IGLPRedemptionUnwrapperTraderV2 {
 
     event UsdcRedemptionAmountSet(
-        address indexed _user,
-        uint256 indexed _accountNumber,
-        uint256 _usdcRedemptionAmount
+        address indexed user,
+        uint256 indexed accountNumber,
+        uint256 usdcRedemptionAmount
     );
 
     function handlerSetUsdcRedemptionAmounts(

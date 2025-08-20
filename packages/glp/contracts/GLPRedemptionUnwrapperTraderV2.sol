@@ -41,7 +41,7 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPIsolationModeUnwrapperV2";
+    bytes32 private constant _FILE = "GLPRedemptionUnwrapperTraderV2";
 
     // ============ Immutable State Variables ============
 
@@ -49,7 +49,7 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
     address public immutable HANDLER;
     IERC20 public immutable USDC;
 
-    mapping(address => mapping(uint256 => uint256)) public _usdcRedemptionAmount;
+    mapping(address => mapping(uint256 => uint256)) public usdcRedemptionAmount;
 
     // ============ Constructor ============
 
@@ -82,7 +82,7 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
         Require.that(
             msg.sender == HANDLER,
             _FILE,
-            "Only callable by handler"
+            "Only handler can call"
         );
         Require.that(
             _users.length == _accountNumbers.length && _users.length == _usdcRedemptionAmounts.length,
@@ -91,7 +91,7 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
         );
 
         for (uint256 i = 0; i < _users.length; ++i) {
-            _usdcRedemptionAmount[_users[i]][_accountNumbers[i]] = _usdcRedemptionAmounts[i];
+            usdcRedemptionAmount[_users[i]][_accountNumbers[i]] = _usdcRedemptionAmounts[i];
             emit UsdcRedemptionAmountSet(_users[i], _accountNumbers[i], _usdcRedemptionAmounts[i]);
         }
     }
@@ -128,11 +128,10 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
             _minOutputAmount,
             /* _receiver = */ address(this)
         );
-        uint256 usdcRedemptionAmount = _usdcRedemptionAmount[user][accountNumber];
+        uint256 amount = usdcRedemptionAmount[user][accountNumber];
+        usdcRedemptionAmount[user][accountNumber] = 0;
 
-        _usdcRedemptionAmount[user][accountNumber] = 0;
-
-        return amountOut + usdcRedemptionAmount;
+        return amountOut + amount;
     }
 
     function _getExchangeCost(
