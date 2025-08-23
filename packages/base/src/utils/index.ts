@@ -90,3 +90,15 @@ export function isArraysEqual<T>(a: T[], b: T[]): boolean {
   }
   return true;
 }
+
+export function chunk<T>(arr: T[], size: number): T[][] {
+  if (size <= 0) {
+    throw new Error('Chunk size must be greater than 0');
+  }
+
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}

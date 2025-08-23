@@ -1,5 +1,5 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
@@ -36,7 +36,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       supplyAccounts,
       48,
       17,
-      { value: 0 },
+      { value: ONE_BI },
     ]),
   ];
 
