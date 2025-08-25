@@ -614,6 +614,19 @@ describe('DepositWithdrawalRouter', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
     });
 
+    it('should fail if withdrawing isolation mode asset from normal account', async () => {
+      await expectThrow(
+        router.withdrawWei(
+          ZERO_BI,
+          defaultAccountNumber,
+          isolationModeMarketId,
+          amountWei,
+          BalanceCheckFlag.None,
+        ),
+        'Token: transfer failed'
+      );
+    });
+
     it('should fail if withdrawing from default account number for vault with normal asset', async () => {
       await expectThrow(
         router.withdrawWei(

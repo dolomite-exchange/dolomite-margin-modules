@@ -546,35 +546,35 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
         address _toAccount
     ) internal {
-        // @todo switch to be similar to _depositWei setup
-        if (_isolationModeMarketId != 0) {
+        if (_isolationModeMarketId != 0 && _marketId == _isolationModeMarketId) {
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
-            if (_isolationModeMarketId == _marketId) {
-                if (_fromAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
-                    vault.transferFromPositionWithUnderlyingToken(
-                        _fromAccountNumber,
-                        DEFAULT_ACCOUNT_NUMBER,
-                        _amountWei
-                    );
-                }
-
-                vault.routerWithdrawUnderlyingTokenFromVault(
+            if (_fromAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
+                vault.transferFromPositionWithUnderlyingToken(
+                    _fromAccountNumber,
                     DEFAULT_ACCOUNT_NUMBER,
                     _amountWei
                 );
-            } else {
-                vault.routerWithdrawOtherTokenFromVault(
-                    _marketId,
-                    _fromAccountNumber,
-                    _amountWei,
-                    _balanceCheckFlag
-                );
             }
+
+            vault.routerWithdrawUnderlyingTokenFromVault(
+                DEFAULT_ACCOUNT_NUMBER,
+                _amountWei
+            );
+        } else if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+            _setAddress(_PENDING_VAULT_SLOT, address(vault));
+
+            vault.routerWithdrawOtherTokenFromVault(
+                _marketId,
+                _fromAccountNumber,
+                _amountWei,
+                _balanceCheckFlag
+            );
         } else {
-            // @audit Do we need a require here to check if _marketId is not isolation mode
             AccountActionLib.withdraw(
                 DOLOMITE_MARGIN(),
                 msg.sender,
