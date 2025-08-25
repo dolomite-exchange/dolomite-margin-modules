@@ -75,30 +75,17 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
             bytes memory orderData
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
-        uint256 outputAmount;
-        {
-            // Create a new scope to avoid "stack the stack too deep" error
-            (
-                IOogaBoogaRouter.swapTokenInfo memory tokenInfo,
-                bytes memory pathDefinition,
-                address executor,
-                uint32 referralCode
-            ) = abi.decode(orderData, (IOogaBoogaRouter.swapTokenInfo, bytes, address, uint32));
-            tokenInfo.outputQuote = _getScaledExpectedOutputAmount(
-                tokenInfo.inputAmount,
-                _inputAmount,
-                tokenInfo.outputQuote
-            );
-            tokenInfo.outputMin = minAmountOutWei;
-            tokenInfo.inputAmount = _inputAmount;
+        (
+            IEnsoRouter.Token memory tokenIn,
+            bytes memory data
+        ) = abi.decode(orderData, (IEnsoRouter.Token, bytes));
+        tokenIn.data = abi.encode(_inputToken, _inputAmount);
 
-            outputAmount = OOGA_BOOGA_ROUTER.swap(
-                tokenInfo,
-                pathDefinition,
-                executor,
-                referralCode
-            );
-        }
+        ENSO_ROUTER.routeSingle(
+            tokenIn,
+            data
+        );
+        uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
 
         Require.that(
             outputAmount >= minAmountOutWei,

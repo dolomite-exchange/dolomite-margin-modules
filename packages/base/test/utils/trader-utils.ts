@@ -23,6 +23,7 @@ const api_config = {
 
 const ODOS_API_URL = 'https://api.odos.xyz';
 const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
+const ENSO_API_URL = 'https://api.enso.finance';
 
 export interface TraderOutput {
   calldata: string;
@@ -45,6 +46,43 @@ export enum ParaswapSwapSelector {
   Mega = '0x46c67b6d',
   Multi = '0xa94e78ef',
   Simple = '0x54e3f31b',
+}
+
+export async function getCalldataForEnso<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  inputAmount: BigNumber,
+  inputToken: { address: address },
+  outputToken: { address: address },
+  trader: { address: address },
+): Promise<TraderOutput> {
+  const api = axios.create({
+    baseURL: ENSO_API_URL,
+    headers: {
+      "Authorization": "Bearer 1e02632d-6feb-4a75-a157-documentation",
+      "Content-Type": "application/json",
+    },
+  });
+
+  const result = await api.get('/api/v1/shortcuts/route', {
+    params: {
+      chainId: core.config.network,
+      fromAddress: trader.address,
+      amountIn: inputAmount.toString(),
+      slippage: 50,
+      tokenIn: inputToken.address,
+      tokenOut: outputToken.address
+    },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in routeSingle', error);
+      throw error;
+    });
+
+  return {
+    calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
+    outputAmount: BigNumber.from(result.amountOut),
+  };
 }
 
 export async function getCalldataForOdos<T extends DolomiteNetwork>(
