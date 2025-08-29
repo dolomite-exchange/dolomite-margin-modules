@@ -575,6 +575,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 _balanceCheckFlag
             );
         } else {
+            // @follow-up @Corey, I did not add specific checks here for if marketId is not isolation mode. I think we are fine without it
+            // but please look at it too
             AccountActionLib.withdraw(
                 DOLOMITE_MARGIN(),
                 msg.sender,
