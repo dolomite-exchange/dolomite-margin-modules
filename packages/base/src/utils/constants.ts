@@ -1205,6 +1205,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne | Network.Berachain | Networ
   },
 };
 
+export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
+    marketId: 13,
+  },
+};
+
 export const WO_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xD8724322f44E5c58D7A815F542036fb17DbbF839',
@@ -2638,6 +2645,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [WE_ETH_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22',
       tokenPairAddress: WETH_MAP[Network.Ethereum].address,
+    },
+    [WLFI_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
     },
   },
   [Network.Ink]: {},
