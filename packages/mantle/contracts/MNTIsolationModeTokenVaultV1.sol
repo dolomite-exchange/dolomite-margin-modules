@@ -78,7 +78,7 @@ contract MNTIsolationModeTokenVaultV1 is
     onlyVaultOwner(msg.sender) {
         _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ true);
         IWETH(UNDERLYING_TOKEN()).deposit{value: msg.value}();
-        _depositIntoVaultForDolomiteMargin(_toAccountNumber, msg.value);
+        _depositIntoVaultForDolomiteMargin(_toAccountNumber, msg.value, /* _isViaRouter */ false);
         assert(!isCurrencyTransfer());
     }
 
@@ -90,7 +90,7 @@ contract MNTIsolationModeTokenVaultV1 is
     nonReentrant
     onlyVaultOwner(msg.sender) {
         _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ true);
-        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, /* _isViaRouter */ false);
         assert(!isCurrencyTransfer());
     }
 

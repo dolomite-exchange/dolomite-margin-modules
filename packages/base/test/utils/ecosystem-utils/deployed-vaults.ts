@@ -1,10 +1,10 @@
-import { marketToIsolationModeVaultInfoBase } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/base';
-import { marketToIsolationModeVaultInfoBotanix } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/botanix';
-import { marketToIsolationModeVaultInfoEthereum } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ethereum';
-import { marketToIsolationModeVaultInfoInk } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ink';
-import { marketToIsolationModeVaultInfoPolygonZkEvm } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/polygon-zkevm';
-import { marketToIsolationModeVaultInfoSuperSeed } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/super-seed';
-import { marketToIsolationModeVaultInfoXLayer } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/xlayer';
+import { marketToIsolationModeVaultInfoBase } from 'packages/deployment/src/deploy/isolation-mode/base-isolation-mode';
+import { marketToIsolationModeVaultInfoBotanix } from 'packages/deployment/src/deploy/isolation-mode/botanix-isolation-mode';
+import { marketToIsolationModeVaultInfoEthereum } from 'packages/deployment/src/deploy/isolation-mode/ethereum-isolation-mode';
+import { marketToIsolationModeVaultInfoInk } from 'packages/deployment/src/deploy/isolation-mode/ink-isolation-mode';
+import { marketToIsolationModeVaultInfoPolygonZkEvm } from 'packages/deployment/src/deploy/isolation-mode/polygon-zkevm-isolation-mode';
+import { marketToIsolationModeVaultInfoSuperSeed } from 'packages/deployment/src/deploy/isolation-mode/super-seed-isolation-mode';
+import { marketToIsolationModeVaultInfoXLayer } from 'packages/deployment/src/deploy/isolation-mode/xlayer-isolation-mode';
 import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
 import { BigNumber } from 'ethers';
@@ -18,13 +18,13 @@ import {
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
-import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain';
+import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum-isolation-mode';
+import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain-isolation-mode';
 import {
   DeployedVaultInformation,
   IsolationModeVaultType,
 } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
-import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle';
+import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle-isolation-mode';
 import {
   deployContractAndSave,
   getMaxDeploymentVersionNumberByDeploymentKey,

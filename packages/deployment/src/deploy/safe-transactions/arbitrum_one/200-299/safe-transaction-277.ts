@@ -89,7 +89,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV5',
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...core.libraries.unwrapperTraderImpl },
+    { ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, ...core.libraries.unwrapperTraderImpl },
   );
   const unwrapperImplementation = GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
     unwrapperImplementationAddress,
@@ -100,7 +100,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV6',
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...core.libraries.wrapperTraderImpl },
+    { ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, ...core.libraries.wrapperTraderImpl },
   );
   const wrapperImplementation = GmxV2IsolationModeWrapperTraderV2__factory.connect(
     wrapperImplementationAddress,
@@ -125,7 +125,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         skipLongToken,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
-      core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
     );
     const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
