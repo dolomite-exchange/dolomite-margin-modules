@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
-import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
 
@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import crypto from 'crypto';
 import querystring from 'querystring';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../../../.env') });
 
@@ -63,24 +64,38 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
     },
   });
 
-  const result = await api.get('/api/v1/shortcuts/route', {
-    params: {
+  const result = await api.post('/api/v1/shortcuts/route', {
       chainId: core.config.network,
       fromAddress: trader.address,
-      amountIn: inputAmount.toString(),
-      slippage: 50,
+      amountIn: "$amount1",
+      slippage: "50",
       tokenIn: inputToken.address,
-      tokenOut: outputToken.address
-    },
+      tokenOut: outputToken.address,
+      routingStrategy: 'router',
+      variableEstimates: {
+        "$amount1": inputAmount.toString(),
+      },
   })
     .then(response => response.data)
     .catch((error) => {
       console.error('Found error in routeSingle', error);
+      console.log(error.response.data)
       throw error;
     });
 
+  let calldata = result.tx.data;
+  const indexes = [];
+  while (true) {
+    const index = calldata.indexOf('{$amount1}');
+    if (index === -1) {
+      break;
+    }
+    indexes.push(index);
+    calldata = calldata.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [ONE_ETH_BI]).slice(2));
+  }
+
   return {
-    calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
+    calldata: `0x${calldata.slice(10)}`, // get rid of the method ID
     outputAmount: BigNumber.from(result.amountOut),
   };
 }

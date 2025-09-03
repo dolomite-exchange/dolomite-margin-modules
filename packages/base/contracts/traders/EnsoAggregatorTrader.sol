@@ -96,6 +96,7 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
         );
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
+        revert('hello');
 
         return outputAmount;
     }

@@ -22,6 +22,7 @@ const minAmountOut = BigNumber.from('123123123');
 
 const ENSO_ROUTER_ADDRESS = '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf';
 const ENSO_SHORTCUTS = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003';
+const ENSO_SWAP_HELPERS = '0xbedFAC7488DCcAAFdD66d1D7D56349780Fe0477e';
 
 describe('EnsoAggregatorTrader', () => {
   let snapshotId: string;
@@ -31,7 +32,6 @@ describe('EnsoAggregatorTrader', () => {
   let defaultAccount: AccountStruct;
 
   before(async () => {
-    hre.tracer.enabled = false;
     const latestBlockNumber = await getRealLatestBlockNumber(true, Network.Ethereum);
     core = await setupCoreProtocol({
       blockNumber: latestBlockNumber,
@@ -91,8 +91,10 @@ describe('EnsoAggregatorTrader', () => {
       );
 
       console.log(await core.tokens.weth.balanceOf(ENSO_SHORTCUTS));
+      console.log(await core.tokens.weth.balanceOf(ENSO_SWAP_HELPERS));
       await doSwapAndCheckResults(calldata);
       console.log(await core.tokens.weth.balanceOf(ENSO_SHORTCUTS));
+      console.log(await core.tokens.weth.balanceOf(ENSO_SWAP_HELPERS));
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
