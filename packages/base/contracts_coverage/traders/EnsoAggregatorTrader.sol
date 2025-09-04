@@ -92,6 +92,7 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
         }
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
 
+        if (outputAmount >= minAmountOutWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= minAmountOutWei,
             _FILE,
@@ -123,7 +124,8 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
         bytes memory _fullData
     )
     internal
-    pure {
+    pure
+    {
         _pointer += 32; // add 32 to skip the length
         assembly {
             // Overwrite the input amount at the specified pointer location

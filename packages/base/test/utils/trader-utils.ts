@@ -59,43 +59,38 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
   const api = axios.create({
     baseURL: ENSO_API_URL,
     headers: {
-      "Authorization": "Bearer 1e02632d-6feb-4a75-a157-documentation",
-      "Content-Type": "application/json",
+      'Authorization': 'Bearer 1e02632d-6feb-4a75-a157-documentation',
+      'Content-Type': 'application/json',
     },
   });
 
   const result = await api.post('/api/v1/shortcuts/route', {
       chainId: core.config.network,
       fromAddress: trader.address,
-      amountIn: "$amount1",
-      slippage: "50",
+      amountIn: '$amount1',
+      slippage: '50',
       tokenIn: inputToken.address,
       tokenOut: outputToken.address,
       routingStrategy: 'router',
       variableEstimates: {
-        "$amount1": inputAmount.toString(),
+        $amount1: inputAmount.toString(),
       },
   })
     .then(response => response.data)
     .catch((error) => {
-      console.error('Found error in routeSingle', error);
-      console.log(error.response.data)
+      console.log(error.response.data);
       throw error;
     });
 
   let calldata = result.tx.data;
-  const indexes = [];
-  while (true) {
-    const index = calldata.indexOf('{$amount1}');
-    if (index === -1) {
-      break;
-    }
-    indexes.push(index);
-    calldata = calldata.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [ONE_ETH_BI]).slice(2));
+  const index = calldata.indexOf('{$amount1}');
+  if (index === -1) {
+    throw new Error('{$amount1} not found');
   }
+  calldata = calldata.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [ZERO_BI]).slice(2));
 
   return {
-    calldata: `0x${calldata.slice(10)}`, // get rid of the method ID
+    calldata: defaultAbiCoder.encode(['uint256', 'bytes'], [(index - 10) / 2, `0x${calldata.slice(10)}`]),
     outputAmount: BigNumber.from(result.amountOut),
   };
 }

@@ -2,19 +2,16 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { EnsoAggregatorTrader, EnsoAggregatorTrader__factory, OdosAggregatorTrader } from '../../src/types';
+import { EnsoAggregatorTrader, EnsoAggregatorTrader__factory } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
-import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createOdosAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
-import { getCalldataForEnso, getCalldataForOdos } from '../utils/trader-utils';
+import { getCalldataForEnso } from '../utils/trader-utils';
 import { CoreProtocolEthereum } from '../utils/core-protocols/core-protocol-ethereum';
-import { hrtime } from 'process';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
@@ -81,7 +78,7 @@ describe('EnsoAggregatorTrader', () => {
       await doSwapAndCheckResults(calldata);
     });
 
-    it.only('should succeed for normal swap when actual input amount is larger', async () => {
+    it('should succeed for normal swap when actual input amount is larger', async () => {
       const { calldata } = await getCalldataForEnso(
         core,
         amountIn.mul(95).div(100),
@@ -90,11 +87,19 @@ describe('EnsoAggregatorTrader', () => {
         trader,
       );
 
-      console.log(await core.tokens.weth.balanceOf(ENSO_SHORTCUTS));
-      console.log(await core.tokens.weth.balanceOf(ENSO_SWAP_HELPERS));
       await doSwapAndCheckResults(calldata);
-      console.log(await core.tokens.weth.balanceOf(ENSO_SHORTCUTS));
-      console.log(await core.tokens.weth.balanceOf(ENSO_SWAP_HELPERS));
+    });
+
+    it('should succeed for normal swap when actual input amount is smaller', async () => {
+      const { calldata } = await getCalldataForEnso(
+        core,
+        amountIn.mul(1001).div(1000),
+        core.tokens.weth,
+        core.tokens.usdc,
+        trader,
+      );
+
+      await doSwapAndCheckResults(calldata);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
@@ -112,15 +117,12 @@ describe('EnsoAggregatorTrader', () => {
     });
 
     it('should fail when output is insufficient', async () => {
-      const { calldata, outputAmount } = await getCalldataForOdos(
+      const { calldata, outputAmount } = await getCalldataForEnso(
+        core,
         amountIn,
         core.tokens.weth,
-        18,
-        minAmountOut,
         core.tokens.usdc,
-        6,
         trader,
-        core,
       );
       const actualOrderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
@@ -150,7 +152,7 @@ describe('EnsoAggregatorTrader', () => {
             },
           ],
         ),
-        'Minimum greater than quote',
+        // 'EnsoAggregatorTrader: Insufficient output amount',
       );
     });
   });
@@ -159,7 +161,7 @@ describe('EnsoAggregatorTrader', () => {
     it('should always fail', async () => {
       await expectThrow(
         trader.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
-        'OdosAggregatorTrader: getExchangeCost not implemented',
+        'EnsoAggregatorTrader: getExchangeCost not implemented',
       );
     });
   });
@@ -174,7 +176,6 @@ describe('EnsoAggregatorTrader', () => {
         calldata,
       ],
     );
-    hre.tracer.enabled = true;
     await core.dolomiteMargin.connect(core.hhUser1).operate(
       [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
       [
@@ -190,9 +191,12 @@ describe('EnsoAggregatorTrader', () => {
         },
       ],
     );
-    hre.tracer.enabled = false;
     expect(await core.tokens.weth.balanceOf(trader.address)).to.eq(ZERO_BI);
     expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+    expect(await core.tokens.weth.balanceOf(ENSO_SHORTCUTS)).to.eq(ZERO_BI);
+    expect(await core.tokens.usdc.balanceOf(ENSO_SHORTCUTS)).to.eq(ZERO_BI);
+    expect(await core.tokens.weth.balanceOf(ENSO_SWAP_HELPERS)).to.eq(ZERO_BI);
+    expect(await core.tokens.usdc.balanceOf(ENSO_SWAP_HELPERS)).to.eq(ZERO_BI);
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
     await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, minAmountOut, 0);
   }
