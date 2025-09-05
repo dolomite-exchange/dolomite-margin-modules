@@ -16,7 +16,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 import {
   disableInterestAccrual,
   setupCoreProtocol,
-  setupGMBalance,
+  setupGLVBalance,
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
 import {
@@ -125,7 +125,7 @@ describe('GlvV2.2Upgrade', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  it.only('should wrap normally for glv', async () => {
+  it('should wrap normally for glv', async () => {
     await core.depositWithdrawalRouter.connect(core.hhUser1).depositPayable(
       glvMarketId,
       borrowAccountNumber,
@@ -178,41 +178,41 @@ describe('GlvV2.2Upgrade', () => {
       token: glvFactory.address,
     });
 
-    // await expectProtocolBalance(core, gmxV2Vault.address, borrowAccountNumber, core.marketIds.weth, 0);
-    // await expectProtocolBalance(core, gmxV2Vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, 0);
-    // await expectProtocolBalanceIsGreaterThan(
-    //   core,
-    //   { owner: gmxV2Vault.address, number: borrowAccountNumber },
-    //   gmxV2MarketId,
-    //   minAmountOut,
-    //   10,
-    // );
-    // expect(await gmxV2UnderlyingToken.balanceOf(gmxV2Vault.address)).to.be.gte(minAmountOut);
-    // expect(await gmxV2Vault.isVaultFrozen()).to.eq(false);
-    // expect(await gmxV2Vault.shouldSkipTransfer()).to.eq(false);
-    // expect(await gmxV2Vault.isDepositSourceWrapper()).to.eq(false);
-    // expect(await gmxV2UnderlyingToken.allowance(gmxV2Wrapper.address, gmxV2Vault.address)).to.eq(0);
+    await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, core.marketIds.weth, 0);
+    await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, core.marketIds.nativeUsdc, 0);
+    await expectProtocolBalanceIsGreaterThan(
+      core,
+      { owner: glvVault.address, number: borrowAccountNumber },
+      glvMarketId,
+      minAmountOut,
+      10,
+    );
+    expect(await glvUnderlyingToken.balanceOf(glvVault.address)).to.be.gte(minAmountOut);
+    expect(await glvVault.isVaultFrozen()).to.eq(false);
+    expect(await glvVault.shouldSkipTransfer()).to.eq(false);
+    expect(await glvVault.isDepositSourceWrapper()).to.eq(false);
+    expect(await glvUnderlyingToken.allowance(glvWrapper.address, glvVault.address)).to.eq(0);
 
-    // const deposit = await gmxV2Wrapper.getDepositInfo(depositKey);
-    // expect(deposit.key).to.eq(BYTES_ZERO);
-    // expect(deposit.vault).to.eq(ZERO_ADDRESS);
-    // expect(deposit.accountNumber).to.eq(ZERO_BI);
-    // expect(deposit.outputAmount).to.eq(ZERO_BI);
+    const deposit = await glvWrapper.getDepositInfo(depositKey);
+    expect(deposit.key).to.eq(BYTES_ZERO);
+    expect(deposit.vault).to.eq(ZERO_ADDRESS);
+    expect(deposit.accountNumber).to.eq(ZERO_BI);
+    expect(deposit.outputAmount).to.eq(ZERO_BI);
 
-    // expect(await gmxV2Vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
-    // expect(await gmxV2Vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
+    expect(await glvVault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+    expect(await glvVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
   });
 
   it('should unwrap normally for gmxV2', async () => {
-    await setupGMBalance(core, gmxV2UnderlyingToken, core.hhUser1, amountWei, gmxV2Vault);
-    await gmxV2Vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-    await expectProtocolBalance(core, gmxV2Vault, defaultAccountNumber, gmxV2MarketId, amountWei);
-    await expectWalletBalance(gmxV2Vault, gmxV2UnderlyingToken, amountWei);
-    expect(await gmxV2Vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
-    expect(await gmxV2Vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
+    await setupGLVBalance(core, glvUnderlyingToken, core.hhUser1, amountWei, glvVault);
+    await glvVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+    await expectProtocolBalance(core, glvVault, defaultAccountNumber, glvMarketId, amountWei);
+    await expectWalletBalance(glvVault, glvUnderlyingToken, amountWei);
+    expect(await glvVault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+    expect(await glvVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
 
     const minAmountOut = TWO_BI;
-    const res = await gmxV2Vault.initiateUnwrapping(
+    const res = await glvVault.initiateUnwrapping(
       defaultAccountNumber,
       amountWei,
       core.tokens.weth.address,
@@ -224,30 +224,27 @@ describe('GlvV2.2Upgrade', () => {
     const filter = eventEmitter.filters.AsyncWithdrawalCreated();
     const eventArgs = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args;
     const withdrawalKey = eventArgs.key;
-    const withdrawalBefore = await gmxV2Unwrapper.getWithdrawalInfo(withdrawalKey);
+    const withdrawalBefore = await glvUnwrapper.getWithdrawalInfo(withdrawalKey);
     expect(withdrawalBefore.key).to.eq(withdrawalKey);
-    expect(withdrawalBefore.vault).to.eq(gmxV2Vault.address);
+    expect(withdrawalBefore.vault).to.eq(glvVault.address);
     expect(withdrawalBefore.accountNumber).to.eq(defaultAccountNumber);
     expect(withdrawalBefore.inputAmount).to.eq(amountWei);
     expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
     expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
 
-    const result = await core.gmxV2Ecosystem.gmxWithdrawalHandlerV2
+    const result = await core.glvEcosystem.glvHandler // may need to update this address
       .connect(core.gmxV2Ecosystem.gmxExecutor)
-      .executeWithdrawal(
+      .executeGlvWithdrawal(
         withdrawalKey,
-        getOracleParams(
-          [core.tokens.weth.address, core.tokens.nativeUsdc.address],
-          [testOracleProvider.address, testOracleProvider.address],
-        ),
+        await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider, GLV_ORACLE_V22),
         { gasLimit },
       );
     await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
       key: withdrawalKey,
-      token: gmxV2Factory.address,
+      token: glvFactory.address,
     });
 
-    const withdrawalAfter = await gmxV2Unwrapper.getWithdrawalInfo(withdrawalKey);
+    const withdrawalAfter = await glvUnwrapper.getWithdrawalInfo(withdrawalKey);
     expect(withdrawalAfter.key).to.eq(BYTES_ZERO);
     expect(withdrawalAfter.vault).to.eq(ZERO_ADDRESS);
     expect(withdrawalAfter.accountNumber).to.eq(ZERO_BI);
@@ -255,19 +252,19 @@ describe('GlvV2.2Upgrade', () => {
     expect(withdrawalAfter.outputToken).to.eq(ZERO_ADDRESS);
     expect(withdrawalAfter.outputAmount).to.eq(ZERO_BI);
 
-    await expectProtocolBalance(core, gmxV2Vault.address, defaultAccountNumber, gmxV2MarketId, ZERO_BI);
-    await expectProtocolBalance(core, gmxV2Vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    await expectProtocolBalance(core, glvVault.address, defaultAccountNumber, glvMarketId, ZERO_BI);
+    await expectProtocolBalance(core, glvVault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
     await expectProtocolBalanceIsGreaterThan(
       core,
       { owner: core.hhUser1.address, number: defaultAccountNumber },
       core.marketIds.weth,
-      parseEther('.04'),
+      parseEther('.036'),
       '0',
     );
-    await expectProtocolBalance(core, gmxV2Vault.address, defaultAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
-    expect(await gmxV2Vault.isVaultFrozen()).to.eq(false);
-    expect(await gmxV2Vault.shouldSkipTransfer()).to.eq(false);
-    expect(await gmxV2Vault.isDepositSourceWrapper()).to.eq(false);
-    expect(await gmxV2UnderlyingToken.balanceOf(gmxV2Vault.address)).to.eq(ZERO_BI);
+    await expectProtocolBalance(core, glvVault.address, defaultAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
+    expect(await glvVault.isVaultFrozen()).to.eq(false);
+    expect(await glvVault.shouldSkipTransfer()).to.eq(false);
+    expect(await glvVault.isDepositSourceWrapper()).to.eq(false);
+    expect(await glvUnderlyingToken.balanceOf(glvVault.address)).to.eq(ZERO_BI);
   });
 });
