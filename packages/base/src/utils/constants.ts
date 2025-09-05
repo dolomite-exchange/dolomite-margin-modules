@@ -1355,6 +1355,14 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
+export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xBB4C47CDfb90e281cAAE873c9531A25eBe2eD343',
+};
+
+export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x7A74946892569Fd488012D015436a5a9cBf37BEf',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };

@@ -25,6 +25,8 @@ import {
   GlvIsolationModeUnwrapperTraderV2,
   GlvIsolationModeVaultFactory,
   GlvIsolationModeWrapperTraderV2,
+  GlvRegistry,
+  GlvRegistry__factory,
   IEventEmitterRegistry,
   IGlvToken,
   IGmxRoleStore__factory,
@@ -33,14 +35,16 @@ import {
   createGlvIsolationModeUnwrapperTraderV2Implementation,
   createGlvIsolationModeWrapperTraderV2Implementation,
   createGlvLibrary,
+  createGlvRegistry,
   getGlvOracleParams,
   getInitiateWrappingParams
 } from './glv-ecosystem-utils';
 import { TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
 import { createGmxV2TraderLibrary, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { GLV_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
 
-const GLV_ORACLE_V22 = '0xb8fc96d7a413c462f611a7ac0c912c2fe26eabc4';
+const GLV_ORACLE_V22 = '0x7F01614cA5198Ec979B1aAd1DAF0DE7e0a215BDF';
 
 const amountWei = parseEther('100');
 const wethAmount = ONE_ETH_BI;
@@ -49,7 +53,7 @@ const borrowAccountNumber = '123';
 const minAmountOut = parseEther('2000');
 
 const executionFee = ONE_ETH_BI;
-const gasLimit = 25_000_000;
+const gasLimit = 40_000_000;
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 
 describe('GlvV2.2Upgrade', () => {
@@ -81,6 +85,14 @@ describe('GlvV2.2Upgrade', () => {
     glvFactory = core.glvEcosystem.live.glvEth.factory.connect(core.hhUser1);
     glvWrapper = core.glvEcosystem.live.glvEth.wrapper.connect(core.hhUser1);
     glvUnwrapper = core.glvEcosystem.live.glvEth.unwrapper.connect(core.hhUser1);
+
+    // Upgrade registry
+    const implementation = await createContractWithAbi<GlvRegistry>(
+      GlvRegistry__factory.abi,
+      GlvRegistry__factory.bytecode,
+      [],
+    );
+    await core.glvEcosystem.live.registryProxy.connect(core.governance).upgradeTo(implementation.address);
 
     // Upgrade Glv Wrapper/Unwrapper
     const library = await createGlvLibrary();
@@ -166,7 +178,7 @@ describe('GlvV2.2Upgrade', () => {
     const eventArgs = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args;
     const depositKey = eventArgs.key;
 
-    const res2 = await core.glvEcosystem.glvHandler
+    const res2 = await core.glvEcosystem.glvDepositHandler
       .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeGlvDeposit(
         depositKey,
@@ -232,7 +244,7 @@ describe('GlvV2.2Upgrade', () => {
     expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
     expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
 
-    const result = await core.glvEcosystem.glvHandler // may need to update this address
+    const result = await core.glvEcosystem.glvWithdrawalHandler
       .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeGlvWithdrawal(
         withdrawalKey,

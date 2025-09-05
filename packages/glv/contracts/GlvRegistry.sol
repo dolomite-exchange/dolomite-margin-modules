@@ -226,7 +226,17 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
-            || _handler == address(glvHandler());
+            || _handler == address(glvHandler())
+            || _handler == address(glvDepositHandler())
+            || _handler == address(glvWithdrawalHandler());
+    }
+
+    function glvDepositHandler() public view returns (address) {
+        return IGlvRouter(_getAddress(_GLV_ROUTER_SLOT)).glvDepositHandler();
+    }
+
+    function glvWithdrawalHandler() public view returns (address) {
+        return IGlvRouter(_getAddress(_GLV_ROUTER_SLOT)).glvWithdrawalHandler();
     }
 
     function glvHandler() public view returns (IGlvHandler) {

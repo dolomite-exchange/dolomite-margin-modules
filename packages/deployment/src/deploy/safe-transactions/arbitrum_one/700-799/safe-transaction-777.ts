@@ -17,6 +17,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
+  const glvRegistryImplAddress = await deployContractAndSave(
+    'GlvRegistry',
+    [],
+    'GlvRegistryImplementationV3',
+  );
+
   const gmxTraderLibraryAddress = await deployContractAndSave(
     'GmxV2TraderLibrary',
     [],
@@ -99,6 +105,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'registry',
       'ownerSetGmxExchangeRouter',
       [core.gmxV2Ecosystem.gmxExchangeRouter.address]
+    ),
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.glvEcosystem.live,
+      'registryProxy',
+      'upgradeTo',
+      [glvRegistryImplAddress],
     ),
   );
 
