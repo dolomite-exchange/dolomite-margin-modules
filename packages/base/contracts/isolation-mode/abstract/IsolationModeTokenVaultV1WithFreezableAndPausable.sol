@@ -28,7 +28,6 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   IsolationModeTokenVaultV1WithFreezableAndPausable

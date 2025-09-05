@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
-import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
 
@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import crypto from 'crypto';
 import querystring from 'querystring';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../../../.env') });
 
@@ -23,6 +24,7 @@ const api_config = {
 
 const ODOS_API_URL = 'https://api.odos.xyz';
 const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
+const ENSO_API_URL = 'https://api.enso.finance';
 
 export interface TraderOutput {
   calldata: string;
@@ -45,6 +47,52 @@ export enum ParaswapSwapSelector {
   Mega = '0x46c67b6d',
   Multi = '0xa94e78ef',
   Simple = '0x54e3f31b',
+}
+
+export async function getCalldataForEnso<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  inputAmount: BigNumber,
+  inputToken: { address: address },
+  outputToken: { address: address },
+  trader: { address: address },
+): Promise<TraderOutput> {
+  const api = axios.create({
+    baseURL: ENSO_API_URL,
+    headers: {
+      'Authorization': 'Bearer 1e02632d-6feb-4a75-a157-documentation',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const result = await api.post('/api/v1/shortcuts/route', {
+      chainId: core.config.network,
+      fromAddress: trader.address,
+      amountIn: '$amount1',
+      slippage: '50',
+      tokenIn: inputToken.address,
+      tokenOut: outputToken.address,
+      routingStrategy: 'router',
+      variableEstimates: {
+        $amount1: inputAmount.toString(),
+      },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.log(error.response.data);
+      throw error;
+    });
+
+  let calldata = result.tx.data;
+  const index = calldata.indexOf('{$amount1}');
+  if (index === -1) {
+    throw new Error('{$amount1} not found');
+  }
+  calldata = calldata.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [ZERO_BI]).slice(2));
+
+  return {
+    calldata: defaultAbiCoder.encode(['uint256', 'bytes'], [(index - 10) / 2, `0x${calldata.slice(10)}`]),
+    outputAmount: BigNumber.from(result.amountOut),
+  };
 }
 
 export async function getCalldataForOdos<T extends DolomiteNetwork>(
