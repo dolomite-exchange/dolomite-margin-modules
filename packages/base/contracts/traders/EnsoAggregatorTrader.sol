@@ -76,7 +76,7 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
         (uint256 pointer, bytes memory fullData) = abi.decode(orderData, (uint256, bytes));
-        _overwriteInputAmount(_inputAmount, pointer, fullData);
+        _overwriteInputAmount(fullData, pointer, _inputAmount);
 
         {
             (
@@ -118,17 +118,24 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
     }
 
     function _overwriteInputAmount(
-        uint256 _inputAmount,
+        bytes memory _fullData,
         uint256 _pointer,
-        bytes memory _fullData
+        uint256 _inputAmount
     )
     internal
     pure {
-        _pointer += 32; // add 32 to skip the length
+        Require.that(
+            _pointer <= _fullData.length - 32,
+            _FILE,
+            "Pointer is out of bounds"
+        );
+
         assembly {
             // Overwrite the input amount at the specified pointer location
             // _pointer is the offset from the start of the data (after the length field)
-            mstore(add(_fullData, _pointer), _inputAmount)
+            mstore(add(_fullData, add(_pointer, 32)), _inputAmount)
         }
+
+        
     }
 }
