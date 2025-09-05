@@ -26,6 +26,18 @@ const lowerBound = Math.floor(scriptNumber / 100) * 100;
 const directory = `${lowerBound}-${lowerBound + 99}`;
 const filePath = path.resolve(__dirname, networkName, directory, `safe-transaction-${scriptNumber}.ts`);
 
+if (dryRunOnly) {
+  console.log('');
+  console.log('\tOnly performing dry run!');
+  console.log('');
+}
+
+if (skipDryRun) {
+  console.log('');
+  console.log('\tSkipping dry run!');
+  console.log('');
+}
+
 if (!skipDryRun) {
   console.log('');
   console.log('===========================================================');

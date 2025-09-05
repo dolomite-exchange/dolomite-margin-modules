@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { ADDRESS_ZERO, DolomiteNetwork, Network } from './no-deps-constants';
+import { DolomiteNetwork, Network } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -1202,6 +1202,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne | Network.Berachain | Networ
   [Network.Ethereum]: {
     address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee',
     marketId: 6,
+  },
+};
+
+export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
+    marketId: 13,
   },
 };
 
@@ -2638,6 +2645,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [WE_ETH_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22',
       tokenPairAddress: WETH_MAP[Network.Ethereum].address,
+    },
+    [WLFI_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
     },
   },
   [Network.Ink]: {},
