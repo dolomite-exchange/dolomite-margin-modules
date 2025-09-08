@@ -92,6 +92,7 @@ describe('GmxV2.2Upgrade', () => {
 
     // Update exchange router, deposit handler, and withdrawal handler
     await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouter.address);
+    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxReader(core.gmxV2Ecosystem.gmxReader.address);
 
     // Set up oracle provider
     const dataStore = core.gmxV2Ecosystem.gmxDataStore;

@@ -102,8 +102,9 @@ describe('GlvV2.2Upgrade', () => {
     await core.glvEcosystem.live.glvEth.wrapperProxy.connect(core.governance).upgradeTo(wrapperImpl.address);
     await core.glvEcosystem.live.glvEth.unwrapperProxy.connect(core.governance).upgradeTo(unwrapperImpl.address);
 
-    // Update glv router
+    // Update glv router and reader
     await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvRouter(core.glvEcosystem.glvRouter.address);
+    await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvReader(core.glvEcosystem.glvReader.address);
 
     // Set up oracle provider
     const dataStore = core.gmxV2Ecosystem.gmxDataStore;

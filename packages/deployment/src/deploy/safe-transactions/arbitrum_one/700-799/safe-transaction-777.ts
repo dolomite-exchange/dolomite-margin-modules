@@ -97,14 +97,26 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerSetGlvRouter',
       [core.glvEcosystem.glvRouter.address]
     ),
-  );
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.gmxV2Ecosystem.live,
       'registry',
       'ownerSetGmxExchangeRouter',
       [core.gmxV2Ecosystem.gmxExchangeRouter.address]
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxV2Ecosystem.live,
+      'registry',
+      'ownerSetGmxReader',
+      [core.gmxV2Ecosystem.gmxReader.address]
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.glvEcosystem.live,
+      'registry',
+      'ownerSetGlvReader',
+      [core.glvEcosystem.glvReader.address]
     ),
   );
 

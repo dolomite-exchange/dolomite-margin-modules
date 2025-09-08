@@ -1368,7 +1368,7 @@ export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x6a9505D0B44cFA863d9281EA5B0b34cB36243b45',
+  [Network.ArbitrumOne]: '0xb51e34dc3A7c80E4ABbC3800aD0e487b7b878339',
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1608,7 +1608,7 @@ export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x0537C767cDAC0726c76Bb89e92904fe28fd02fE1',
+  [Network.ArbitrumOne]: '0x65A6CC451BAfF7e7B4FDAb4157763aB4b6b44D0E',
 };
 
 export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
