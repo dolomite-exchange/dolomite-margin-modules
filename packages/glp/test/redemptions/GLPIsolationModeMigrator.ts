@@ -41,7 +41,7 @@ describe('GLPIsolationModeMigrator', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 369_756_000,
+      blockNumber: 377_031_000,
       network: Network.ArbitrumOne,
     });
 
@@ -55,6 +55,8 @@ describe('GLPIsolationModeMigrator', () => {
       [core.hhUser4.address, core.tokens.usdc.address]
     );
     await core.gmxEcosystem.live.dGlp.connect(core.governance).setUserVaultImplementation(migratorImplementation.address);
+
+    await core.dolomiteMargin.connect(core.governance).ownerSetMaxWei(core.marketIds.dGmx, parseEther('250000'));
 
     unwrapper = await createContractWithAbi<GLPRedemptionUnwrapperTraderV2>(
       GLPRedemptionUnwrapperTraderV2__factory.abi,
@@ -96,7 +98,6 @@ describe('GLPIsolationModeMigrator', () => {
       .gmxEcosystem!.esGmx.connect(gov)
       .mint(core.gmxEcosystem.esGmxDistributorForStakedGmx.address, parseEther('100000000'));
 
-
     snapshotId = await snapshot();
   });
 
@@ -115,7 +116,33 @@ describe('GLPIsolationModeMigrator', () => {
   });
 
   describe('#handlerUnwrapGLP', () => {
-    xit('should work normally with default account', async () => {
+    it.only('should work normally with default account to unwrap to WBTC', async () => {
+      const traderParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(
+          ['uint256', 'bytes'],
+          [ONE_BI, defaultAbiCoder.encode(['address', 'uint256'], [glpVaultAddress, defaultAccountNumber])],
+        ),
+        makerAccountIndex: 0,
+      };
+
+      await glpVault.connect(core.hhUser4).handlerUnwrapGLP(
+        defaultAccountNumber,
+        [core.marketIds.dfsGlp, core.marketIds.wbtc],
+        defaultBalance,
+        ONE_BI,
+        [traderParam],
+        [],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        }
+      );
+    });
+
+    it.only('should work normally with default account to unwrap to USDC', async () => {
       const traderParam: GenericTraderParam = {
         trader: unwrapper.address,
         traderType: GenericTraderType.IsolationModeUnwrapper,
@@ -129,7 +156,7 @@ describe('GLPIsolationModeMigrator', () => {
       await glpVault.connect(core.hhUser4).handlerUnwrapGLP(
         defaultAccountNumber,
         [core.marketIds.dfsGlp, core.marketIds.usdc],
-        defaultBalance,
+        ZERO_BI,
         ONE_BI,
         [traderParam],
         [],
@@ -138,7 +165,10 @@ describe('GLPIsolationModeMigrator', () => {
           balanceCheckFlag: BalanceCheckFlag.None,
           eventType: GenericEventEmissionType.None,
         }
-      )
+      );
+    });
+
+    it('should work normally to unwrap to WBTC and USDC', async () => {
     });
 
     xit('should work normally with borrow account', async () => {

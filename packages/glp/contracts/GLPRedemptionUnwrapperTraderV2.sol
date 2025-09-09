@@ -101,7 +101,7 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
     // ==========================================
 
     function isValidOutputToken(address _outputToken) public override view returns (bool) {
-        return _outputToken == address(USDC);
+        return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
 
     // ============================================
@@ -122,16 +122,23 @@ contract GLPRedemptionUnwrapperTraderV2 is IGLPRedemptionUnwrapperTraderV2, Isol
     returns (uint256) {
         (address user, uint256 accountNumber) = abi.decode(_extraOrderData, (address, uint256));
 
-        uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
-            /* _tokenOut = */ _outputToken,
-            /* _glpAmount = */ _inputAmount,
-            _minOutputAmount,
-            /* _receiver = */ address(this)
-        );
-        uint256 amount = usdcRedemptionAmount[user][accountNumber];
-        usdcRedemptionAmount[user][accountNumber] = 0;
+        uint256 amountOut;
+        if (_inputAmount > 0) {
+            amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
+                /* _tokenOut = */ _outputToken,
+                /* _glpAmount = */ _inputAmount,
+                _minOutputAmount,
+                /* _receiver = */ address(this)
+            );
+        }
 
-        return amountOut + amount;
+        if (_outputToken == address(USDC)) {
+            uint256 amount = usdcRedemptionAmount[user][accountNumber];
+            usdcRedemptionAmount[user][accountNumber] = 0;
+            amountOut += amount;
+        }
+
+        return amountOut;
     }
 
     function _getExchangeCost(

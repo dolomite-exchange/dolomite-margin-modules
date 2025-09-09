@@ -155,17 +155,7 @@ contract GLPIsolationModeMigrator is ReentrancyGuardUpgradeable {
         IGenericTraderProxyV2.UserConfig memory _userConfig
     ) external onlyHandler(msg.sender) {
         Require.that(
-            _marketIdsPath.length == 2,
-            _FILE,
-            "Invalid marketIdsPath"
-        );
-        Require.that(
             _marketIdsPath[0] == DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY()),
-            _FILE,
-            "Invalid marketIdsPath"
-        );
-        Require.that(
-            _marketIdsPath[1] == DOLOMITE_MARGIN().getMarketIdByTokenAddress(USDC),
             _FILE,
             "Invalid marketIdsPath"
         );
