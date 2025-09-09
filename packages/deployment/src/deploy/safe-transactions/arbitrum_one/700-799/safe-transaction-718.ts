@@ -2,11 +2,10 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { IsolationModeVaultType } from '../../../isolation-mode/isolation-mode-helpers';
-import { deployContractAndSave, getMaxDeploymentVersionNumberByDeploymentKey } from 'packages/deployment/src/utils/deploy-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -17,22 +16,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const glvRegistryImplAddress = await deployContractAndSave(
-    'GlvRegistry',
-    [],
-    'GlvRegistryImplementationV3',
-  );
+  const glvRegistryImplAddress = await deployContractAndSave('GlvRegistry', [], 'GlvRegistryImplementationV3');
 
-  const gmxTraderLibraryAddress = await deployContractAndSave(
-    'GmxV2TraderLibrary',
-    [],
-    'GmxV2TraderLibraryV1',
-  );
-  const glvLibraryAddress = await deployContractAndSave(
-    'GlvLibrary',
-    [],
-    'GlvLibraryV4',
-  );
+  const gmxTraderLibraryAddress = await deployContractAndSave('GmxV2TraderLibrary', [], 'GmxV2TraderLibraryV1');
+  const glvLibraryAddress = await deployContractAndSave('GlvLibrary', [], 'GlvLibraryV4');
   const gmxV2TraderLibraryMap = { GmxV2TraderLibrary: gmxTraderLibraryAddress };
 
   const gmxV2WrapperImplAddress = await deployContractAndSave(
@@ -59,6 +46,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [core.tokens.weth.address],
     'GlvIsolationModeUnwrapperTraderImplementationV5',
     { GlvLibrary: glvLibraryAddress, ...gmxV2TraderLibraryMap, ...core.libraries.unwrapperTraderImpl },
+  );
+
+  // Used later in #720
+  await deployContractAndSave(
+    'GmxV2VaultLibrary',
+    [],
+    'GmxV2VaultLibraryV1'
   );
 
   const transactions: EncodedTransaction[] = [];
@@ -90,44 +84,25 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.glvEcosystem.live,
-      'registry',
-      'ownerSetGlvRouter',
-      [core.glvEcosystem.glvRouter.address]
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.glvEcosystem.live, 'registry', 'ownerSetGlvRouter', [
+      core.glvEcosystem.glvRouter.address,
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.gmxV2Ecosystem.live,
       'registry',
       'ownerSetGmxExchangeRouter',
-      [core.gmxV2Ecosystem.gmxExchangeRouter.address]
+      [core.gmxV2Ecosystem.gmxExchangeRouter.address],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.gmxV2Ecosystem.live,
-      'registry',
-      'ownerSetGmxReader',
-      [core.gmxV2Ecosystem.gmxReader.address]
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.glvEcosystem.live,
-      'registry',
-      'ownerSetGlvReader',
-      [core.glvEcosystem.glvReader.address]
-    ),
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.glvEcosystem.live,
-      'registryProxy',
-      'upgradeTo',
-      [glvRegistryImplAddress],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxV2Ecosystem.live, 'registry', 'ownerSetGmxReader', [
+      core.gmxV2Ecosystem.gmxReader.address,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.glvEcosystem.live, 'registry', 'ownerSetGlvReader', [
+      core.glvEcosystem.glvReader.address,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.glvEcosystem.live, 'registryProxy', 'upgradeTo', [
+      glvRegistryImplAddress,
+    ]),
   );
 
   return {

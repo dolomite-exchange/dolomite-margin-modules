@@ -80,24 +80,6 @@ contract GlvIsolationModeWrapperTraderV2 is
 
     function afterGlvDepositExecution(
         bytes32 _key,
-        GlvDeposit.Props memory _deposit,
-        GmxEventUtils.EventLogData memory _eventData
-    )
-    external
-    onlyHandler(msg.sender) {
-        GmxEventUtils.UintKeyValue memory receivedGlvTokens = _eventData.uintItems.items[0];
-        Require.that(
-            keccak256(abi.encodePacked(receivedGlvTokens.key))
-                == keccak256(abi.encodePacked("receivedGlvTokens")),
-            _FILE,
-            "Unexpected receivedGlvTokens"
-        );
-
-        _executeDepositExecution(_key, receivedGlvTokens.value, _deposit.numbers.minGlvTokens);
-    }
-
-    function afterGlvDepositExecution(
-        bytes32 _key,
         GmxEventUtils.EventLogData memory _depositData,
         GmxEventUtils.EventLogData memory _eventData
     )
@@ -112,25 +94,6 @@ contract GlvIsolationModeWrapperTraderV2 is
         );
 
         _executeDepositExecution(_key, receivedGlvTokens.value, _depositData.uintItems.get("minGlvTokens"));
-    }
-
-    /**
-     *
-     * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
-     *       any excess tokens other than the inputToken will be stuck in the contract
-     */
-    function afterGlvDepositCancellation(
-        bytes32 _key,
-        GlvDeposit.Props memory /* _deposit */,
-        GmxEventUtils.EventLogData memory /* _eventData */
-    )
-    external
-    onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = getDepositInfo(_key);
-        depositInfo.isRetryable = true;
-        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
-
-        _executeDepositCancellation(depositInfo);
     }
 
     function afterGlvDepositCancellation(

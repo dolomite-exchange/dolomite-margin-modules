@@ -133,37 +133,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function afterWithdrawalExecution(
         bytes32 _key,
-        GmxWithdrawal.WithdrawalProps memory _withdrawal,
-        GmxEventUtils.EventLogData memory _eventData
-    )
-    external
-    nonReentrant
-    onlyHandler(msg.sender) {
-        WithdrawalInfo memory withdrawalInfo = getWithdrawalInfo(_key);
-        _validateWithdrawalExists(withdrawalInfo);
-
-        GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
-        GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
-        GmxV2TraderLibrary.validateEventDataForWithdrawal(
-            IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _withdrawal.numbers.marketTokenAmount,
-            /* _outputTokenAddress = */ _eventData.addressItems.items[0],
-            outputTokenAmount,
-            /* _secondaryOutputTokenAddress = */ _eventData.addressItems.items[1],
-            secondaryOutputTokenAmount,
-            withdrawalInfo
-        );
-
-        // Save the output amount so we can refer to it later. This also enables it to be retried if execution fails
-        withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
-        withdrawalInfo.isRetryable = true;
-        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
-
-        _executeWithdrawal(withdrawalInfo);
-    }
-
-    function afterWithdrawalExecution(
-        bytes32 _key,
         GmxEventUtils.EventLogData memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     )
@@ -191,20 +160,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
 
         _executeWithdrawal(withdrawalInfo);
-    }
-
-    /**
-     * @dev Funds will automatically be sent back to the vault by GMX
-     */
-    function afterWithdrawalCancellation(
-        bytes32 _key,
-        GmxWithdrawal.WithdrawalProps memory /* _withdrawal */,
-        GmxEventUtils.EventLogData memory /* _eventData */
-    )
-    external
-    nonReentrant
-    onlyHandler(msg.sender) {
-        _executeWithdrawalCancellation(_key);
     }
 
     function afterWithdrawalCancellation(

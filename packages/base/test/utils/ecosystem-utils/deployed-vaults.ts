@@ -262,6 +262,7 @@ async function initializeVaults<T extends DolomiteNetwork>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, info, config.network));
     } catch (e) {
+      console.error('ERROR', e);
       skippedMarkets += 1;
     }
   }

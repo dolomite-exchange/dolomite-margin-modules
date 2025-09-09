@@ -32,7 +32,6 @@ import { IGlvRegistry } from "./IGlvRegistry.sol";
  */
 interface IGlvIsolationModeWrapperTraderV2 is
     IUpgradeableAsyncIsolationModeWrapperTrader,
-    IGlvDepositCallbackReceiver,
     IGlvV22DepositCallbackReceiver
 {
 
