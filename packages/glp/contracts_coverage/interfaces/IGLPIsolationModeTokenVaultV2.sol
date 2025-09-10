@@ -20,13 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-// solhint-disable max-line-length
-import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
-import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
-import { ISGMX } from "./ISGMX.sol";
-// solhint-enable max-line-length
 
 
 /**
@@ -36,9 +30,7 @@ import { ISGMX } from "./ISGMX.sol";
  * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV2 implementation
  *          contract for each user's proxy vault.
  */
-interface IGLPIsolationModeTokenVaultV2 is IIsolationModeTokenVaultV1WithFreezable {
-
-    function getGmxVaultOrCreate() external returns (address);
+interface IGLPIsolationModeTokenVaultV2 {
 
     /**
      * @notice  Allows the user to claim all rewards and stake them if the user wants to. This function must be called
@@ -204,15 +196,4 @@ interface IGLPIsolationModeTokenVaultV2 is IIsolationModeTokenVaultV1WithFreezab
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
-
-    /**
-     * @return The amount of esGMX tokens the user owns
-     */
-    function esGmxBalanceOf() external view returns (uint256);
-
-    function gmx() external view returns (IERC20);
-
-    function sGmx() external view returns (ISGMX);
-
-    function gmxRewardsRouter() external view returns (IGmxRewardRouterV2);
 }

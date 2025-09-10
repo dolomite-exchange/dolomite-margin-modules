@@ -158,12 +158,12 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function signalAccountTransfer(
         address _receiver,
-        uint256 _glpBalance
+        uint256 _glpBal
     ) external onlyGmxVault(msg.sender) {
-        if (_glpBalance > 0) {
+        if (_glpBal > 0) {
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BALANCE_SLOT, _glpBalance);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
+            _setUint256(_TEMP_BALANCE_SLOT, _glpBal);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
             /*assert(!shouldSkipTransfer());*/
         } else {
             _setUint256(_TEMP_BALANCE_SLOT, 0);
@@ -349,12 +349,7 @@ contract GLPIsolationModeTokenVaultV2 is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function isVaultFrozen()
-        public
-        view
-        override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
-        returns (bool)
-    {
+    function isVaultFrozen() public view override returns (bool) {
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
         return gmxVault == address(0) ? false : IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
     }
@@ -489,17 +484,10 @@ contract GLPIsolationModeTokenVaultV2 is
             _FILE,
             "Can only deposit ETH if claiming"
         );
-        if (!(!_shouldClaimGmx && _shouldStakeGmx)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            !(!_shouldClaimGmx && _shouldStakeGmx),
-            _FILE,
-            "Can only stake GMX if claiming"
-        );
 
-        IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
             // we don't know how much GMX will be staked, so we have to approve all
-            _approveGmxForStaking(_gmx, type(uint256).max);
+            _approveGmxForStaking(gmx(), type(uint256).max);
         }
 
         uint256 stakedGmxBalanceBefore = gmxBalanceOf();
@@ -514,26 +502,24 @@ contract GLPIsolationModeTokenVaultV2 is
         );
         uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
 
+        IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, /* _amount = */ 0);
         }
 
-        if (_shouldClaimGmx) {
-            uint256 unstakedGmxBalance = _gmx.balanceOf(address(this));
-            _gmx.safeApprove(address(DOLOMITE_MARGIN()), unstakedGmxBalance);
-            IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                _DEFAULT_ACCOUNT_NUMBER,
-                DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
-                unstakedGmxBalance
-            );
-            _depositIntoGMXVault(
-                gmxVault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                stakedGmxBalanceDelta,
-                /* shouldSkipTransfer = */ true
-            );
-        }
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmx().balanceOf(address(this)),
+            /* shouldSkipTransfer = */ false
+        );
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            stakedGmxBalanceDelta,
+            /* shouldSkipTransfer = */ true
+        );
 
         if (_shouldClaimWeth) {
             address factory = VAULT_FACTORY();
@@ -568,17 +554,12 @@ contract GLPIsolationModeTokenVaultV2 is
         IERC20 _gmx = gmx();
         uint256 balance = _gmx.balanceOf(address(this));
 
-        if (_addDepositIntoDolomite && balance > 0) {
+        if (_addDepositIntoDolomite) {
             if (_shouldStakeGmx) {
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
                 _stakeGmx(_gmx, balance);
             } else {
-                _gmx.safeApprove(address(DOLOMITE_MARGIN()), balance);
-                IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    _DEFAULT_ACCOUNT_NUMBER,
-                    DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
-                    balance
-                );
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ false);
             }
         }
     }

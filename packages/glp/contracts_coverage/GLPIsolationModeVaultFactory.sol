@@ -62,7 +62,6 @@ contract GLPIsolationModeVaultFactory is
         _fsGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
-        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         WETH = _weth;
