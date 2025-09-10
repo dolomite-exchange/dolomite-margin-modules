@@ -1,9 +1,10 @@
+import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectProtocolBalance } from 'packages/base/test/utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance } from 'packages/base/test/utils/setup';
 import {
@@ -90,6 +91,60 @@ describe('GLPRedemptionOperator', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await redemptionOperator.HANDLER()).to.eq(core.hhUser4.address);
+      expect(await redemptionOperator.USDC_FUND()).to.eq(core.hhUser5.address);
+      expect(await redemptionOperator.USDC_MARKET_ID()).to.eq(core.marketIds.usdc);
+      expect(await redemptionOperator.GLP_FACTORY()).to.eq(core.gmxEcosystem.live.dGlp.address);
+      expect(await redemptionOperator.GLP_UNWRAPPER_TRADER()).to.eq(glpUnwrapperTraderAddress);
+      expect(await redemptionOperator.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#handlerSetUsdcRedemptionAmounts', () => {
+    it('should work normally', async () => {
+      const usdcReward = BigNumber.from('15000000');
+      const res = await redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
+        [glpVault.address],
+        [defaultAccountNumber],
+        [usdcReward]
+      );
+      await expectEvent(redemptionOperator, res, 'UsdcRedemptionAmountSet', {
+        vault: glpVault.address,
+        accountNumber: defaultAccountNumber,
+        usdcRedemptionAmount: usdcReward
+      });
+
+      expect(await redemptionOperator.usdcRedemptionAmount(glpVault.address, defaultAccountNumber)).to.eq(usdcReward);
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        redemptionOperator.connect(core.hhUser1).handlerSetUsdcRedemptionAmounts(
+          [glpVault.address],
+          [defaultAccountNumber],
+          [BigNumber.from('15000000')]
+        ),
+        'GLPRedemptionOperator: Only handler can call'
+      );
+    });
+
+    it('should fail if invalid array lengths', async () => {
+      await expectThrow(
+        redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
+          [glpVault.address, glpVault.address],
+          [defaultAccountNumber],
+          [BigNumber.from('15000000')]
+        ),
+        'GLPRedemptionOperator: Invalid input lengths'
+      );
+      await expectThrow(
+        redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
+          [glpVault.address, glpVault.address],
+          [defaultAccountNumber, defaultAccountNumber],
+          [BigNumber.from('15000000')]
+        ),
+        'GLPRedemptionOperator: Invalid input lengths'
+      );
     });
   });
 
@@ -112,7 +167,7 @@ describe('GLPRedemptionOperator', () => {
         core.marketIds.usdc
       )).value;
       const usdcReward = BigNumber.from('15000000'); // 15 USDC
-      await redemptionOperator.connect(core.governance).ownerSetRedemptionAmount(
+      await redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
         [glpVault.address],
         [defaultAccountNumber],
         [usdcReward] // 15 USDC
@@ -138,7 +193,7 @@ describe('GLPRedemptionOperator', () => {
 
     it('should work normally to unwrap GLP with USDC reward in borrow account', async () => {
       const usdcReward = BigNumber.from('15000000'); // 15 USDC
-      await redemptionOperator.connect(core.governance).ownerSetRedemptionAmount(
+      await redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
         [glpVault.address],
         [borrowAccountNumber],
         [usdcReward] // 15 USDC
@@ -184,6 +239,30 @@ describe('GLPRedemptionOperator', () => {
         defaultAccountNumber,
         core.marketIds.wbtc,
         currentWbtcBal.add(borrowOutputWbtc)
+      );
+    });
+
+    it('should fail if invalid GLP vault', async () => {
+      await expectThrow(
+        redemptionOperator.connect(core.hhUser4).handlerRedeemGLP(
+          core.hhUser1.address,
+          defaultAccountNumber,
+          core.marketIds.wbtc,
+          ONE_BI
+        ),
+        'GLPRedemptionOperator: Invalid GLP vault'
+      );
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        redemptionOperator.connect(core.hhUser1).handlerRedeemGLP(
+          glpVault.address,
+          defaultAccountNumber,
+          core.marketIds.wbtc,
+          ONE_BI
+        ),
+        'GLPRedemptionOperator: Only handler can call'
       );
     });
   });

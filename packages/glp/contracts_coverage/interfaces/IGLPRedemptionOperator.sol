@@ -37,7 +37,7 @@ interface IGLPRedemptionOperator {
 
     /**
      * Sets the USDC redemption amount for a given address and account number
-     * 
+     *
      * @param  _users           The addresses of the GLP vaults
      * @param  _accountNumbers  The account numbers of the users
      * @param  _amounts         The USDC redemption amounts
@@ -50,10 +50,10 @@ interface IGLPRedemptionOperator {
 
     /**
      * Redeems GLP for a given address and account number and claims USDC redemption
-     * 
+     *
      * @dev If account is a borrow account, it will leave the USDC and output token in the borrow account
      * @dev If account is a default account, it will transfer USDC and output token to the vault owner's default account
-     * 
+     *
      * @param  _vault               The address of the GLP vault
      * @param  _accountNumber       The account number of the glp vault
      * @param  _outputMarketId      The market id of the output token
