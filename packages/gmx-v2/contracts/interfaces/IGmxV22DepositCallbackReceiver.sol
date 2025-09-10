@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2025 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,20 +20,22 @@
 
 pragma solidity ^0.8.9;
 
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { IGlvDepositCallbackReceiver } from "./IGlvDepositCallbackReceiver.sol";
-import { IGlvV22DepositCallbackReceiver } from "./IGlvV22DepositCallbackReceiver.sol";
-import { IGlvRegistry } from "./IGlvRegistry.sol";
+import { GmxEventUtils } from "../lib/GmxEventUtils.sol";
+
 
 /**
- * @title   IGlvIsolationModeWrapperTraderV2
+ * @title   IGmxV22DepositCallbackReceiver
  * @author  Dolomite
  *
  */
-interface IGlvIsolationModeWrapperTraderV2 is
-    IUpgradeableAsyncIsolationModeWrapperTrader,
-    IGlvV22DepositCallbackReceiver
-{
+interface IGmxV22DepositCallbackReceiver {
+    // @dev called after a deposit execution
+    // @param key the key of the deposit
+    // @param deposit the deposit that was executed
+    function afterDepositExecution(bytes32 key, GmxEventUtils.EventLogData memory depositData, GmxEventUtils.EventLogData memory eventData) external;
 
-    function GLV_REGISTRY() external view returns (IGlvRegistry);
+    // @dev called after a deposit cancellation
+    // @param key the key of the deposit
+    // @param deposit the deposit that was cancelled
+    function afterDepositCancellation(bytes32 key, GmxEventUtils.EventLogData memory depositData, GmxEventUtils.EventLogData memory eventData) external;
 }

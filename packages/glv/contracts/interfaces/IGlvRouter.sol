@@ -59,4 +59,8 @@ interface IGlvRouter {
     function sendTokens(address token, address receiver, uint256 amount) external;
 
     function router() external view returns (address);
+
+    function glvDepositHandler() external view returns (address);
+
+    function glvWithdrawalHandler() external view returns (address);
 }

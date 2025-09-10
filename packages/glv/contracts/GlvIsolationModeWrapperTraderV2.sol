@@ -47,6 +47,7 @@ contract GlvIsolationModeWrapperTraderV2 is
     IGlvIsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -79,7 +80,7 @@ contract GlvIsolationModeWrapperTraderV2 is
 
     function afterGlvDepositExecution(
         bytes32 _key,
-        GlvDeposit.Props memory _deposit,
+        GmxEventUtils.EventLogData memory _depositData,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -92,17 +93,12 @@ contract GlvIsolationModeWrapperTraderV2 is
             "Unexpected receivedGlvTokens"
         );
 
-        _executeDepositExecution(_key, receivedGlvTokens.value, _deposit.numbers.minGlvTokens);
+        _executeDepositExecution(_key, receivedGlvTokens.value, _depositData.uintItems.get("minGlvTokens"));
     }
 
-    /**
-     *
-     * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
-     *       any excess tokens other than the inputToken will be stuck in the contract
-     */
     function afterGlvDepositCancellation(
         bytes32 _key,
-        GlvDeposit.Props memory /* _deposit */,
+        GmxEventUtils.EventLogData memory /* _deposit */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external

@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { ADDRESS_ZERO, DolomiteNetwork, Network } from './no-deps-constants';
+import { DolomiteNetwork, Network } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -1205,6 +1205,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne | Network.Berachain | Networ
   },
 };
 
+export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
+    marketId: 13,
+  },
+};
+
 export const WO_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xD8724322f44E5c58D7A815F542036fb17DbbF839',
@@ -1348,16 +1355,24 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
+export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xBB4C47CDfb90e281cAAE873c9531A25eBe2eD343',
+};
+
+export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x7A74946892569Fd488012D015436a5a9cBf37BEf',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
 export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x6a9505D0B44cFA863d9281EA5B0b34cB36243b45',
+  [Network.ArbitrumOne]: '0xb51e34dc3A7c80E4ABbC3800aD0e487b7b878339',
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x105b5aFe50FBCe7759051974fB1710ce331C77B3',
+  [Network.ArbitrumOne]: '0x10Fa5Bd343373101654E896B43Ca38Fd8f3789F9',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1377,7 +1392,7 @@ export const GMX_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_DEPOSIT_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xfe2Df84627950A0fB98EaD49c69a1DE3F66867d6',
+  [Network.ArbitrumOne]: '0x563E8cDB5Ba929039c2Bb693B78CE12dC0AAfaDa',
 };
 
 export const GMX_DEPOSIT_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1389,7 +1404,7 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x900173A66dbD345006C51fA35fA3aB760FcD843b',
+  [Network.ArbitrumOne]: '0x87d66368cD08a7Ca42252f5ab44B2fb6d1Fb8d15',
 };
 
 export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1593,7 +1608,7 @@ export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x0537C767cDAC0726c76Bb89e92904fe28fd02fE1',
+  [Network.ArbitrumOne]: '0x65A6CC451BAfF7e7B4FDAb4157763aB4b6b44D0E',
 };
 
 export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1616,7 +1631,7 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x64fbD82d9F987baF5A59401c64e823232182E8Ed',
+  [Network.ArbitrumOne]: '0x1EC018d2b6ACCA20a0bEDb86450b7E27D1D8355B',
 };
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -2638,6 +2653,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [WE_ETH_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22',
       tokenPairAddress: WETH_MAP[Network.Ethereum].address,
+    },
+    [WLFI_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
     },
   },
   [Network.Ink]: {},

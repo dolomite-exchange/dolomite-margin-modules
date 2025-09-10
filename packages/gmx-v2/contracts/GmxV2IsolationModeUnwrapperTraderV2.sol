@@ -45,6 +45,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeUnwrapperTraderV2,
     UpgradeableAsyncIsolationModeUnwrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -132,7 +133,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function afterWithdrawalExecution(
         bytes32 _key,
-        GmxWithdrawal.WithdrawalProps memory _withdrawal,
+        GmxEventUtils.EventLogData memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -145,7 +146,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         GmxV2TraderLibrary.validateEventDataForWithdrawal(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _withdrawal.numbers.marketTokenAmount,
+            _withdrawal.uintItems.get("marketTokenAmount"),
             /* _outputTokenAddress = */ _eventData.addressItems.items[0],
             outputTokenAmount,
             /* _secondaryOutputTokenAddress = */ _eventData.addressItems.items[1],
@@ -161,12 +162,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _executeWithdrawal(withdrawalInfo);
     }
 
-    /**
-     * @dev Funds will automatically be sent back to the vault by GMX
-     */
     function afterWithdrawalCancellation(
         bytes32 _key,
-        GmxWithdrawal.WithdrawalProps memory /* _withdrawal */,
+        GmxEventUtils.EventLogData memory /* _withdrawal */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external

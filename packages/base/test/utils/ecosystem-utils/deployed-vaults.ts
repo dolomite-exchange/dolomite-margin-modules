@@ -223,7 +223,7 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
     return deployedVaults;
   }
   if (skippedMarkets > 0) {
-    throw new Error('Skipped markets for non-forked blocks...');
+    throw new Error(`Skipped markets for non-forked blocks... ${skippedMarkets}`);
   }
 
   const marketsCount = await dolomiteMargin.getNumMarkets();
@@ -262,6 +262,7 @@ async function initializeVaults<T extends DolomiteNetwork>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, info, config.network));
     } catch (e) {
+      console.error('ERROR', e);
       skippedMarkets += 1;
     }
   }

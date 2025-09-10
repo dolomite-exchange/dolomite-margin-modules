@@ -129,22 +129,29 @@ library GlvLibrary {
             IERC20(_inputToken).safeApprove(glvRouter.router(), _inputAmount);
             glvRouter.sendTokens(_inputToken, vault, _inputAmount);
         }
+
         IGlvIsolationModeVaultFactory factory = _factory;
-        GlvDepositUtils.CreateGlvDepositParams memory depositParams = GlvDepositUtils.CreateGlvDepositParams(
+        IGlvRegistry registry = _registry;
+
+        GlvDepositUtils.CreateGlvDepositParamsAddresses memory addresses = GlvDepositUtils.CreateGlvDepositParamsAddresses(
             /* glv = */ _outputTokenUnderlying,
-            /* market = */ _registry.glvTokenToGmMarketForDeposit(factory.UNDERLYING_TOKEN()),
+            /* market = */ registry.glvTokenToGmMarketForDeposit(factory.UNDERLYING_TOKEN()),
             /* receiver = */ address(this),
             /* callbackContract = */ address(this),
             /* uiFeeReceiver = */ address(0),
             /* initialLongToken = */ factory.LONG_TOKEN(),
             /* initialShortToken = */ factory.SHORT_TOKEN(),
             /* longTokenSwapPath = */ new address[](0),
-            /* shortTokenSwapPath = */ new address[](0),
+            /* shortTokenSwapPath = */ new address[](0)
+        );
+        GlvDepositUtils.CreateGlvDepositParams memory depositParams = GlvDepositUtils.CreateGlvDepositParams(
+            /* addresses = */ addresses,
             /* minGlvTokens = */ _minOutputAmount,
             /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ _registry.callbackGasLimit(),
+            /* callbackGasLimit = */ registry.callbackGasLimit(),
             /* shouldUnwrapNativeToken = */ false,
-            /* isMarketTokenDeposit = */ false
+            /* isMarketTokenDeposit = */ false,
+            /* dataList = */ new bytes32[](0)
         );
 
         return glvRouter.createGlvDeposit(depositParams);
@@ -216,21 +223,30 @@ library GlvLibrary {
             _FILE,
             "minOutputAmount too small"
         );
+
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
-        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams =
-            GlvWithdrawalUtils.CreateGlvWithdrawalParams(
+        uint256 minOutputAmount = _minOutputAmount;
+        uint256 ethExecutionFee = _ethExecutionFee;
+
+        GlvWithdrawalUtils.CreateGlvWithdrawalParamsAddresses memory addresses =
+            GlvWithdrawalUtils.CreateGlvWithdrawalParamsAddresses(
                 /* receiver = */ address(unwrapper),
                 /* callbackContract = */ address(unwrapper),
                 /* uiFeeReceiver = */ address(0),
                 /* market = */ swapPath[0],
                 /* glv = */ factory.UNDERLYING_TOKEN(),
                 /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-                /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-                /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
-                /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
+                /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath
+            );
+        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams =
+            GlvWithdrawalUtils.CreateGlvWithdrawalParams(
+                /* addresses = */ addresses,
+                /* minLongTokenAmount = */ longToken == outputToken ? minOutputAmount : minOtherTokenAmount,
+                /* minShortTokenAmount = */ longToken != outputToken ? minOutputAmount : minOtherTokenAmount,
                 /* shouldUnwrapNativeToken = */ false,
-                /* executionFee = */ _ethExecutionFee,
-                /* callbackGasLimit = */ registry.callbackGasLimit()
+                /* executionFee = */ ethExecutionFee,
+                /* callbackGasLimit = */ registry.callbackGasLimit(),
+                /* dataList = */ new bytes32[](0)
             );
 
         return glvRouter.createGlvWithdrawal(withdrawalParams);

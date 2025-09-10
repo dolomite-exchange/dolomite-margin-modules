@@ -30,6 +30,7 @@ export enum IsolationModeLibraryNames {
   IsolationModeTokenVaultV1ActionsImpl = 'IsolationModeTokenVaultV1ActionsImpl',
   AsyncIsolationModeTokenVaultV1ActionsImpl = 'AsyncIsolationModeTokenVaultV1ActionsImpl',
   GlvLibrary = 'GlvLibrary',
+  GmxV2TraderLibrary = 'GmxV2TraderLibrary',
   GmxV2VaultLibrary = 'GmxV2VaultLibrary',
 }
 

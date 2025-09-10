@@ -45,6 +45,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -77,7 +78,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function afterDepositExecution(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxEventUtils.EventLogData memory _depositData,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -90,17 +91,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Unexpected receivedMarketTokens"
         );
 
-        _executeDepositExecution(_key, receivedMarketTokens.value, _deposit.numbers.minMarketTokens);
+        _executeDepositExecution(_key, receivedMarketTokens.value, _depositData.uintItems.get("minMarketTokens"));
     }
 
-    /**
-     *
-     * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
-     *       any excess tokens other than the inputToken will be stuck in the contract
-     */
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.DepositProps memory /* _deposit */,
+        GmxEventUtils.EventLogData memory /* _depositData */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
