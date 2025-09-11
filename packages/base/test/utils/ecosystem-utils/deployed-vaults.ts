@@ -156,6 +156,28 @@ export class DeployedVault {
     ]);
   }
 
+  public async encodeSetUserVaultImplementationWithAddress<T extends DolomiteNetwork>(
+    core: CoreProtocolType<T>,
+    newImplementation: string,
+  ): Promise<EncodedTransaction> {
+    if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
+      const factory = IIsolationModeVaultFactoryOld__factory.connect(
+        await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
+        core.governance,
+      );
+      return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'setUserVaultImplementation', [
+        newImplementation,
+      ]);
+    }
+    const factory = IIsolationModeVaultFactory__factory.connect(
+      await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
+      core.governance,
+    );
+    return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerSetUserVaultImplementation', [
+      newImplementation
+    ]);
+  }
+
   private populateLibraryAddresses(libraries: string[], network: Network) {
     const libraryAddresses: Record<string, string> = {};
     for (const library of libraries) {
