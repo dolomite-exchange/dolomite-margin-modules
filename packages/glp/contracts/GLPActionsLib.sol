@@ -25,6 +25,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
+import { IGmxVester } from "./interfaces/IGmxVester.sol";
 
 
 /**
@@ -46,6 +47,45 @@ library GLPActionsLib {
     // ===========================================================
     // ======================== Functions ========================
     // ===========================================================
+
+    function unvestEsGmx(
+        IGLPIsolationModeTokenVaultV2 _vault,
+        IGmxVester _vester,
+        bool _shouldStakeGmx,
+        bool _addDepositIntoDolomite
+    ) public {
+        address gmxVault = _vault.getGmxVaultOrCreate();
+
+        _vester.withdraw();
+        IERC20 _gmx = _vault.gmx();
+        uint256 balance = _gmx.balanceOf(address(this));
+
+        if (_addDepositIntoDolomite && balance > 0) {
+            if (_shouldStakeGmx) {
+                depositIntoGMXVault(
+                    _vault,
+                    gmxVault,
+                    _DEFAULT_ACCOUNT_NUMBER,
+                    balance,
+                    /* shouldSkipTransfer = */ true
+                );
+                stakeGmx(_vault, _gmx, address(_vault.sGmx()), balance);
+            } else {
+                _gmx.safeApprove(address(_vault.DOLOMITE_MARGIN()), balance);
+                IGLPIsolationModeVaultFactory(_vault.VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                    _DEFAULT_ACCOUNT_NUMBER,
+                    _vault.DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
+                    balance
+                );
+            }
+        }
+    }
+
+    function stakeGmx(IGLPIsolationModeTokenVaultV2 _vault, IERC20 _gmx, address _sGmx, uint256 _amount) public {
+        approveGmxForStaking(_gmx, _sGmx, _amount);
+
+        _vault.gmxRewardsRouter().stakeGmx(_amount);
+    }
 
     function approveGmxForStaking(IERC20 _gmx, address _sGmx, uint256 _amount) public {
         uint256 allowance = _gmx.allowance(address(this), _sGmx);

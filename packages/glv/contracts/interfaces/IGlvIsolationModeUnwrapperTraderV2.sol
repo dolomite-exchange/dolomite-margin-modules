@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGlvRegistry } from "./IGlvRegistry.sol";
-import { IGlvWithdrawalCallbackReceiver } from "./IGlvWithdrawalCallbackReceiver.sol";
+import { IGlvV22WithdrawalCallbackReceiver } from "./IGlvV22WithdrawalCallbackReceiver.sol";
 
 /**
  * @title   IGlvIsolationModeUnwrapperTraderV2
@@ -31,7 +31,7 @@ import { IGlvWithdrawalCallbackReceiver } from "./IGlvWithdrawalCallbackReceiver
  */
 interface IGlvIsolationModeUnwrapperTraderV2 is
     IUpgradeableAsyncIsolationModeUnwrapperTrader,
-    IGlvWithdrawalCallbackReceiver
+    IGlvV22WithdrawalCallbackReceiver
 {
 
     function GLV_REGISTRY() external view returns (IGlvRegistry);

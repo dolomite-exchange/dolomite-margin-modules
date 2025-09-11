@@ -26,7 +26,7 @@ import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange
 import { AsyncIsolationModeUnwrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GmxV2TraderLibrary } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2TraderLibrary.sol";
 import { IGmxV2IsolationModeVaultFactory } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GlvLibrary } from "./GlvLibrary.sol";
@@ -47,6 +47,7 @@ contract GlvIsolationModeUnwrapperTraderV2 is
     IGlvIsolationModeUnwrapperTraderV2,
     UpgradeableAsyncIsolationModeUnwrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -134,7 +135,7 @@ contract GlvIsolationModeUnwrapperTraderV2 is
 
     function afterGlvWithdrawalExecution(
         bytes32 _key,
-        GlvWithdrawal.Props memory _withdrawal,
+        GmxEventUtils.EventLogData memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -147,7 +148,7 @@ contract GlvIsolationModeUnwrapperTraderV2 is
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         GlvLibrary.validateEventDataForWithdrawal(
             IGlvIsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _withdrawal.numbers.glvTokenAmount,
+            _withdrawal.uintItems.get("glvTokenAmount"),
             /* _outputTokenAddress = */ _eventData.addressItems.items[0],
             outputTokenAmount,
             /* _secondaryOutputTokenAddress = */ _eventData.addressItems.items[1],
@@ -163,12 +164,9 @@ contract GlvIsolationModeUnwrapperTraderV2 is
         _executeWithdrawal(withdrawalInfo);
     }
 
-    /**
-     * @dev Funds will automatically be sent back to the vault by GMX
-     */
     function afterGlvWithdrawalCancellation(
         bytes32 _key,
-        GlvWithdrawal.Props memory /* _withdrawal */,
+        GmxEventUtils.EventLogData memory /* _withdrawal */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -185,7 +183,7 @@ contract GlvIsolationModeUnwrapperTraderV2 is
     virtual
     override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
-        return GmxV2Library.isValidInputOrOutputToken(
+        return GmxV2TraderLibrary.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _outputToken,
             skipLongToken()

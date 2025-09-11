@@ -30,14 +30,8 @@ import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBala
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
-import { hrtime } from 'process';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -73,7 +67,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     const genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -136,7 +130,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize(
-      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+      [
+        tokenUnwrapper.address,
+        tokenWrapper.address,
+        core.depositWithdrawalRouter.address,
+      ],
     );
 
     await factory.createVault(core.hhUser1.address);

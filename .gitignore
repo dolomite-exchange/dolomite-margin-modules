@@ -30,6 +30,10 @@ packages/*/cache_forge
 
 dist/
 
+# foundry
+packages/*/out/
+packages/*/cache_forge
+
 output/
 
 yarn-error.log

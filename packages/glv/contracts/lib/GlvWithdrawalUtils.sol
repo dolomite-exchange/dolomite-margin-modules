@@ -11,6 +11,16 @@ pragma solidity ^0.8.9;
 library GlvWithdrawalUtils {
 
     struct CreateGlvWithdrawalParams {
+        CreateGlvWithdrawalParamsAddresses addresses;
+        uint256 minLongTokenAmount;
+        uint256 minShortTokenAmount;
+        bool shouldUnwrapNativeToken;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+        bytes32[] dataList;
+    }
+
+    struct CreateGlvWithdrawalParamsAddresses {
         address receiver;
         address callbackContract;
         address uiFeeReceiver;
@@ -18,10 +28,5 @@ library GlvWithdrawalUtils {
         address glv;
         address[] longTokenSwapPath;
         address[] shortTokenSwapPath;
-        uint256 minLongTokenAmount;
-        uint256 minShortTokenAmount;
-        bool shouldUnwrapNativeToken;
-        uint256 executionFee;
-        uint256 callbackGasLimit;
     }
 }

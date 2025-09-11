@@ -33,6 +33,15 @@ import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
 interface IGmxExchangeRouter {
 
     struct CreateDepositParams {
+        CreateDepositParamsAddresses addresses;
+        uint256 minMarketTokens;
+        bool shouldUnwrapNativeToken;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+        bytes32[] dataList;
+    }
+
+    struct CreateDepositParamsAddresses {
         address receiver;
         address callbackContract;
         address uiFeeReceiver;
@@ -41,24 +50,25 @@ interface IGmxExchangeRouter {
         address initialShortToken;
         address[] longTokenSwapPath;
         address[] shortTokenSwapPath;
-        uint256 minMarketTokens;
-        bool shouldUnwrapNativeToken;
-        uint256 executionFee;
-        uint256 callbackGasLimit;
     }
 
     struct CreateWithdrawalParams {
+        CreateWithdrawalParamsAddresses addresses;
+        uint256 minLongTokenAmount;
+        uint256 minShortTokenAmount;
+        bool shouldUnwrapNativeToken;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+        bytes32[] dataList;
+    }
+
+    struct CreateWithdrawalParamsAddresses {
         address receiver;
         address callbackContract;
         address uiFeeReceiver;
         address market;
         address[] longTokenSwapPath;
         address[] shortTokenSwapPath;
-        uint256 minLongTokenAmount;
-        uint256 minShortTokenAmount;
-        bool shouldUnwrapNativeToken;
-        uint256 executionFee;
-        uint256 callbackGasLimit;
     }
 
     function createDeposit(CreateDepositParams calldata _params) external returns (bytes32);
