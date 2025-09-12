@@ -43,7 +43,8 @@ type EverythingButBaseAndBotanix =
   | Network.Mantle
   | Network.PolygonZkEvm
   | Network.XLayer;
-type ArbitrumAndBerachainAndMantle = Network.ArbitrumOne | Network.Berachain | Network.Mantle;
+
+type RedstoneNetworks = Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle;
 
 const SUBGRAPH_BASE_URL = 'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549';
 const SUBGRAPH_VERSION = 'v0.1.4/gn';
@@ -117,6 +118,13 @@ export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<DolomiteNetwork, string> = {
   [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
   [Network.SuperSeed]: CoreDeployments.ChainlinkPriceOracleV1[Network.SuperSeed].address,
   [Network.XLayer]: CoreDeployments.ChainlinkPriceOracleV1[Network.XLayer].address,
+};
+
+export const C_USD_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xcCcc62962d17b8914c62D74FfB843d73B2a3cccC',
+    marketId: 14,
+  },
 };
 
 export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
@@ -926,6 +934,13 @@ export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
     marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+};
+
+export const STC_USD_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0x88887bE419578051FF9F4eb6C858A951921D8888',
+    marketId: 15,
   },
 };
 
@@ -2897,7 +2912,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
 };
 
 export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
-  ArbitrumAndBerachainAndMantle,
+  RedstoneNetworks,
   Record<string, AggregatorInfo | undefined>
 > = {
   [Network.ArbitrumOne]: {
@@ -2966,6 +2981,11 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     [WE_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x65eD6a4ac085620eE943c0B15525C4428D23e4Db',
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
+    },
+  },
+  [Network.Ethereum]: {
+    [C_USD_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x9A5a3c3Ed0361505cC1D4e824B3854De5724434A',
     },
   },
   [Network.Mantle]: {

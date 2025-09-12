@@ -19,7 +19,7 @@ import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
   ChainsightPriceOracleV3,
-  ChroniclePriceOracleV3,
+  ChroniclePriceOracleV3, ERC4626PriceOracle,
   IAlgebraV3Pool,
   IChainlinkAggregator,
   IChainlinkPriceOracleV1,
@@ -75,6 +75,16 @@ export type CoreProtocolWithChronicle<T extends DolomiteNetwork> = Extract<
     config: CoreProtocolConfig<T>;
     dolomiteMargin: DolomiteMargin<T>;
     chroniclePriceOracleV3: ChroniclePriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
+
+export type CoreProtocolWithERC4626<T extends DolomiteNetwork> = Extract<
+  CoreProtocolType<T>,
+  {
+    config: CoreProtocolConfig<T>;
+    dolomiteMargin: DolomiteMargin<T>;
+    erc4626Oracle: ERC4626PriceOracle;
     oracleAggregatorV2: OracleAggregatorV2;
   }
 >;
