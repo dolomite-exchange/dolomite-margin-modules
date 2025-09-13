@@ -21,9 +21,7 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
-import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IHandlerRegistry.sol";
 import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
-import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
@@ -40,25 +38,21 @@ import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxDataStore } from "./interfaces/IGmxDataStore.sol";
-import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
-import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
-import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
 import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 // solhint-enable max-line-length
 
 
 /**
- * @title   GmxV2Library
+ * @title   GmxV2VaultLibrary
  * @author  Dolomite
  *
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size
  */
-library GmxV2Library {
+library GmxV2VaultLibrary {
     using DecimalLib for *;
     using DolomiteMarginVersionWrapperLib for *;
     using SafeERC20 for IERC20;
@@ -69,7 +63,7 @@ library GmxV2Library {
     // ============================ Constants ===========================
     // ==================================================================
 
-    bytes32 private constant _FILE = "GmxV2Library";
+    bytes32 private constant _FILE = "GmxV2VaultLibrary";
     bytes32 private constant _MAX_PNL_FACTOR_KEY = keccak256(abi.encode("MAX_PNL_FACTOR"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
@@ -96,148 +90,6 @@ library GmxV2Library {
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
-
-    function wrapperCreateDeposit(
-        IGmxV2IsolationModeVaultFactory _factory,
-        IGmxV2Registry _registry,
-        IWETH _weth,
-        address _vault,
-        uint256 _ethExecutionFee,
-        address _outputTokenUnderlying,
-        uint256 _minOutputAmount,
-        address _inputToken,
-        uint256 _inputAmount
-    ) public returns (bytes32) {
-        IGmxExchangeRouter exchangeRouter = _registry.gmxExchangeRouter();
-        bytes32 executeDepositKey = keccak256(abi.encode(
-            _EXECUTE_DEPOSIT_FEATURE_DISABLED,
-            exchangeRouter.depositHandler()
-        ));
-        Require.that(
-            !_registry.gmxDataStore().getBool(executeDepositKey),
-            _FILE,
-            "Execute deposit feature disabled"
-        );
-
-        address depositVault = _registry.gmxDepositVault();
-        if (_inputToken == address(_weth)) {
-            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
-            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee + _inputAmount);
-            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee + _inputAmount);
-        } else {
-            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
-            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee);
-            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee);
-
-            IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
-            exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
-        }
-
-        IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
-            /* receiver = */ address(this),
-            /* callbackContract = */ address(this),
-            /* uiFeeReceiver = */ address(0),
-            /* market = */ _outputTokenUnderlying,
-            /* initialLongToken = */ _factory.LONG_TOKEN(),
-            /* initialShortToken = */ _factory.SHORT_TOKEN(),
-            /* longTokenSwapPath = */ new address[](0),
-            /* shortTokenSwapPath = */ new address[](0),
-            /* minMarketTokens = */ _minOutputAmount,
-            /* shouldUnwrapNativeToken = */ false,
-            /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ _registry.callbackGasLimit()
-        );
-
-        return exchangeRouter.createDeposit(depositParams);
-    }
-
-    function initiateCancelDeposit(IGmxV2IsolationModeWrapperTraderV2 _wrapper, bytes32 _key) public {
-        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo = _wrapper.getDepositInfo(_key);
-        Require.that(
-            msg.sender == depositInfo.vault
-                || IAsyncIsolationModeTraderBase(address(_wrapper)).isHandler(msg.sender),
-            _FILE,
-            "Only vault or handler can cancel"
-        );
-        _wrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
-    }
-
-    function unwrapperInitiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
-                            _unwrapper.getWithdrawalInfo(_key);
-        Require.that(
-            msg.sender == withdrawalInfo.vault
-                || IAsyncIsolationModeTraderBase(address(_unwrapper)).isHandler(msg.sender),
-            _FILE,
-            "Only vault or handler can cancel"
-        );
-        _unwrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
-    }
-
-    function unwrapperExecuteInitiateUnwrapping(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount,
-        uint256 _ethExecutionFee,
-        bytes calldata _extraData
-    ) public returns (bytes32) {
-        IERC20(_factory.UNDERLYING_TOKEN()).safeTransferFrom(_vault, address(this), _inputAmount);
-
-        IGmxV2Registry registry = _factory.gmxV2Registry();
-        IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
-
-        address[] memory swapPath = new address[](1);
-        swapPath[0] = _factory.UNDERLYING_TOKEN();
-
-        // Change scope for stack too deep
-        {
-            address withdrawalVault = registry.gmxWithdrawalVault();
-            exchangeRouter.sendWnt{value: _ethExecutionFee}(withdrawalVault, _ethExecutionFee);
-            IERC20(swapPath[0]).safeApprove(address(registry.gmxRouter()), _inputAmount);
-            exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
-        }
-
-        Require.that(
-            _extraData.length == 64,
-            _FILE,
-            "Invalid extra data"
-        );
-
-        // Fix stack too deep
-        address outputToken = _outputToken;
-        IGmxV2IsolationModeVaultFactory factory = _factory;
-        address longToken = factory.LONG_TOKEN();
-
-        (, uint256 minOtherTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
-        _minOutputAmount -= minOtherTokenAmount; // subtract from the total figure to get its value from the Zap SDK
-        Require.that(
-            _minOutputAmount > 0 && minOtherTokenAmount > 0,
-            _FILE,
-            "minOutputAmount too small"
-        );
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
-        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
-            /* receiver = */ address(unwrapper),
-            /* callbackContract = */ address(unwrapper),
-            /* uiFeeReceiver = */ address(0),
-            /* market = */ swapPath[0],
-            /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
-            /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
-            /* shouldUnwrapNativeToken = */ false,
-            /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ registry.callbackGasLimit()
-        );
-
-        if (longToken == factory.SHORT_TOKEN()) {
-            withdrawalParams.longTokenSwapPath = new address[](0);
-            withdrawalParams.shortTokenSwapPath = new address[](0);
-        }
-        return exchangeRouter.createWithdrawal(withdrawalParams);
-    }
 
     function vaultValidateExecutionFeeIfWrapToUnderlying(
         IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
@@ -285,18 +137,38 @@ library GmxV2Library {
         unwrapper.initiateCancelWithdrawal(_key);
     }
 
-    function isValidInputOrOutputToken(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _token,
-        bool _skipLongToken
-    ) public view returns (bool) {
-        if (_skipLongToken) {
-            return _token == _factory.SHORT_TOKEN();
-        }
-        return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
+    function vaultInitiateUnwrapping(
+        IGmxV2IsolationModeTokenVaultV1 _vault,
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData,
+        uint256 _ethExecutionFee
+    ) public {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_vault.VAULT_FACTORY());
+        Require.that(
+            _vault.registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+
+        _validateExecutionFee(factory, msg.value);
+
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = _vault.registry().getUnwrapperByToken(factory);
+        IERC20(factory.UNDERLYING_TOKEN()).safeApprove(address(unwrapper), _inputAmount);
+        unwrapper.vaultInitiateUnwrapping{ value: _ethExecutionFee }(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
+        );
     }
 
-    function validateExecutionFee(
+    function validateExecutionFeeAndUsage(
         IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _toAccountNumber
     ) public view {
@@ -384,113 +256,6 @@ library GmxV2Library {
         return _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
 
-    function validateInitialMarketIds(
-        uint256[] memory _marketIds,
-        uint256 _longMarketId,
-        uint256 _shortMarketId
-    ) public pure {
-        if (_longMarketId == type(uint256).max) {
-            Require.that(
-                _marketIds.length >= 1,
-                _FILE,
-                "Invalid market IDs length"
-            );
-            Require.that(
-                _marketIds[0] == _shortMarketId,
-                _FILE,
-                "Invalid market IDs"
-            );
-        } else {
-            Require.that(
-                _marketIds.length >= 2,
-                _FILE,
-                "Invalid market IDs length"
-            );
-            Require.that(
-                (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
-                || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
-                _FILE,
-                "Invalid market IDs"
-            );
-        }
-    }
-
-    function validateEventDataForWithdrawal(
-        IGmxV2IsolationModeVaultFactory _factory,
-        uint256 _marketTokenAmount,
-        GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
-        GmxEventUtils.UintKeyValue memory _outputTokenAmount,
-        GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
-        GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
-        IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
-    ) public view {
-        Require.that(
-            _marketTokenAmount >= _withdrawalInfo.inputAmount,
-            _FILE,
-            "Invalid market token amount"
-        );
-
-        _validateEventData(_outputTokenAddress.key, "outputToken");
-        _validateEventData(_outputTokenAmount.key, "outputAmount");
-        _validateEventData(_secondaryOutputTokenAddress.key, "secondaryOutputToken");
-        _validateEventData(_secondaryOutputTokenAmount.key, "secondaryOutputAmount");
-
-        if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
-            Require.that(
-                _withdrawalInfo.outputToken == _outputTokenAddress.value,
-                _FILE,
-                "Output token is incorrect"
-            );
-
-            if (_secondaryOutputTokenAmount.value > 0) {
-                Require.that(
-                    _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
-                    _FILE,
-                    "Can only receive one token"
-                );
-            }
-        } else {
-            Require.that(
-                _withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value,
-                _FILE,
-                "Output token is incorrect"
-            );
-
-            if (_outputTokenAmount.value > 0) {
-                Require.that(
-                    _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
-                    _FILE,
-                    "Can only receive one token"
-                );
-            }
-        }
-    }
-
-    function validateInitiateUnwrapping(
-        IAsyncFreezableIsolationModeVaultFactory _factory,
-        IHandlerRegistry _registry,
-        address _outputToken
-    ) public view {
-        Require.that(
-            _registry.getUnwrapperByToken(_factory).isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token"
-        );
-
-        _validateExecutionFee(_factory, msg.value);
-    }
-
-    function _validateExecutionFee(
-        IAsyncFreezableIsolationModeVaultFactory _factory,
-        uint256 _msgValue
-    ) private view {
-        Require.that(
-            _msgValue <= _factory.maxExecutionFee(),
-            _FILE,
-            "Invalid execution fee"
-        );
-    }
-
     function validateMinAmountIsNotTooLargeForLiquidation(
         IGmxV2IsolationModeVaultFactory _factory,
         IDolomiteStructs.AccountInfo memory _liquidAccount,
@@ -537,6 +302,37 @@ library GmxV2Library {
         );
     }
 
+    function validateInitialMarketIds(
+        uint256[] memory _marketIds,
+        uint256 _longMarketId,
+        uint256 _shortMarketId
+    ) public pure {
+        if (_longMarketId == type(uint256).max) {
+            Require.that(
+                _marketIds.length >= 1,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                _marketIds[0] == _shortMarketId,
+                _FILE,
+                "Invalid market IDs"
+            );
+        } else {
+            Require.that(
+                _marketIds.length >= 2,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+                || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
+                _FILE,
+                "Invalid market IDs"
+            );
+        }
+    }
+
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
@@ -551,6 +347,17 @@ library GmxV2Library {
         IERC20(address(_vault.WETH())).safeApprove(
             address(_vault.handlerRegistry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
             msg.value
+        );
+    }
+
+    function _validateExecutionFee(
+        IAsyncFreezableIsolationModeVaultFactory _factory,
+        uint256 _msgValue
+    ) private view {
+        Require.that(
+            _msgValue <= _factory.maxExecutionFee(),
+            _FILE,
+            "Invalid execution fee"
         );
     }
 

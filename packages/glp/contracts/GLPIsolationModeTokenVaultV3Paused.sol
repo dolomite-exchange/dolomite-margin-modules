@@ -137,7 +137,7 @@ contract GLPIsolationModeTokenVaultV3Paused is
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        _stakeGmx(_gmx, _amount);
+        GLPActionsLib.stakeGmx(/* _vault */ this, _gmx, address(sGmx()), _amount);
     }
 
     function unstakeGmx(uint256 _amount) external override requireNotFrozen onlyGmxVault(msg.sender) {
@@ -196,7 +196,8 @@ contract GLPIsolationModeTokenVaultV3Paused is
     }
 
     function sweepGmxTokensIntoGmxVault() external requireNotFrozen onlyGmxVault(msg.sender) {
-        _depositIntoGMXVault(
+        GLPActionsLib.depositIntoGMXVault(
+            /* _vault = */ this,
             /* _gmxVault = */ msg.sender,
             /* _accountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _amountWei = */ gmx().balanceOf(address(this)),
@@ -426,35 +427,17 @@ contract GLPIsolationModeTokenVaultV3Paused is
         );
     }
 
-    function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
-        GLPActionsLib.approveGmxForStaking(_gmx, address(sGmx()), _amount);
-        gmxRewardsRouter().stakeGmx(_amount);
-    }
-
     function _vestEsGmx(IGmxVester _vester, uint256 _esGmxAmount) internal {
         _vester.deposit(_esGmxAmount);
     }
 
     function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx, bool _addDepositIntoDolomite) internal {
-        address gmxVault = getGmxVaultOrCreate();
-
-        _vester.withdraw();
-        IERC20 _gmx = gmx();
-        uint256 balance = _gmx.balanceOf(address(this));
-
-        if (_addDepositIntoDolomite && balance > 0) {
-            if (_shouldStakeGmx) {
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
-                _stakeGmx(_gmx, balance);
-            } else {
-                _gmx.safeApprove(address(DOLOMITE_MARGIN()), balance);
-                IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    _DEFAULT_ACCOUNT_NUMBER,
-                    DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
-                    balance
-                );
-            }
-        }
+        GLPActionsLib.unvestEsGmx(
+            /* _vault = */ this,
+            _vester,
+            _shouldStakeGmx,
+            _addDepositIntoDolomite
+        );
     }
 
     function _sync(address _gmxVault) internal {
@@ -466,27 +449,12 @@ contract GLPIsolationModeTokenVaultV3Paused is
         _setUint256(_HAS_SYNCED, 1);
 
         // Skip the transfer since we're depositing staked GMX tokens
-        _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, gmxBalanceOf(), /* shouldSkipTransfer = */ true);
-    }
-
-    function _depositIntoGMXVault(
-        address _gmxVault,
-        uint256 _accountNumber,
-        uint256 _amountWei,
-        bool _shouldSkipTransfer
-    ) internal {
-        if (_amountWei == 0) {
-            return;
-        }
-
-        if (!_shouldSkipTransfer) {
-            gmx().safeApprove(_gmxVault, _amountWei);
-        }
-        registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+        GLPActionsLib.depositIntoGMXVault(
+            /* _vault = */ this,
             _gmxVault,
-            _accountNumber,
-            _amountWei,
-            _shouldSkipTransfer
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmxBalanceOf(),
+            /* shouldSkipTransfer = */ true
         );
     }
 
@@ -500,12 +468,14 @@ contract GLPIsolationModeTokenVaultV3Paused is
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) internal override {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, _isViaRouter);
 
         // Sweep any GMX tokens that are sent to this vault from unvesting GLP
-        _depositIntoGMXVault(
+        GLPActionsLib.depositIntoGMXVault(
+            /* _vault = */ this,
             getGmxVaultOrCreate(),
             _DEFAULT_ACCOUNT_NUMBER,
             gmx().balanceOf(address(this)),

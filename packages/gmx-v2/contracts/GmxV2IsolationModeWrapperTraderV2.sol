@@ -26,7 +26,7 @@ import { UpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/m
 import { AsyncIsolationModeWrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
 import { IIsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
+import { GmxV2TraderLibrary } from "./GmxV2TraderLibrary.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
@@ -45,6 +45,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -77,7 +78,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function afterDepositExecution(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxEventUtils.EventLogData memory _depositData,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -90,17 +91,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Unexpected receivedMarketTokens"
         );
 
-        _executeDepositExecution(_key, receivedMarketTokens.value, _deposit.numbers.minMarketTokens);
+        _executeDepositExecution(_key, receivedMarketTokens.value, _depositData.uintItems.get("minMarketTokens"));
     }
 
-    /**
-     *
-     * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
-     *       any excess tokens other than the inputToken will be stuck in the contract
-     */
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.DepositProps memory /* _deposit */,
+        GmxEventUtils.EventLogData memory /* _depositData */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -113,7 +109,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function initiateCancelDeposit(bytes32 _key) external {
-        GmxV2Library.initiateCancelDeposit(/* _wrapper = */ this, _key);
+        GmxV2TraderLibrary.initiateCancelDeposit(/* _wrapper = */ this, _key);
     }
 
     function isValidInputToken(
@@ -124,7 +120,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     virtual
     override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTraderV2)
     returns (bool) {
-        return GmxV2Library.isValidInputOrOutputToken(
+        return GmxV2TraderLibrary.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _inputToken,
             skipLongToken()
@@ -153,7 +149,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     ) internal override returns (bytes32) {
         // New scope for the "stack too deep" error
         uint256 ethExecutionFee = abi.decode(_extraOrderData, (uint256));
-        return GmxV2Library.wrapperCreateDeposit(
+        return GmxV2TraderLibrary.wrapperCreateDeposit(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             GMX_REGISTRY_V2(),
             WETH,

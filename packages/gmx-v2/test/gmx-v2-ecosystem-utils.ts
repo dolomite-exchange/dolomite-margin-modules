@@ -47,6 +47,8 @@ import {
   GmxV2MarketTokenPriceOracle__factory,
   GmxV2Registry,
   GmxV2Registry__factory,
+  GmxV2TraderLibrary,
+  GmxV2TraderLibrary__factory,
   IGmxV2IsolationModeVaultFactory,
   IGmxV2Registry,
   TestGmxV2IsolationModeTokenVaultV1,
@@ -54,6 +56,8 @@ import {
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
+import { GmxV2VaultLibrary } from 'packages/glv/src/types';
+import { GmxV2VaultLibrary__factory } from 'packages/glv/src/types';
 
 export async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
@@ -107,6 +111,22 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
   return createContractWithAbi<GmxV2Library>(
     GmxV2Library__factory.abi,
     GmxV2Library__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2VaultLibrary(): Promise<GmxV2VaultLibrary> {
+  return createContractWithAbi<GmxV2VaultLibrary>(
+    GmxV2VaultLibrary__factory.abi,
+    GmxV2VaultLibrary__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2TraderLibrary(): Promise<GmxV2TraderLibrary> {
+  return createContractWithAbi<GmxV2TraderLibrary>(
+    GmxV2TraderLibrary__factory.abi,
+    GmxV2TraderLibrary__factory.bytecode,
     [],
   );
 }
@@ -200,13 +220,13 @@ export async function createTestGmxV2IsolationModeVaultFactory(
 
 export async function createGmxV2IsolationModeUnwrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
-  gmxV2Library: GmxV2Library,
+  gmxV2TraderLibrary: GmxV2TraderLibrary,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GmxV2IsolationModeUnwrapperTraderV2>(
     artifact,
-    { GmxV2Library: gmxV2Library.address, ...libraries },
+    { GmxV2TraderLibrary: gmxV2TraderLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -267,13 +287,13 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
 
 export async function createGmxV2IsolationModeWrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
-  library: GmxV2Library,
+  library: GmxV2TraderLibrary,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeWrapperTraderV2');
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
     artifact,
-    { GmxV2Library: library.address, ...libraries },
+    { GmxV2TraderLibrary: library.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -615,6 +635,13 @@ export function getOracleProviderForTokenKey(token: { address: string}) {
   const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
   return ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [oracleProviderString, token.address]),
+  );
+}
+
+export function getOracleProviderForTokenKeyWithOracle(oracle: string, token: { address: string}) {
+  const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address', 'address'], [oracleProviderString, oracle, token.address]),
   );
 }
 

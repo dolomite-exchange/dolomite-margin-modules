@@ -5,6 +5,8 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteOwner } from "@dolomite-exchange/modules-admin/contracts/interfaces/IDolomiteOwner.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
@@ -12,16 +14,14 @@ import { IDolomiteERC20 } from "../interfaces/IDolomiteERC20.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 /**
@@ -671,7 +671,9 @@ contract DolomiteERC20 is
         /*assert(_maxSupplyWei.isPositive());*/
 
         IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
-        IDolomiteStructs.Wei memory remainingSupplyWei = _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar));
+        IDolomiteStructs.Wei memory remainingSupplyWei = _maxSupplyWei.sub(
+            DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)
+        );
 
         return remainingSupplyWei.sign ? remainingSupplyWei.value : 0;
     }

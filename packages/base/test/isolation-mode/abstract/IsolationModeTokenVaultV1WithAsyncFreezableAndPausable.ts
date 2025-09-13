@@ -44,18 +44,13 @@ import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protoco
 import {
   createAndUpgradeDolomiteRegistry,
   createAsyncIsolationModeTokenVaultV1ActionsImpl,
-  createIsolationModeTokenVaultV1ActionsImpl
+  createIsolationModeTokenVaultV1ActionsImpl,
 } from '../../utils/dolomite';
 import {
   createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
 } from '../../utils/ecosystem-utils/testers';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -173,7 +168,11 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize(
-      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+      [
+        tokenUnwrapper.address,
+        tokenWrapper.address,
+        core.depositWithdrawalRouter.address,
+      ],
     );
 
     await factory.createVault(core.hhUser1.address);
@@ -301,13 +300,14 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
       await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
 
       await freezeVault();
-      await expectThrow(core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        underlyingMarketId,
-        defaultAccountNumber,
-        underlyingMarketId,
-        amountWei,
-        0,
-      ),
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+          underlyingMarketId,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          0,
+        ),
         `IsolationVaultV1AsyncFreezable: Vault account is frozen <${defaultAccountNumber}>`,
       );
     });
