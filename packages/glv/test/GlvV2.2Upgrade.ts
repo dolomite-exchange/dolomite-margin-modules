@@ -73,6 +73,7 @@ describe('GlvV2.2Upgrade', () => {
   let testOracleProvider: TestOracleProvider;
 
   before(async () => {
+    hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
       blockNumber: 368_406_500
@@ -105,6 +106,7 @@ describe('GlvV2.2Upgrade', () => {
     // Update glv router and reader
     await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvRouter(core.glvEcosystem.glvRouter.address);
     await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvReader(core.glvEcosystem.glvReader.address);
+    await core.glvEcosystem.live.registry.connect(core.governance).ownerSetCallbackGasLimit(BigNumber.from('3000000'));
 
     // Set up oracle provider
     const dataStore = core.gmxV2Ecosystem.gmxDataStore;
@@ -245,6 +247,8 @@ describe('GlvV2.2Upgrade', () => {
     expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
     expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
 
+    hre.tracer.enabled = true;
+    hre.tracer.gasCost = true;
     const result = await core.glvEcosystem.glvWithdrawalHandler
       .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeGlvWithdrawal(
@@ -252,6 +256,7 @@ describe('GlvV2.2Upgrade', () => {
         await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider, GLV_ORACLE_V22),
         { gasLimit },
       );
+    hre.tracer.enabled = false;
     await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
       key: withdrawalKey,
       token: glvFactory.address,

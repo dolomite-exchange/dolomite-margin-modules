@@ -56,6 +56,7 @@ contract TestOracleProvider {
     address private constant _TRX = 0xb06aa7E4af937C130dDade66f6ed7642716fe07A;
     address private constant _WLD = 0x75B9AdD873641b253718810E6c65dB6d72311FD0;
     address private constant _XRP = 0xc14e065b0067dE91534e032868f5Ac6ecf2c6868;
+    address private constant _SOMETHING = 0x3B6f801C0052Dfe0Ac80287D611F31B7c47B9A6b;
 
     IDolomitePriceOracle public immutable ORACLE_AGGREGATOR;
     uint256 public constant GMX_DECIMAL_ADJUSTMENT = 10 ** 6;
@@ -137,13 +138,16 @@ contract TestOracleProvider {
                 price = 2900000000000;
             } else if (_token == _XRP) {
                 price = 1900000000000;
+            } else if (_token == _SOMETHING) {
+                price = 10000000000000;
             } else {
-                Require.that(
-                    false,
-                    _FILE,
-                    "Invalid token",
-                    _token
-                );
+                // Require.that(
+                //     false,
+                //     _FILE,
+                //     "Invalid token",
+                //     _token
+                // );
+                price = 10000000000000;
             }
 
             return ValidatedPrice({

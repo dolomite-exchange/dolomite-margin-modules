@@ -16,6 +16,7 @@ import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-d
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
+  createAsyncIsolationModeTokenVaultV1ActionsImpl,
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
   createIsolationModeTokenVaultV1ActionsImpl,
@@ -24,7 +25,7 @@ import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-ut
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import { TestOracleProvider } from 'packages/gmx-v2/src/types';
-import { createGmxV2Library, getOracleProviderForTokenKey, getOracleProviderForTokenKeyWithOracle } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { createGmxV2Library, createGmxV2VaultLibrary, getOracleProviderForTokenKey, getOracleProviderForTokenKeyWithOracle } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import {
   ChaosLabsPriceOracleV3,
@@ -115,18 +116,18 @@ export async function createGlvLibrary(): Promise<GlvLibrary> {
 export async function createTestGlvIsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
 ): Promise<TestGlvIsolationModeTokenVaultV1> {
-  const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
+  const actionsLib = await createAsyncIsolationModeTokenVaultV1ActionsImpl();
   const safeDelegateCallLibrary = await createSafeDelegateLibrary();
   const glvLibrary = await createGlvLibrary();
-  const gmxV2Library = await createGmxV2Library();
+  const gmxV2VaultLibrary = await createGmxV2VaultLibrary();
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGlvIsolationModeTokenVaultV1');
   return await createContractWithLibraryAndArtifact<TestGlvIsolationModeTokenVaultV1>(
     artifact,
     {
       GlvLibrary: glvLibrary.address,
-      GmxV2Library: gmxV2Library.address,
+      GmxV2VaultLibrary: gmxV2VaultLibrary.address,
       SafeDelegateCallLib: safeDelegateCallLibrary.address,
-      IsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
+      AsyncIsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
     },
     getGlvIsolationModeTokenVaultConstructorParams(core),
   );
