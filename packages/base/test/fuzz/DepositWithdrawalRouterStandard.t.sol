@@ -1,42 +1,21 @@
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
+import { DolomiteForkTest } from "../foundry/DolomiteForkTest.sol";
 
-import { DepositWithdrawalRouter } from "../../../contracts/routers/DepositWithdrawalRouter.sol";
-import { IDepositWithdrawalRouter } from "../../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
-import { IDolomiteMargin } from "../../../contracts/protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteRegistry } from "../../../contracts/interfaces/IDolomiteRegistry.sol";
-import { IWETH } from "../../../contracts/protocol/interfaces/IWETH.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IDolomiteStructs } from "../../../contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../contracts/protocol/lib/Require.sol";
-import { InterestIndexLib } from "../../../contracts/lib/InterestIndexLib.sol";
-import { AccountBalanceLib } from "../../../contracts/lib/AccountBalanceLib.sol";
-import { TypesLib } from "../../../contracts/protocol/lib/TypesLib.sol";
+import { DepositWithdrawalRouter } from "../../contracts/routers/DepositWithdrawalRouter.sol";
+import { IDepositWithdrawalRouter } from "../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
+import { IDolomiteStructs } from "../../contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { AccountBalanceLib } from "../../contracts/lib/AccountBalanceLib.sol";
 
-import { SimpleIsolationModeTokenVaultV1 } from "../../../contracts/isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 
-contract DepositWithdrawalRouterStandardTest is Test {
-    using TypesLib for IDolomiteStructs.Par;
-    using TypesLib for IDolomiteStructs.Wei;
-    using InterestIndexLib for IDolomiteMargin;
+contract DepositWithdrawalRouterStandardTest is DolomiteForkTest {
 
     bytes32 private constant _FILE = "DepositWithdrawalRouterTest";
 
-    IDolomiteMargin public dolomiteMargin = IDolomiteMargin(0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072);
-    IDolomiteRegistry public dolomiteRegistry = IDolomiteRegistry(0x2A059D6d682e5fB1226eB8bC2977b512698C2404);
-    address public dolomiteOwner;
-
-    IWETH public weth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
-    IERC20 public usdc = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
-
     DepositWithdrawalRouter public router;
 
-    address public alice = makeAddr("alice");
-
-    function setUp() public {
-        vm.createSelectFork(vm.envString("ARBITRUM_ONE_WEB3_PROVIDER_URL"), 344263500);
-        dolomiteOwner = dolomiteMargin.owner();
+    function setUp() public override {
+        super.setUp();
 
         router = new DepositWithdrawalRouter(address(dolomiteRegistry), address(dolomiteMargin));
 
@@ -49,7 +28,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
     // =============== Deposit Tests ===============
     // =============================================
 
-    function test_depositWei_normalToken(uint128 _amountWei) public {
+    function test_depositWei(uint128 _amountWei) public {
         vm.assume(_amountWei > 0);
 
         deal(address(usdc), alice, _amountWei);
@@ -69,6 +48,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertEq(usdc.balanceOf(alice), 0);
         assertEq(usdc.balanceOf(address(router)), 0);
         assertProtocolBalanceWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -78,19 +58,25 @@ contract DepositWithdrawalRouterStandardTest is Test {
         );
     }
 
-    function test_depositPar_normalToken(uint64 _amountPar) public {
+    function test_depositPar(uint64 _amountPar) public {
         vm.assume(_amountPar > 0);
 
         IDolomiteStructs.Par memory parStruct = IDolomiteStructs.Par({
             sign: true,
             value: _amountPar
         });
-        uint256 weiAmount = InterestIndexLib.parToWei(dolomiteMargin, dolomiteMargin.getMarketIdByTokenAddress(address(usdc)), parStruct).value;
+        IDolomiteStructs.Wei memory weiAmount = convertParToWei(
+            dolomiteMargin,
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            parStruct
+        );
 
-        deal(address(usdc), alice, weiAmount);
+        deal(address(usdc), alice, weiAmount.value);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), weiAmount);
+        usdc.approve(address(router), weiAmount.value);
         router.depositPar(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
@@ -104,6 +90,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertEq(usdc.balanceOf(alice), 0);
         assertEq(usdc.balanceOf(address(router)), 0);
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -120,14 +107,16 @@ contract DepositWithdrawalRouterStandardTest is Test {
                 sign: true,
                 value: _amountPars[i]
             });
-            uint256 weiAmount = InterestIndexLib.parToWei(
+            IDolomiteStructs.Wei memory weiAmount = convertParToWei(
                 dolomiteMargin,
+                alice,
+                0,
                 dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
                 parStruct
-            ).value;
+            );
 
-            deal(address(usdc), alice, weiAmount + 1);
-            usdc.approve(address(router), weiAmount + 1);
+            deal(address(usdc), alice, weiAmount.value);
+            usdc.approve(address(router), weiAmount.value);
 
             router.depositPar(
                 /* _isolationModeMarketId */ 0,
@@ -140,6 +129,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
         assertEq(usdc.balanceOf(address(router)), 0);
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -190,6 +180,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
         // Confirm protocol balance is 0
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             123,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -212,6 +203,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertEq(address(router).balance, 0);
         assertEq(alice.balance, 0);
         assertProtocolBalanceWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
@@ -223,16 +215,17 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
     function test_depositParPayable(uint96 _amountPar) public {
         vm.assume(_amountPar > 0);
-        uint256 weiAmount = _convertParToWei(
+        IDolomiteStructs.Wei memory weiAmount = convertParToWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
             _amountPar
         );
-        deal(alice, weiAmount);
+        deal(alice, weiAmount.value);
 
         vm.startPrank(alice);
-        router.depositParPayable{value: weiAmount}(
+        router.depositParPayable{value: weiAmount.value}(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
             /* _amountPar */ _amountPar,
@@ -241,7 +234,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
 
         assertEq(address(router).balance, 0);
         assertEq(alice.balance, 0);
-        assertProtocolBalancePar(alice, 0, dolomiteMargin.getMarketIdByTokenAddress(address(weth)), _amountPar, true);
+        assertProtocolBalancePar(dolomiteMargin, alice, 0, dolomiteMargin.getMarketIdByTokenAddress(address(weth)), _amountPar, true);
     }
 
     // =============================================
@@ -282,6 +275,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         assertEq(usdc.balanceOf(alice), _withdrawAmount);
         assertEq(usdc.balanceOf(address(router)), 0);
         assertProtocolBalanceWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -298,12 +292,18 @@ contract DepositWithdrawalRouterStandardTest is Test {
             sign: true,
             value: _amountPar
         });
-        uint256 weiAmount = InterestIndexLib.parToWei(dolomiteMargin, dolomiteMargin.getMarketIdByTokenAddress(address(usdc)), parStruct).value;
+        IDolomiteStructs.Wei memory weiAmount = convertParToWei(
+            dolomiteMargin,
+            alice,
+            0,
+            dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
+            parStruct
+        );
 
-        deal(address(usdc), alice, weiAmount);
+        deal(address(usdc), alice, weiAmount.value);
 
         vm.startPrank(alice);
-        usdc.approve(address(router), weiAmount);
+        usdc.approve(address(router), weiAmount.value);
         router.depositPar(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
@@ -322,6 +322,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         );
 
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(usdc)),
@@ -343,6 +344,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
         uint256 protocolBalance = assertProtocolBalanceWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
@@ -360,6 +362,7 @@ contract DepositWithdrawalRouterStandardTest is Test {
         );
         assertEq(alice.balance, _withdrawAmount);
         assertProtocolBalanceWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
@@ -373,22 +376,24 @@ contract DepositWithdrawalRouterStandardTest is Test {
         vm.assume(_amountPar > 0);
         vm.assume(_withdrawAmount > 0);
 
-        uint256 weiAmount = _convertParToWei(
+        IDolomiteStructs.Wei memory weiAmount = convertParToWei(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
             _amountPar
         );
-        deal(alice, weiAmount);
+        deal(alice, weiAmount.value);
 
         vm.startPrank(alice);
-        router.depositParPayable{value: weiAmount}(
+        router.depositParPayable{value: weiAmount.value}(
             /* _isolationModeMarketId */ 0,
             /* _toAccountNumber */ 0,
             /* _amountPar */ _amountPar,
             /* _eventFlag */ IDepositWithdrawalRouter.EventFlag.None
         );
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
@@ -404,108 +409,12 @@ contract DepositWithdrawalRouterStandardTest is Test {
             /* _balanceCheckFlag */ AccountBalanceLib.BalanceCheckFlag.From
         );
         assertProtocolBalancePar(
+            dolomiteMargin,
             alice,
             0,
             dolomiteMargin.getMarketIdByTokenAddress(address(weth)),
             _amountPar - _withdrawAmount,
             true
         );
-    }
-
-    // =============================================
-    // ============ Dolomite Assertions ============
-    // =============================================
-
-    function assertProtocolBalanceWei(
-        address _account,
-        uint256 _accountNumber,
-        uint256 _marketId,
-        uint256 _expectedAmount,
-        bool _expectedSign
-    ) public view returns (uint256) {
-        return assertProtocolBalanceWei(
-            _account,
-            _accountNumber,
-            _marketId,
-            _expectedAmount,
-            _expectedSign,
-            /* _marginOfErrorWei */ 0
-        );
-    }
-
-    function assertProtocolBalancePar(
-        address _account,
-        uint256 _accountNumber,
-        uint256 _marketId,
-        uint256 _expectedAmount,
-        bool _expectedSign
-    ) public view {
-        IDolomiteStructs.AccountInfo memory accountStruct = IDolomiteStructs.AccountInfo({
-            owner: _account,
-            number: _accountNumber
-        });
-        IDolomiteStructs.Par memory balance = dolomiteMargin.getAccountPar(
-            accountStruct,
-            _marketId
-        );
-
-        assertEq(_expectedAmount, balance.value, "balance value incorrect");
-        if (_expectedAmount != 0) {
-            assertEq(_expectedSign, balance.sign, "balance sign incorrect");
-        }
-    }
-
-    function assertProtocolBalanceWei(
-        address _account,
-        uint256 _accountNumber,
-        uint256 _marketId,
-        uint256 _expectedAmount,
-        bool _expectedSign,
-        uint256 _marginOfErrorWei
-    ) public view returns (uint256) {
-        IDolomiteStructs.AccountInfo memory accountStruct = IDolomiteStructs.AccountInfo({
-            owner: _account,
-            number: _accountNumber
-        });
-        IDolomiteStructs.Wei memory balance = dolomiteMargin.getAccountWei(
-            accountStruct,
-            _marketId
-        );
-
-        uint256 lowerBound = _expectedAmount > _marginOfErrorWei ? _expectedAmount - _marginOfErrorWei : 0;
-        assertTrue(
-            balance.value >= lowerBound
-                && balance.value <= _expectedAmount + _marginOfErrorWei,
-            "balance value incorrect"
-        );
-        if (_expectedAmount != 0) {
-            assertEq(_expectedSign, balance.sign, "balance sign incorrect");
-        }
-        return balance.value;
-    }
-
-    /**
-     * Converts the par amount to wei
-     */
-    function _convertParToWei(
-        address _accountOwner,
-        uint256 _accountNumber,
-        uint256 _marketId,
-        uint256 _amountPar
-    ) internal view returns (uint256) {
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
-            owner: _accountOwner,
-            number: _accountNumber
-        });
-        IDolomiteStructs.Par memory parBalance = dolomiteMargin.getAccountPar(accountInfo, _marketId);
-        IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
-            sign: true,
-            value: uint128(_amountPar)
-        });
-        parBalance = parBalance.add(deltaPar);
-
-        IDolomiteStructs.Wei memory weiBalanceBefore = dolomiteMargin.getAccountWei(accountInfo, _marketId);
-        IDolomiteStructs.Wei memory weiBalanceAfter = dolomiteMargin.parToWei(_marketId, parBalance);
-        return weiBalanceAfter.sub(weiBalanceBefore).value;
     }
 }
