@@ -59,8 +59,7 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
   const api = axios.create({
     baseURL: ENSO_API_URL,
     headers: {
-      'Authorization': 'Bearer 1e02632d-6feb-4a75-a157-documentation',
-      'Content-Type': 'application/json',
+      Authorization: 'Bearer 1e02632d-6feb-4a75-a157-documentation',
     },
   });
 
@@ -82,15 +81,10 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
       throw error;
     });
 
-  let calldata = result.tx.data;
-  const index = calldata.indexOf('{$amount1}');
-  if (index === -1) {
-    throw new Error('{$amount1} not found');
-  }
-  calldata = calldata.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [ZERO_BI]).slice(2));
+  const [indices, updatedCalldata] = getIndexAndUpdateCalldata(result.tx.data);
 
   return {
-    calldata: defaultAbiCoder.encode(['uint256', 'bytes'], [(index - 10) / 2, `0x${calldata.slice(10)}`]),
+    calldata: defaultAbiCoder.encode(['uint256[]', 'bytes'], [indices, updatedCalldata]),
     outputAmount: BigNumber.from(result.amountOut),
   };
 }
@@ -372,4 +366,20 @@ function createSignature(method: string, request_path: string, params: Record<st
   const message = preHash(timestamp, method, request_path, params);
   const signature = sign(message, api_config['secret_key']!);
   return { signature, timestamp };
+}
+
+function getIndexAndUpdateCalldata(calldata: string): [number[], string] {
+  const indices: number[] = [];
+  let calldataCopy = calldata;
+
+  while (calldataCopy.includes('{$amount1}')) {
+    const index = calldataCopy.indexOf('{$amount1}');
+    // replace {$amount1} with bytes32(0) and remove the 0x prefix
+    calldataCopy = calldataCopy.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [0]).slice(2));
+    indices.push((index - 10) / 2);
+  }
+
+  // we remove the first 10 characters of the calldata (0x + function selector)
+  // then divide index by 2 because 2 char = 1 byte
+  return [indices, `0x${calldataCopy.slice(10)}`];
 }

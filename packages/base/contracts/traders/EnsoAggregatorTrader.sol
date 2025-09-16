@@ -75,15 +75,14 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
             bytes memory orderData
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
-        (uint256 pointer, bytes memory fullData) = abi.decode(orderData, (uint256, bytes));
-        _overwriteInputAmount(fullData, pointer, _inputAmount);
+        (uint256[] memory pointers, bytes memory fullData) = abi.decode(orderData, (uint256[], bytes));
+        _overwriteInputAmount(fullData, pointers, _inputAmount);
 
         {
             (
                 IEnsoRouter.Token memory tokenIn,
                 bytes memory data
             ) = abi.decode(fullData, (IEnsoRouter.Token, bytes));
-            tokenIn.data = abi.encode(_inputToken, _inputAmount);
 
             ENSO_ROUTER.routeSingle(
                 tokenIn,
@@ -119,23 +118,23 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
 
     function _overwriteInputAmount(
         bytes memory _fullData,
-        uint256 _pointer,
+        uint256[] memory _pointers,
         uint256 _inputAmount
-    )
-    internal
-    pure {
-        Require.that(
-            _pointer <= _fullData.length - 32,
-            _FILE,
-            "Pointer is out of bounds"
-        );
+    ) internal pure {
+        uint256 len = _pointers.length;
+        for (uint256 i; i < len; ++i) {
+            uint256 pointer = _pointers[i];
+            Require.that(
+                pointer <= _fullData.length - 32,
+                _FILE,
+                "Pointer is out of bounds"
+            );
 
-        assembly {
-            // Overwrite the input amount at the specified pointer location
-            // _pointer is the offset from the start of the data (after the length field)
-            mstore(add(_fullData, add(_pointer, 32)), _inputAmount)
+            assembly {
+                // Overwrite the input amount at the specified pointer location
+                // _pointer is the offset from the start of the data (after the length field)
+                mstore(add(_fullData, add(pointer, 32)), _inputAmount)
+            }
         }
-
-        
     }
 }

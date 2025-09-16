@@ -42,13 +42,7 @@ contract AuthorizationBase is IAuthorizationBase, OnlyDolomiteMarginForUpgradeab
     // ============ Modifiers ============
 
     modifier requireIsCallerAuthorized(address _caller) {
-        if (_isCallerAuthorized[_caller]) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _isCallerAuthorized[_caller],
-            _FILE,
-            "unauthorized",
-            _caller
-        );
+        _requireIsCallerAuthorized(_caller);
         _;
     }
 
@@ -71,5 +65,15 @@ contract AuthorizationBase is IAuthorizationBase, OnlyDolomiteMarginForUpgradeab
 
     function isCallerAuthorized(address _caller) external view returns (bool) {
         return _isCallerAuthorized[_caller];
+    }
+
+    function _requireIsCallerAuthorized(address _caller) internal view {
+        if (_isCallerAuthorized[_caller]) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _isCallerAuthorized[_caller],
+            _FILE,
+            "unauthorized",
+            _caller
+        );
     }
 }

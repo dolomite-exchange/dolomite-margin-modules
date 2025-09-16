@@ -6,12 +6,13 @@ import { EnsoAggregatorTrader, EnsoAggregatorTrader__factory } from '../../src/t
 import { AccountStruct } from '../../src/utils/constants';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForEnso } from '../utils/trader-utils';
 import { CoreProtocolEthereum } from '../utils/core-protocols/core-protocol-ethereum';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
@@ -41,7 +42,7 @@ describe('EnsoAggregatorTrader', () => {
         ENSO_ROUTER_ADDRESS,
         core.dolomiteMargin.address,
       ],
-    )
+    );
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
     // prevent interest accrual between calls
@@ -100,6 +101,32 @@ describe('EnsoAggregatorTrader', () => {
       );
 
       await doSwapAndCheckResults(calldata);
+    });
+
+    it('should fail if pointer is out of bounds', async () => {
+      const { calldata } = await getCalldataForEnso(
+        core,
+        amountIn,
+        core.tokens.weth,
+        core.tokens.usdc,
+        trader,
+      );
+
+      const [indices, tradeData] = defaultAbiCoder.decode(['uint256[]', 'bytes'], calldata);
+      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'bytes'], [[tradeData.length + 100], tradeData]);
+
+      const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        trader.connect(doloImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.tokens.weth.address,
+          core.tokens.usdc.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata])
+        ),
+        'EnsoAggregatorTrader: Pointer is out of bounds',
+      );
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
