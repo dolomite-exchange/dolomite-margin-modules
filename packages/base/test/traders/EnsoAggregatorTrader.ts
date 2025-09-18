@@ -94,13 +94,45 @@ describe('EnsoAggregatorTrader', () => {
     it('should succeed for normal swap when actual input amount is smaller', async () => {
       const { calldata } = await getCalldataForEnso(
         core,
-        amountIn.mul(1001).div(1000),
+        amountIn.mul(10001).div(10000),
         core.tokens.weth,
         core.tokens.usdc,
         trader,
       );
 
       await doSwapAndCheckResults(calldata);
+    });
+
+    it('should fail if scaled output amount is insufficient', async () => {
+      const { calldata } = await getCalldataForEnso(
+        core,
+        amountIn.mul(9999).div(10000),
+        core.tokens.weth,
+        core.tokens.usdc,
+        trader,
+      );
+
+      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
+      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [indices, originalInputAmount, expectedOutputAmount.mul(105).div(100), tradeData]);
+
+      await expectThrow(
+        core.dolomiteMargin.connect(core.hhUser1).operate(
+          [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+          [
+            {
+              actionType: ActionType.Sell,
+              primaryMarketId: core.marketIds.weth,
+              secondaryMarketId: core.marketIds.usdc,
+              accountId: 0,
+              otherAccountId: 0,
+              amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: amountIn },
+              otherAddress: trader.address,
+              data: defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata]),
+            },
+          ],
+        ),
+        'EnsoAggregatorTrader: Insufficient output amount',
+      );
     });
 
     it('should fail if pointer is out of bounds', async () => {
@@ -112,8 +144,8 @@ describe('EnsoAggregatorTrader', () => {
         trader,
       );
 
-      const [indices, tradeData] = defaultAbiCoder.decode(['uint256[]', 'bytes'], calldata);
-      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'bytes'], [[tradeData.length + 100], tradeData]);
+      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
+      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [[tradeData.length + 100], originalInputAmount, expectedOutputAmount, tradeData]);
 
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
@@ -122,7 +154,7 @@ describe('EnsoAggregatorTrader', () => {
           core.dolomiteMargin.address,
           core.tokens.weth.address,
           core.tokens.usdc.address,
-          ZERO_BI,
+          amountIn,
           defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata])
         ),
         'EnsoAggregatorTrader: Pointer is out of bounds',
