@@ -56,10 +56,11 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
   outputToken: { address: address },
   trader: { address: address },
 ): Promise<TraderOutput> {
+  const ensoApiKey = process.env.ENSO_API_KEY;
   const api = axios.create({
     baseURL: ENSO_API_URL,
     headers: {
-      Authorization: 'Bearer 1e02632d-6feb-4a75-a157-documentation',
+      Authorization: `Bearer ${ensoApiKey}`,
     },
   });
 
@@ -82,9 +83,10 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
     });
 
   const [indices, updatedCalldata] = getIndexAndUpdateCalldata(result.tx.data);
+  const minOutputAmount = BigNumber.from(result.amountOut).mul(995).div(1000);
 
   return {
-    calldata: defaultAbiCoder.encode(['uint256[]', 'bytes'], [indices, updatedCalldata]),
+    calldata: defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [indices, inputAmount, minOutputAmount, updatedCalldata]),
     outputAmount: BigNumber.from(result.amountOut),
   };
 }
