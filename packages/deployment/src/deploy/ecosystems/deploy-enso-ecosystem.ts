@@ -14,7 +14,7 @@ async function main() {
   await deployContractAndSave(
     'EnsoAggregatorTrader',
     getEnsoAggregatorTraderConstructorParams(core),
-    getMaxDeploymentVersionNameByDeploymentKey('EnsoAggregatorTrader', 2),
+    getMaxDeploymentVersionNameByDeploymentKey('EnsoAggregatorTrader', 1),
   );
 }
 
