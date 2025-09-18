@@ -305,7 +305,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
-  await deployInterestSetters(network, dolomiteMargin);
+  await deployInterestSetters(dolomiteMargin);
 
   const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
     dolomiteMargin,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
 
-    Copyright 2023 Dolomite.
+    Copyright 2025 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,24 +34,25 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
-import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
+import { IVeExternalVesterV2 } from "./interfaces/IVeExternalVesterV2.sol";
 import { IVeToken } from "./interfaces/IVeToken.sol";
 import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 
 
 /**
- * @title   VeExternalVesterImplementationV1
+ * @title   VeExternalVesterImplementationV2
  * @author  Dolomite
  *
- * @notice  An implementation of the IVeExternalVesterV1 interface that allows users to buy PAIR_TOKEN at a discount if
- *          they vest PAIR_TOKEN and oToken for a certain amount of time.
+ * @notice  An implementation of the IVeExternalVesterV2 interface that allows users to buy PAIR_TOKEN at a discount if
+ *          they vest PAIR_TOKEN and oToken for a certain amount of time. This version pulls the reward token (DOLO)
+ *          from the DAO.
  */
-contract VeExternalVesterImplementationV1 is
+contract VeExternalVesterImplementationV2 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuardUpgradeable,
     ERC721EnumerableUpgradeable,
-    IVeExternalVesterV1
+    IVeExternalVesterV2
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
@@ -60,7 +61,7 @@ contract VeExternalVesterImplementationV1 is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VeExternalVesterImplementationV1";
+    bytes32 private constant _FILE = "VeExternalVesterImplementationV2";
     uint256 private constant _BASE = 10_000;
     uint256 private constant _ONE_ETH_BASE = 1 ether;
     uint256 private constant _NO_MARKET_ID = type(uint256).max;
@@ -102,7 +103,6 @@ contract VeExternalVesterImplementationV1 is
     // =========================================================
 
     modifier requireVestingActive() {
-        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
@@ -141,14 +141,12 @@ contract VeExternalVesterImplementationV1 is
         initializer
     {
         (
-            address _discountCalculator,
             address _oToken,
             string memory _baseUri,
             string memory _name,
             string memory _symbol
-        ) = abi.decode(_data, (address, address, string, string, string));
+        ) = abi.decode(_data, (address, string, string, string));
         _ownerSetIsVestingActive(true);
-        _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(0 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
@@ -159,9 +157,9 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function lazyInitialize(
+        address _discountCalculator,
         address _veToken
     ) external {
-        if (address(VE_TOKEN) == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             address(VE_TOKEN) == address(0),
             _FILE,
@@ -169,6 +167,17 @@ contract VeExternalVesterImplementationV1 is
         );
         VE_TOKEN = IVeToken(_veToken);
         emit VeTokenSet(_veToken);
+
+        _ownerSetDiscountCalculator(_discountCalculator);
+    }
+
+    function ownerRegisterDistributor() external onlyDolomiteMarginOwner(msg.sender) {
+        DOLOMITE_REGISTRY.eventEmitter().emitDistributorRegistered(
+            address(this),
+            address(oToken()),
+            address(PAIR_TOKEN),
+            address(PAYMENT_TOKEN)
+        );
     }
 
     // ==================================================================
@@ -186,7 +195,6 @@ contract VeExternalVesterImplementationV1 is
         returns (uint256)
     {
         _validateEnoughRewardsAvailable(_oTokenAmount);
-        if (_duration == _VEST_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration == _VEST_DURATION,
             _FILE,
@@ -197,12 +205,12 @@ contract VeExternalVesterImplementationV1 is
         uint256 nftId = _nextId() + 1;
         _setNextId(nftId);
 
-        uint256 pairPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAIR_TOKEN)).value;
-        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
-        uint256 pairAmount = _oTokenAmount * rewardPrice / pairPrice;
-        if (pairAmount <= _maxPairAmount) { /* FOR COVERAGE TESTING */ }
+        // Pair and reward token are the same
+        // uint256 pairPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAIR_TOKEN)).value;
+        // uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
+        // uint256 pairAmount = _oTokenAmount * rewardPrice / pairPrice;
         Require.that(
-            pairAmount <= _maxPairAmount,
+            _oTokenAmount <= _maxPairAmount,
             _FILE,
             "Pair amount exceeds max"
         );
@@ -214,23 +222,23 @@ contract VeExternalVesterImplementationV1 is
                 startTime: block.timestamp,
                 duration: _duration,
                 oTokenAmount: _oTokenAmount,
-                pairAmount: pairAmount
+                pairAmount: _oTokenAmount
             })
         );
         _setPromisedTokens(promisedTokens() + _oTokenAmount);
 
         _mint(msg.sender, nftId);
         IERC20(address(oToken())).safeTransferFrom(msg.sender, address(this), _oTokenAmount);
-        PAIR_TOKEN.safeTransferFrom(msg.sender, address(this), pairAmount);
+        PAIR_TOKEN.safeTransferFrom(msg.sender, address(this), _oTokenAmount);
         _depositIntoDolomite(
             /* _toAccountOwner = */ address(this),
             /* _toAccountNumber = */ calculateAccountNumber(msg.sender, nftId),
             /* _token = */ PAIR_TOKEN,
             /* _marketId */ PAIR_MARKET_ID,
-            /* _amount */ pairAmount
+            /* _amount */ _oTokenAmount
         );
 
-        emit VestingStarted(msg.sender, _duration, _oTokenAmount, pairAmount, nftId);
+        emit VestingStarted(msg.sender, _duration, _oTokenAmount, _oTokenAmount, nftId);
         return nftId;
     }
 
@@ -246,18 +254,35 @@ contract VeExternalVesterImplementationV1 is
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
         address positionOwner = ownerOf(_nftId);
-        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
-        if (block.timestamp > position.startTime + position.duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration,
             _FILE,
             "Position not vested"
         );
+        Require.that(
+            _veTokenId == type(uint256).max || VE_TOKEN.ownerOf(_veTokenId) == positionOwner,
+            _FILE,
+            "Invalid ve token ID"
+        );
+
+        if (_veTokenId != type(uint256).max) {
+            Require.that(
+                _veLockEndTime == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        } else {
+            Require.that(
+                _veLockEndTime > block.timestamp && _veLockEndTime % 1 weeks == 0,
+                _FILE,
+                "Invalid lock end timestamp"
+            );
+        }
 
         _closePosition(position);
 
@@ -317,13 +342,11 @@ contract VeExternalVesterImplementationV1 is
     external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
-        if (closePositionWindow() != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             closePositionWindow() != 0,
             _FILE,
             "Positions are not expirable"
         );
-        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -339,7 +362,6 @@ contract VeExternalVesterImplementationV1 is
     function emergencyWithdraw(uint256 _id) external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
-        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
@@ -355,56 +377,14 @@ contract VeExternalVesterImplementationV1 is
     // ======================= Admin Functions ==========================
     // ==================================================================
 
-    function ownerDepositRewardToken(
-        uint256 _amount
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), _amount);
-        _depositIntoDolomite(
-            /* _toAccountOwner = */ address(this),
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            REWARD_TOKEN,
-            REWARD_MARKET_ID,
-            _amount
-        );
-    }
-
-    function ownerWithdrawRewardToken(
-        address _toAccount,
-        uint256 _amount,
-        bool _shouldBypassAvailableAmounts
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        if (!_shouldBypassAvailableAmounts) {
-            if (_amount <= availableTokens()) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _amount <= availableTokens(),
-                _FILE,
-                "Insufficient available tokens"
-            );
-        }
-        _withdrawFromDolomite(
-            _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccount */ _toAccount,
-            REWARD_TOKEN,
-            REWARD_MARKET_ID,
-            _amount,
-            /* _withdrawAllIfPossible = */ false
-        );
-    }
-
     function ownerAccrueRewardTokenInterest(address _toAccount) external onlyDolomiteMarginOwner(msg.sender) {
         // all tokens have been spent
-        if (pushedTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() == 0,
             _FILE,
             "Interest cannot be withdrawn yet",
             pushedTokens()
         );
-        if (REWARD_MARKET_ID != _NO_MARKET_ID) { /* FOR COVERAGE TESTING */ }
         Require.that(
             REWARD_MARKET_ID != _NO_MARKET_ID,
             _FILE,
@@ -490,7 +470,16 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function pushedTokens() public view returns (uint256) {
-        return _getUint256(_PUSHED_TOKENS_SLOT);
+        address dao = DOLOMITE_REGISTRY.dao();
+        uint256 bal = REWARD_TOKEN.balanceOf(dao);
+        Require.that(
+            bal > 0,
+            _FILE,
+            "No DOLO balance in DAO"
+        );
+
+        uint256 allowed = REWARD_TOKEN.allowance(dao, address(this));
+        return bal < allowed ? bal : allowed;
     }
 
     function discountCalculator() public view returns (IVesterDiscountCalculator) {
@@ -550,7 +539,6 @@ contract VeExternalVesterImplementationV1 is
         address _discountCalculator
     )
     internal {
-        if (_discountCalculator != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _discountCalculator != address(0),
             _FILE,
@@ -563,13 +551,12 @@ contract VeExternalVesterImplementationV1 is
     function _ownerSetOToken(address _oToken) internal {
         // DANGER: this should be called VERY carefully.
         // Should not change the oToken when there are promised tokens.
-        /*assert(promisedTokens() == 0);*/
+        assert(promisedTokens() == 0);
         _setAddress(_O_TOKEN_SLOT, _oToken);
         emit OTokenSet(_oToken);
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
-        if (_closePositionWindow >= _ONE_WEEK || _closePositionWindow == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _closePositionWindow >= _ONE_WEEK || _closePositionWindow == 0,
             _FILE,
@@ -580,7 +567,6 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
-        if (_forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax < _BASE,
             _FILE,
@@ -594,7 +580,6 @@ contract VeExternalVesterImplementationV1 is
         uint256 _emergencyWithdrawTax
     )
     internal {
-        if (_emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -634,7 +619,6 @@ contract VeExternalVesterImplementationV1 is
         uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration, _veTokenId, _veLockEndTime);
         uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAYMENT_TOKEN)).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
-        if (paymentAmount <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             paymentAmount <= _maxPaymentAmount,
             _FILE,
@@ -644,7 +628,7 @@ contract VeExternalVesterImplementationV1 is
         // Deposit payment tokens into Dolomite, going to DOLOMITE_MARGIN_OWNER()
         PAYMENT_TOKEN.safeTransferFrom(_positionOwner, address(this), paymentAmount);
         _depositIntoDolomite(
-            /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+            /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _token = */ PAYMENT_TOKEN,
             /* _marketId */ PAYMENT_MARKET_ID,
@@ -687,7 +671,7 @@ contract VeExternalVesterImplementationV1 is
         pairTokenTax = _position.pairAmount * _taxNumerator / _BASE;
         if (pairTokenTax > 0) {
             _depositIntoDolomite(
-                /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+                /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 PAIR_TOKEN,
                 PAIR_MARKET_ID,
@@ -704,14 +688,6 @@ contract VeExternalVesterImplementationV1 is
         uint256 _marketId,
         uint256 _amount
     ) internal {
-        if (
-            _toAccountOwner == address(this) &&
-            _toAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
-            _marketId == REWARD_MARKET_ID
-        ) {
-            _setPushedTokens(pushedTokens() + _amount);
-        }
-
         if (_marketId == _NO_MARKET_ID) {
             // Guard statement for _NO_MARKET_ID
             if (_toAccountOwner == DOLOMITE_MARGIN_OWNER()) {
@@ -722,7 +698,7 @@ contract VeExternalVesterImplementationV1 is
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
 
-        /*assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));*/
+        assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));
         _token.safeApprove(address(dolomiteMargin), _amount);
 
         AccountActionLib.deposit(
@@ -752,7 +728,7 @@ contract VeExternalVesterImplementationV1 is
             _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
             _token == REWARD_TOKEN
         ) {
-            _setPushedTokens(pushedTokens() - _amount);
+            _token.safeTransferFrom(DOLOMITE_REGISTRY.dao(), address(this), _amount);
         }
 
         if (_marketId == _NO_MARKET_ID) {
@@ -846,7 +822,6 @@ contract VeExternalVesterImplementationV1 is
     ) internal view returns (uint256) {
         bytes memory extraBytes = abi.encode(_veTokenId, _veLockEndTime);
         uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration, extraBytes);
-        if (discount <= _ONE_ETH_BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             discount <= _ONE_ETH_BASE,
             _FILE,
@@ -859,7 +834,6 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {
-        if (pushedTokens() >= _oTokenAmount + promisedTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() >= _oTokenAmount + promisedTokens(),
             _FILE,

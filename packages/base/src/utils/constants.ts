@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { ADDRESS_ZERO, DolomiteNetwork, Network } from './no-deps-constants';
+import { DolomiteNetwork, Network } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -43,7 +43,8 @@ type EverythingButBaseAndBotanix =
   | Network.Mantle
   | Network.PolygonZkEvm
   | Network.XLayer;
-type ArbitrumAndBerachainAndMantle = Network.ArbitrumOne | Network.Berachain | Network.Mantle;
+
+type RedstoneNetworks = Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle;
 
 const SUBGRAPH_BASE_URL = 'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549';
 const SUBGRAPH_VERSION = 'v0.1.4/gn';
@@ -96,7 +97,7 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
 
 export const BYUSD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '0x688e72142674041f8f6af4c808a4045ca1d6ac82',
+    address: '0x688e72142674041f8f6Af4c808a4045cA1D6aC82',
     marketId: 40,
   },
 };
@@ -117,6 +118,13 @@ export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<DolomiteNetwork, string> = {
   [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
   [Network.SuperSeed]: CoreDeployments.ChainlinkPriceOracleV1[Network.SuperSeed].address,
   [Network.XLayer]: CoreDeployments.ChainlinkPriceOracleV1[Network.XLayer].address,
+};
+
+export const C_USD_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xcCcc62962d17b8914c62D74FfB843d73B2a3cccC',
+    marketId: 14,
+  },
 };
 
 export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
@@ -713,6 +721,13 @@ export const OHM_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const ORI_BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x69f1E971257419B1E9C405A553f252c64A29A30a',
+    marketId: 41,
+  },
+};
+
 export const P_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
   [Network.Botanix]: {
     address: '0x42725b4D9270CFe24F6852401fdDa88248CB4dE9',
@@ -819,6 +834,13 @@ export const R_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMa
   },
 };
 
+export const S_WBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x118D2cEeE9785eaf70C15Cd74CD84c9f8c3EeC9a',
+    marketId: 42,
+  },
+};
+
 export const SIZE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',
@@ -912,6 +934,13 @@ export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
     marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+};
+
+export const STC_USD_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0x88887bE419578051FF9F4eb6C858A951921D8888',
+    marketId: 15,
   },
 };
 
@@ -1188,6 +1217,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne | Network.Berachain | Networ
   [Network.Ethereum]: {
     address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee',
     marketId: 6,
+  },
+};
+
+export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
+    marketId: 13,
   },
 };
 
@@ -1613,7 +1649,7 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Base]: '0xa75c21c5be284122a87a37a76cc6c4dd3e55a1d4',
   [Network.Berachain]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.Botanix]: '0xD0Ead284Aa5136E95CEc0C1b0bFC928c17D66dF7',
+  [Network.Botanix]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ethereum]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ink]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Mantle]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
@@ -1627,8 +1663,8 @@ export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string | undefined> =
   [Network.ArbitrumOne]: undefined,
   [Network.Base]: undefined,
   [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Botanix]: '0xaf50c534F927F00A1a62c886939F622901cAb7b5',
-  [Network.Ethereum]: '0x89576FCE04DD73933f74BbCD4E6F0d9125118542',
+  [Network.Botanix]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Ethereum]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: undefined,
@@ -2625,6 +2661,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       aggregatorAddress: '0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22',
       tokenPairAddress: WETH_MAP[Network.Ethereum].address,
     },
+    [WLFI_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
+    },
   },
   [Network.Ink]: {},
   [Network.Mantle]: {},
@@ -2873,7 +2912,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
 };
 
 export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
-  ArbitrumAndBerachainAndMantle,
+  RedstoneNetworks,
   Record<string, AggregatorInfo | undefined>
 > = {
   [Network.ArbitrumOne]: {
@@ -2942,6 +2981,11 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     [WE_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x65eD6a4ac085620eE943c0B15525C4428D23e4Db',
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
+    },
+  },
+  [Network.Ethereum]: {
+    [C_USD_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x9A5a3c3Ed0361505cC1D4e824B3854De5724434A',
     },
   },
   [Network.Mantle]: {

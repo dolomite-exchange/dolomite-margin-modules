@@ -37,28 +37,28 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { regularAirdrop: core.tokenomics.regularAirdrop },
+      { regularAirdrop: core.tokenomicsAirdrop.regularAirdrop },
       'regularAirdrop',
       'ownerSetAddressRemapping',
       [berachainAddresses, arbitrumAddresses],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { optionAirdrop: core.tokenomics.optionAirdrop },
+      { optionAirdrop: core.tokenomicsAirdrop.optionAirdrop },
       'optionAirdrop',
       'ownerSetAddressRemapping',
       [berachainAddresses, arbitrumAddresses],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { vestingClaims: core.tokenomics.vestingClaims },
-      'vestingClaims',
+      { regularInvestorVesting: core.tokenomicsAirdrop.regularInvestorVesting },
+      'regularInvestorVesting',
       'ownerSetAddressRemapping',
       [berachainAddresses, arbitrumAddresses],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { strategicVesting: core.tokenomics.strategicVesting },
+      { strategicVesting: core.tokenomicsAirdrop.strategicVesting },
       'strategicVesting',
       'ownerSetAddressRemapping',
       [berachainAddresses, arbitrumAddresses],
@@ -81,22 +81,22 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     invariants: async () => {
       for (const remappedAddress of remappedAddresses) {
         assertHardhatInvariant(
-          (await core.tokenomics.regularAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
+          (await core.tokenomicsAirdrop.regularAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
             remappedAddress.arbitrumAddress,
           'Regular airdrop address remapping is incorrect',
         );
         assertHardhatInvariant(
-          (await core.tokenomics.optionAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
+          (await core.tokenomicsAirdrop.optionAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
             remappedAddress.arbitrumAddress,
           'Option airdrop address remapping is incorrect',
         );
         assertHardhatInvariant(
-          (await core.tokenomics.vestingClaims.addressRemapping(remappedAddress.berachainAddress)) ===
+          (await core.tokenomicsAirdrop.regularInvestorVesting.addressRemapping(remappedAddress.berachainAddress)) ===
             remappedAddress.arbitrumAddress,
           'Vesting claims address remapping is incorrect',
         );
         assertHardhatInvariant(
-          (await core.tokenomics.strategicVesting.addressRemapping(remappedAddress.berachainAddress)) ===
+          (await core.tokenomicsAirdrop.strategicVesting.addressRemapping(remappedAddress.berachainAddress)) ===
             remappedAddress.arbitrumAddress,
           'Strategic vesting address remapping is incorrect',
         );

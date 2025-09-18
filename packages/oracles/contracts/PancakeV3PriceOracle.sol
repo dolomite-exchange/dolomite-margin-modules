@@ -69,6 +69,8 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+
+        assert(IAlgebraV3Pool(_pair).token0() == _token || IAlgebraV3Pool(_pair).token1() == _token);
     }
 
     // ========================= Admin Functions =========================
