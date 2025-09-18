@@ -17,7 +17,7 @@ import { getCalldataForEnso } from '../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
-const minAmountOut = BigNumber.from('123123123');
+const minAmountOut = BigNumber.from('2000000000'); // 2000 USDC
 
 const ENSO_ROUTER_ADDRESS = '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf';
 const ENSO_SHORTCUTS = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003';
@@ -96,21 +96,15 @@ describe('EnsoAggregatorTrader', () => {
     });
 
     it('should fail if scaled output amount is insufficient', async () => {
-      const { calldata } = await getCalldataForEnso(
-        core,
-        amountIn.mul(9999).div(10000),
-        core.tokens.weth,
-        core.tokens.usdc,
-        trader,
-      );
+      const { calldata } = await getCalldataForEnso(core, amountIn, core.tokens.weth, core.tokens.usdc, trader);
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(
-        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+      const [indices, originalInputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'bytes'],
         calldata,
       );
       const newCalldata = defaultAbiCoder.encode(
-        ['uint256[]', 'uint256', 'uint256', 'bytes'],
-        [indices, originalInputAmount, expectedOutputAmount.mul(105).div(100), tradeData],
+        ['uint256[]', 'uint256', 'bytes'],
+        [indices, originalInputAmount.div(10), tradeData],
       );
 
       await expectThrow(
@@ -141,13 +135,13 @@ describe('EnsoAggregatorTrader', () => {
     it('should fail if pointer is out of bounds', async () => {
       const { calldata } = await getCalldataForEnso(core, amountIn, core.tokens.weth, core.tokens.usdc, trader);
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(
-        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+      const [, originalInputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'bytes'],
         calldata,
       );
       const newCalldata = defaultAbiCoder.encode(
-        ['uint256[]', 'uint256', 'uint256', 'bytes'],
-        [[tradeData.length + 100], originalInputAmount, expectedOutputAmount, tradeData],
+        ['uint256[]', 'uint256', 'bytes'],
+        [[tradeData.length + 100], originalInputAmount, tradeData],
       );
 
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);

@@ -83,10 +83,9 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
     });
 
   const [indices, updatedCalldata] = getEnsoPointerIndexAndUpdateCalldata(result.tx.data);
-  const minOutputAmount = BigNumber.from(result.amountOut).mul(995).div(1000);
 
   return {
-    calldata: defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [indices, inputAmount, minOutputAmount, updatedCalldata]),
+    calldata: defaultAbiCoder.encode(['uint256[]', 'uint256', 'bytes'], [indices, inputAmount, updatedCalldata]),
     outputAmount: BigNumber.from(result.amountOut),
   };
 }
