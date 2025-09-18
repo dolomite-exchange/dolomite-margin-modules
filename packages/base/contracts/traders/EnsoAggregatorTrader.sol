@@ -84,10 +84,7 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
                 bytes memory data
             ) = abi.decode(fullData, (IEnsoRouter.Token, bytes));
 
-            ENSO_ROUTER.routeSingle(
-                tokenIn,
-                data
-            );
+            ENSO_ROUTER.routeSingle(tokenIn, data);
         }
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
 
