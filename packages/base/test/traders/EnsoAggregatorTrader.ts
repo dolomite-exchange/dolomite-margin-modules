@@ -1,18 +1,19 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { EnsoAggregatorTrader, EnsoAggregatorTrader__factory } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
+import { getEnsoAggregatorTraderConstructorParams } from '../../src/utils/constructors/traders';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
+import { CoreProtocolEthereum } from '../utils/core-protocols/core-protocol-ethereum';
 
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForEnso } from '../utils/trader-utils';
-import { CoreProtocolEthereum } from '../utils/core-protocols/core-protocol-ethereum';
-import { defaultAbiCoder } from 'ethers/lib/utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
@@ -38,10 +39,7 @@ describe('EnsoAggregatorTrader', () => {
     trader = await createContractWithAbi<EnsoAggregatorTrader>(
       EnsoAggregatorTrader__factory.abi,
       EnsoAggregatorTrader__factory.bytecode,
-      [
-        ENSO_ROUTER_ADDRESS,
-        core.dolomiteMargin.address,
-      ],
+      getEnsoAggregatorTraderConstructorParams(core),
     );
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
@@ -68,13 +66,7 @@ describe('EnsoAggregatorTrader', () => {
 
   describe('#exchange', () => {
     it('should succeed for normal swap', async () => {
-      const { calldata } = await getCalldataForEnso(
-        core,
-        amountIn,
-        core.tokens.weth,
-        core.tokens.usdc,
-        trader,
-      );
+      const { calldata } = await getCalldataForEnso(core, amountIn, core.tokens.weth, core.tokens.usdc, trader);
 
       await doSwapAndCheckResults(calldata);
     });
@@ -112,8 +104,14 @@ describe('EnsoAggregatorTrader', () => {
         trader,
       );
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
-      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [indices, originalInputAmount, expectedOutputAmount.mul(105).div(100), tradeData]);
+      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+        calldata,
+      );
+      const newCalldata = defaultAbiCoder.encode(
+        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+        [indices, originalInputAmount, expectedOutputAmount.mul(105).div(100), tradeData],
+      );
 
       await expectThrow(
         core.dolomiteMargin.connect(core.hhUser1).operate(
@@ -125,7 +123,12 @@ describe('EnsoAggregatorTrader', () => {
               secondaryMarketId: core.marketIds.usdc,
               accountId: 0,
               otherAccountId: 0,
-              amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: amountIn },
+              amount: {
+                sign: false,
+                denomination: AmountDenomination.Wei,
+                ref: AmountReference.Delta,
+                value: amountIn,
+              },
               otherAddress: trader.address,
               data: defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata]),
             },
@@ -136,41 +139,45 @@ describe('EnsoAggregatorTrader', () => {
     });
 
     it('should fail if pointer is out of bounds', async () => {
-      const { calldata } = await getCalldataForEnso(
-        core,
-        amountIn,
-        core.tokens.weth,
-        core.tokens.usdc,
-        trader,
-      );
+      const { calldata } = await getCalldataForEnso(core, amountIn, core.tokens.weth, core.tokens.usdc, trader);
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
-      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [[tradeData.length + 100], originalInputAmount, expectedOutputAmount, tradeData]);
+      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+        calldata,
+      );
+      const newCalldata = defaultAbiCoder.encode(
+        ['uint256[]', 'uint256', 'uint256', 'bytes'],
+        [[tradeData.length + 100], originalInputAmount, expectedOutputAmount, tradeData],
+      );
 
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        trader.connect(doloImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.tokens.weth.address,
-          core.tokens.usdc.address,
-          amountIn,
-          defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata])
-        ),
+        trader
+          .connect(doloImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            core.tokens.weth.address,
+            core.tokens.usdc.address,
+            amountIn,
+            defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata]),
+          ),
         'EnsoAggregatorTrader: Pointer is out of bounds',
       );
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
       await expectThrow(
-        trader.connect(core.hhUser1).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.tokens.weth.address,
-          core.tokens.usdc.address,
-          ZERO_BI,
-          BYTES_EMPTY,
-        ),
+        trader
+          .connect(core.hhUser1)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            core.tokens.weth.address,
+            core.tokens.usdc.address,
+            ZERO_BI,
+            BYTES_EMPTY,
+          ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -185,10 +192,7 @@ describe('EnsoAggregatorTrader', () => {
       );
       const actualOrderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
-        [
-          outputAmount.mul(2),
-          calldata,
-        ],
+        [outputAmount.mul(2), calldata],
       );
       await expectThrow(
         core.dolomiteMargin.connect(core.hhUser1).operate(
@@ -225,16 +229,8 @@ describe('EnsoAggregatorTrader', () => {
     });
   });
 
-  async function doSwapAndCheckResults(
-    calldata: string,
-  ) {
-    const actualOrderData = ethers.utils.defaultAbiCoder.encode(
-      ['uint256', 'bytes'],
-      [
-        minAmountOut,
-        calldata,
-      ],
-    );
+  async function doSwapAndCheckResults(calldata: string) {
+    const actualOrderData = ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, calldata]);
     await core.dolomiteMargin.connect(core.hhUser1).operate(
       [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
       [

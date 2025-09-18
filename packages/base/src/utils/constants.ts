@@ -1339,6 +1339,10 @@ export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };
 
+export const ENSO_ROUTER_MAP: Record<Network.Ethereum, string> = {
+  [Network.Ethereum]: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
+};
+
 export const ES_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xf42Ae1D54fd613C9bb14810b0588FaAa09a426cA',
 };

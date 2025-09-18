@@ -82,7 +82,7 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
       throw error;
     });
 
-  const [indices, updatedCalldata] = getIndexAndUpdateCalldata(result.tx.data);
+  const [indices, updatedCalldata] = getEnsoPointerIndexAndUpdateCalldata(result.tx.data);
   const minOutputAmount = BigNumber.from(result.amountOut).mul(995).div(1000);
 
   return {
@@ -370,7 +370,7 @@ function createSignature(method: string, request_path: string, params: Record<st
   return { signature, timestamp };
 }
 
-function getIndexAndUpdateCalldata(calldata: string): [number[], string] {
+function getEnsoPointerIndexAndUpdateCalldata(calldata: string): [number[], string] {
   const indices: number[] = [];
   let calldataCopy = calldata;
 

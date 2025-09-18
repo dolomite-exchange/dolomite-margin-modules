@@ -244,6 +244,7 @@ import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
 import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
+import { createEnsoEcosystem } from './ecosystem-utils/enso';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -1677,6 +1678,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
+      ensoEcosystem: await createEnsoEcosystem(config.network, hhUser1),
       erc4626Oracle: ERC4626PriceOracle__factory.connect(
         ModuleDeployments.ERC4626PriceOracleV1[typedConfig.network].address,
         hhUser1,
