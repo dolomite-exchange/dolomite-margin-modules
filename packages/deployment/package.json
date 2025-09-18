@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -16,6 +16,7 @@
     "deploy:chainsight-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainsight",
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
+    "deploy:enso-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts enso",
     "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",

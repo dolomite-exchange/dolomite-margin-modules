@@ -1,9 +1,15 @@
+import { EnsoEcosystem } from '../../../test/utils/ecosystem-utils/enso';
 import { DolomiteNetwork, Network } from '../no-deps-constants';
 import { ParaswapEcosystem } from '../../../test/utils/ecosystem-utils/paraswap';
 import { OdosEcosystem } from '../../../test/utils/ecosystem-utils/odos';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolType } from '../../../test/utils/setup';
 import { OkxEcosystem } from 'packages/base/test/utils/ecosystem-utils/okx';
+
+export type CoreProtocolWithEnso<T extends DolomiteNetwork> = Extract<CoreProtocolType<T>, {
+  dolomiteMargin: DolomiteMargin<T>;
+  ensoEcosystem: EnsoEcosystem;
+}>;
 
 export type CoreProtocolWithParaswap<T extends DolomiteNetwork> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
@@ -19,6 +25,15 @@ export type CoreProtocolWithOkx<T extends DolomiteNetwork> = Extract<CoreProtoco
   dolomiteMargin: DolomiteMargin<T>;
   okxEcosystem: OkxEcosystem;
 }>;
+
+export function getEnsoAggregatorTraderConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolWithEnso<T>,
+): any[] {
+  return       [
+    core.ensoEcosystem.router.address,
+    core.dolomiteMargin.address,
+  ];
+}
 
 export function getParaswapAggregatorTraderConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithParaswap<T>,

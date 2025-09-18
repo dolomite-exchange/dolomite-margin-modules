@@ -2795,6 +2795,13 @@
       "isVerified": true
     }
   },
+  "EnsoAggregatorTraderV1": {
+    "1": {
+      "address": "0x40E816361e9ECEb4DeD402dEF58Cc77e9f097914",
+      "transaction": "0x6122e8a25b14c545973ac8db5ceccdcc841e916691f809b724fd47d83b3fb581",
+      "isVerified": true
+    }
+  },
   "ERC4626PriceOracleV1": {
     "1": {
       "address": "0x6289B14D96B660d1C9A7576B26A5A717480577eE",
@@ -7596,6 +7603,28 @@
       "isVerified": true
     }
   },
+  "OdosAggregatorTraderV2": {
+    "1": {
+      "address": "0x29Ca3F2D9Dbd30Bc96EB2189Db31C0B766762588",
+      "transaction": "0x81b233b7e993bd7494af9ea56c5c29916ca998bcbd1de2568cf1200aa9a6d8c7",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x29Ca3F2D9Dbd30Bc96EB2189Db31C0B766762588",
+      "transaction": "0x5e716ad7b842ce496cf5754375d2bfcaa56b25d94109293b1bc60b26df4368b5",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x29Ca3F2D9Dbd30Bc96EB2189Db31C0B766762588",
+      "transaction": "0x365a3ec336d011e07a41e546c7b14f0d37cf46b1413e6b2fb461074abb1a9a08",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x29Ca3F2D9Dbd30Bc96EB2189Db31C0B766762588",
+      "transaction": "0xd33981aee18239ce47daf3a42fdbef12f4d2b06d7727f4bd79ee855712863206",
+      "isVerified": true
+    }
+  },
   "OkxPriceOracleV3": {
     "196": {
       "address": "0xcb1b98acAec1700Dc268eAF01d1f98b67A2aF30D",
@@ -7607,6 +7636,13 @@
     "80094": {
       "address": "0x18b619935591958499D37140FA1670F33460bfbf",
       "transaction": "0x540acf51896348783ae8dfced459bd18ed643f93c8f41257ba708f07b770d713",
+      "isVerified": true
+    }
+  },
+  "OogaBoogaAggregatorTraderV2": {
+    "80094": {
+      "address": "0x0CE205f7bCBa70E4c03f826918c8c21073386ED3",
+      "transaction": "0xcd0059a2c376546fce99bed602ad150e48d96d4cca98353dea858e838888eb17",
       "isVerified": true
     }
   },
