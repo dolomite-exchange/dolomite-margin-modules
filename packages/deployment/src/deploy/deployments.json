@@ -7579,7 +7579,7 @@
       "isVerified": true
     }
   },
-  "OdosAggregatorTrader": {
+  "OdosAggregatorTraderV1": {
     "1": {
       "address": "0x1Eed28D5e241deD7D067949b1eD8A946eC0188dA",
       "transaction": "0x947c5703be0281adccd31ab955f002079cb5ecc1b917504f0f9c127b9951d736",
@@ -7603,7 +7603,7 @@
       "isVerified": true
     }
   },
-  "OogaBoogaAggregatorTrader": {
+  "OogaBoogaAggregatorTraderV1": {
     "80094": {
       "address": "0x18b619935591958499D37140FA1670F33460bfbf",
       "transaction": "0x540acf51896348783ae8dfced459bd18ed643f93c8f41257ba708f07b770d713",
