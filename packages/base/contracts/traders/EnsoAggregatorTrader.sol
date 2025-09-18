@@ -75,7 +75,11 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
             bytes memory orderData
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
-        (uint256[] memory pointers,,, bytes memory fullData) = abi.decode(orderData, (uint256[], uint256, uint256, bytes));
+        (
+            uint256[] memory pointers,
+            uint256 originalInputAmount,
+            bytes memory fullData
+        ) = abi.decode(orderData, (uint256[], uint256, bytes));
         _overwriteInputAmount(fullData, pointers, _inputAmount);
 
         {
@@ -89,16 +93,12 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
                 data
             );
         }
-
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
-        _checkExpectedOutputAmount(_inputAmount, outputAmount, orderData);
 
         Require.that(
-            outputAmount >= minAmountOutWei,
+            outputAmount >= _getScaledExpectedOutputAmount(originalInputAmount, _inputAmount, minAmountOutWei),
             _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minAmountOutWei
+            "Insufficient output amount"
         );
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
@@ -115,20 +115,6 @@ contract EnsoAggregatorTrader is AggregatorTraderBase {
     pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost not implemented")));
-    }
-
-    function _checkExpectedOutputAmount(
-        uint256 _inputAmount,
-        uint256 _outputAmount,
-        bytes memory _orderData
-    ) internal pure {
-        (, uint256 originalInputAmount, uint256 originalMinOutputAmount,) = abi.decode(_orderData, (uint256[], uint256, uint256, bytes));
-        uint256 scaledMinOutputAmount = _getScaledExpectedOutputAmount(originalInputAmount, _inputAmount, originalMinOutputAmount);
-        Require.that(
-            _outputAmount >= scaledMinOutputAmount,
-            _FILE,
-            "Insufficient output amount"
-        );
     }
 
     function _overwriteInputAmount(

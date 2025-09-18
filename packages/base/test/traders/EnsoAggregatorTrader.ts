@@ -16,7 +16,7 @@ import { defaultAbiCoder } from 'ethers/lib/utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
-const minAmountOut = BigNumber.from('123123123');
+const minAmountOut = BigNumber.from('2000000000'); // 2000 USDC
 
 const ENSO_ROUTER_ADDRESS = '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf';
 const ENSO_SHORTCUTS = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003';
@@ -106,14 +106,20 @@ describe('EnsoAggregatorTrader', () => {
     it('should fail if scaled output amount is insufficient', async () => {
       const { calldata } = await getCalldataForEnso(
         core,
-        amountIn.mul(9999).div(10000),
+        amountIn,
         core.tokens.weth,
         core.tokens.usdc,
         trader,
       );
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
-      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [indices, originalInputAmount, expectedOutputAmount.mul(105).div(100), tradeData]);
+      const [indices, originalInputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'bytes'],
+        calldata
+      );
+      const newCalldata = defaultAbiCoder.encode(
+        ['uint256[]', 'uint256', 'bytes'],
+        [indices, originalInputAmount.div(10), tradeData]
+      );
 
       await expectThrow(
         core.dolomiteMargin.connect(core.hhUser1).operate(
@@ -125,7 +131,12 @@ describe('EnsoAggregatorTrader', () => {
               secondaryMarketId: core.marketIds.usdc,
               accountId: 0,
               otherAccountId: 0,
-              amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: amountIn },
+              amount: {
+                sign: false,
+                denomination: AmountDenomination.Wei,
+                ref: AmountReference.Delta,
+                value: amountIn,
+              },
               otherAddress: trader.address,
               data: defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, newCalldata]),
             },
@@ -144,8 +155,14 @@ describe('EnsoAggregatorTrader', () => {
         trader,
       );
 
-      const [indices, originalInputAmount, expectedOutputAmount, tradeData] = defaultAbiCoder.decode(['uint256[]', 'uint256', 'uint256', 'bytes'], calldata);
-      const newCalldata = defaultAbiCoder.encode(['uint256[]', 'uint256', 'uint256', 'bytes'], [[tradeData.length + 100], originalInputAmount, expectedOutputAmount, tradeData]);
+      const [indices, originalInputAmount, tradeData] = defaultAbiCoder.decode(
+        ['uint256[]', 'uint256', 'bytes'],
+        calldata
+      );
+      const newCalldata = defaultAbiCoder.encode(
+        ['uint256[]', 'uint256', 'bytes'],
+        [[tradeData.length + 100], originalInputAmount, tradeData]
+      );
 
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
