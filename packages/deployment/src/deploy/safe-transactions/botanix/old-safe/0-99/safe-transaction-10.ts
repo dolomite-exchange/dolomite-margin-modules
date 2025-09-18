@@ -1,11 +1,11 @@
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { deployDolomiteErc4626Token, deployDolomiteErc4626WithPayableToken } from '../../../../utils/deploy-utils';
-import { encodeSetupDolomite4626Token } from '../../../../utils/encoding/dolomite-4626-token-encoder-utils';
+import { getAndCheckSpecificNetwork } from '../../../../../../../base/src/utils/dolomite-utils';
+import { Network } from '../../../../../../../base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '../../../../../../../base/test/utils';
+import { setupCoreProtocol } from '../../../../../../../base/test/utils/setup';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../../utils/dry-run-utils';
+import getScriptName from '../../../../../utils/get-script-name';
+import { deployDolomiteErc4626Token, deployDolomiteErc4626WithPayableToken } from '../../../../../utils/deploy-utils';
+import { encodeSetupDolomite4626Token } from '../../../../../utils/encoding/dolomite-4626-token-encoder-utils';
 
 /**
  * This script encodes the following transactions:

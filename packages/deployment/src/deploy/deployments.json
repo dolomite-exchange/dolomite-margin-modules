@@ -2074,6 +2074,7 @@
     "3637": {
       "address": "0xaCEBb7b9e2ad9810F8BE9D8e818AE6ad3FAfD5F4",
       "transaction": "0xee59e404f2a521032aba795b23f82b95fa004288b0cb885e297286e2cacaf541",
+      "isPayable": true,
       "isVerified": true
     }
   },
@@ -2698,7 +2699,8 @@
     "1": {
       "address": "0xf7b5127B510E568fdC39e6Bb54e2081BFaD489AF",
       "transaction": "0xcc4b23dca2da89e97c5ac6b974c02442108326b9500f723fa62d3e056cef56c6",
-      "isVerified": true
+      "isVerified": true,
+      "isPayable": true
     },
     "3637": {
       "address": "0xf7b5127B510E568fdC39e6Bb54e2081BFaD489AF",
@@ -2794,6 +2796,12 @@
     }
   },
   "ERC4626PriceOracleV1": {
+    "1": {
+      "address": "0x6289B14D96B660d1C9A7576B26A5A717480577eE",
+      "transaction": "0x27b4e3f3b6de485587b986dad40b531a3c04f102d95e80a232ca3a1998cb5662",
+      "isVerified": true,
+      "realName": "ERC4626PriceOracle"
+    },
     "80094": {
       "address": "0xBa8741A77f5917366C79F95Fd414f233690eFCF0",
       "transaction": "0xe02776ac9454777bb66ed975c3c3e3265c22801a24ca43e3c8f37e6981f03a0d",
