@@ -1,11 +1,11 @@
 pragma solidity ^0.8.13;
 
-import { DolomiteForkTest } from "../foundry/DolomiteForkTest.sol";
+import { DolomiteForkTest } from "../../foundry/DolomiteForkTest.sol";
 
-import { DepositWithdrawalRouter } from "../../contracts/routers/DepositWithdrawalRouter.sol";
-import { IDepositWithdrawalRouter } from "../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
-import { IDolomiteStructs } from "../../contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { AccountBalanceLib } from "../../contracts/lib/AccountBalanceLib.sol";
+import { DepositWithdrawalRouter } from "../../../contracts/routers/DepositWithdrawalRouter.sol";
+import { IDepositWithdrawalRouter } from "../../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
+import { IDolomiteStructs } from "../../../contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { AccountBalanceLib } from "../../../contracts/lib/AccountBalanceLib.sol";
 
 
 contract DepositWithdrawalRouterStandardTest is DolomiteForkTest {
