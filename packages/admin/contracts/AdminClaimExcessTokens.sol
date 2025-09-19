@@ -67,8 +67,9 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
         address _receiver,
         bool _depositIntoDolomite
     )
-    external
-    checkPermission(this.claimExcessTokens.selector, msg.sender) {
+        external
+        checkPermission(this.claimExcessTokens.selector, msg.sender)
+    {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),

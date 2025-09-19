@@ -63,7 +63,7 @@ describe('AdminClaimExcessTokens', () => {
       .ownerSetGlobalOperator(adminClaimExcessTokens.address, true);
 
     await adminRegistry.connect(core.governance).grantPermission(
-      '0x23d750e4', // claimExcessTokens selector
+      adminClaimExcessTokens.interface.getSighash('claimExcessTokens'),
       adminClaimExcessTokens.address,
       core.hhUser4.address
     );
