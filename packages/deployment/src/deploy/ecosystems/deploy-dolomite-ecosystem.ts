@@ -54,16 +54,12 @@ import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
-import {
-  encodeDolomiteAccountRiskOverrideSetterMigrations,
-} from './helpers/encode-dolomite-account-risk-override-setter-migrations';
+import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { encodeGenericTraderProxyMigrations } from './helpers/encode-generic-trader-proxy-migrations';
-import {
-  encodeIsolationModeFreezableLiquidatorMigrations,
-} from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -197,7 +193,9 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     'RegistryProxy',
     getRegistryProxyConstructorParams(
       liquidatorProxyV6ImplementationAddress,
-      (await liquidatorProxyV6Implementation.populateTransaction.initialize()).data!,
+      (
+        await liquidatorProxyV6Implementation.populateTransaction.initialize()
+      ).data!,
       dolomiteMargin,
     ),
     'LiquidatorProxyV6',
@@ -210,10 +208,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteMigrator', 1),
   );
 
-  await deployContractAndSave(
-    'MultiCallWithExceptionHandler',
-    [],
-  );
+  await deployContractAndSave('MultiCallWithExceptionHandler', []);
 
   const oracleAggregator = await deployOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
@@ -305,13 +300,15 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
-  await deployInterestSetters(dolomiteMargin);
+  const { modularInterestSetter } = await deployInterestSetters(dolomiteMargin, hhUser1);
 
-  const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
-    dolomiteMargin,
-    dolomiteRegistry,
-    hhUser1,
-  );
+  const {
+    adminClaimExcessTokens,
+    adminSetInterestSetter,
+    adminPauseMarket,
+    adminRegistry,
+    adminRegistryImplementationAddress,
+  } = await deployDolomiteAdminContracts(dolomiteMargin, dolomiteRegistry, modularInterestSetter, hhUser1);
 
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
@@ -394,7 +391,16 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, adminClaimExcessTokens, adminPauseMarket, transactions, core);
+  await encodeDolomiteOwnerMigrations(
+    dolomiteOwnerV2,
+    adminRegistry,
+    adminRegistryImplementationAddress,
+    adminClaimExcessTokens,
+    adminPauseMarket,
+    adminSetInterestSetter,
+    transactions,
+    core,
+  );
 
   return {
     core: {
@@ -403,8 +409,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
         network,
       },
     } as any,
-    invariants: async () => {
-    },
+    invariants: async () => {},
     scriptName: getScriptName(__filename),
     upload: {
       transactions,

@@ -22,16 +22,28 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IAdminClaimExcessTokens
+ * @title   IAdminRegistry
  * @author  Dolomite
  *
- * @notice  Interface for the AdminClaimExcessTokens contract
+ * @notice  Interface for the AdminRegistry contract
  */
-interface IAdminClaimExcessTokens {
+interface IAdminRegistry {
+
+    function initialize() external;
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function claimExcessTokens(address _token, address _receiver, bool _depositIntoDolomite) external;
+    function grantPermission(bytes4 _selector, address _contract, address _account) external;
+
+    function revokePermission(bytes4 _selector, address _contract, address _account) external;
+
+    // ========================================================
+    // ==================== View Functions ====================
+    // ========================================================
+
+    function role(bytes4 _selector, address _contract) external pure returns (bytes32);
+
+    function hasPermission(bytes4 _selector, address _contract, address _account) external view returns (bool);
 }

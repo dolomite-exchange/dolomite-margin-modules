@@ -22,16 +22,32 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IAdminClaimExcessTokens
+ * @title   IAdminSetInterestSetter
  * @author  Dolomite
  *
- * @notice  Interface for the AdminClaimExcessTokens contract
+ * @notice  Interface for the AdminSetInterestSetter contract
  */
-interface IAdminClaimExcessTokens {
+interface IAdminSetInterestSetter {
+    event ModularInterestSetterSet(address interestSetter);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function claimExcessTokens(address _token, address _receiver, bool _depositIntoDolomite) external;
+    function ownerSetModularInterestSetter(address _modularInterestSetter) external;
+
+    // ========================================================
+    // ==================== Public Functions ==================
+    // ========================================================
+
+    function setInterestSetterByMarketId(uint256 _marketId, address _interestSetter) external;
+
+    function setModularInterestSetterByMarketId(uint256 _marketId) external;
+
+    function setInterestSettingsByToken(
+        address _token,
+        uint256 _lowerOptimalPercent,
+        uint256 _upperOptimalPercent,
+        uint256 _optimalUtilization
+    ) external;
 }

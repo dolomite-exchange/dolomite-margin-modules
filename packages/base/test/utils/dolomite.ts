@@ -36,6 +36,7 @@ import {
   TestDepositWithdrawalRouter__factory,
 } from '../../src/types';
 import {
+  getAdminRegistryProxyConstructorParams,
   getDolomiteErc20ProxyConstructorParams,
   getDolomiteErc4626ProxyConstructorParams,
   getDolomiteErc4626WithPayableProxyConstructorParams,
@@ -55,6 +56,7 @@ import {
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
 import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
+import { AdminRegistry, AdminRegistry__factory } from 'packages/admin/src/types';
 
 export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IDolomiteMargin
@@ -185,6 +187,22 @@ export async function createIsolationModeTraderProxy<T extends DolomiteNetwork>(
     IsolationModeTraderProxy__factory.bytecode,
     getIsolationModeTraderProxyConstructorParams(implementationAddress, initializationCalldata, core),
   );
+}
+
+export async function createAdminRegistry<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+): Promise<AdminRegistry> {
+  const implementation = await createContractWithAbi<AdminRegistry>(
+    AdminRegistry__factory.abi,
+    AdminRegistry__factory.bytecode,
+    [core.dolomiteMargin.address],
+  );
+  const proxy = await createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getAdminRegistryProxyConstructorParams(core, implementation),
+  );
+  return AdminRegistry__factory.connect(proxy.address, core.governance) as AdminRegistry;
 }
 
 export async function createEventEmitter<T extends DolomiteNetwork>(

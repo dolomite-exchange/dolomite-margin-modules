@@ -473,7 +473,7 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
 ) {
   let whaleAddress: string;
   if (core.network === Network.Berachain) {
-    whaleAddress = '0xBD8DFf36a635B951e008E414ED73021869324Fd7';
+    whaleAddress = '0x7145855835924a9dFa80f42749E1FF96Eed26BC1';
   } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else if (core.network === Network.Berachain) {
