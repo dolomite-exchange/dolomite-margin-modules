@@ -3,7 +3,7 @@ import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy
 import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import {
   ChainsightPriceOracleV3__factory,
-  ChroniclePriceOracleV3__factory,
+  ChroniclePriceOracleV3__factory, ERC4626PriceOracle__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
   IChaosLabsPriceOracleV3__factory,
@@ -78,7 +78,7 @@ import {
   BERA_ETH_MAP,
   BGT_MAP,
   BTC_PLACEHOLDER_MAP,
-  BYUSD_MAP,
+  BYUSD_MAP, C_USD_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
@@ -180,7 +180,7 @@ import {
   SOLV_BTC_MAP,
   SR_USD_MAP,
   ST_BTC_MAP,
-  ST_ETH_MAP,
+  ST_ETH_MAP, STC_USD_MAP,
   STONE_BTC_MAP,
   STONE_MAP,
   TBTC_MAP,
@@ -244,6 +244,7 @@ import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
 import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
+import { createEnsoEcosystem } from './ecosystem-utils/enso';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -472,7 +473,7 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
 ) {
   let whaleAddress: string;
   if (core.network === Network.Berachain) {
-    whaleAddress = '0xBD8DFf36a635B951e008E414ED73021869324Fd7';
+    whaleAddress = '0x7145855835924a9dFa80f42749E1FF96Eed26BC1';
   } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else if (core.network === Network.Berachain) {
@@ -1677,15 +1678,22 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
+      ensoEcosystem: await createEnsoEcosystem(config.network, hhUser1),
+      erc4626Oracle: ERC4626PriceOracle__factory.connect(
+        ModuleDeployments.ERC4626PriceOracleV1[typedConfig.network].address,
+        hhUser1,
+      ),
       marketIds: {
         ...coreProtocolParams.marketIds,
         aave: AAVE_MAP[typedConfig.network].marketId,
+        cUsd: C_USD_MAP[typedConfig.network].marketId,
         crv: CRV_MAP[typedConfig.network].marketId,
         link: LINK_MAP[typedConfig.network]!.marketId,
         mEth: METH_MAP[typedConfig.network].marketId,
         rUsd: R_USD_MAP[typedConfig.network]!.marketId,
         sUsde: S_USDE_MAP[typedConfig.network].marketId,
         srUsd: SR_USD_MAP[typedConfig.network].marketId,
+        stcUsd: STC_USD_MAP[typedConfig.network].marketId,
         usd1: USD1_MAP[typedConfig.network].marketId,
         usdc: USDC_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
@@ -1700,15 +1708,21 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ],
       },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+      redstonePriceOracleV3: RedstonePriceOracleV3__factory.connect(
+        ModuleDeployments.RedstonePriceOracleV3[typedConfig.network].address,
+        hhUser1,
+      ),
       tokens: {
         ...coreProtocolParams.tokens,
         aave: IERC20__factory.connect(AAVE_MAP[typedConfig.network].address, hhUser1),
+        cUsd: IERC20__factory.connect(C_USD_MAP[typedConfig.network].address, hhUser1),
         crv: IERC20__factory.connect(CRV_MAP[typedConfig.network].address, hhUser1),
         link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
         mEth: IERC20__factory.connect(METH_MAP[typedConfig.network]!.address, hhUser1),
         rUsd: IERC20__factory.connect(R_USD_MAP[typedConfig.network]!.address, hhUser1),
         sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
         srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
+        stcUsd: IERC20__factory.connect(STC_USD_MAP[typedConfig.network].address, hhUser1),
         usd1: IERC20__factory.connect(USD1_MAP[typedConfig.network].address, hhUser1),
         usdc: IERC20__factory.connect(USDC_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),

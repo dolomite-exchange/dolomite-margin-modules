@@ -555,4 +555,57 @@ describe('DolomiteRegistryImplementation', () => {
       );
     });
   });
+
+  describe('#ownerSetAdminRegistry', () => {
+    it('should work normally', async () => {
+      expect(await registry.adminRegistry()).to.equal(ZERO_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetAdminRegistry(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'AdminRegistrySet', {
+        _adminRegistry: OTHER_ADDRESS,
+      });
+      expect(await registry.adminRegistry()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetAdminRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid adminRegistry',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetAdminRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetMarketIdToDToken', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetMarketIdToDToken(
+        core.marketIds.usdc,
+        core.dolomiteTokens.usdc.address
+      );
+      await expectEvent(registry, result, 'MarketIdToDTokenSet', {
+        _marketId: core.marketIds.usdc,
+        _dToken: core.dolomiteTokens.usdc.address,
+      });
+      expect(await registry.marketIdToDToken(core.marketIds.usdc)).to.equal(core.dolomiteTokens.usdc.address);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetMarketIdToDToken(core.marketIds.usdc, ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dToken',
+      );
+    });
+    
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetMarketIdToDToken(core.marketIds.usdc, OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
 });
