@@ -707,7 +707,7 @@ contract VeExternalVesterImplementationV1 is
         pairTokenTax = _position.pairAmount * _taxNumerator / _BASE;
         if (pairTokenTax > 0) {
             _depositIntoDolomite(
-                /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+                /* _toAccountOwner = */ DOLOMITE_REGISTRY.dao(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 PAIR_TOKEN,
                 PAIR_MARKET_ID,
