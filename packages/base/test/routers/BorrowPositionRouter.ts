@@ -2,9 +2,9 @@ import { Network, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupDAIBalance,
+  setupGMBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance
@@ -19,8 +19,6 @@ import {
 import { createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
-  createAndUpgradeDolomiteRegistry,
-  createDolomiteAccountRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createTestBorrowPositionRouter,
 } from '../utils/dolomite';
@@ -28,6 +26,7 @@ import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/te
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { parseEther } from 'ethers/lib/utils';
 
 const amountWei = ONE_ETH_BI;
 const defaultAccountNumber = ZERO_BI;
@@ -45,16 +44,12 @@ describe('BorrowPositionRouter', () => {
   let isolationModeMarketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 380_800_000,
+    });
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
-
-    await createAndUpgradeDolomiteRegistry(core);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
-      core.borrowPositionProxyV2.address
-    );
-    const accountRegistry = await createDolomiteAccountRegistryImplementation();
-    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(accountRegistry.address);
 
     router = await createTestBorrowPositionRouter(core);
 
@@ -77,6 +72,10 @@ describe('BorrowPositionRouter', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([router.address]);
     await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(router.address, true);
+    await core.gmxV2Ecosystem.live.gmEthUsd.factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
+      router.address,
+      true
+    );
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -88,6 +87,7 @@ describe('BorrowPositionRouter', () => {
 
     await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
+    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
 
     snapshotId = await snapshot();
   });
@@ -98,7 +98,7 @@ describe('BorrowPositionRouter', () => {
 
   describe('#openBorrowPosition', () => {
     it('should work normally for a user for a normal asset', async () => {
-      const res = await router.openBorrowPosition(
+      const res = await router.connect(core.hhUser1).openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -106,8 +106,8 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
-        accountOwner: core.hhUser1.address,
-        accountNumber: borrowAccountNumber,
+        _borrower: core.hhUser1.address,
+        _borrowAccountNumber: borrowAccountNumber,
       });
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -126,11 +126,62 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
-        accountOwner: userVault.address,
-        accountNumber: borrowAccountNumber,
+        _borrower: userVault.address,
+        _borrowAccountNumber: borrowAccountNumber,
       });
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
+    });
+
+    it('should work normally with execution fee', async () => {
+      const vaultAddress = await core.gmxV2Ecosystem.live.gmEthUsd.factory.calculateVaultByAccount(
+        core.hhUser1.address
+      );
+      await setupGMBalance(
+        core,
+        core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken,
+        core.hhUser1,
+        amountWei,
+        core.depositWithdrawalRouter,
+      );
+      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+        core.marketIds.dGmEthUsd,
+        defaultAccountNumber,
+        core.marketIds.dGmEthUsd,
+        amountWei,
+        0
+      );
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dGmEthUsd, amountWei);
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.dGmEthUsd, ZERO_BI);
+
+      const res = await router.connect(core.hhUser1).openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dGmEthUsd,
+        amountWei,
+        BalanceCheckFlag.Both,
+        { value: parseEther('0.001') }
+      );
+      await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
+        _borrower: vaultAddress,
+        _borrowAccountNumber: borrowAccountNumber,
+      });
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dGmEthUsd, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.dGmEthUsd, amountWei);
+    });
+
+    it('should fail if msg.value > 0 for normal asset', async () => {
+      await expectThrow(
+        router.connect(core.hhUser1).openBorrowPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          core.marketIds.dai,
+          amountWei,
+          BalanceCheckFlag.Both,
+          { value: ONE_ETH_BI }
+        ),
+        'BorrowPositionRouter: Invalid msg.value'
+      );
     });
 
     it('should fail if reentered', async () => {
@@ -158,8 +209,8 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
-        accountOwner: core.hhUser1.address,
-        accountNumber: borrowAccountNumber,
+        _borrower: core.hhUser1.address,
+        _borrowAccountNumber: borrowAccountNumber,
       });
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);

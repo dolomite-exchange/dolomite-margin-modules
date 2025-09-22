@@ -24,6 +24,7 @@ import { RouterBase } from "./RouterBase.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -59,9 +60,15 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256 _marketId,
     uint256 _amount,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-  ) external nonReentrant {
+  ) external payable nonReentrant {
     MarketInfo memory marketInfo = _getMarketInfo(_marketId);
     if (!marketInfo.isIsolationModeAsset) {
+      Require.that(
+        msg.value == 0,
+        _FILE,
+        "Invalid msg.value"
+      );
+
       DOLOMITE_REGISTRY.borrowPositionProxy().openBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
@@ -73,7 +80,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
-      vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
+      vault.openBorrowPosition{value: msg.value}(_fromAccountNumber, _toAccountNumber, _amount);
     }
   }
 

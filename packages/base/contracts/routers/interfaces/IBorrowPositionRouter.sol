@@ -38,7 +38,7 @@ interface IBorrowPositionRouter is IRouterBase {
         uint256 _marketId,
         uint256 _amount,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external;
+    ) external payable;
 
     function closeBorrowPosition(
         uint256 _isolationModeMarketId,

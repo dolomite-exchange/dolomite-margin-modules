@@ -37,7 +37,6 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DepositWithdrawalRouter
@@ -161,7 +160,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _toAccountNumber,
             _marketId,
             _amountPar,
-            _isolationModeMarketId
+            _isolationModeMarketId,
+            true
         );
         marketInfo.token.safeTransferFrom(msg.sender, address(this), amountWei);
 
@@ -207,7 +207,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _toAccountNumber,
             marketId,
             _amountPar,
-            _isolationModeMarketId
+            _isolationModeMarketId,
+            true
         );
         if (msg.value >= amountWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -289,7 +290,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _fromAccountNumber,
             _marketId,
             _amountPar,
-            _isolationModeMarketId
+            _isolationModeMarketId,
+            false
         );
 
         _withdrawWei(
@@ -314,7 +316,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _fromAccountNumber,
             marketId,
             _amountPar,
-            _isolationModeMarketId
+            _isolationModeMarketId,
+            false
         );
 
         if (_isolationModeMarketId != 0) {
@@ -547,34 +550,37 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
         address _toAccount
     ) internal {
-        if (_isolationModeMarketId != 0) {
+        if (_isolationModeMarketId != 0 && _marketId == _isolationModeMarketId) {
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
             _setAddress(_PENDING_VAULT_SLOT, address(vault));
 
-            if (_isolationModeMarketId == _marketId) {
-                if (_fromAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
-                    vault.transferFromPositionWithUnderlyingToken(
-                        _fromAccountNumber,
-                        DEFAULT_ACCOUNT_NUMBER,
-                        _amountWei
-                    );
-                }
-
-                vault.routerWithdrawUnderlyingTokenFromVault(
+            if (_fromAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
+                vault.transferFromPositionWithUnderlyingToken(
+                    _fromAccountNumber,
                     DEFAULT_ACCOUNT_NUMBER,
                     _amountWei
                 );
-            } else {
-                vault.routerWithdrawOtherTokenFromVault(
-                    _marketId,
-                    _fromAccountNumber,
-                    _amountWei,
-                    _balanceCheckFlag
-                );
             }
+
+            vault.routerWithdrawUnderlyingTokenFromVault(
+                DEFAULT_ACCOUNT_NUMBER,
+                _amountWei
+            );
+        } else if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+            _setAddress(_PENDING_VAULT_SLOT, address(vault));
+
+            vault.routerWithdrawOtherTokenFromVault(
+                _marketId,
+                _fromAccountNumber,
+                _amountWei,
+                _balanceCheckFlag
+            );
         } else {
-            // @audit Do we need a require here to check if _marketId is not isolation mode
+            // @follow-up @Corey, I did not add specific checks here for if marketId is not isolation mode. I think we are fine without it
+            // but please look at it too
             AccountActionLib.withdraw(
                 DOLOMITE_MARGIN(),
                 msg.sender,
@@ -645,7 +651,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _accountNumber,
         uint256 _marketId,
         uint256 _amountPar,
-        uint256 _isolationModeMarketId
+        uint256 _isolationModeMarketId,
+        bool _isDeposit
     ) internal returns (uint256) {
         if (_isolationModeMarketId != 0) {
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
@@ -659,7 +666,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         });
         IDolomiteStructs.Par memory parBalance = DOLOMITE_MARGIN().getAccountPar(accountInfo, _marketId);
         IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
-            sign: true,
+            sign: _isDeposit,
             value: _amountPar.to128()
         });
         parBalance = parBalance.add(deltaPar);
