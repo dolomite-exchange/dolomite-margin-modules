@@ -19,6 +19,9 @@ const totalUsdcRewardAmount = BigNumber.from('10000000000'); // 10,000 USDC
 const userAddress = '0xae7ae37d9D97ABc1099995036f17701fd55cefE5';
 const glpVaultAddress = '0x121228cBAF3f3615b5b99F6B41bED5e536f8C19a'; // roughly 14 GLP in 0, 2.8 ish in borrow account
 
+const userAddressZeroGlp = '0x50A852203b68861968786fA057b0716860775b3a';
+const glpVaultZeroBalance = '0x47D746940fC01aA4CF6C6107DE9B6b8E05E53795';
+
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('64870034939730665364032064862425947019883560685074554993543589166029552275672');
 const defaultOutputWbtc = BigNumber.from('1297');
@@ -159,6 +162,35 @@ describe('GLPRedemptionOperator', () => {
 
       await expectProtocolBalance(core, glpVault, defaultAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
       await expectProtocolBalance(core, user, defaultAccountNumber, core.marketIds.wbtc, defaultOutputWbtc);
+    });
+
+    it('should work normally if no GLP but USDC reward', async () => {
+      const currentUsdcBal = (await core.dolomiteMargin.getAccountWei(
+        { owner: userAddressZeroGlp, number: defaultAccountNumber },
+        core.marketIds.usdc
+      )).value;
+      const usdcReward = BigNumber.from('15000000'); // 15 USDC
+      await redemptionOperator.connect(core.hhUser4).handlerSetUsdcRedemptionAmounts(
+        [glpVaultZeroBalance],
+        [defaultAccountNumber],
+        [usdcReward] // 15 USDC
+      );
+
+      await redemptionOperator.connect(core.hhUser4).handlerRedeemGLP(
+        glpVaultZeroBalance,
+        defaultAccountNumber,
+        core.marketIds.wbtc,
+        ONE_BI
+      );
+      await expectProtocolBalance(core, glpVaultZeroBalance, defaultAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        userAddressZeroGlp,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        currentUsdcBal.add(usdcReward)
+      );
+      await expectProtocolBalance(core, userAddressZeroGlp, defaultAccountNumber, core.marketIds.wbtc, ZERO_BI);
     });
 
     it('should work normally to unwrap GLP with USDC reward in default account', async () => {
