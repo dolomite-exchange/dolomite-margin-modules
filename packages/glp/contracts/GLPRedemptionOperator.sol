@@ -30,7 +30,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IGLPRedemptionOperator } from "./interfaces/IGLPRedemptionOperator.sol";
 // solhint-enable max-line-length
 
-
+import "hardhat/console.sol";
 /**
  * @title   GLPRedemptionOperator
  * @author  Dolomite
@@ -45,6 +45,10 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
 
     bytes32 private constant _FILE = "GLPRedemptionOperator";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
+
+    uint256 private constant _USDC_FUND_ACCOUNT_ID = 0;
+    uint256 private constant _VAULT_ACCOUNT_ID = 1;
+    uint256 private constant _VAULT_OWNER_ACCOUNT_ID = 2;
 
     address public immutable HANDLER;
     address public immutable USDC_FUND;
@@ -93,51 +97,21 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
     // ==================================================================
 
     /// @inheritdoc IGLPRedemptionOperator
-    function handlerSetUsdcRedemptionAmounts(
-        address[] memory _vaults,
-        uint256[] memory _accountNumbers,
-        uint256[] memory _amounts
+    function handlerSetRedemptionAmounts(
+        SetRedemptionAmountsParams[] memory _params
     ) external onlyHandler(msg.sender) {
-        Require.that(
-            _vaults.length == _accountNumbers.length && _vaults.length == _amounts.length,
-            _FILE,
-            "Invalid input lengths"
-        );
-
-        for (uint256 i = 0; i < _vaults.length; ++i) {
-            usdcRedemptionAmount[_vaults[i]][_accountNumbers[i]] = _amounts[i];
-            emit UsdcRedemptionAmountSet(_vaults[i], _accountNumbers[i], _amounts[i]);
+        for (uint256 i; i < _params.length; ++i) {
+            _setVaultRedemptionAmounts(_params[i]);
         }
     }
 
     /// @inheritdoc IGLPRedemptionOperator
-    function handlerRedeemGLP(
+    function handlerExecuteVault(
         address _vault,
-        uint256 _accountNumber,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmountWei
+        RedemptionParams[] memory _redemptionParams
     ) external onlyHandler(msg.sender) {
-        address vaultOwner = GLP_FACTORY.getAccountByVault(_vault);
-        Require.that(
-            vaultOwner != address(0),
-            _FILE,
-            "Invalid GLP vault"
-        );
-
-        uint256 glpBal = DOLOMITE_MARGIN().getAccountWei(
-            IDolomiteStructs.AccountInfo({
-                owner: _vault,
-                number: _accountNumber
-            }),
-            GLP_FACTORY.marketId()
-        ).value;
-
-        if (glpBal == 0) {
-            _transferUsdcToDefaultAccount(_vault, _accountNumber, vaultOwner);
-        } else if (_accountNumber == 0) {
-            _unwrapAndTransferUsdcToDefaultAccount(_vault, vaultOwner, _outputMarketId, _minOutputAmountWei);
-        } else {
-            _unwrapAndTransferUsdcToBorrowAccount(_vault, _accountNumber, _outputMarketId, _minOutputAmountWei);
+        for (uint256 i; i < _redemptionParams.length; ++i) {
+            _executeRedemption(_vault, _redemptionParams[i]);
         }
     }
 
@@ -145,125 +119,100 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
     // ======================== Internal Functions ======================
     // ==================================================================
 
-    function _transferUsdcToDefaultAccount(
+    function _executeRedemption(
         address _vault,
-        uint256 _accountNumber,
-        address _vaultOwner
+        RedemptionParams memory _redemptionParams
     ) internal {
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: USDC_FUND,
-            number: _DEFAULT_ACCOUNT_NUMBER
-        });
-        accounts[1] = IDolomiteStructs.AccountInfo({
-            owner: _vaultOwner,
-            number: _DEFAULT_ACCOUNT_NUMBER
-        });
+        address vaultOwner = GLP_FACTORY.getAccountByVault(_vault);
+        assert(vaultOwner != address(0));
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-        actions[0] = AccountActionLib.encodeTransferAction(
-            /* fromAccountId = */ 0,
-            /* toAccountId = */ 1,
-            USDC_MARKET_ID,
-            IDolomiteStructs.AssetDenomination.Wei,
-            usdcRedemptionAmount[_vault][_accountNumber]
-        );
-
-        delete usdcRedemptionAmount[_vault][_accountNumber];
-
-        DOLOMITE_MARGIN().operate(accounts, actions);
-    }
-
-    function _unwrapAndTransferUsdcToDefaultAccount(
-        address _vault,
-        address _vaultOwner,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmountWei
-    ) internal {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
-        accounts[0] = IDolomiteStructs.AccountInfo({
+        accounts[_USDC_FUND_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: USDC_FUND,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        accounts[1] = IDolomiteStructs.AccountInfo({
+        accounts[_VAULT_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _vault,
-            number: _DEFAULT_ACCOUNT_NUMBER
+            number: _redemptionParams.accountNumber
         });
-        accounts[2] = IDolomiteStructs.AccountInfo({
-            owner: _vaultOwner,
+        accounts[_VAULT_OWNER_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: vaultOwner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
 
-        // 2 to unwrap and 2 transfers
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](4);
-        _appendUnwrapActions(
-            actions,
-            /* vaultAccountId = */ 1,
-            _vault,
-            _DEFAULT_ACCOUNT_NUMBER,
-            _outputMarketId,
-            _minOutputAmountWei
+
+        uint256 glpBal = DOLOMITE_MARGIN().getAccountWei(accounts[_VAULT_ACCOUNT_ID], GLP_FACTORY.marketId()).value;
+        uint256 usdcAmount = usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
+        Require.that(
+            usdcAmount > 0,
+            _FILE,
+            "Invalid usdc redemption amount"
         );
-        // transfer USDC to vault owner
-        actions[2] = AccountActionLib.encodeTransferAction(
-            /* fromAccountId = */ 0,
-            /* toAccountId = */ 2,
+        delete usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
+        
+        // @dev optimistically set the max length
+        uint256 actionsLength;
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](5);
+
+        if (glpBal > 0) {
+            _appendUnwrapActions(
+                actions,
+                _VAULT_ACCOUNT_ID,
+                _vault,
+                _redemptionParams.accountNumber,
+                _redemptionParams.outputMarketId,
+                _redemptionParams.minOutputAmountWei
+            );
+            actionsLength += 2;
+        }
+
+        actions[actionsLength++] = AccountActionLib.encodeTransferAction(
+            _USDC_FUND_ACCOUNT_ID,
+            _VAULT_ACCOUNT_ID,
             USDC_MARKET_ID,
             IDolomiteStructs.AssetDenomination.Wei,
-            usdcRedemptionAmount[_vault][_DEFAULT_ACCOUNT_NUMBER]
-        );
-        // transfer output token to vault owner
-        actions[3] = AccountActionLib.encodeTransferAction(
-            /* fromAccountId = */ 1,
-            /* toAccountId = */ 2,
-            _outputMarketId,
-            IDolomiteStructs.AssetDenomination.Wei,
-            type(uint256).max
+            usdcAmount
         );
 
-        delete usdcRedemptionAmount[_vault][_DEFAULT_ACCOUNT_NUMBER];
+        // @dev if default account, transfer USDC and output token to vault owner
+        if (_redemptionParams.accountNumber == 0) {
+            actions[actionsLength++] = AccountActionLib.encodeTransferAction(
+                _VAULT_ACCOUNT_ID,
+                _VAULT_OWNER_ACCOUNT_ID,
+                USDC_MARKET_ID,
+                IDolomiteStructs.AssetDenomination.Wei,
+                type(uint256).max
+            );
+            actions[actionsLength++] = AccountActionLib.encodeTransferAction(
+                _VAULT_ACCOUNT_ID,
+                _VAULT_OWNER_ACCOUNT_ID,
+                _redemptionParams.outputMarketId,
+                IDolomiteStructs.AssetDenomination.Wei,
+                type(uint256).max
+            );
+        }
+        
+        // overwrite the actual actions length
+        assembly {
+            mstore(actions, actionsLength)
+        }
 
         DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
-    function _unwrapAndTransferUsdcToBorrowAccount(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmountWei
+    function _setVaultRedemptionAmounts(
+        SetRedemptionAmountsParams memory _params
     ) internal {
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: USDC_FUND,
-            number: _DEFAULT_ACCOUNT_NUMBER
-        });
-        accounts[1] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _accountNumber
-        });
-
-        // 2 to unwrap and 1 transfer
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](3);
-        _appendUnwrapActions(
-            actions,
-            /* vaultAccountId = */ 1,
-            _vault,
-            _accountNumber,
-            _outputMarketId,
-            _minOutputAmountWei
-        );
-        // transfer USDC to vault
-        actions[2] = AccountActionLib.encodeTransferAction(
-            /* fromAccountId = */ 0,
-            /* toAccountId = */ 1,
-            USDC_MARKET_ID,
-            IDolomiteStructs.AssetDenomination.Wei,
-            usdcRedemptionAmount[_vault][_accountNumber]
+        Require.that(
+            _params.accountNumbers.length == _params.usdcRedemptionAmounts.length,
+            _FILE,
+            "Invalid input lengths"
         );
 
-        delete usdcRedemptionAmount[_vault][_accountNumber];
-
-        DOLOMITE_MARGIN().operate(accounts, actions);
+        for (uint256 i; i < _params.accountNumbers.length; ++i) {
+            usdcRedemptionAmount[_params.vault][_params.accountNumbers[i]] = _params.usdcRedemptionAmounts[i];
+        }
+        emit UsdcRedemptionAmountSet(_params.vault, _params.accountNumbers, _params.usdcRedemptionAmounts);
     }
 
     /**
