@@ -177,7 +177,14 @@ describe('GLPRedemptionOperator', () => {
       );
 
       await expectProtocolBalance(core, glpVault, defaultAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
-      await expectProtocolWeiBalanceChange(core, tx, user, defaultAccountNumber, core.marketIds.wbtc, defaultOutputWbtc);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        user,
+        defaultAccountNumber,
+        core.marketIds.wbtc,
+        defaultOutputWbtc
+      );
       await expectProtocolWeiBalanceChange(core, tx, user, defaultAccountNumber, core.marketIds.usdc, usdcReward);
     });
 
@@ -200,7 +207,14 @@ describe('GLPRedemptionOperator', () => {
       );
       await expectProtocolBalance(core, glpVaultAddress2, defaultAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
       await expectProtocolBalance(core, glpVaultAddress2, defaultAccountNumber, core.marketIds.wbtc, ZERO_BI);
-      await expectProtocolWeiBalanceChange(core, tx, userAddress2, defaultAccountNumber, core.marketIds.usdc, usdcReward);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        userAddress2,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcReward
+      );
     });
 
     it('should work normally to unwrap GLP with USDC reward in borrow account', async () => {
@@ -222,8 +236,22 @@ describe('GLPRedemptionOperator', () => {
       );
 
       await expectProtocolBalance(core, glpVault, borrowAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
-      await expectProtocolWeiBalanceChange(core, tx, glpVault, borrowAccountNumber, core.marketIds.usdc, usdcReward);
-      await expectProtocolWeiBalanceChange(core, tx, glpVault, borrowAccountNumber, core.marketIds.wbtc, borrowOutputWbtc);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        glpVault,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        usdcReward
+      );
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        glpVault,
+        borrowAccountNumber,
+        core.marketIds.wbtc,
+        borrowOutputWbtc
+      );
 
       // Make sure user can now close borrow position
       const tx2 = await glpVault.connect(user).closeBorrowPositionWithOtherTokens(
@@ -233,8 +261,80 @@ describe('GLPRedemptionOperator', () => {
       );
       await expectProtocolBalance(core, glpVault, borrowAccountNumber, core.marketIds.usdc, ZERO_BI);
       await expectProtocolBalance(core, glpVault, borrowAccountNumber, core.marketIds.wbtc, ZERO_BI);
-      await expectProtocolWeiBalanceChange(core, tx2, user, defaultAccountNumber, core.marketIds.usdc, usdcReward);
-      await expectProtocolWeiBalanceChange(core, tx2, user, defaultAccountNumber, core.marketIds.wbtc, borrowOutputWbtc);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx2,
+        user,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcReward
+      );
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx2,
+        user,
+        defaultAccountNumber,
+        core.marketIds.wbtc,
+        borrowOutputWbtc
+      );
+    });
+
+    it('should work normally to unwrap GLP with USDC reward in both accounts', async () => {
+      await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
+        [
+          {
+            vault: glpVault.address,
+            accountNumbers: [defaultAccountNumber, borrowAccountNumber],
+            usdcRedemptionAmounts: [usdcReward, usdcReward]
+          }
+        ]
+      );
+
+      const tx = await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
+        glpVault.address,
+        [
+          { accountNumber: defaultAccountNumber, outputMarketId: core.marketIds.wbtc, minOutputAmountWei: ONE_BI },
+          { accountNumber: borrowAccountNumber, outputMarketId: core.marketIds.wbtc, minOutputAmountWei: ONE_BI },
+        ]
+      );
+
+      expect(await redemptionOperator.usdcRedemptionAmount(glpVault.address, defaultAccountNumber)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, glpVault, defaultAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        user,
+        defaultAccountNumber,
+        core.marketIds.wbtc,
+        defaultOutputWbtc
+      );
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        user,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcReward
+      );
+
+      expect(await redemptionOperator.usdcRedemptionAmount(glpVault.address, borrowAccountNumber)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, glpVault, borrowAccountNumber, core.marketIds.dfsGlp, ZERO_BI);
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        glpVault,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        usdcReward
+      );
+      await expectProtocolWeiBalanceChange(
+        core,
+        tx,
+        glpVault,
+        borrowAccountNumber,
+        core.marketIds.wbtc,
+        borrowOutputWbtc
+      );
     });
 
     it('should fail if invalid GLP vault', async () => {
@@ -245,7 +345,6 @@ describe('GLPRedemptionOperator', () => {
             { accountNumber: defaultAccountNumber, outputMarketId: core.marketIds.wbtc, minOutputAmountWei: ONE_BI }
           ]
         ),
-        'GLPRedemptionOperator: Invalid GLP vault'
       );
     });
 

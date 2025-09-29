@@ -30,7 +30,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IGLPRedemptionOperator } from "./interfaces/IGLPRedemptionOperator.sol";
 // solhint-enable max-line-length
 
-import "hardhat/console.sol";
+
 /**
  * @title   GLPRedemptionOperator
  * @author  Dolomite

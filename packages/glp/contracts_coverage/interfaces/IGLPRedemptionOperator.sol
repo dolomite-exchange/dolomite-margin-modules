@@ -28,41 +28,44 @@ pragma solidity ^0.8.9;
  * @notice  Interface for the GLPRedemptionOperator contract
  */
 interface IGLPRedemptionOperator {
-
     event UsdcRedemptionAmountSet(
         address indexed vault,
-        uint256 indexed accountNumber,
-        uint256 usdcRedemptionAmount
+        uint256[] accountNumbers,
+        uint256[] usdcRedemptionAmounts
     );
 
+    struct SetRedemptionAmountsParams {
+        address vault;
+        uint256[] accountNumbers;
+        uint256[] usdcRedemptionAmounts;
+    }
+
+    struct RedemptionParams {
+        uint256 accountNumber;
+        uint256 outputMarketId;
+        uint256 minOutputAmountWei;
+    }
+
     /**
-     * Sets the USDC redemption amount for a given address and account number
+     * Sets the USDC redemption amount all vault accounts
      *
-     * @param  _users           The addresses of the GLP vaults
-     * @param  _accountNumbers  The account numbers of the users
-     * @param  _amounts         The USDC redemption amounts
+     * @param  _params          The parameters for the redemption amounts
      */
-    function handlerSetUsdcRedemptionAmounts(
-        address[] memory _users,
-        uint256[] memory _accountNumbers,
-        uint256[] memory _amounts
+    function handlerSetRedemptionAmounts(
+        SetRedemptionAmountsParams[] memory _params
     ) external;
 
     /**
-     * Redeems GLP for a given address and account number and claims USDC redemption
+     * Executes redemptions and unwraps for a vault accounts
      *
      * @dev If account is a borrow account, it will leave the USDC and output token in the borrow account
      * @dev If account is a default account, it will transfer USDC and output token to the vault owner's default account
      *
      * @param  _vault               The address of the GLP vault
-     * @param  _accountNumber       The account number of the glp vault
-     * @param  _outputMarketId      The market id of the output token
-     * @param  _minOutputAmountWei  The minimum amount of output token to receive
+     * @param  _redemptionParams    The parameters for the redemption
      */
-    function handlerRedeemGLP(
+    function handlerExecuteVault(
         address _vault,
-        uint256 _accountNumber,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmountWei
+        RedemptionParams[] memory _redemptionParams
     ) external;
 }

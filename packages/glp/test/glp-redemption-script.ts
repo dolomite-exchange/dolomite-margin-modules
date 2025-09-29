@@ -154,7 +154,7 @@ describe('glp-redemption-script', () => {
         let usedRewardAmount = ZERO_BI
         let defaultAccountBal = ZERO_BI;
         for (const marginAccount of result) {
-          if (marginAccount.accountNumber == 0) {
+          if (marginAccount.accountNumber === 0) {
             defaultAccountBal = parseEther(marginAccount.tokenValues[0].valuePar);
             continue;
           }
