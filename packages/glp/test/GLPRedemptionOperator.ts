@@ -109,13 +109,9 @@ describe('GLPRedemptionOperator', () => {
   describe('#handlerSetRedemptionAmounts', () => {
     it('should work normally', async () => {
       const res = await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-        [
-          {
-            vault: glpVault.address,
-            accountNumbers: [defaultAccountNumber, borrowAccountNumber],
-            usdcRedemptionAmounts: [usdcReward, usdcReward]
-          },
-        ]
+        glpVault.address,
+        [defaultAccountNumber, borrowAccountNumber],
+        [usdcReward, usdcReward]
       );
       await expectEvent(redemptionOperator, res, 'UsdcRedemptionAmountSet', {
         vault: glpVault.address,
@@ -129,13 +125,9 @@ describe('GLPRedemptionOperator', () => {
     it('should fail if not called by handler', async () => {
       await expectThrow(
         redemptionOperator.connect(core.hhUser1).handlerSetRedemptionAmounts(
-          [
-            {
-              vault: glpVault.address,
-              accountNumbers: [defaultAccountNumber],
-              usdcRedemptionAmounts: [usdcReward]
-            }
-          ]
+          glpVault.address,
+          [defaultAccountNumber],
+          [usdcReward]
         ),
         'GLPRedemptionOperator: Only handler can call'
       );
@@ -144,13 +136,9 @@ describe('GLPRedemptionOperator', () => {
     it('should fail if invalid array lengths', async () => {
       await expectThrow(
         redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-          [
-            {
-              vault: glpVault.address,
-              accountNumbers: [defaultAccountNumber, borrowAccountNumber],
-              usdcRedemptionAmounts: [usdcReward]
-            },
-          ]
+          glpVault.address,
+          [defaultAccountNumber, borrowAccountNumber],
+          [usdcReward]
         ),
         'GLPRedemptionOperator: Invalid input lengths'
       );
@@ -160,13 +148,9 @@ describe('GLPRedemptionOperator', () => {
   describe('#handlerRedeemGLP', () => {
     it('should work normally to unwrap GLP in default account', async () => {
       await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-        [
-          {
-            vault: glpVault.address,
-            accountNumbers: [defaultAccountNumber],
-            usdcRedemptionAmounts: [usdcReward]
-          }
-        ]
+        glpVault.address,
+        [defaultAccountNumber],
+        [usdcReward]
       );
 
       const tx = await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
@@ -190,13 +174,9 @@ describe('GLPRedemptionOperator', () => {
 
     it('should work normally if no GLP in default account', async () => {
       await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-        [
-          {
-            vault: glpVaultAddress2,
-            accountNumbers: [defaultAccountNumber],
-            usdcRedemptionAmounts: [usdcReward] // 15 USDC
-          }
-        ]
+        glpVaultAddress2,
+        [defaultAccountNumber],
+        [usdcReward] // 15 USDC
       );
 
       const tx = await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
@@ -219,13 +199,9 @@ describe('GLPRedemptionOperator', () => {
 
     it('should work normally to unwrap GLP with USDC reward in borrow account', async () => {
       await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-        [
-          {
-            vault: glpVault.address,
-            accountNumbers: [borrowAccountNumber],
-            usdcRedemptionAmounts: [usdcReward] // 15 USDC
-          }
-        ]
+        glpVault.address,
+        [borrowAccountNumber],
+        [usdcReward] // 15 USDC
       );
 
       const tx = await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
@@ -281,13 +257,9 @@ describe('GLPRedemptionOperator', () => {
 
     it('should work normally to unwrap GLP with USDC reward in both accounts', async () => {
       await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
-        [
-          {
-            vault: glpVault.address,
-            accountNumbers: [defaultAccountNumber, borrowAccountNumber],
-            usdcRedemptionAmounts: [usdcReward, usdcReward]
-          }
-        ]
+        glpVault.address,
+        [defaultAccountNumber, borrowAccountNumber],
+        [usdcReward, usdcReward]
       );
 
       const tx = await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
@@ -345,6 +317,7 @@ describe('GLPRedemptionOperator', () => {
             { accountNumber: defaultAccountNumber, outputMarketId: core.marketIds.wbtc, minOutputAmountWei: ONE_BI }
           ]
         ),
+        'GLPRedemptionOperator: Invalid vault'
       );
     });
 

@@ -98,11 +98,20 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
 
     /// @inheritdoc IGLPRedemptionOperator
     function handlerSetRedemptionAmounts(
-        SetRedemptionAmountsParams[] memory _params
+        address _vault,
+        uint256[] memory _accountNumbers,
+        uint256[] memory _usdcRedemptionAmounts
     ) external onlyHandler(msg.sender) {
-        for (uint256 i; i < _params.length; ++i) {
-            _setVaultRedemptionAmounts(_params[i]);
+        Require.that(
+            _accountNumbers.length == _usdcRedemptionAmounts.length,
+            _FILE,
+            "Invalid input lengths"
+        );
+
+        for (uint256 i; i < _accountNumbers.length; ++i) {
+            usdcRedemptionAmount[_vault][_accountNumbers[i]] = _usdcRedemptionAmounts[i];
         }
+        emit UsdcRedemptionAmountSet(_vault, _accountNumbers, _usdcRedemptionAmounts);
     }
 
     /// @inheritdoc IGLPRedemptionOperator
@@ -124,7 +133,11 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         RedemptionParams memory _redemptionParams
     ) internal {
         address vaultOwner = GLP_FACTORY.getAccountByVault(_vault);
-        assert(vaultOwner != address(0));
+        Require.that(
+            vaultOwner != address(0),
+            _FILE,
+            "Invalid vault"
+        );
 
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
         accounts[_USDC_FUND_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
@@ -143,11 +156,6 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
 
         uint256 glpBal = DOLOMITE_MARGIN().getAccountWei(accounts[_VAULT_ACCOUNT_ID], GLP_FACTORY.marketId()).value;
         uint256 usdcAmount = usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
-        Require.that(
-            usdcAmount > 0,
-            _FILE,
-            "Invalid usdc redemption amount"
-        );
         delete usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
         
         // @dev optimistically set the max length
@@ -198,21 +206,6 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         }
 
         DOLOMITE_MARGIN().operate(accounts, actions);
-    }
-
-    function _setVaultRedemptionAmounts(
-        SetRedemptionAmountsParams memory _params
-    ) internal {
-        Require.that(
-            _params.accountNumbers.length == _params.usdcRedemptionAmounts.length,
-            _FILE,
-            "Invalid input lengths"
-        );
-
-        for (uint256 i; i < _params.accountNumbers.length; ++i) {
-            usdcRedemptionAmount[_params.vault][_params.accountNumbers[i]] = _params.usdcRedemptionAmounts[i];
-        }
-        emit UsdcRedemptionAmountSet(_params.vault, _params.accountNumbers, _params.usdcRedemptionAmounts);
     }
 
     /**

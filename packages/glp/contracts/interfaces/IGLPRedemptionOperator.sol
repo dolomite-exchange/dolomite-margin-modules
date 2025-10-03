@@ -34,12 +34,6 @@ interface IGLPRedemptionOperator {
         uint256[] usdcRedemptionAmounts
     );
 
-    struct SetRedemptionAmountsParams {
-        address vault;
-        uint256[] accountNumbers;
-        uint256[] usdcRedemptionAmounts;
-    }
-
     struct RedemptionParams {
         uint256 accountNumber;
         uint256 outputMarketId;
@@ -49,10 +43,14 @@ interface IGLPRedemptionOperator {
     /**
      * Sets the USDC redemption amount all vault accounts
      * 
-     * @param  _params          The parameters for the redemption amounts
+     * @param  _vault                   The address of the GLP vault
+     * @param  _accountNumbers          The account numbers to set the redemption amounts for
+     * @param  _usdcRedemptionAmounts   The USDC redemption amounts to set for the accounts
      */
     function handlerSetRedemptionAmounts(
-        SetRedemptionAmountsParams[] memory _params
+        address _vault,
+        uint256[] memory _accountNumbers,
+        uint256[] memory _usdcRedemptionAmounts
     ) external;
 
     /**
