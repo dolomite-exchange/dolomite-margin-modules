@@ -10,8 +10,9 @@ import {
 import { DolomiteNetwork } from '../../../../base/src/utils/no-deps-constants';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { BigNumberish } from 'ethers';
 
-export async function encodeModularInterestSetterParams<T extends DolomiteNetwork>(
+export async function encodeSetModularInterestSetterParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   lower: LowerPercentage,
@@ -31,5 +32,34 @@ export async function encodeModularInterestSetterParams<T extends DolomiteNetwor
     'modularInterestSetter',
     'ownerSetSettingsByToken',
     [token.address, lowerNumber, upperNumber.sub(lowerNumber), parseEther(optimalUtilizationRate)],
+  );
+}
+
+export async function encodeUpdateModularInterestSetterParams<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  updates: {
+    lowerRate?: LowerPercentage;
+    upperRate?: UpperPercentage;
+    optimalUtilizationRate?: OptimalUtilizationRate;
+  },
+): Promise<EncodedTransaction> {
+  const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
+  const current = await core.interestSetters.modularInterestSetter.getSettingsByToken(tokenAddress);
+  const previousUpperRate = current.upperOptimalPercent.add(current.lowerOptimalPercent);
+
+  const actualLowerRate = updates.lowerRate ? parseEther(updates.lowerRate) : current.lowerOptimalPercent;
+  const actualUpperRate = updates.upperRate
+    ? parseEther(updates.upperRate).sub(actualLowerRate)
+    : previousUpperRate.sub(actualLowerRate);
+  const actualOptimalUtilization = updates.optimalUtilizationRate
+    ? parseEther(updates.optimalUtilizationRate)
+    : current.optimalUtilization;
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.interestSetters,
+    'modularInterestSetter',
+    'ownerSetSettingsByToken',
+    [tokenAddress, actualLowerRate, actualUpperRate, actualOptimalUtilization],
   );
 }

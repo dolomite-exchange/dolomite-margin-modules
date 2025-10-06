@@ -6,9 +6,10 @@ import { LowerPercentage, UpperPercentage } from '../../../../../../base/src/uti
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
   encodeSetBorrowCapWithMagic,
-  encodeUpdateInterestSetterData,
+
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -24,7 +25,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [
     await encodeSetBorrowCapWithMagic(core, core.marketIds.oriBgt, 1_500_000),
     await encodeSetBorrowCapWithMagic(core, core.marketIds.xSolvBtc, 100),
-    await encodeUpdateInterestSetterData(core, core.marketIds.wbera, {
+    await encodeUpdateModularInterestSetterParams(core, core.marketIds.wbera, {
       lowerRate: LowerPercentage._60,
       upperRate: UpperPercentage._150,
     }),

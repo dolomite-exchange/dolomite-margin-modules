@@ -19,7 +19,7 @@ import { checkAccountRiskOverrideCategory, checkMarket } from '../../../../utils
 import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { parseEther } from 'ethers/lib/utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -35,7 +35,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   const marketIds = core.marketIds;
 
   const transactions: EncodedTransaction[] = [
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       core.tokens.rUsd,
       LowerPercentage._11,

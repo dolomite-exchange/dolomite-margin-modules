@@ -4,8 +4,8 @@ import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeUpdateInterestSetterData } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -19,7 +19,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await encodeUpdateInterestSetterData(core, core.marketIds.byusd, {
+    await encodeUpdateModularInterestSetterParams(core, core.marketIds.byusd, {
       optimalUtilizationRate: OptimalUtilizationRate._80,
     }),
   ];

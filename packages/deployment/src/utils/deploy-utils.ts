@@ -417,10 +417,10 @@ export async function deployContractAndSave(
     return Promise.reject(new Error(`\tCould not deploy after ${attempts} attempts!`));
   }
 
-  const invalidNames = ['RegistryProxy', 'UpgradeableProxy'];
+  const invalidNames = ['RegistryProxy', 'UpgradeableProxy', 'PancakeV3PriceOracle', 'TWAPPriceOracleV2'];
   if (invalidNames.includes(contractName) && !contractRename) {
     if (!options.skipRenameUpgradeableContracts) {
-      console.error('Cannot deploy an upgradeable contract with an invalid name:', invalidNames);
+      return Promise.reject(new Error(`Cannot deploy an upgradeable contract with an invalid name: ${contractName}`));
     }
   }
 

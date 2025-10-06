@@ -17,7 +17,7 @@ import {
   UpperPercentage,
 } from '../../../../../../../base/src/utils/constructors/dolomite';
 import { BigNumber, BigNumberish } from 'ethers';
-import { encodeModularInterestSetterParams } from '../../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../../utils/encoding/interest-setter-encoder-utils';
 import { CoreProtocolBotanix } from '../../../../../../../base/test/utils/core-protocols/core-protocol-botanix';
 
 enum InterestSetter {
@@ -69,14 +69,14 @@ async function main(): Promise<DryRunOutput<Network.Botanix>> {
 
   const transactions: EncodedTransaction[] = [
     // Interest setters
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.pUsd,
       LowerPercentage._12,
       UpperPercentage._80,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.ypUsd,
       LowerPercentage._12,

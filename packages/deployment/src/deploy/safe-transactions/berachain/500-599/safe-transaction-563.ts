@@ -9,7 +9,7 @@ import {
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const ORIGINAL_ADDRESSES = [
@@ -34,14 +34,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       core.tokens.wbera,
       LowerPercentage._70,
       UpperPercentage._200,
       OptimalUtilizationRate._75,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       core.tokens.iBera,
       LowerPercentage._70,

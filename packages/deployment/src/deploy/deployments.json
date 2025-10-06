@@ -7973,6 +7973,13 @@
       "isVerified": true
     }
   },
+  "PancakeV3PriceOracle": {
+    "1": {
+      "address": "0x535694AECf750d317992B10b2080271f00F4bc0B",
+      "transaction": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "isVerified": false
+    }
+  },
   "ParaswapAggregatorTrader": {
     "42161": {
       "address": "0x6173C34E01A18d5897C06b4991152F2969059A68",

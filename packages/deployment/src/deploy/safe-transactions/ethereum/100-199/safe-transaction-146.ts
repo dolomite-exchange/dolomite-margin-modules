@@ -18,7 +18,7 @@ import {
   encodeSetIsBorrowOnly,
   encodeSetSingleCollateralWithStrictDebtByMarketId,
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import {
   encodeInsertERC4626Oracle,
   encodeInsertRedstoneOracleV3,
@@ -51,7 +51,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   const transactions: EncodedTransaction[] = [
     ...await encodeInsertRedstoneOracleV3(core, core.tokens.cUsd),
     ...await encodeInsertERC4626Oracle(core, core.tokens.stcUsd, core.tokens.cUsd.address),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       core.tokens.cUsd,
       LowerPercentage._8,

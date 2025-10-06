@@ -495,15 +495,15 @@ export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 export const DOLO_MAP: Record<Network.ArbitrumOne | Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: -1, // Does not exist yet
   },
   [Network.Berachain]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: 35, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: 35,
   },
   [Network.Ethereum]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: 16,
   },
 };
 
