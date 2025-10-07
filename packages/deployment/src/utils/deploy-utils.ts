@@ -20,13 +20,12 @@ import {
   BYTES_EMPTY,
   BYTES_ZERO,
   DolomiteNetwork,
+  EVM_VERSION,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -62,8 +61,11 @@ import {
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { Wallet } from '@ethersproject/wallet/src.ts';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
+import type { EtherscanVerifyResponse } from '@nomicfoundation/hardhat-verify/src/internal/etherscan.types';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
+import { EtherscanResponse } from '@nomiclabs/hardhat-etherscan/dist/src/etherscan/EtherscanService';
 import { sleep } from '@openzeppelin/upgrades';
+import axios, { AxiosResponse } from 'axios';
 import { BigNumber, BigNumberish, ethers, Signer } from 'ethers';
 import { keccak256, parseEther, parseUnits } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
@@ -148,6 +150,7 @@ export async function verifyContract(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
     customChain.urls.apiURL,
     customChain.urls.browserURL,
+    customChain.chainId,
   );
   if (await instance.isVerified(address)) {
     console.log('\tContract is already verified. Skipping verification...');
@@ -161,41 +164,46 @@ export async function verifyContract(
     const factory = await hardhat.ethers.getContractFactoryFromArtifact(artifact, { libraries });
     console.log('\tGot contract info for verification...');
 
-    const buildInfo = artifacts.getBuildInfoSync(contractName);
+    const fullyQualifiedName = `${artifact.sourceName}:${artifact.contractName}`;
+    const buildInfo = artifacts.getBuildInfoSync(fullyQualifiedName)!;
 
     // Retrieve and override only the needed sources
-    const output = buildInfo!.output.contracts[artifact.sourceName][artifact.contractName];
+    const output = buildInfo.output.contracts[artifact.sourceName][artifact.contractName];
     const allSources = JSON.parse((output as any).metadata).sources as Record<string, any>;
-    buildInfo!.input.sources = Object.keys(buildInfo!.input.sources).reduce((memo, sourceName) => {
+    buildInfo.input.sources = Object.keys(buildInfo.input.sources).reduce((memo, sourceName) => {
       if (allSources[sourceName]) {
-        memo[sourceName] = buildInfo!.input.sources[sourceName];
+        memo[sourceName] = buildInfo.input.sources[sourceName];
       }
       return memo;
     }, {} as Record<string, { content: string }>);
+    buildInfo.input.settings.evmVersion = EVM_VERSION;
 
     // Inject any needed libraries
-    buildInfo!.input.settings.libraries = Object.keys(libraries).reduce<any>((acc, library) => {
+    buildInfo.input.settings.libraries = Object.keys(libraries).reduce<any>((acc, library) => {
       const artifact = artifacts.readArtifactSync(library);
       acc[`${artifact.sourceName}`] = { [library]: libraries[library] };
       return acc;
     }, {});
 
     console.log('\tSubmitting verification...');
+
     const { message: guid } = await retryWithTimeout(
-      () => instance.verify(
-        address,
-        JSON.stringify(buildInfo!.input),
-        contractName,
-        `v${buildInfo!.solcLongVersion}`,
-        factory.interface.encodeDeploy(constructorArguments).slice(2),
-      ),
-      10_000,
+      () =>
+        instance.verify(
+          // instance,
+          address,
+          JSON.stringify(buildInfo.input),
+          fullyQualifiedName,
+          `v${buildInfo.solcLongVersion}`,
+          factory.interface.encodeDeploy(constructorArguments).slice(2),
+        ),
+      30_000,
       3,
     );
 
     console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
-    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 10_000, 3);
+    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 15_000, 3);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
@@ -215,30 +223,77 @@ export async function verifyContract(
   }
 }
 
-async function retryWithTimeout<T>(
-  fn: () => Promise<T>,
-  timeoutMs: number,
-  retries: number,
-): Promise<T> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
+async function verify(
+  etherscan: Etherscan,
+  contractAddress: string,
+  sourceCode: string,
+  contractName: string,
+  compilerVersion: string,
+  constructorArguments: string,
+): Promise<EtherscanResponse> {
+  const parameters = new FormData();
+  parameters.set('chainId', etherscan.chainId!.toString());
+  parameters.set('codeformat', 'solidity-standard-json-input');
+  parameters.set('sourceCode', sourceCode);
+  parameters.set('constructorArguements', constructorArguments);
+  parameters.set('contractaddress', contractAddress);
+  parameters.set('contractname', contractName);
+  parameters.set('compilerversion', compilerVersion);
+  parameters.set('module', 'contract');
+  parameters.set('action', 'verifysourcecode');
+  parameters.set('apikey', etherscan.apiKey);
+
+  const url = new URL(etherscan.apiUrl);
+  url.searchParams.append('chainid', String(etherscan.chainId));
+
+  let response: AxiosResponse | undefined;
+  let json: EtherscanVerifyResponse | undefined;
+  try {
+    response = await axios.post<EtherscanVerifyResponse>(url.toString(), parameters, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    json = response?.data as EtherscanVerifyResponse;
+  } catch (e: any) {
+    throw e;
+  }
+
+  if (response.status < 200 || response.status > 299) {
+    throw new Error([url.toString(), response.status, JSON.stringify(json)].join(', '));
+  }
+
+  const etherscanResponse = new EtherscanResponse(json);
+
+  if (etherscanResponse.isBytecodeMissingInNetworkError()) {
+    throw new Error([etherscan.apiUrl, contractAddress].join(', '));
+  }
+
+  if (!etherscanResponse.isOk()) {
+    throw new Error(etherscanResponse.message);
+  }
+
+  return etherscanResponse;
+}
+
+async function retryWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number, retries: number): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await Promise.race([
         fn(),
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject('Timeout exceeded'), timeoutMs),
-        ),
+        new Promise<T>((_, reject) => setTimeout(() => reject('Timeout exceeded'), timeoutMs)),
       ]);
     } catch (err: any) {
-      const message = err.message ?? '';
       if (attempt === retries) {
         throw err;
       }
-      console.warn(`\tAttempt ${attempt + 1} failed:`, message || err);
-      if (message.includes('does not have bytecode')) {
+      console.warn(`\tAttempt ${attempt + 1} failed:`, err);
+      if (err.message.includes('does not have bytecode')) {
         await sleep(timeoutMs);
       }
     }
   }
+
   return Promise.reject(new Error('All retries failed'));
 }
 
@@ -815,7 +870,7 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   if (ptOfficial !== ptToken.address) {
     return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
   }
-  if (!syTokensIn.some(t => t === underlyingToken.address)) {
+  if (!syTokensIn.some((t) => t === underlyingToken.address)) {
     return Promise.reject(
       new Error(
         `Underlying does not match official underlying on chain: underlying=[${

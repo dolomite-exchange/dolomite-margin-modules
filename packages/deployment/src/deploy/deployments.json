@@ -370,6 +370,13 @@
       "isVerified": true
     }
   },
+  "AdvisorVestingClaimsImplementationV1": {
+    "80094": {
+      "address": "0x9e579Ab791249f8c682107fb63Ae17bCa694b1A5",
+      "transaction": "0x1897f2ca00610ecd840da708d88b7ed65fc8a3c231abd92e9eded039d00d2b7e",
+      "isVerified": false
+    }
+  },
   "ARBIsolationModeTokenVaultV1": {
     "42161": {
       "address": "0x0c5b395408082C8313Ac33201a144EE561235C0b",
@@ -3035,6 +3042,11 @@
     }
   },
   "DOLOPriceOracle": {
+    "1": {
+      "address": "0x8517ed4E41e3bc6B5660162ed1B131510458542b",
+      "transaction": "0xa2e3a6aedc81e0d5f1af6fef45e0e9c322f6def5d3b399f81b5930ceb5708a4b",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x8517ed4E41e3bc6B5660162ed1B131510458542b",
       "transaction": "0x11b7786ce8a3105d87d406ec03e391d1458373c0ff311497be03316d1c6baa1f",

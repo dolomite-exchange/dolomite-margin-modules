@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'hardhat-tracer';
 import {
+  EVM_VERSION,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
@@ -189,6 +190,7 @@ export const base_config: HardhatUserConfig = {
       {
         version: '0.8.9',
         settings: {
+          evmVersion: EVM_VERSION,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -221,14 +223,14 @@ export const base_config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      [NetworkName.ArbitrumOne]: arbiscanApiKey,
-      [NetworkName.Base]: basescanApiKey,
-      [NetworkName.Berachain]: berascanApiKey,
+      [NetworkName.ArbitrumOne]: etherscanApiKey,
+      [NetworkName.Base]: etherscanApiKey,
+      [NetworkName.Berachain]: etherscanApiKey,
       [NetworkName.Botanix]: botanixApiKey,
       [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
-      [NetworkName.Mantle]: mantlescanApiKey,
-      [NetworkName.PolygonZkEvm]: polygonscanApiKey,
+      [NetworkName.Mantle]: etherscanApiKey,
+      [NetworkName.PolygonZkEvm]: etherscanApiKey,
       [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
@@ -293,7 +295,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.PolygonZkEvm,
         chainId: parseInt(Network.PolygonZkEvm, 10),
         urls: {
-          apiURL: 'https://api-zkevm.polygonscan.com/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://zkevm.polygonscan.com',
         },
       },

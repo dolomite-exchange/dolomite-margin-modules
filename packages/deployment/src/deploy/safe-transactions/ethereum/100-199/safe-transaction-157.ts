@@ -68,7 +68,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
         {
           liquidationRewardOverride: TargetLiquidationPenalty._15,
           debtMarketIds: core.marketIds.stablecoins,
-          marginRatioOverride: TargetCollateralization._150, // TODO: check this
+          marginRatioOverride: TargetCollateralization._166,
         },
       ],
     ),
