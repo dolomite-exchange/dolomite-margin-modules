@@ -239,7 +239,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.ArbitrumOne,
         chainId: parseInt(Network.ArbitrumOne, 10),
         urls: {
-          apiURL: 'https://api.arbiscan.io/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://arbiscan.io',
         },
       },
@@ -247,7 +247,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Base,
         chainId: parseInt(Network.Base, 10),
         urls: {
-          apiURL: 'https://api.basescan.org/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://basescan.org/',
         },
       },
@@ -255,7 +255,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Berachain,
         chainId: parseInt(Network.Berachain, 10),
         urls: {
-          apiURL: 'https://api.berascan.com/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://berascan.com',
         },
       },
@@ -271,7 +271,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Ethereum,
         chainId: parseInt(Network.Ethereum, 10),
         urls: {
-          apiURL: 'https://api.etherscan.io/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://etherscan.io',
         },
       },
@@ -287,7 +287,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Mantle,
         chainId: parseInt(Network.Mantle, 10),
         urls: {
-          apiURL: 'https://api.mantlescan.xyz/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://mantlescan.xyz',
         },
       },

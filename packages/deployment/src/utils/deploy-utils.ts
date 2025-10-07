@@ -61,6 +61,7 @@ import {
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { Wallet } from '@ethersproject/wallet/src.ts';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
+import { ETHERSCAN_V2_API_URL } from '@nomicfoundation/hardhat-verify/internal/etherscan';
 import type { EtherscanVerifyResponse } from '@nomicfoundation/hardhat-verify/src/internal/etherscan.types';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { EtherscanResponse } from '@nomiclabs/hardhat-etherscan/dist/src/etherscan/EtherscanService';
@@ -150,7 +151,7 @@ export async function verifyContract(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
     customChain.urls.apiURL,
     customChain.urls.browserURL,
-    customChain.chainId,
+    customChain.urls.apiURL === ETHERSCAN_V2_API_URL ? customChain.chainId : undefined,
   );
   if (await instance.isVerified(address)) {
     console.log('\tContract is already verified. Skipping verification...');
