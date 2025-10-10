@@ -191,7 +191,6 @@ export async function verifyContract(
     const { message: guid } = await retryWithTimeout(
       () =>
         instance.verify(
-          // instance,
           address,
           JSON.stringify(buildInfo.input),
           fullyQualifiedName,

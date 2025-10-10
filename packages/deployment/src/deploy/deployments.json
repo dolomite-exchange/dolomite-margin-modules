@@ -374,7 +374,7 @@
     "80094": {
       "address": "0x9e579Ab791249f8c682107fb63Ae17bCa694b1A5",
       "transaction": "0x1897f2ca00610ecd840da708d88b7ed65fc8a3c231abd92e9eded039d00d2b7e",
-      "isVerified": false
+      "isVerified": true
     }
   },
   "ARBIsolationModeTokenVaultV1": {
