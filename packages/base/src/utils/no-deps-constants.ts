@@ -133,6 +133,8 @@ export const SELL_ALL = MAX_UINT_256_BI;
 
 export const NO_PARASWAP_TRADER_PARAM: GenericTraderParamStruct | undefined = undefined;
 
+export const EVM_VERSION = 'london';
+
 // ========================================
 // ================= Roles ================
 // ========================================

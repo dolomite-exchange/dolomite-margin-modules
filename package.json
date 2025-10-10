@@ -34,7 +34,7 @@
     "@dolomite-exchange/dolomite-margin": "^0.14.4",
     "@dolomite-exchange/zap-sdk": "^0.3.45",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
-    "@nomicfoundation/hardhat-verify": "^2.0.4",
+    "@nomicfoundation/hardhat-verify": "2.0.14",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-solhint": "^3.0.1",
