@@ -246,9 +246,9 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function ownerSetWiBgt(
-        address _wibgt
+        address _wiBgt
     ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetWiBgt(_wibgt);
+        _ownerSetWiBgt(_wiBgt);
     }
 
     function ownerSetPolFeeAgent(
@@ -489,14 +489,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         emit WberaSet(_wbera);
     }
 
-    function _ownerSetWiBgt(address _wibgt) internal {
+    function _ownerSetWiBgt(address _wiBgt) internal {
         Require.that(
-            _wibgt != address(0),
+            _wiBgt != address(0),
             _FILE,
             "Invalid wiBGT address"
         );
-        _setAddress(_WI_BGT_SLOT, _wibgt);
-        emit WiBgtSet(_wibgt);
+        _setAddress(_WI_BGT_SLOT, _wiBgt);
+        emit WiBgtSet(_wiBgt);
     }
 
     function _ownerSetBgtIsolationModeVaultFactory(

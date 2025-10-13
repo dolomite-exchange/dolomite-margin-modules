@@ -112,7 +112,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetBgtm(address _bgtm) external;
     function ownerSetIBgt(address _iBgt) external;
     function ownerSetWbera(address _wbera) external;
-    function ownerSetWiBgt(address _wibgt) external;
+    function ownerSetWiBgt(address _wiBgt) external;
 
     function ownerSetBerachainRewardsFactory(address _berachainRewardsFactory) external;
     function ownerSetIBgtStakingVault(address _iBgtStakingVault) external;
