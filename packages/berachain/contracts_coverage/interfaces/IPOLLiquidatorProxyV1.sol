@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.9;
 
-import { ILiquidatorProxyV5 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/ILiquidatorProxyV5.sol"; // solhint-disable-line max-line-length
+import { ILiquidatorProxyV6 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/ILiquidatorProxyV6.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -38,7 +38,7 @@ interface IPOLLiquidatorProxyV1 {
     function initialize() external;
 
     function liquidateProofOfLiquidityCollateral(
-        ILiquidatorProxyV5.LiquidateParams memory _liquidateParams
+        ILiquidatorProxyV6.LiquidateParams memory _liquidateParams
     ) external;
 
     function liquidatorProxy() external view returns (address);

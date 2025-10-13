@@ -1738,6 +1738,10 @@ export const INFRARED_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xb71b3DaEA39012Fb0f2B14D2a9C86da9292fC126',
 };
 
+export const WI_IBGT_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x4f3C10D2bC480638048Fa67a7D00237a33670C1B',
+};
+
 export const KYBER_AGGREGATOR_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
   [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',

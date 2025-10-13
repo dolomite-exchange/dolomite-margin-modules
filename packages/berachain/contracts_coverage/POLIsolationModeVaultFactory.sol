@@ -20,11 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { MinimalERC20 } from "@dolomite-exchange/modules-base/contracts/general/MinimalERC20.sol";
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IPOLIsolationModeVaultFactory } from "./interfaces/IPOLIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPOLIsolationModeVaultFactory } from "./interfaces/IPOLIsolationModeVaultFactory.sol";
 
 
 /**
@@ -51,6 +54,8 @@ contract POLIsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
+        string memory _name,
+        string memory _symbol,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _berachainRewardsRegistry,
@@ -69,6 +74,7 @@ contract POLIsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
+        _initializeTokenInfo(_name, _symbol, MinimalERC20(_underlyingToken).decimals());
     }
 
     // ============ External Functions ============
@@ -80,9 +86,23 @@ contract POLIsolationModeVaultFactory is
         emit BerachainRewardsRegistrySet(_berachainRewardsRegistry);
     }
 
+    function userVaultImplementation()
+        public override(IIsolationModeVaultFactory, IsolationModeVaultFactory)
+        view
+        returns (address)
+    {
+        address implementation = berachainRewardsRegistry.polTokenVault();
+        if (implementation == address(0)) {
+            implementation = super.userVaultImplementation();
+        }
+
+        /*assert(implementation != address(0));*/
+        return implementation;
+    }
+
     // ============ Internal Functions ============
 
-    function _createVault(address _account) internal virtual override returns (address) {
+    function _createVault(address _account) internal override returns (address) {
         address vault = super._createVault(_account);
 
         if (_account != _DEAD_VAULT) {

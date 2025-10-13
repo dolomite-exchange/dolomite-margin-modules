@@ -362,6 +362,30 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
+  describe('#ownerSetWiBgt', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetWiBgt(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'WiBgtSet', {
+        wiBgt: OTHER_ADDRESS,
+      });
+      expect(await registry.wiBgt()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetWiBgt(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetWiBgt(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid wiBGT address',
+      );
+    });
+  });
+
   describe('#ownerSetIBgtStakingVault', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetIBgtStakingVault(OTHER_ADDRESS);

@@ -31,9 +31,7 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *
  * @notice  Base contract for upgradeable POL unwrapper trader contracts
  */
-contract POLIsolationModeUnwrapperUpgradeableProxy is
-    ProxyContractHelpers
-{
+contract POLIsolationModeUnwrapperUpgradeableProxy is ProxyContractHelpers {
     using Address for address;
 
     // ============ Constants ============
@@ -52,21 +50,22 @@ contract POLIsolationModeUnwrapperUpgradeableProxy is
         Address.functionDelegateCall(
             implementation(),
             _initializationCalldata,
-            "POLIsolationModeWrapperProxy: Initialization failed"
+            "POLIsolationModeUnwrapperProxy: Initialization failed"
         );
     }
 
     // ============ Functions ============
 
-    receive() external payable {} // solhint-disable-line no-empty-blocks
+    receive() external payable {
+        _callImplementation(implementation());
+    }
 
+    // solhint-disable-next-line payable-fallback
     fallback() external payable {
-        // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }
 
     function implementation() public view returns (address) {
         return BERACHAIN_REWARDS_REGISTRY.polUnwrapperTrader();
     }
-
 }

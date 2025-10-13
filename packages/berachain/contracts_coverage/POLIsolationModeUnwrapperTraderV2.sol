@@ -150,7 +150,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ==================================================================
 
     function exchange(
-        address _tradeOriginator,
+        address /* _tradeOriginator */,
         address /* _receiver */,
         address _outputToken,
         address _inputToken,

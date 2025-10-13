@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IInfraredVault } from "./IInfraredVault.sol";
 
 
 /**
@@ -29,6 +30,25 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  *
  */
 interface IBaseMetaVault {
+
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event AssetStaked(
+        address indexed asset,
+        IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType,
+        uint256 amount
+    );
+    event AssetUnstaked(
+        address indexed asset,
+        IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType,
+        uint256 amount
+    );
+    event DTokenFeeCharged(address indexed asset, address indexed feeAgent, uint256 feeAmount);
+    event IBgtStaked(uint256 amount);
+    event IBgtUnstaked(uint256 amount);
+    event RewardClaimed(address indexed rewardVault);
 
     // ================================================
     // ================== Functions ===================
@@ -79,6 +99,10 @@ interface IBaseMetaVault {
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external view returns (uint256);
+
+    function getPendingRewardsByAsset(
+        address _asset
+    ) external view returns (IInfraredVault.UserReward[] memory);
 
     /**
      * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite
