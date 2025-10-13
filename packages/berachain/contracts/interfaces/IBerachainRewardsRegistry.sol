@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
 import { IBGTM } from "./IBGTM.sol";
 import { IBerachainRewardsFactory } from "./IBerachainRewardsFactory.sol";

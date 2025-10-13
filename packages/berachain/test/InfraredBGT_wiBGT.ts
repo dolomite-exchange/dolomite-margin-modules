@@ -65,7 +65,9 @@ describe('InfraredBGT_wiBGT', () => {
       BerachainRewardsRegistry__factory.bytecode,
       [],
     );
-    await core.berachainRewardsEcosystem.live.registryProxy.connect(core.governance).upgradeTo(registryImplementation.address);
+    await core.berachainRewardsEcosystem.live.registryProxy.connect(core.governance).upgradeTo(
+      registryImplementation.address
+    );
     await registry.connect(core.governance).ownerSetMetaVaultImplementation(metaVaultImplementation.address);
 
     await iBgtFactory.createVault(core.hhUser1.address);
@@ -97,7 +99,10 @@ describe('InfraredBGT_wiBGT', () => {
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
 
       await increase(60);
-      const wiBgtAmount = await core.berachainRewardsEcosystem.iBgtStakingPool.earned(metaVault.address, core.tokens.wiBgt.address);
+      const wiBgtAmount = await core.berachainRewardsEcosystem.iBgtStakingPool.earned(
+        metaVault.address,
+        core.tokens.wiBgt.address
+      );
       await iBgtVault.getReward({ gasLimit: 5000000 });
 
       await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
@@ -118,7 +123,10 @@ describe('InfraredBGT_wiBGT', () => {
       await core.tokens.iBgt.connect(iBgtWhale).transfer(metaVault.address, ONE_ETH_BI);
 
       await increase(60);
-      const wiBgtAmount = await core.berachainRewardsEcosystem.iBgtStakingPool.earned(metaVault.address, core.tokens.wiBgt.address);
+      const wiBgtAmount = await core.berachainRewardsEcosystem.iBgtStakingPool.earned(
+        metaVault.address,
+        core.tokens.wiBgt.address
+      );
       await iBgtVault.getReward({ gasLimit: 5000000 });
 
       await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
