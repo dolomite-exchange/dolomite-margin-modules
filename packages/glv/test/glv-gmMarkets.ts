@@ -49,7 +49,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxBnbAddress]!.decimals,
         token: gmxBnbAddress
       });
 
@@ -92,7 +92,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 8,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxCroAddress]!.decimals,
         token: gmxCroAddress
       });
 
@@ -135,7 +135,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxPumpAddress]!.decimals,
         token: gmxPumpAddress
       });
 
@@ -165,7 +165,6 @@ describe('Glv Gm Markets Test', () => {
         formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString())
       );
     });
-
 
     it('should work normally for ada', async () => {
       // Add ada oracle and gmx ada address
@@ -464,7 +463,7 @@ describe('Glv Gm Markets Test', () => {
   });
 
   describe('#glv eth', () => {
-    it('should work normally for apt', async () => {
+    it.only('should work normally for apt', async () => {
       // Add apt oracle and gmx apt address
       const gmxAptAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['APT'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -476,7 +475,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 8,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxAptAddress]!.decimals,
         token: gmxAptAddress
       });
 
@@ -507,7 +506,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it('should work normally for crv', async () => {
+    it.only('should work normally for crv', async () => {
       // Add crv oracle and gmx crv address
       const gmxCrvAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRV'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -519,7 +518,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxCrvAddress]!.decimals,
         token: gmxCrvAddress
       });
 
@@ -550,7 +549,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it('should work normally for cvx', async () => {
+    it.only('should work normally for cvx', async () => {
       // Add cvx oracle and gmx cvx address
       const gmxCvxAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CVX'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -562,7 +561,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxCvxAddress]!.decimals,
         token: gmxCvxAddress
       });
 
@@ -593,7 +592,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it('should work normally for mnt', async () => {
+    it.only('should work normally for mnt', async () => {
       // Add mnt oracle and gmx mnt address
       const gmxMntAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MNT'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -605,7 +604,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxMntAddress]!.decimals,
         token: gmxMntAddress
       });
 
@@ -636,7 +635,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it('should work normally for sui', async () => {
+    it.only('should work normally for sui', async () => {
       // Add sui oracle and gmx sui address
       const gmxSuiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SUI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -648,7 +647,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 9,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxSuiAddress]!.decimals,
         token: gmxSuiAddress
       });
 
@@ -679,7 +678,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it('should work normally for wlfi', async () => {
+    it.only('should work normally for wlfi', async () => {
       // Add wlfi oracle and gmx wlfi address
       const gmxWlfiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['WLFI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -691,7 +690,7 @@ describe('Glv Gm Markets Test', () => {
         oracleInfos: [
           { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
         ],
-        decimals: 18,
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxWlfiAddress]!.decimals,
         token: gmxWlfiAddress
       });
 

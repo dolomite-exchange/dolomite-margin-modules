@@ -2310,6 +2310,10 @@ export const INVALID_TOKEN_MAP: Record<
       symbol: 'ADA',
       decimals: 6,
     },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['APT']]: {
+      symbol: 'APT',
+      decimals: 8,
+    },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ATOM']]: {
       symbol: 'ATOM',
       decimals: 6,
@@ -2318,8 +2322,24 @@ export const INVALID_TOKEN_MAP: Record<
       symbol: 'BERA',
       decimals: 18,
     },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BNB']]: {
+      symbol: 'BNB',
+      decimals: 18,
+    },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CAKE']]: {
       symbol: 'CAKE',
+      decimals: 18,
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRO']]: {
+      symbol: 'CRO',
+      decimals: 8,
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRV']]: {
+      symbol: 'CRV',
+      decimals: 18,
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CVX']]: {
+      symbol: 'CVX',
       decimals: 18,
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOGE']]: {
@@ -2358,6 +2378,10 @@ export const INVALID_TOKEN_MAP: Record<
       symbol: 'MKR',
       decimals: 18,
     },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MNT']]: {
+      symbol: 'MNT',
+      decimals: 18,
+    },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['NEAR']]: {
       symbol: 'NEAR',
       decimals: 24,
@@ -2370,6 +2394,10 @@ export const INVALID_TOKEN_MAP: Record<
       symbol: 'POL',
       decimals: 18,
     },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['PUMP']]: {
+      symbol: 'PUMP',
+      decimals: 18,
+    },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SEI']]: {
       symbol: 'SEI',
       decimals: 18,
@@ -2377,6 +2405,10 @@ export const INVALID_TOKEN_MAP: Record<
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['STX']]: {
       symbol: 'STX',
       decimals: 6,
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SUI']]: {
+      symbol: 'SUI',
+      decimals: 9,
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TIA']]: {
       symbol: 'TIA',
@@ -2389,6 +2421,10 @@ export const INVALID_TOKEN_MAP: Record<
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TAO']]: {
       symbol: 'TAO',
       decimals: 9,
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['WLFI']]: {
+      symbol: 'WLFI',
+      decimals: 18,
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['XRP']]: {
       symbol: 'XRP',
