@@ -37,6 +37,136 @@ describe('Glv Gm Markets Test', () => {
   });
 
   describe('#glv btc', () => {
+    it.only('should work normally for bnb', async () => {
+      // Add bnb oracle and gmx bnb address
+      const gmxBnbAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BNB'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxBnbAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxBnbAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: 18,
+        token: gmxBnbAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.bnbUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.bnbUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.bnbUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log(
+        'bnb gm price: ',
+        formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString())
+      );
+    });
+
+    it.only('should work normally for cro', async () => {
+      // Add cro oracle and gmx cro address
+      const gmxCroAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRO'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxCroAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxCroAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: 8,
+        token: gmxCroAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.croUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.croUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.croUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log(
+        'cro gm price: ',
+        formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString())
+      );
+    });
+
+    it.only('should work normally for pump', async () => {
+      // Add pump oracle and gmx pump address
+      const gmxPumpAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['PUMP'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxPumpAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxPumpAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: 18,
+        token: gmxPumpAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.pumpUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.pumpUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.pumpUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log(
+        'pump gm price: ',
+        formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString())
+      );
+    });
+
+
     it('should work normally for ada', async () => {
       // Add ada oracle and gmx ada address
       const gmxAdaAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ADA'];
@@ -334,7 +464,7 @@ describe('Glv Gm Markets Test', () => {
   });
 
   describe('#glv eth', () => {
-    it.only('should work normally for apt', async () => {
+    it('should work normally for apt', async () => {
       // Add apt oracle and gmx apt address
       const gmxAptAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['APT'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -377,7 +507,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for crv', async () => {
+    it('should work normally for crv', async () => {
       // Add crv oracle and gmx crv address
       const gmxCrvAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRV'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -420,7 +550,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for cvx', async () => {
+    it('should work normally for cvx', async () => {
       // Add cvx oracle and gmx cvx address
       const gmxCvxAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CVX'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -463,7 +593,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for mnt', async () => {
+    it('should work normally for mnt', async () => {
       // Add mnt oracle and gmx mnt address
       const gmxMntAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MNT'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -506,7 +636,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for sui', async () => {
+    it('should work normally for sui', async () => {
       // Add sui oracle and gmx sui address
       const gmxSuiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SUI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -549,7 +679,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for wlfi', async () => {
+    it('should work normally for wlfi', async () => {
       // Add wlfi oracle and gmx wlfi address
       const gmxWlfiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['WLFI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
@@ -1065,7 +1195,7 @@ describe('Glv Gm Markets Test', () => {
       );
     });
 
-    it.only('should work normally for pol', async () => {
+    it('should work normally for pol', async () => {
       // Add pol oracle and gmx pol address
       const gmxPolAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['POL'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(

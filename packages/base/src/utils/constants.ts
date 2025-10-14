@@ -1446,6 +1446,10 @@ export const GMX_BERA_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
   [Network.ArbitrumOne]: '0x876Ff160d63809674e03f82DC4D3C3Ae8B0acF28',
 };
 
+export const GMX_BNB_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x065577D05c3D4C11505ed7bc97BBF85d462A6A6f',
+};
+
 export const GMX_BTC_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x47c031236e19d024b42f8AE6780E44A573170703',
 };
@@ -1456,6 +1460,10 @@ export const GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, 
 
 export const GMX_CAKE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xdE967676db7b1ccdBA2bD94B01B5b19DE4b563e4',
+};
+
+export const GMX_CRO_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xa29FfE4152B65A0347512Ae5c6A4Bbc7a3d6d51B',
 };
 
 export const GMX_CRV_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1546,6 +1554,10 @@ export const GMX_POL_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> =
   [Network.ArbitrumOne]: '0xD0a1AFDDE31Eb51e8b53bdCE989EB8C2404828a4',
 };
 
+export const GMX_PUMP_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x4C0Bb704529Fa49A26bD854802d70206982c6f1B',
+};
+
 export const GMX_SEI_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB489711B1cB86afDA48924730084e23310EB4883',
 };
@@ -1588,7 +1600,9 @@ export const GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP: Record<Network.ArbitrumOne, R
     APT: '0x3f8f0dCE4dCE4d0D1d0871941e79CDA82cA50d0B',
     ATOM: '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA',
     BERA: '0x67ADABbAd211eA9b3B4E2fd0FD165E593De1e983',
+    BNB: '0xa9004A5421372E1D83fB1f85b0fc986c912f91f3',
     CAKE: '0x580b373Ac16803BB0133356F470f3c7EEF54151B',
+    CRO: '0xB7EfE7c7f059E84Ab87A83A169c583Fb4A54fAc3',
     CRV: '0xe5f01aeAcc8288E9838A60016AB00d7b6675900b',
     CVX: '0x3B6f801C0052Dfe0Ac80287D611F31B7c47B9A6b',
     DOGE: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
@@ -1604,6 +1618,7 @@ export const GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP: Record<Network.ArbitrumOne, R
     NEAR: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
     ORDI: '0x1E15d08f3CA46853B692EE28AE9C7a0b88a9c994',
     POL: '0x9c74772b713a1B032aEB173E28683D937E51921c',
+    PUMP: '0x9c060B2fA953b5f69879a8B7B81f62BFfEF360be',
     SEI: '0x55e85A147a1029b985384822c0B2262dF8023452',
     SUI: '0x197aa2DE1313c7AD50184234490E12409B2a1f95',
     STX: '0xBaf07cF91D413C0aCB2b7444B9Bf13b4e03c9D71',
@@ -2463,8 +2478,14 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BERA']]: {
       aggregatorAddress: '0x4f861F14246229530a881D32C8d26D78b8c48BE6',
     },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BNB']]: {
+      aggregatorAddress: '0x6970460aabF80C5BE983C6b74e5D06dEDCA95D4A',
+    },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CAKE']]: {
       aggregatorAddress: '0x256654437f1ADA8057684b18d742eFD14034C400',
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRO']]: {
+      aggregatorAddress: '0xea320E4d688B143A3bFBF1b4a5cc4B986fCa086c',
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CRV']]: {
       aggregatorAddress: '0xaebDA2c976cfd1eE1977Eac079B4382acb849325',
@@ -2510,6 +2531,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['POL']]: {
       aggregatorAddress: '0x82BA56a2fADF9C14f17D08bc51bDA0bDB83A8934',
+    },
+    [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['PUMP']]: {
+      aggregatorAddress: '0x0C997958ccE7A0403AEA7E34d14bbaDA897B5bb3',
     },
     [GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SEI']]: {
       aggregatorAddress: '0xCc9742d77622eE9abBF1Df03530594f9097bDcB3',
