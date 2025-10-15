@@ -100,8 +100,8 @@ describe('GLPRedemptionOperator', () => {
       expect(await redemptionOperator.HANDLER()).to.eq(core.hhUser4.address);
       expect(await redemptionOperator.USDC_FUND()).to.eq(core.hhUser5.address);
       expect(await redemptionOperator.USDC_MARKET_ID()).to.eq(core.marketIds.usdc);
-      expect(await redemptionOperator.GLP_FACTORY()).to.eq(core.gmxEcosystem.live.dGlp.address);
-      expect(await redemptionOperator.GLP_UNWRAPPER_TRADER()).to.eq(glpUnwrapperTraderAddress);
+      expect(await redemptionOperator.FACTORY()).to.eq(core.gmxEcosystem.live.dGlp.address);
+      expect(await redemptionOperator.UNWRAPPER_TRADER()).to.eq(glpUnwrapperTraderAddress);
       expect(await redemptionOperator.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
   });

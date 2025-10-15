@@ -54,8 +54,8 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
     address public immutable USDC_FUND;
 
     uint256 public immutable USDC_MARKET_ID;
-    IIsolationModeVaultFactory public immutable GLP_FACTORY;
-    IIsolationModeUnwrapperTraderV2 public immutable GLP_UNWRAPPER_TRADER;
+    IIsolationModeVaultFactory public immutable FACTORY;
+    IIsolationModeUnwrapperTraderV2 public immutable UNWRAPPER_TRADER;
 
     mapping(address => mapping(uint256 => uint256)) public usdcRedemptionAmount;
 
@@ -80,16 +80,16 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         address _handler,
         address _usdcFund,
         uint256 _usdcMarketId,
-        address _glpFactory,
-        address _glpUnwrapperTrader,
+        address _factory, // only glp or plvGlp
+        address _unwrapperTrader, // only glp or plvGlp
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         HANDLER = _handler;
         USDC_FUND = _usdcFund;
 
         USDC_MARKET_ID = _usdcMarketId;
-        GLP_FACTORY = IIsolationModeVaultFactory(_glpFactory);
-        GLP_UNWRAPPER_TRADER = IIsolationModeUnwrapperTraderV2(_glpUnwrapperTrader);
+        FACTORY = IIsolationModeVaultFactory(_factory);
+        UNWRAPPER_TRADER = IIsolationModeUnwrapperTraderV2(_unwrapperTrader);
     }
 
     // ==================================================================
@@ -132,7 +132,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         address _vault,
         RedemptionParams memory _redemptionParams
     ) internal {
-        address vaultOwner = GLP_FACTORY.getAccountByVault(_vault);
+        address vaultOwner = FACTORY.getAccountByVault(_vault);
         Require.that(
             vaultOwner != address(0),
             _FILE,
@@ -154,7 +154,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         });
 
 
-        uint256 glpBal = DOLOMITE_MARGIN().getAccountWei(accounts[_VAULT_ACCOUNT_ID], GLP_FACTORY.marketId()).value;
+        uint256 bal = DOLOMITE_MARGIN().getAccountWei(accounts[_VAULT_ACCOUNT_ID], FACTORY.marketId()).value;
         uint256 usdcAmount = usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
         delete usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
         
@@ -162,7 +162,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         uint256 actionsLength;
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](5);
 
-        if (glpBal > 0) {
+        if (bal > 0) {
             _appendUnwrapActions(
                 actions,
                 _VAULT_ACCOUNT_ID,
@@ -227,7 +227,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         uint256 _outputMarketId,
         uint256 _minOutputAmountWei
     ) internal view {
-        IDolomiteStructs.ActionArgs[] memory unwrapActions = GLP_UNWRAPPER_TRADER.createActionsForUnwrapping(
+        IDolomiteStructs.ActionArgs[] memory unwrapActions = UNWRAPPER_TRADER.createActionsForUnwrapping(
             IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams({
                 primaryAccountId: _vaultAccountId,
                 otherAccountId: _vaultAccountId,
@@ -236,14 +236,14 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
                 otherAccountOwner: _vault,
                 otherAccountNumber: _accountNumber,
                 outputMarket: _outputMarketId,
-                inputMarket: GLP_FACTORY.marketId(),
+                inputMarket: FACTORY.marketId(),
                 minOutputAmount: _minOutputAmountWei,
                 inputAmount: DOLOMITE_MARGIN().getAccountWei(
                     IDolomiteStructs.AccountInfo({
                         owner: _vault,
                         number: _accountNumber
                     }),
-                    GLP_FACTORY.marketId()
+                    FACTORY.marketId()
                 ).value,
                 orderData: abi.encode(_minOutputAmountWei)
             })
