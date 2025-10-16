@@ -16,6 +16,9 @@ const defaultAccountNumber = ZERO_BI;
 
 const PLV_GLP_UNWRAPPER_TRADER_ADDRESS = '0x74D3Cb3955E7517AeC82D391C5767BE50DBa575f';
 
+/**
+ * DO NOT USE. I mixed up plvGLP and Jones. plvGLP gets not USDC redemption amount
+ */
 describe('plv-glp-redemption-script', () => {
   let snapshotId: string;
 
@@ -78,9 +81,14 @@ describe('plv-glp-redemption-script', () => {
 
       let sum = ZERO_BI;
       for (const user of data['Result']) {
+        if (user['address'] !== '0x0f687b1d213aefb1c174cd8c136cdf563f2a7897') {
+          continue;
+        }
         // get user full reward amount
         const effectiveBalance = parseEther(user['effective_balance']);
         const vaultAddress = await core.plutusEcosystem.live.dPlvGlp.getVaultByAccount(user['address']);
+        console.log('vaultAddress: ', vaultAddress);
+        console.log('effectiveBalance: ', effectiveBalance);
         expect(vaultAddress).to.not.eq(ZERO_ADDRESS);
         const query = `
         {
