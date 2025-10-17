@@ -26,7 +26,7 @@ describe('GM Delta Neutral APR', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 388_391_800,
+      blockNumber: 390_228_800,
     });
     snapshotId = await snapshot();
   });
