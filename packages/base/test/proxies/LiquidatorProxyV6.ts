@@ -56,6 +56,8 @@ describe('LiquidatorProxyV6', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.arb);
 
+    await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
     const liquidatorProxyImplementation = await createContractWithLibrary(
       'TestLiquidatorProxyV6',
@@ -136,7 +138,7 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidate', () => {
-    it('should work normally', async () => {
+    it.only('should work normally', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -190,6 +192,7 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
     });
 
     it('should work normally with 2 trades', async () => {

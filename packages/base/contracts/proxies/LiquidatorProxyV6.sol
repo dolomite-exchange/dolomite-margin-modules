@@ -32,6 +32,7 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV6
@@ -55,6 +56,7 @@ contract LiquidatorProxyV6 is
 
     bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
+    uint256 private constant DOLOMITE_RAKE_ACCOUNT_ID = 3;
 
     // ============ Constructor ============
 
@@ -123,7 +125,7 @@ contract LiquidatorProxyV6 is
             otherAccountNumber: 0,
             feeTransferAccountIndex: 0,
             // traders go right after the liquid account ("other account")
-            traderAccountStartIndex: LIQUID_ACCOUNT_ID + 1,
+            traderAccountStartIndex: DOLOMITE_RAKE_ACCOUNT_ID + 1,
             actionsCursor: 0,
             // unused for this function
             inputBalanceWeiBeforeOperate: TypesLib.zeroWei(),
@@ -185,6 +187,10 @@ contract LiquidatorProxyV6 is
         // the call to _getAccounts leaves accounts[LIQUID_ACCOUNT_ID] null because it fills in the traders starting at
         // the `traderAccountCursor` index
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
+        accounts[DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: DOLOMITE_REGISTRY.feeAgent(),
+            number: DEFAULT_ACCOUNT_NUMBER
+        });
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
@@ -202,13 +208,19 @@ contract LiquidatorProxyV6 is
             liquidatorCache,
             genericCache
         );
+        uint256 dolomiteRakeAmount = _appendDolomiteRakeTransferAction(
+            actions,
+            constants,
+            liquidatorCache,
+            genericCache
+        );
         _appendTraderActions(
             accounts,
             actions,
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            _liquidateParams.inputAmountWei,
+            _liquidateParams.inputAmountWei - dolomiteRakeAmount,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -294,11 +306,40 @@ contract LiquidatorProxyV6 is
         }
     }
 
+    function _appendDolomiteRakeTransferAction(
+
+        IDolomiteStructs.ActionArgs[] memory _actions,
+        LiquidatorProxyConstants memory _constants,
+        LiquidatorProxyCache memory _liquidatorCache,
+        GenericTraderProxyCache memory _genericCache
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
+
+        // @todo update to use settable dolomite rake percentage
+        console.log('heldWeiWithoutReward: ', heldWeiWithoutReward);
+        console.log('solidHeldUpdateWithReward: ', _liquidatorCache.solidHeldUpdateWithReward);
+        // @todo check case when held collateral < adjusted debt
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward) / 10;
+        _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
+            TRADE_ACCOUNT_ID,
+            DOLOMITE_RAKE_ACCOUNT_ID,
+            _constants.heldMarket,
+            IDolomiteStructs.AssetDenomination.Wei,
+            dolomiteRakeAmount
+        );
+        return dolomiteRakeAmount;
+    }
+
     function _otherAccountId() internal pure override returns (uint256) {
         return LIQUID_ACCOUNT_ID;
     }
 
     function _getLiquidationActionsLength(bool _withdrawAllReward) internal pure returns (uint256) {
-        return _withdrawAllReward ? 2 : 1;
+        // 1 for liquidate action, 1 for dolomite rake transfer, 1 for withdrawal reward
+        return _withdrawAllReward ? 3 : 2;
     }
 }
