@@ -203,12 +203,14 @@ export async function getCalldataForOkx<T extends DolomiteNetwork>(
 }
 
 export async function getCalldataForOogaBooga(
+  chainId: string,
   inputToken: { address: address },
   inputAmount: BigNumber,
   outputToken: { address: address },
   receiver: { address: address },
 ): Promise<TraderOutput> {
-  const result = await axios.get('https://mainnet.api.oogabooga.io/v1/swap', {
+  const url = chainId === Network.Botanix ? 'https://botanix.api.oogabooga.io' : 'https://mainnet.api.oogabooga.io';
+  const result = await axios.get(`${url}/v1/swap`, {
     headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
     params: {
       tokenIn: inputToken.address,
@@ -226,7 +228,7 @@ export async function getCalldataForOogaBooga(
 
   return {
     calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
-    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin), // @follow-up Use min or quote here?
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin),
   };
 }
 
