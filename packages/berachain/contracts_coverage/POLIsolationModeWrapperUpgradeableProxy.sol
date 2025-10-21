@@ -31,9 +31,7 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *
  * @notice  Base contract for upgradeable POL wrapper trader contracts
  */
-contract POLIsolationModeWrapperUpgradeableProxy is
-    ProxyContractHelpers
-{
+contract POLIsolationModeWrapperUpgradeableProxy is ProxyContractHelpers {
     using Address for address;
 
     // ============ Constants ============
@@ -58,15 +56,16 @@ contract POLIsolationModeWrapperUpgradeableProxy is
 
     // ============ Functions ============
 
-    receive() external payable {} // solhint-disable-line no-empty-blocks
+    receive() external payable {
+        _callImplementation(implementation());
+    }
 
+    // solhint-disable-next-line payable-fallback
     fallback() external payable {
-        // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }
 
     function implementation() public view returns (address) {
         return BERACHAIN_REWARDS_REGISTRY.polWrapperTrader();
     }
-
 }

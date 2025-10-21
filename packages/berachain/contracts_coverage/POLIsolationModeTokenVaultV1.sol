@@ -124,7 +124,9 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amount
     ) external onlyLiquidator(msg.sender) returns (uint256) {
-        return _unstakeBeforeUnwrapping(_accountNumber, _amount, /* _isLiquidation = */ true);
+        uint256 newInputAmountWei = _unstakeBeforeUnwrapping(_accountNumber, _amount, /* _isLiquidation = */ true);
+        emit PrepareForLiquidation(_accountNumber, _amount);
+        return newInputAmountWei;
     }
 
     // ==================================================================
@@ -339,17 +341,31 @@ contract POLIsolationModeTokenVaultV1 is
         metaVault.exit(_asset, true);
     }
 
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 /* _accountNumber */,
+        uint256 /* _marketId */
+    ) internal pure override {
+        revert("POLIsolationModeTokenVaultV1: Can only zap into POL vault");
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 /* _accountNumber */,
+        uint256 /* _marketId */
+    ) internal pure override {
+        revert("POLIsolationModeTokenVaultV1: Can only zap out of POL vault");
+    }
+
     function _depositIntoVaultForDolomiteMargin(
         uint256 /* _toAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert("Not implemented");
+        revert("POLIsolationModeTokenVaultV1: Can only zap into POL vault");
     }
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 /* _fromAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert("Not implemented");
+        revert("POLIsolationModeTokenVaultV1: Can only zap out of POL vault");
     }
 }

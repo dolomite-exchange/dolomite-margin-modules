@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
 import { IBGTM } from "./IBGTM.sol";
@@ -79,6 +80,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event BgtmSet(address bgtm);
     event IBgtSet(address iBgt);
     event WberaSet(address wbera);
+    event WiBgtSet(address wiBgt);
 
     event BerachainRewardsFactorySet(address berachainRewardsFactory);
     event IBgtStakingVaultSet(address iBgtStakingVault);
@@ -110,6 +112,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetBgtm(address _bgtm) external;
     function ownerSetIBgt(address _iBgt) external;
     function ownerSetWbera(address _wbera) external;
+    function ownerSetWiBgt(address _wiBgt) external;
 
     function ownerSetBerachainRewardsFactory(address _berachainRewardsFactory) external;
     function ownerSetIBgtStakingVault(address _iBgtStakingVault) external;
@@ -145,6 +148,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function bgtm() external view returns (IBGTM);
     function iBgt() external view returns (IERC20);
     function wbera() external view returns (IWETH);
+    function wiBgt() external view returns (IERC4626);
 
     function berachainRewardsFactory() external view returns (IBerachainRewardsFactory);
     function iBgtStakingVault() external view returns (IInfraredVault);

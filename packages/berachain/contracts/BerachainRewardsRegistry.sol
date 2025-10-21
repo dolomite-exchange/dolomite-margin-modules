@@ -24,6 +24,7 @@ import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetaVaultUpgradeableProxy } from "./MetaVaultUpgradeableProxy.sol";
@@ -59,6 +60,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _BGTM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtm")) - 1);
     bytes32 private constant _I_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgt")) - 1);
     bytes32 private constant _WBERA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wbera")) - 1);
+    bytes32 private constant _WI_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wiBgt")) - 1);
 
     bytes32 private constant _BERACHAIN_REWARDS_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.berachainRewardsFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_STAKING_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtStakingVault")) - 1); // solhint-disable-line max-line-length
@@ -243,6 +245,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetWbera(_wbera);
     }
 
+    function ownerSetWiBgt(
+        address _wiBgt
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetWiBgt(_wiBgt);
+    }
+
     function ownerSetPolFeeAgent(
         address _polFeeAgent
     ) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -297,6 +305,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     function wbera() external view override returns (IWETH) {
         return IWETH(_getAddress(_WBERA_SLOT));
+    }
+
+    function wiBgt() external view override returns (IERC4626) {
+        return IERC4626(_getAddress(_WI_BGT_SLOT));
     }
 
     function berachainRewardsFactory() public view override returns (IBerachainRewardsFactory) {
@@ -475,6 +487,16 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_WBERA_SLOT, _wbera);
         emit WberaSet(_wbera);
+    }
+
+    function _ownerSetWiBgt(address _wiBgt) internal {
+        Require.that(
+            _wiBgt != address(0),
+            _FILE,
+            "Invalid wiBGT address"
+        );
+        _setAddress(_WI_BGT_SLOT, _wiBgt);
+        emit WiBgtSet(_wiBgt);
     }
 
     function _ownerSetBgtIsolationModeVaultFactory(

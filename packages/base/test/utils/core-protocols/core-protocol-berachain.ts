@@ -4,7 +4,7 @@ import {
   RedstonePriceOracleV3,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
-import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../../../src/types';
+import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IERC4626, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 import {
@@ -61,6 +61,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   wbera: IWETH;
   wbtc: IERC20;
   weEth: IERC20;
+  wiBgt: IERC4626;
   xSolvBtc: IERC20;
   ylBtcLst: IERC20;
   ylPumpBtc: IERC20;

@@ -37,7 +37,7 @@ interface IPOLIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ==================== Events ====================
     // ================================================
 
-    event BerachainRewardsRegistrySet(address _berachainRewardsRegistry);
+    event BerachainRewardsRegistrySet(address berachainRewardsRegistry);
 
     // ===================================================
     // ==================== Functions ====================

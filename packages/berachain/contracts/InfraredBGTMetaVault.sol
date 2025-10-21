@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
@@ -335,6 +336,23 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
                 owner,
                 DEFAULT_ACCOUNT_NUMBER,
                 _amount
+            );
+        } else if (_token == address(REGISTRY().wiBgt())) {
+            // redeem the wiBgt
+            IERC4626 wiBgt = IERC4626(_token);
+            wiBgt.redeem(_amount, address(this), address(this));
+
+            // deposit iBgt
+            IERC20 iBgt = REGISTRY().iBgt();
+            uint256 iBgtAmount = iBgt.balanceOf(address(this));
+
+            assert(iBgtAmount > 0);
+            iBgt.safeApprove(vault, iBgtAmount);
+            IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
+            _factory.depositIntoDolomiteMarginFromMetaVault(
+                owner,
+                DEFAULT_ACCOUNT_NUMBER,
+                iBgtAmount
             );
         } else {
             IDolomiteMargin dolomiteMargin = REGISTRY().DOLOMITE_MARGIN();

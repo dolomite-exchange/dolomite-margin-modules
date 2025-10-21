@@ -3,7 +3,8 @@ import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy
 import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import {
   ChainsightPriceOracleV3__factory,
-  ChroniclePriceOracleV3__factory, ERC4626PriceOracle__factory,
+  ChroniclePriceOracleV3__factory,
+  ERC4626PriceOracle__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
   IChaosLabsPriceOracleV3__factory,
@@ -58,6 +59,7 @@ import {
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
+  IERC4626__factory,
   IEventEmitterRegistry__factory,
   IExpiry__factory,
   IExpiryV2__factory,
@@ -78,7 +80,8 @@ import {
   BERA_ETH_MAP,
   BGT_MAP,
   BTC_PLACEHOLDER_MAP,
-  BYUSD_MAP, C_USD_MAP,
+  BYUSD_MAP,
+  C_USD_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
@@ -172,7 +175,8 @@ import {
   S_GLP_MAP,
   S_USDA_MAP,
   S_USDE_MAP,
-  S_USDS_MAP, S_WBERA_MAP,
+  S_USDS_MAP,
+  S_WBERA_MAP,
   SDE_USD_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
@@ -180,7 +184,8 @@ import {
   SOLV_BTC_MAP,
   SR_USD_MAP,
   ST_BTC_MAP,
-  ST_ETH_MAP, STC_USD_MAP,
+  ST_ETH_MAP,
+  STC_USD_MAP,
   STONE_BTC_MAP,
   STONE_MAP,
   TBTC_MAP,
@@ -202,7 +207,9 @@ import {
   WBERA_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
-  WETH_MAP, WLFI_MAP,
+  WETH_MAP,
+  WI_IBGT_MAP,
+  WLFI_MAP,
   WMNT_MAP,
   WO_ETH_MAP,
   WOKB_MAP,
@@ -321,20 +328,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolConfigBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolConfigEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolConfigBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolConfigEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolConfigMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolConfigPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolConfigXLayer
+                : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -349,7 +356,7 @@ export async function enableInterestAccrual<T extends DolomiteNetworkNoBotanixOr
 ) {
   return core.dolomiteMargin.ownerSetInterestSetter(
     marketId,
-    core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
+    (core.interestSetters as any).linearStepFunction8L92U90OInterestSetter.address,
   );
 }
 
@@ -777,20 +784,20 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolXLayer
+                : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -1640,6 +1647,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
+        wiBgt: IERC4626__factory.connect(WI_IBGT_MAP[typedConfig.network], hhUser1),
         xSolvBtc: IERC20__factory.connect(X_SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
         ylBtcLst: IERC20__factory.connect(YL_FBTC_MAP[typedConfig.network].address, hhUser1),
         ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
