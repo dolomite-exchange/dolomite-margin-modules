@@ -7971,6 +7971,11 @@
     }
   },
   "OogaBoogaAggregatorTraderV2": {
+    "3637": {
+      "address": "0x0CE205f7bCBa70E4c03f826918c8c21073386ED3",
+      "transaction": "0x1a874119c7ace25451a0d71fa4fd2856ffc9534ac05c519f1e43db637c6bbac7",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x0CE205f7bCBa70E4c03f826918c8c21073386ED3",
       "transaction": "0xcd0059a2c376546fce99bed602ad150e48d96d4cca98353dea858e838888eb17",

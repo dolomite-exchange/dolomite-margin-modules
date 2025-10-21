@@ -5,6 +5,7 @@ import { OdosEcosystem } from '../../../test/utils/ecosystem-utils/odos';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolType } from '../../../test/utils/setup';
 import { OkxEcosystem } from 'packages/base/test/utils/ecosystem-utils/okx';
+import { OogaBoogaEcosystem } from 'packages/base/test/utils/ecosystem-utils/ooga-booga';
 
 export type CoreProtocolWithEnso<T extends DolomiteNetwork> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
@@ -24,6 +25,11 @@ export type CoreProtocolWithOdos<T extends DolomiteNetwork> = Extract<CoreProtoc
 export type CoreProtocolWithOkx<T extends DolomiteNetwork> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
   okxEcosystem: OkxEcosystem;
+}>;
+
+export type CoreProtocolWithOogaBooga<T extends DolomiteNetwork> = Extract<CoreProtocolType<T>, {
+  dolomiteMargin: DolomiteMargin<T>;
+  oogaBoogaEcosystem: OogaBoogaEcosystem;
 }>;
 
 export function getEnsoAggregatorTraderConstructorParams<T extends DolomiteNetwork>(
@@ -74,8 +80,8 @@ export function getOkxAggregatorTraderConstructorParams<T extends DolomiteNetwor
   ];
 }
 
-export function getOogaBoogaAggregatorTraderConstructorParams(
-  core: CoreProtocolType<Network.Berachain>,
+export function getOogaBoogaAggregatorTraderConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolWithOogaBooga<T>
 ): any[] {
   return [
     core.oogaBoogaEcosystem.oogaBoogaRouter.address,
