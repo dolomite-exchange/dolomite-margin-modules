@@ -16,6 +16,7 @@ import {
 import {
   CoreProtocolWithOdos,
   CoreProtocolWithOkx,
+  CoreProtocolWithOogaBooga,
   CoreProtocolWithParaswap,
   getOdosAggregatorTraderConstructorParams,
   getOkxAggregatorTraderConstructorParams,
@@ -76,8 +77,8 @@ export async function createOkxAggregatorTrader<T extends DolomiteNetwork>(
   );
 }
 
-export async function createOogaBoogaAggregatorTrader(
-  core: CoreProtocolBerachain,
+export async function createOogaBoogaAggregatorTrader<T extends DolomiteNetwork>(
+  core: CoreProtocolWithOogaBooga<T>,
 ): Promise<OogaBoogaAggregatorTrader> {
   return await createContractWithAbi<OogaBoogaAggregatorTrader>(
     OogaBoogaAggregatorTrader__factory.abi,

@@ -153,7 +153,7 @@ export async function verifyContract(
     customChain.urls.browserURL,
     customChain.urls.apiURL === ETHERSCAN_V2_API_URL ? customChain.chainId : undefined,
   );
-  if (await instance.isVerified(address)) {
+  if (customChain.chainId.toString() === Network.PolygonZkEvm || await instance.isVerified(address)) {
     console.log('\tContract is already verified. Skipping verification...');
     return;
   }

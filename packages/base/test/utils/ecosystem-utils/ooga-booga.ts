@@ -11,7 +11,7 @@ export async function createOogaBoogaEcosystem(
   network: Network,
   signer: SignerWithAddressWithSafety,
 ): Promise<OogaBoogaEcosystem> {
-  if (network !== Network.Berachain) {
+  if (network !== Network.Berachain && network !== Network.Botanix) {
     return Promise.reject(`Invalid network, found ${network}`);
   }
 
