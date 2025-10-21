@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
-import { DolomiteNetwork, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
 
@@ -65,16 +65,16 @@ export async function getCalldataForEnso<T extends DolomiteNetwork>(
   });
 
   const result = await api.post('/api/v1/shortcuts/route', {
-      chainId: core.config.network,
-      fromAddress: trader.address,
-      amountIn: '$amount1',
-      slippage: '50',
-      tokenIn: inputToken.address,
-      tokenOut: outputToken.address,
-      routingStrategy: 'router',
-      variableEstimates: {
-        $amount1: inputAmount.toString(),
-      },
+    chainId: core.config.network,
+    fromAddress: trader.address,
+    amountIn: '$amount1',
+    slippage: '50',
+    tokenIn: inputToken.address,
+    tokenOut: outputToken.address,
+    routingStrategy: 'router',
+    variableEstimates: {
+      $amount1: inputAmount.toString(),
+    },
   })
     .then(response => response.data)
     .catch((error) => {
@@ -203,13 +203,21 @@ export async function getCalldataForOkx<T extends DolomiteNetwork>(
 }
 
 export async function getCalldataForOogaBooga(
-  chainId: string,
+  chainId: Network,
   inputToken: { address: address },
   inputAmount: BigNumber,
   outputToken: { address: address },
   receiver: { address: address },
 ): Promise<TraderOutput> {
-  const url = chainId === Network.Botanix ? 'https://botanix.api.oogabooga.io' : 'https://mainnet.api.oogabooga.io';
+  let url: string;
+  if (chainId === Network.Berachain) {
+    url = 'https://mainnet.api.oogabooga.io';
+  } else if (chainId === Network.Botanix) {
+    url = 'https://botanix.api.oogabooga.io';
+  } else {
+    return Promise.reject(new Error(`Invalid network, found: ${chainId}`));
+  }
+
   const result = await axios.get(`${url}/v1/swap`, {
     headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
     params: {

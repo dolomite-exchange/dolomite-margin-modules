@@ -11,18 +11,14 @@ import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 
 interface CoreProtocolTokensBotanix extends CoreProtocolTokens<Network.Botanix> {
   pbtc: IWETH;
-  pUsd: IERC20;
   stBtc: IERC20;
   usdt: IERC20;
-  ypUsd: IERC20;
 }
 
 interface CoreProtocolMarketIdsBotanix extends CoreProtocolMarketIds {
   pbtc: BigNumberish;
-  pUsd: BigNumberish;
   stBtc: BigNumberish;
   usdt: BigNumberish;
-  ypUsd: BigNumberish;
 }
 
 export interface CoreProtocolParamsBotanix {
