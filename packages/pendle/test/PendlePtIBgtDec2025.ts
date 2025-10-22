@@ -80,7 +80,17 @@ describe('PendlePtIBgtDec2025', () => {
     });
 
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, ptToken, true, core.oracleAggregatorV2);
+    await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
+      ptToken.address,
+      core.oracleAggregatorV2.address,
+      core.interestSetters.alwaysZeroInterestSetter.address,
+      { value: parseEther('1.25') },
+      { value: parseEther('0.07') },
+      parseEther('750000'),
+      ZERO_BI,
+      { value: ZERO_BI },
+      true,
+    );
 
     await setupWBERABalance(core, core.hhUser1, amountWei, core.depositWithdrawalRouter);
     await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
