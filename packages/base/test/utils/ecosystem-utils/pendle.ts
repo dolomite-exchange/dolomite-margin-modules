@@ -35,6 +35,7 @@ import {
   PENDLE_MARKET_EZ_ETH_SEP_2024_MAP,
   PENDLE_MARKET_GLP_MAR_2024_MAP,
   PENDLE_MARKET_GLP_SEP_2024_MAP,
+  PENDLE_MARKET_IBGT_DEC_2025_MAP,
   PENDLE_MARKET_METH_DEC_2024_MAP,
   PENDLE_MARKET_MNT_OCT_2024_MAP,
   PENDLE_MARKET_RETH_JUN_2025_MAP,
@@ -53,6 +54,7 @@ import {
   PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
+  PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP,
   PENDLE_PT_METH_DEC_2024_TOKEN_MAP,
   PENDLE_PT_MNT_OCT_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -69,6 +71,7 @@ import {
   PENDLE_SY_EZ_ETH_TOKEN_MAP,
   PENDLE_SY_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
+  PENDLE_SY_IBGT_TOKEN_MAP,
   PENDLE_SY_METH_DEC_2024_TOKEN_MAP,
   PENDLE_SY_MNT_OCT_2024_TOKEN_MAP,
   PENDLE_SY_RETH_TOKEN_MAP,
@@ -84,6 +87,7 @@ import {
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 export interface CorePendleEcosystem {
   pendleRouter: IPendleRouter;
@@ -232,6 +236,15 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
   syRsEthToken: IPendleSyToken;
   syWeEthToken: IPendleSyToken;
   syWstEthToken: IPendleSyToken;
+}
+
+export interface PendleEcosystemBerachain extends CorePendleEcosystem {
+  iBgtDec2025: {
+    ptOracle: IPendlePtOracle;
+    iBgtMarket: IPendlePtMarket;
+    ptIBgtToken: IPendlePtToken;
+  };
+  syIBgtToken: IPendleSyToken;
 }
 
 export async function createPendleEcosystemMantle(
@@ -681,5 +694,25 @@ export async function createPendleEcosystemArbitrumOne(
     syRsEthToken: getContract(PENDLE_SY_RS_ETH_TOKEN_MAP[network] as string, IPendleSyToken__factory.connect, signer),
     syWeEthToken: getContract(PENDLE_SY_WE_ETH_TOKEN_MAP[network] as string, IPendleSyToken__factory.connect, signer),
     syWstEthToken: getContract(PENDLE_SY_WST_ETH_TOKEN_MAP[network] as string, IPendleSyToken__factory.connect, signer),
+  };
+}
+
+export async function createPendleEcosystemBerachain(
+  network: Network,
+  signer: SignerWithAddressWithSafety,
+): Promise<PendleEcosystemBerachain> {
+  if (network !== Network.Berachain) {
+    return Promise.reject(`Invalid network, found ${network}`);
+  }
+
+  return {
+    pendleRouter: getContract(PENDLE_ROUTER_MAP[network] as string, IPendleRouter__factory.connect, signer),
+    pendleRouterV3: getContract(PENDLE_ROUTER_V4_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
+    iBgtDec2025: {
+      ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
+      iBgtMarket: getContract(PENDLE_MARKET_IBGT_DEC_2025_MAP[network] as string, IPendlePtMarket__factory.connect, signer),
+      ptIBgtToken: getContract(PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP[network] as string, IPendlePtToken__factory.connect, signer),
+    },
+    syIBgtToken: getContract(PENDLE_SY_IBGT_TOKEN_MAP[network] as string, IPendleSyToken__factory.connect, signer),
   };
 }

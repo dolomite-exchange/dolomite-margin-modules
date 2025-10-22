@@ -258,7 +258,7 @@ import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
-import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
+import { createPendleEcosystemArbitrumOne, createPendleEcosystemBerachain, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
@@ -451,6 +451,18 @@ export async function setupHONEYBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.honey.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.honey.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupIBgtBalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9'; // Infrared Reward Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.iBgt.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.iBgt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupNativeUSDCBalance(
@@ -1483,6 +1495,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       hhUser1,
     );
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
+    const pendleEcosystem = await createPendleEcosystemBerachain(config.network, hhUser1);
     const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
@@ -1491,11 +1504,12 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       berachainRewardsEcosystem,
-      oogaBoogaEcosystem,
       tokenomics,
       tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
       chainsightPriceOracleV3: chainsightPriceOracle,
+      oogaBoogaEcosystem,
+      pendleEcosystem,
       redstonePriceOracleV3: redstonePriceOracle,
       dTokens: {
         ...coreProtocolParams.dTokens,

@@ -26,6 +26,8 @@ import {
   IInfraredVault__factory,
   INativeRewardVault,
   INativeRewardVault__factory,
+  InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTIsolationModeVaultFactory__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeUnwrapperTraderV2,
@@ -48,6 +50,7 @@ export interface BerachainRewardsEcosystem {
     bexHoneyWbera: ListedRewardAsset;
   };
   live: {
+    iBgtFactory: InfraredBGTIsolationModeVaultFactory;
     registry: BerachainRewardsRegistry;
     registryProxy: RegistryProxy;
     tokenVaultImplementation: POLIsolationModeTokenVaultV1;
@@ -118,6 +121,10 @@ export async function createBerachainRewardsEcosystem(
       },
     },
     live: {
+      iBgtFactory: InfraredBGTIsolationModeVaultFactory__factory.connect(
+        Deployments.InfraredBGTIsolationModeVaultFactory['80094'].address,
+        signer,
+      ),
       registry: BerachainRewardsRegistry__factory.connect(
         Deployments.BerachainRewardsRegistryProxy['80094'].address,
         signer,
