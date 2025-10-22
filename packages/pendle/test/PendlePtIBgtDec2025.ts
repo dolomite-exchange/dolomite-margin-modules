@@ -7,7 +7,6 @@ import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan } from '@dolo
 import {
   disableInterestAccrual,
   setupCoreProtocol,
-  setupIBgtBalance,
   setupTestMarket,
   setupWBERABalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -24,7 +23,6 @@ import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/c
 import { createPendleRegistry } from './pendle-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { PendlePtPriceOracleV2__factory } from '../src/types/factories/contracts/PendlePtPriceOracleV2__factory';
-import { InfraredBGTIsolationModeTokenVaultV1, InfraredBGTIsolationModeTokenVaultV1__factory } from 'packages/berachain/src/types';
 import { getCalldataForOogaBooga } from 'packages/base/test/utils/trader-utils';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin';
 
@@ -46,11 +44,9 @@ describe('PendlePtIBgtDec2025', () => {
   let pendleRegistry: PendleRegistry;
   let priceOracle: PendlePtPriceOracle;
 
-  let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
-
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 12_115_000,
+      blockNumber: 12_127_000,
       network: Network.Berachain
     });
     await disableInterestAccrual(core, core.marketIds.wbera);
@@ -86,16 +82,7 @@ describe('PendlePtIBgtDec2025', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, ptToken, true, core.oracleAggregatorV2);
 
-    await setupIBgtBalance(core, core.hhUser1, amountWei, core.depositWithdrawalRouter);
     await setupWBERABalance(core, core.hhUser1, amountWei, core.depositWithdrawalRouter);
-
-    await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-      core.marketIds.diBgt,
-      defaultAccountNumber,
-      core.marketIds.diBgt,
-      amountWei,
-      0
-    );
     await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
       ZERO_BI,
       defaultAccountNumber,
@@ -103,13 +90,6 @@ describe('PendlePtIBgtDec2025', () => {
       amountWei,
       0
     );
-    iBgtVault = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
-      await core.berachainRewardsEcosystem.live.iBgtFactory.getVaultByAccount(core.hhUser1.address),
-      core.hhUser1,
-    );
-
-    await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, core.marketIds.diBgt, amountWei);
-    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, amountWei);
 
     snapshotId = await snapshot();
   });
@@ -153,8 +133,8 @@ describe('PendlePtIBgtDec2025', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        core.marketIds.wbera,
-        amountWei,
+        marketId,
+        outputAmount,
         0
       );
 
