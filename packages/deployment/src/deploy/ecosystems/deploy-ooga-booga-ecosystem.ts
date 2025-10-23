@@ -10,7 +10,7 @@ import getScriptName from '../../utils/get-script-name';
 async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork<T>();
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-  if (core.network !== Network.Berachain) {
+  if (core.network !== Network.Berachain && core.network !== Network.Botanix) {
     return Promise.reject(new Error(`Invalid network, found ${network}`));
   }
 
