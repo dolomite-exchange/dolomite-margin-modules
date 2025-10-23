@@ -28,11 +28,11 @@ import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeabl
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV6
@@ -51,12 +51,18 @@ contract LiquidatorProxyV6 is
     Initializable,
     ILiquidatorProxyV6
 {
+    using DecimalLib for uint256;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
     uint256 private constant DOLOMITE_RAKE_ACCOUNT_ID = 3;
+    uint256 private constant _ONE = 1 ether;
+
+    // ============ State Variables ============
+
+    IDolomiteStructs.Decimal public dolomiteRake;
 
     // ============ Constructor ============
 
@@ -74,7 +80,8 @@ contract LiquidatorProxyV6 is
         _chainId
     )
     GenericTraderProxyBase(_dolomiteRegistry)
-    {}
+    {
+    }
 
     // ============ External Functions ============
 
@@ -109,6 +116,12 @@ contract LiquidatorProxyV6 is
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[0]);
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1]);
         _liquidate(_liquidateParams);
+    }
+
+    function ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRake(_dolomiteRake);
     }
 
     // ============ Internal Functions ============
@@ -235,6 +248,18 @@ contract LiquidatorProxyV6 is
         genericCache.dolomiteMargin.operate(accounts, actions);
     }
 
+    function _ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) internal {
+        Require.that(
+            _dolomiteRake.value < _ONE,
+            _FILE,
+            "Invalid dolomite rake"
+        );
+        dolomiteRake = _dolomiteRake;
+        emit DolomiteRakeSet(_dolomiteRake);
+    }
+
     function _appendWithdrawRewardAction(
         IDolomiteStructs.ActionArgs[] memory _actions,
         LiquidatorProxyConstants memory _constants,
@@ -317,13 +342,11 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
+        // @todo maybe switch to dolomite margin math
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
 
-        // @todo update to use settable dolomite rake percentage
-        console.log('heldWeiWithoutReward: ', heldWeiWithoutReward);
-        console.log('solidHeldUpdateWithReward: ', _liquidatorCache.solidHeldUpdateWithReward);
         // @todo check case when held collateral < adjusted debt
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward) / 10;
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,
@@ -331,6 +354,7 @@ contract LiquidatorProxyV6 is
             IDolomiteStructs.AssetDenomination.Wei,
             dolomiteRakeAmount
         );
+
         return dolomiteRakeAmount;
     }
 

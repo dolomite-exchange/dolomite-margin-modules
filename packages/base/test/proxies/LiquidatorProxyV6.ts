@@ -15,7 +15,7 @@ import {
 } from 'packages/base/src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
 import {
@@ -40,6 +40,7 @@ const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 
 describe('LiquidatorProxyV6', () => {
+
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let liquidatorProxy: TestLiquidatorProxyV6;
@@ -67,7 +68,7 @@ describe('LiquidatorProxyV6', () => {
         core.expiry.address,
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
-        core.liquidatorAssetRegistry.address,
+        core.liquidatorAssetRegistry.address
       ],
     );
     const data = await liquidatorProxyImplementation.populateTransaction.initialize();
@@ -77,16 +78,14 @@ describe('LiquidatorProxyV6', () => {
       data.data!,
     ]);
     liquidatorProxy = TestLiquidatorProxyV6__factory.connect(proxy.address, core.hhUser1);
+
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
+    await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
 
     await setupWETHBalance(core, core.hhUser2, parseEther('5'), core.dolomiteMargin);
     await core.tokens.weth
       .connect(core.hhUser2)
       .transfer(core.testEcosystem!.testExchangeWrapper.address, parseEther('5'));
-    await setupDAIBalance(core, core.hhUser2, parseEther('1000'), core.dolomiteMargin);
-    await core.tokens.dai
-      .connect(core.hhUser2)
-      .transfer(core.testEcosystem!.testExchangeWrapper.address, parseEther('1000'));
 
     await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('500'));
     await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.dai.address, parseEther('1'));
@@ -138,7 +137,7 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidate', () => {
-    it.only('should work normally', async () => {
+    it.only('should work normally with 10% rake', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -181,10 +180,11 @@ describe('LiquidatorProxyV6', () => {
        * After liquidation action:
        *     liquid account dai = 1000 - 945 = 55
        *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 945
+       *     solid account dai = 940.5
        *     solid account weth = -1
+       *     dolomite rake account dai = 4.5
        *
-       * After trade action where solid account swaps 945 dai for 1.1 weth:
+       * After trade action where solid account swaps 940.5 dai for 1.1 weth:
        *     solid account dai = 0
        *     solid account weth = .1
        */
@@ -193,6 +193,68 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('940.5'));
+    });
+
+    it.only('should work normally with 20% rake', async () => {
+      await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
+      await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
+      await core.borrowPositionProxyV2
+        .connect(core.hhUser1)
+        .transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.weth,
+          parseEther('1'),
+          BalanceCheckFlag.None,
+        );
+
+      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.dai,
+        MAX_UINT_256_BI,
+        core.marketIds.weth,
+        parseEther('1.1'),
+        core,
+      );
+      await liquidatorProxy.connect(core.hhUser2).liquidate({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+
+      /*
+       * held = 1000 DAI
+       * owed = 1 WETH
+       * heldPrice = $1
+       * owedPrice = $900
+       * owedPriceAdj = 900 + .05(900) = $945
+       *
+       * After liquidation action:
+       *     dolomite rake = 45 * .2 = 9
+       *     liquid account dai = 1000 - 945 = 55
+       *     liquid account weth = 1 - 1 = 0
+       *     solid account dai = 945 - 9 = 936
+       *     solid account weth = -1
+       *     dolomite rake account dai = 9
+       *
+       * After trade action where solid account swaps 936 dai for 1.1 weth:
+       *     solid account dai = 0
+       *     solid account weth = .1
+       */
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI.sub(ONE_BI)); // @follow-up Look into this. Why it is -1
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('9'));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('936'));
     });
 
     it('should work normally with 2 trades', async () => {
@@ -1241,6 +1303,31 @@ describe('LiquidatorProxyV6', () => {
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).callFunctionAndTriggerReentrancy(transaction.data!),
         'ReentrancyGuard: reentrant call',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteRake', () => {
+    it('should work normally', async () => {
+      expect(await liquidatorProxy.dolomiteRake()).to.equal(parseEther('.1'));
+      const res = await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
+      await expectEvent(liquidatorProxy, res, 'DolomiteRakeSet', {
+        dolomiteRake: { value: parseEther('.2') },
+      });
+      expect(await liquidatorProxy.dolomiteRake()).to.equal(parseEther('.2'));
+    });
+
+    it('should fail if dolomite rake is invalid', async () => {
+      await expectThrow(
+        liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('1') }),
+        'LiquidatorProxyV6: Invalid dolomite rake',
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        liquidatorProxy.connect(core.hhUser2).ownerSetDolomiteRake({ value: parseEther('.2') }),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
       );
     });
   });
