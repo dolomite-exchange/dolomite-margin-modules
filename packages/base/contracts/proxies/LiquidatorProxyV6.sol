@@ -33,6 +33,7 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV6
@@ -233,7 +234,7 @@ contract LiquidatorProxyV6 is
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            _liquidateParams.inputAmountWei - dolomiteRakeAmount,
+            type(uint256).max,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -342,7 +343,6 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        // @todo maybe switch to dolomite margin math
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
         uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
 

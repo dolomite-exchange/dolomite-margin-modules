@@ -46,6 +46,7 @@ describe('LiquidatorProxyV6', () => {
   let liquidatorProxy: TestLiquidatorProxyV6;
 
   before(async () => {
+    hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
       blockNumber: 221_500_000,
@@ -137,7 +138,7 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidate', () => {
-    it.only('should work normally with 10% rake', async () => {
+    it('should work normally with 10% rake', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -218,17 +219,22 @@ describe('LiquidatorProxyV6', () => {
         parseEther('1.1'),
         core,
       );
-      await liquidatorProxy.connect(core.hhUser2).liquidate({
-        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
-        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
-        marketIdsPath: zapParams.marketIdsPath,
-        inputAmountWei: zapParams.inputAmountWei,
-        minOutputAmountWei: MAX_UINT_256_BI,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
-        expirationTimestamp: ZERO_BI,
-        withdrawAllReward: false,
-      });
+      hre.tracer.enabled = true;
+      await liquidatorProxy.connect(core.hhUser2).liquidate(
+        {
+          solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+          liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: MAX_UINT_256_BI,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          expirationTimestamp: ZERO_BI,
+          withdrawAllReward: false,
+        },
+        { gasLimit: 10000000 }
+      );
+      hre.tracer.enabled = false;
 
       /*
        * held = 1000 DAI
@@ -252,7 +258,7 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI.sub(ONE_BI)); // @follow-up Look into this. Why it is -1
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('9'));
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('936'));
     });
