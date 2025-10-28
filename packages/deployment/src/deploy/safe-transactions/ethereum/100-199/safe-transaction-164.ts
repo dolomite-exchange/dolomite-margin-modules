@@ -2,34 +2,24 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { LowerPercentage, UpperPercentage } from '../../../../../../base/src/utils/constructors/dolomite';
+import { parseEther } from 'ethers/lib/utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetBorrowCapWithMagic,
-
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { checkSupplyCap } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Risk updates
+ * - Modify supply cap for the DOLO market
  */
-async function main(): Promise<DryRunOutput<Network.Berachain>> {
-  const network = await getAndCheckSpecificNetwork(Network.Berachain);
+async function main(): Promise<DryRunOutput<Network.Ethereum>> {
+  const network = await getAndCheckSpecificNetwork(Network.Ethereum);
   const core = await setupCoreProtocol({
     network,
-    blockNumber: await getRealLatestBlockNumber(true, network),
+    blockNumber: await getRealLatestBlockNumber(false, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    await encodeSetBorrowCapWithMagic(core, core.marketIds.oriBgt, 1_500_000),
-    await encodeSetBorrowCapWithMagic(core, core.marketIds.xSolvBtc, 100),
-    await encodeUpdateModularInterestSetterParams(core, core.marketIds.wbera, {
-      lowerRate: LowerPercentage._60,
-      upperRate: UpperPercentage._150,
-    }),
-  ];
+  const transactions: EncodedTransaction[] = [await encodeSetSupplyCapWithMagic(core, core.marketIds.dolo, 15_000_000)];
 
   return {
     core,
@@ -44,7 +34,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      await checkSupplyCap(core, core.marketIds.dolo, parseEther(`${15_000_000}`));
+    },
   };
 }
 

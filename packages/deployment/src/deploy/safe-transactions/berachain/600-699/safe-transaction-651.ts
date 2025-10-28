@@ -2,18 +2,13 @@ import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dol
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
-import { LowerPercentage } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetSupplyCapWithMagic,
-
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Risk updates
+ * - Lower the DOLO supply cap to 15M
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -22,13 +17,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.dolo, 15_000_000),
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.solvBtc, 100),
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.xSolvBtc, 2.5),
-
-    await encodeUpdateModularInterestSetterParams(core, core.marketIds.rUsd, { lowerRate: LowerPercentage._7 }),
-  ];
+  const transactions: EncodedTransaction[] = [await encodeSetSupplyCapWithMagic(core, core.marketIds.dolo, 15_000_000)];
 
   return {
     core,

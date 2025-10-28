@@ -18,7 +18,7 @@ import {
   UpperPercentage,
 } from '../../../../../../../base/src/utils/constructors/dolomite';
 import { BigNumber, BigNumberish } from 'ethers';
-import { encodeModularInterestSetterParams } from '../../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../../utils/encoding/interest-setter-encoder-utils';
 import { CoreProtocolBotanix } from '../../../../../../../base/test/utils/core-protocols/core-protocol-botanix';
 import { parseUsdc, parseUsdt } from '../../../../../../../base/src/utils/math-utils';
 
@@ -86,35 +86,35 @@ async function main(): Promise<DryRunOutput<Network.Botanix>> {
     ),
 
     // Interest setters
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.weth,
       LowerPercentage._3,
       UpperPercentage._125,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.pbtc,
       LowerPercentage._10,
       UpperPercentage._80,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdc,
       LowerPercentage._12,
       UpperPercentage._80,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.stBtc,
       LowerPercentage._10,
       UpperPercentage._70,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdt,
       LowerPercentage._12,

@@ -370,6 +370,13 @@
       "isVerified": true
     }
   },
+  "AdvisorVestingClaimsImplementationV1": {
+    "80094": {
+      "address": "0x9e579Ab791249f8c682107fb63Ae17bCa694b1A5",
+      "transaction": "0x1897f2ca00610ecd840da708d88b7ed65fc8a3c231abd92e9eded039d00d2b7e",
+      "isVerified": true
+    }
+  },
   "ARBIsolationModeTokenVaultV1": {
     "42161": {
       "address": "0x0c5b395408082C8313Ac33201a144EE561235C0b",
@@ -1682,6 +1689,65 @@
     "80094": {
       "address": "0xa424E1BfE8845B9c324eeDd5575844B42a88C998",
       "transaction": "0x82b804c1d951eb0537661aa040e838785da7456ad0d6ad3ff224873f1911b04e",
+      "isVerified": true
+    }
+  },
+  "DolomiteAccountRiskOverrideSetterImplementationV5": {
+    "42161": {
+      "address": "0x443fa52E4a0e7865E6db910175f063D2140B117D",
+      "transaction": "0x4a64b21782e1cce49292384936c8d95c6260099b2b0025b2514de103a1bab232",
+      "isVerified": false
+    }
+  },
+  "DolomiteAccountRiskOverrideSetterImplementationV6": {
+    "1": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x60053586a2cbe3221cc7607d0df4ba30ae69bf660ea05528963f1672981d9341",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x9b8c55d71aa676299f77be81d9e577c386bd954b9e26f45ee49de0f76ba7b9ea",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0xa0e6b707b857080e3162cd78e483f583cbfe4fd65ee9d4da2d4771ab29410623",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x52ec2ecfd9634f7b1a5d813122c7138fe456ca2674f61d4a2c041b70e8be5157",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x08f1e884d1fc63ddc73ec30df8d3d953399ed0c4472cba32cdcdb7d5f383e750",
+      "isVerified": true
+    },
+    "5330": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0xf425ddddba6baffdea20f1fb8ab12c4e1c96058b89bcc702edb1f075208a9129",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x3c6a1b8a40cf8da6d567261b8160dc8b210f7d2f99d1d666087c0c3f4c3f708f",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x57960e166bdf213a637fb8954d324ddcd77a2e5420e68d3c26b92b81d5965252",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0xbefe247665263b2d90f267c034fe28ff92e1f1a8e22e7d035ef9c9a3d593471d",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0x909286e19B1fEE14AeB1d771b72A3B187a42E972",
+      "transaction": "0x9df05b48e129668f65badfdf096d5f0defd29ebe3ab94249a4406aaba1a670bb",
       "isVerified": true
     }
   },
@@ -3035,6 +3101,11 @@
     }
   },
   "DOLOPriceOracle": {
+    "1": {
+      "address": "0x8517ed4E41e3bc6B5660162ed1B131510458542b",
+      "transaction": "0xa2e3a6aedc81e0d5f1af6fef45e0e9c322f6def5d3b399f81b5930ceb5708a4b",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x8517ed4E41e3bc6B5660162ed1B131510458542b",
       "transaction": "0x11b7786ce8a3105d87d406ec03e391d1458373c0ff311497be03316d1c6baa1f",
@@ -7970,6 +8041,11 @@
     }
   },
   "OogaBoogaAggregatorTraderV2": {
+    "3637": {
+      "address": "0x0CE205f7bCBa70E4c03f826918c8c21073386ED3",
+      "transaction": "0x1a874119c7ace25451a0d71fa4fd2856ffc9534ac05c519f1e43db637c6bbac7",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x0CE205f7bCBa70E4c03f826918c8c21073386ED3",
       "transaction": "0xcd0059a2c376546fce99bed602ad150e48d96d4cca98353dea858e838888eb17",
@@ -8041,6 +8117,13 @@
       "address": "0xa150Ef2D5827dB283321D15d62d5D07fB41d636E",
       "transaction": "0xce7dd7751e41e60176258d35b3ceae8a305b7786d5fb7f4ca595459f2f28f5b7",
       "isVerified": true
+    }
+  },
+  "PancakeV3PriceOracle": {
+    "1": {
+      "address": "0x535694AECf750d317992B10b2080271f00F4bc0B",
+      "transaction": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "isVerified": false
     }
   },
   "ParaswapAggregatorTrader": {

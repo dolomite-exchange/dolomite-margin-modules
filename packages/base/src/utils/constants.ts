@@ -495,15 +495,15 @@ export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 export const DOLO_MAP: Record<Network.ArbitrumOne | Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: -1, // Does not exist yet
   },
   [Network.Berachain]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: 35, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: 35,
   },
   [Network.Ethereum]: {
     address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
-    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+    marketId: 16,
   },
 };
 
@@ -1824,8 +1824,17 @@ export const OKX_DEX_TRANSFER_PROXY_MAP: Record<Network.XLayer, string> = {
   [Network.XLayer]: '0x8b773D83bc66Be128c60e07E17C8901f7a64F000',
 };
 
-export const OOGA_BOOGA_ROUTER_MAP: Record<Network.Berachain, string> = {
+export const OOGA_BOOGA_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
+  [Network.ArbitrumOne]: undefined,
+  [Network.Base]: undefined,
   [Network.Berachain]: '0xFd88aD4849BA0F729D6fF4bC27Ff948Ab1Ac3dE7',
+  [Network.Botanix]: '0x417fBC387fa853AEd674d62Ca1b21E3cE54C0F85',
+  [Network.Ethereum]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: undefined,
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
 };
 
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {

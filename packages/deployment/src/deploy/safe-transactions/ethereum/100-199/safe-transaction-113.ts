@@ -18,7 +18,7 @@ import { CoreProtocolEthereum } from '../../../../../../base/test/utils/core-pro
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { checkMarket } from '../../../../utils/invariant-utils';
@@ -76,56 +76,56 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
 
   const transactions: EncodedTransaction[] = [
     ...await encodeInsertChainlinkOracleV3(core, btcPlaceholder),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.weth,
       LowerPercentage._3,
       UpperPercentage._80,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usd1,
       LowerPercentage._11,
       UpperPercentage._60,
       OptimalUtilizationRate._92,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdc,
       LowerPercentage._11,
       UpperPercentage._60,
       OptimalUtilizationRate._92,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.link,
       LowerPercentage._8,
       UpperPercentage._125,
       OptimalUtilizationRate._50,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.wbtc,
       LowerPercentage._4,
       UpperPercentage._100,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdt,
       LowerPercentage._11,
       UpperPercentage._60,
       OptimalUtilizationRate._92,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.crv,
       LowerPercentage._10,
       UpperPercentage._300,
       OptimalUtilizationRate._50,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.aave,
       LowerPercentage._10,
