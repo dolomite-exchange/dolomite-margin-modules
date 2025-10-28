@@ -23,8 +23,8 @@ pragma solidity ^0.8.9;
 import { RouterBase } from "./RouterBase.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
 
 
 /**
@@ -55,6 +55,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ========================================================
 
   function openBorrowPosition(
+    uint256 _isolationModeMarketId,
     uint256 _fromAccountNumber,
     uint256 _toAccountNumber,
     uint256 _marketId,
@@ -62,7 +63,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external payable nonReentrant {
     MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-    if (!marketInfo.isIsolationModeAsset) {
+    if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
       if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
       Require.that(
           msg.value == 0,
@@ -79,7 +80,20 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _amount,
         _balanceCheckFlag
       );
+    } else if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId != 0) {
+      MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+      IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+
+      DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(address(vault), _toAccountNumber);
+      vault.transferIntoPositionWithOtherToken(
+        _fromAccountNumber,
+        _toAccountNumber,
+        _marketId,
+        _amount,
+        _balanceCheckFlag
+      );
     } else {
+      /*assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
       IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
       vault.openBorrowPosition{value: msg.value}(_fromAccountNumber, _toAccountNumber, _amount);
     }

@@ -70,6 +70,7 @@ describe('BorrowPositionRouter', () => {
     await setupTestMarket(core, factory, true);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(router.address, true);
     await factory.connect(core.governance).ownerInitialize([router.address]);
     await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(router.address, true);
     await core.gmxV2Ecosystem.live.gmEthUsd.factory.connect(core.governance).ownerSetIsTokenConverterTrusted(
@@ -99,6 +100,7 @@ describe('BorrowPositionRouter', () => {
   describe('#openBorrowPosition', () => {
     it('should work normally for a user for a normal asset', async () => {
       const res = await router.connect(core.hhUser1).openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -119,6 +121,7 @@ describe('BorrowPositionRouter', () => {
       await userVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       const res = await router.openBorrowPosition(
+        isolationModeMarketId,
         defaultAccountNumber,
         borrowAccountNumber,
         isolationModeMarketId,
@@ -131,6 +134,23 @@ describe('BorrowPositionRouter', () => {
       });
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
+    });
+
+    it('should work normally for a vault and a normal asset', async () => {
+      const res = await router.connect(core.hhUser1).openBorrowPosition(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
+        borrower: userVault.address,
+        borrowAccountNumber: borrowAccountNumber,
+      });
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, amountWei);
     });
 
     it('should work normally with execution fee', async () => {
@@ -155,6 +175,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.dGmEthUsd, ZERO_BI);
 
       const res = await router.connect(core.hhUser1).openBorrowPosition(
+        core.marketIds.dGmEthUsd,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dGmEthUsd,
@@ -173,6 +194,7 @@ describe('BorrowPositionRouter', () => {
     it('should fail if msg.value > 0 for normal asset', async () => {
       await expectThrow(
         router.connect(core.hhUser1).openBorrowPosition(
+          ZERO_BI,
           defaultAccountNumber,
           borrowAccountNumber,
           core.marketIds.dai,
@@ -186,6 +208,7 @@ describe('BorrowPositionRouter', () => {
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         isolationModeMarketId,
@@ -202,6 +225,7 @@ describe('BorrowPositionRouter', () => {
   describe('#closeBorrowPosition', () => {
     it('should work normally for normal user and asset', async () => {
       const res = await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -231,6 +255,7 @@ describe('BorrowPositionRouter', () => {
       await userVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await router.openBorrowPosition(
+        isolationModeMarketId,
         defaultAccountNumber,
         borrowAccountNumber,
         isolationModeMarketId,
@@ -441,6 +466,7 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
       await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -515,6 +541,7 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
       await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -551,6 +578,7 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -591,6 +619,7 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -619,6 +648,7 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
