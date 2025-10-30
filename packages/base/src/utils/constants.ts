@@ -1917,6 +1917,10 @@ export const PENDLE_MARKET_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, stri
   [Network.ArbitrumOne]: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
 };
 
+export const PENDLE_MARKET_IBGT_DEC_2025_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x850A9f099De3081FE88f8be6207492c52754aCb5',
+};
+
 export const PENDLE_MARKET_METH_DEC_2024_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x99E83709846b6cB82d47a0D78b175E68497EA28B',
 };
@@ -1993,6 +1997,13 @@ export const PENDLE_PT_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0x89cD713a6607787F93d6743E67777Be9Ad73c54b',
 };
 
+export const PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xc2c7ded5837f911b7efe5984b52182036fd66a20',
+    marketId: 43,
+  },
+};
+
 export const PENDLE_PT_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x1333B49BBdD06544a25647f9127358D9A9486105',
 };
@@ -2036,7 +2047,7 @@ export const PENDLE_PT_WST_ETH_2025_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 export const PENDLE_PT_ORACLE_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.Base]: undefined,
-  [Network.Berachain]: undefined,
+  [Network.Berachain]: '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2',
   [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.Ink]: undefined,
@@ -2049,11 +2060,11 @@ export const PENDLE_PT_ORACLE_MAP: Record<DolomiteNetwork, string | undefined> =
 export const PENDLE_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
   [Network.Base]: undefined,
-  [Network.Berachain]: undefined,
+  [Network.Berachain]: '0x888888888889758F76e7103c6CbF23ABbF58F946', // fall back to v4
   [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
   [Network.Ink]: undefined,
-  [Network.Mantle]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
+  [Network.Mantle]: '0x888888888889758F76e7103c6CbF23ABbF58F946', // fall back to v4
   [Network.PolygonZkEvm]: undefined,
   [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
@@ -2062,7 +2073,7 @@ export const PENDLE_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
 export const PENDLE_ROUTER_V4_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Base]: undefined,
-  [Network.Berachain]: undefined,
+  [Network.Berachain]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Ink]: undefined,
@@ -2086,6 +2097,10 @@ export const PENDLE_SY_GLP_MAR_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_SY_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xd1F7d5fec6EB532847e552269c905Ac489992Ef6',
+};
+
+export const PENDLE_SY_IBGT_TOKEN_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xC61C866B6fDC36f88eC368b969C6d7cb810caFa9',
 };
 
 export const PENDLE_SY_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {

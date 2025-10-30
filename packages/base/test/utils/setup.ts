@@ -158,7 +158,7 @@ import {
   ORI_BGT_MAP,
   PAYABLE_TOKEN_MAP,
   PBTC_MAP,
-  PENDLE_MAP,
+  PENDLE_MAP, PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP,
   POL_MAP,
   POL_R_USD_MAP,
   PREMIA_MAP,
@@ -258,7 +258,11 @@ import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
-import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
+import {
+  createPendleEcosystemArbitrumOne,
+  createPendleEcosystemBerachain,
+  createPendleEcosystemMantle,
+} from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
@@ -1483,6 +1487,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       hhUser1,
     );
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
+    const pendleEcosystem = await createPendleEcosystemBerachain(config.network, hhUser1);
     const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
@@ -1496,6 +1501,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
       chainsightPriceOracleV3: chainsightPriceOracle,
+      pendleEcosystem: pendleEcosystem,
       redstonePriceOracleV3: redstonePriceOracle,
       dTokens: {
         ...coreProtocolParams.dTokens,
@@ -1551,6 +1557,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ohm: OHM_MAP[typedConfig.network].marketId,
         oriBgt: ORI_BGT_MAP[typedConfig.network].marketId,
         polRUsd: POL_R_USD_MAP[typedConfig.network].marketId,
+        ptIBgt: PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP[typedConfig.network].marketId,
         pumpBtc: PUMP_BTC_MAP[typedConfig.network].marketId,
         rsEth: RS_ETH_MAP[typedConfig.network].marketId,
         rswEth: RSW_ETH_MAP[typedConfig.network].marketId,
@@ -1618,6 +1625,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ohm: IERC20__factory.connect(OHM_MAP[typedConfig.network].address, hhUser1),
         oriBgt: IERC20__factory.connect(ORI_BGT_MAP[typedConfig.network].address, hhUser1),
         polRUsd: IERC20__factory.connect(POL_R_USD_MAP[typedConfig.network].address, hhUser1),
+        ptIBgt: IERC20__factory.connect(PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP[typedConfig.network].address, hhUser1),
         pumpBtc: IERC20__factory.connect(PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
         rswEth: IERC20__factory.connect(RSW_ETH_MAP[typedConfig.network].address, hhUser1),

@@ -19,6 +19,7 @@ import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
 import { IBGT } from 'packages/berachain/src/types';
 import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
+import { CorePendleEcosystem, PendleEcosystemBerachain } from '../ecosystem-utils/pendle';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
@@ -39,6 +40,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   ohm: IERC20;
   oriBgt: IERC20;
   polRUsd: IERC20;
+  ptIBgt: IERC20;
   pumpBtc: IERC20;
   rsEth: IERC20;
   rswEth: IERC20;
@@ -119,6 +121,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   ohm: BigNumberish;
   oriBgt: BigNumberish;
   polRUsd: BigNumberish;
+  ptIBgt: BigNumberish;
   pumpBtc: BigNumberish;
   rsEth: BigNumberish;
   rswEth: BigNumberish;
@@ -154,6 +157,7 @@ export interface CoreProtocolParamsBerachain {
   chainsightPriceOracleV3: ChainsightPriceOracleV3;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
+  pendleEcosystem: PendleEcosystemBerachain;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokenomics: TokenomicsEcosystem;
   tokenomicsAirdrop: TokenomicsAirdropEcosystem;
@@ -167,6 +171,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly chainsightPriceOracleV3: ChainsightPriceOracleV3;
   public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
+  public readonly pendleEcosystem: PendleEcosystemBerachain;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
   public readonly tokenomics: TokenomicsEcosystem;
   public readonly tokenomicsAirdrop: TokenomicsAirdropEcosystem;
@@ -186,6 +191,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.dolomiteTokens = berachainParams.dTokens;
     this.marketIds = berachainParams.marketIds;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
+    this.pendleEcosystem = berachainParams.pendleEcosystem;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
     this.tokenomics = berachainParams.tokenomics;
     this.tokenomicsAirdrop = berachainParams.tokenomicsAirdrop;

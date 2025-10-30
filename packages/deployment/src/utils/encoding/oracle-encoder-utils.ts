@@ -562,7 +562,7 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
 }
 
 export async function encodeInsertOracle<T extends DolomiteNetwork>(
-  core: CoreProtocolWithRedstone<T>,
+  core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
   tokenPair: IERC20 | undefined,
