@@ -46,7 +46,6 @@ describe('LiquidatorProxyV6', () => {
   let liquidatorProxy: TestLiquidatorProxyV6;
 
   before(async () => {
-    hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
       blockNumber: 221_500_000,
@@ -193,11 +192,11 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('940.5'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5').sub(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('940.5').add(1));
     });
 
-    it.only('should work normally with 20% rake', async () => {
+    it('should work normally with 20% rake', async () => {
       await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -219,7 +218,6 @@ describe('LiquidatorProxyV6', () => {
         parseEther('1.1'),
         core,
       );
-      hre.tracer.enabled = true;
       await liquidatorProxy.connect(core.hhUser2).liquidate(
         {
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
@@ -234,7 +232,6 @@ describe('LiquidatorProxyV6', () => {
         },
         { gasLimit: 10000000 }
       );
-      hre.tracer.enabled = false;
 
       /*
        * held = 1000 DAI
@@ -626,7 +623,7 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
     });
 
-    it('should work normally if collateral value < debt value', async () => {
+    it.only('should work normally if collateral value < debt value', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2

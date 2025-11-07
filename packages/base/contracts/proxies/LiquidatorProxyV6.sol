@@ -234,7 +234,7 @@ contract LiquidatorProxyV6 is
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            type(uint256).max,
+            _liquidateParams.inputAmountWei - dolomiteRakeAmount,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -344,7 +344,7 @@ contract LiquidatorProxyV6 is
         returns (uint256)
     {
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake) - 1;
 
         // @todo check case when held collateral < adjusted debt
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
