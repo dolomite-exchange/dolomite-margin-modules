@@ -600,7 +600,7 @@ describe('DolomiteRegistryImplementation', () => {
         'DolomiteRegistryImplementation: Invalid dToken',
       );
     });
-    
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetMarketIdToDToken(core.marketIds.usdc, OTHER_ADDRESS),
