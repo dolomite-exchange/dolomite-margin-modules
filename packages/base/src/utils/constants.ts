@@ -1220,6 +1220,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne | Network.Berachain | Networ
   },
 };
 
+export const WG_BERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xD77552D3849ab4D8C3b189A9582d0ba4C1F4f912',
+    marketId: 44,
+  },
+};
+
 export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
@@ -2880,6 +2887,9 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
     [WETH_MAP[Network.Berachain].address]: {
       scribeAddress: '0x3d97ad50ce86a1fc3425b46ac799074b0fa35570',
+    },
+    [WG_BERA_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x34F13852066A5F9D386db0899E814E1EA9B282f9',
     },
     [YL_FBTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xcfee055bf4dec42563f023ca097edf0c48cc357f',

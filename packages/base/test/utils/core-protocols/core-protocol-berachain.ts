@@ -63,6 +63,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   wbera: IWETH;
   wbtc: IERC20;
   weEth: IERC20;
+  wgBera: IERC20;
   xSolvBtc: IERC20;
   ylBtcLst: IERC20;
   ylPumpBtc: IERC20;
@@ -144,6 +145,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   wbera: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  wgBera: BigNumberish;
   xSolvBtc: BigNumberish;
   ylFbtc: BigNumberish;
   ylPumpBtc: BigNumberish;
