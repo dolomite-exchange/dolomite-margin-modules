@@ -1005,6 +1005,13 @@
       "isVerified": true
     }
   },
+  "BoycoClaimProxy": {
+    "80094": {
+      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
+      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
+      "isVerified": true
+    }
+  },
   "BoycoPartnerClaimProxy": {
     "80094": {
       "address": "0x232FaF2D9163DcA0f62d0ecDE2C2C259AA5eF44B",
@@ -8131,6 +8138,13 @@
       "isVerified": true
     }
   },
+  "PendleIBgtDec2025RegistryProxy": {
+    "80094": {
+      "address": "0x3EE75e3B85aC0e3Aa6cD4499f700B8c0fC955F22",
+      "transaction": "0x31b6651e9773de51f238e23e64e14d5d06f469c9c3ba829c79afd26afd953650",
+      "isVerified": true
+    }
+  },
   "PendlemETHDec2024RegistryProxy": {
     "5000": {
       "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",
@@ -8576,6 +8590,13 @@
     "42161": {
       "address": "0x162aBcE9bBf515cF86aF4b5FBFA31979aabC35cA",
       "transaction": "0x971c9470c6e7b29abb1f79629a3f8d0eeb78c97ab2ea02b2ecd19b5c80ad6220",
+      "isVerified": true
+    }
+  },
+  "PendlePtIBgtDec2025PriceOracleV2": {
+    "80094": {
+      "address": "0x5f1F10Cd988E566DD01a6F8f91316c095214cFe7",
+      "transaction": "0x362a0f15d1e5a1125f57d694b7fee134fe1e489dec3e32e6a58050c6f02650cf",
       "isVerified": true
     }
   },
@@ -9744,6 +9765,11 @@
       "address": "0x4f64f834BC6C8A09995e0A76D71ad0F4DadF1c14",
       "transaction": "0x8705a93cf06c48430ac3f7dfea26fa20cf0e4465196bea9bf07eb80c1f121f6c",
       "isVerified": true
+    },
+    "80094": {
+      "address": "0x40e6D35B6E73d49E81658Fdc8A779F0127602Bc3",
+      "transaction": "0x8fa1fd322c8a29aa3aa60a5bfb888f0806f60b610fd36397fc20fb921e566b75",
+      "isVerified": true
     }
   },
   "PendleREthJun2025RegistryProxy": {
@@ -10575,14 +10601,6 @@
       "address": "0xbe801A96E18a131D4AFD164704a2A42cCb1be376",
       "transaction": "0xfdf68e1003bc967ec87e595deb30587d70d1d803332f181125bbe12dfcc76415",
       "isVerified": true
-    }
-  },
-  "VeTokenClaimProxy": {
-    "80094": {
-      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
-      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
-      "isVerified": true,
-      "extraName": "Boyco"
     }
   },
   "VoterAlwaysActive": {
