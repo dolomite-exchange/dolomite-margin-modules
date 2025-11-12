@@ -26,6 +26,7 @@ import { ICustomTestToken } from "./ICustomTestToken.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   TestDolomiteMarginExchangeWrapper
@@ -52,12 +53,13 @@ contract TestDolomiteMarginExchangeWrapper is IDolomiteMarginExchangeWrapper, On
         address _receiver,
         address _outputToken,
         address,
-        uint256,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        console.log("inputAmount: ", _inputAmount);
         (, bytes memory extraData) = abi.decode(_orderData, (uint256, bytes));
         uint256 returnAmount = abi.decode(extraData, (uint256));
         if (ICustomTestToken(_outputToken).balanceOf(address(this)) < returnAmount) {

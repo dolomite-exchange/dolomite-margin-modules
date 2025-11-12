@@ -33,7 +33,6 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV6
@@ -344,7 +343,7 @@ contract LiquidatorProxyV6 is
         returns (uint256)
     {
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake) - 1;
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
 
         // @todo check case when held collateral < adjusted debt
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(

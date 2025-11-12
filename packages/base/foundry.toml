@@ -1,0 +1,17 @@
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['../../node_modules', 'node_modules', 'lib']
+test = 'test'
+cache_path  = 'cache_forge'
+
+[lint]
+lint_on_build = false
+
+remappings = [
+    "@openzeppelin/=../../node_modules/@openzeppelin",
+    "@dolomite-exchange/modules-admin/=../admin/"
+]
+
+[fuzz]
+runs = 2000
