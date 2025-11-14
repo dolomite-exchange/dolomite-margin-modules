@@ -9,10 +9,12 @@ import {
   StrategicVestingClaims,
   StrategicVestingClaims__factory,
   VestingClaims,
-  VestingClaims__factory,
+  VestingClaims__factory, VeTokenClaim, VeTokenClaim__factory,
 } from 'packages/tokenomics/src/types';
 
 export interface TokenomicsAirdropEcosystem {
+  boycoAirdrop: VeTokenClaim;
+  boycoPartnerAirdrop: VeTokenClaim;
   optionAirdrop: OptionAirdrop;
   regularAirdrop: RegularAirdrop;
   regularInvestorVesting: VestingClaims;
@@ -29,6 +31,8 @@ export async function createTokenomicsAirdropEcosystem(
   }
 
   return {
+    boycoAirdrop: VeTokenClaim__factory.connect(Deployments.BoycoClaimProxy[network].address, signer),
+    boycoPartnerAirdrop: VeTokenClaim__factory.connect(Deployments.BoycoPartnerClaimProxy[network].address, signer),
     optionAirdrop: OptionAirdrop__factory.connect(Deployments.OptionAirdropProxy[network].address, signer),
     regularAirdrop: RegularAirdrop__factory.connect(Deployments.RegularAirdropProxy[network].address, signer),
     regularInvestorVesting: VestingClaims__factory.connect(Deployments.VestingClaimsProxy[network].address, signer),

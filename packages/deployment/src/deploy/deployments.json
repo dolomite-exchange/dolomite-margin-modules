@@ -1005,6 +1005,13 @@
       "isVerified": true
     }
   },
+  "BoycoClaimProxy": {
+    "80094": {
+      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
+      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
+      "isVerified": true
+    }
+  },
   "BoycoPartnerClaimProxy": {
     "80094": {
       "address": "0x232FaF2D9163DcA0f62d0ecDE2C2C259AA5eF44B",
@@ -10594,14 +10601,6 @@
       "address": "0xbe801A96E18a131D4AFD164704a2A42cCb1be376",
       "transaction": "0xfdf68e1003bc967ec87e595deb30587d70d1d803332f181125bbe12dfcc76415",
       "isVerified": true
-    }
-  },
-  "VeTokenClaimProxy": {
-    "80094": {
-      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
-      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
-      "isVerified": true,
-      "extraName": "Boyco"
     }
   },
   "VoterAlwaysActive": {
