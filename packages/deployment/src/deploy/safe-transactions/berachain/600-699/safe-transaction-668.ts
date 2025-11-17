@@ -20,7 +20,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const wgBera = await deployDolomiteErc4626Token(core, 'WgBera', core.marketIds.wgBera);
-
   const transactions: EncodedTransaction[] = [
     ...await encodeSetupDolomite4626Token(core, wgBera),
   ];

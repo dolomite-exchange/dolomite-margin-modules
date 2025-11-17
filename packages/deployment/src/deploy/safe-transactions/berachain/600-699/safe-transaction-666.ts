@@ -39,7 +39,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core.interestSetters.alwaysZeroInterestSetter,
       TargetCollateralization._150,
       TargetLiquidationPenalty._15,
-      /* maxSupplyWei */ parseEther(`${400_000}`),
+      /* maxSupplyWei */ parseEther(`${250_000}`),
       /* maxBorrowWei */ 0,
       /* isCollateralOnly */ true,
     ),
@@ -49,7 +49,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       [
         {
           marginRatioOverride: TargetCollateralization._133,
-          liquidationRewardOverride: TargetLiquidationPenalty._10,
+          liquidationRewardOverride: TargetLiquidationPenalty._15,
           debtMarketIds: [core.marketIds.wbera],
         },
       ],

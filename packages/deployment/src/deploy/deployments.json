@@ -3064,6 +3064,13 @@
       "isVerified": true
     }
   },
+  "DolomiteWgBera4626Token": {
+    "80094": {
+      "address": "0x561Fee9518c2417d9E85dC295c829eEeE7BFC255",
+      "transaction": "0x6c99a21cdaf9cbb4cd040ea4ecf1bcf8b57e99fca8883dd7d624ae47c8a04ead",
+      "isVerified": true
+    }
+  },
   "DolomiteWhitelistForGlpDepositorV2": {
     "42161": {
       "address": "0xD873e5D8020cfd47b6268CA5d3732c4F75ccA7EC",
