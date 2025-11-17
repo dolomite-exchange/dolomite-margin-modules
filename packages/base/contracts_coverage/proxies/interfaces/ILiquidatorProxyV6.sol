@@ -30,6 +30,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
  * Interface for liquidating positions via the LiquidatorProxyV5
  */
 interface ILiquidatorProxyV6 {
+    event DolomiteRakeSet(IDolomiteStructs.Decimal dolomiteRake);
 
     // ============ Enums ============
 
