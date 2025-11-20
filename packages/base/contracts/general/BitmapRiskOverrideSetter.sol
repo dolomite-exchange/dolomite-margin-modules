@@ -28,6 +28,7 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   BitmapRiskOverrideSetter
@@ -66,6 +67,9 @@ contract BitmapRiskOverrideSetter is
 
     constructor(address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {}
 
+    function initialize() external initializer {
+    }
+
     // ===========================================================
     // ===================== Admin Functions =====================
     // ===========================================================
@@ -81,21 +85,14 @@ contract BitmapRiskOverrideSetter is
 
     function ownerSetSingleCollateralStrictDebt(
         uint256 _collateralMarketId,
-        uint256[] memory _debtBitmaps,
-        IDolomiteStructs.Decimal memory _marginRatioOverride,
-        IDolomiteStructs.Decimal memory _liquidationRewardOverride
+        SingleCollateralStrictDebtStruct calldata _singleCollateralStrictDebt
     ) external onlyDolomiteMarginOwner(msg.sender) {
         Storage storage s = _getStorage();
 
-        s.singleCollateralStrictDebt[_collateralMarketId] = SingleCollateralStrictDebtStruct({
-            set: true,
-            debtBitmaps: _debtBitmaps,
-            marginRatioOverride: _marginRatioOverride,
-            liquidationRewardOverride: _liquidationRewardOverride
-        });
+        s.singleCollateralStrictDebt[_collateralMarketId] = _singleCollateralStrictDebt;
         s.singleCollateralStrictDebtMarketIds.add(_collateralMarketId);
 
-        emit SingleCollateralStrictDebtSet(_collateralMarketId, _debtBitmaps, _marginRatioOverride, _liquidationRewardOverride);
+        emit SingleCollateralStrictDebtSet(_collateralMarketId, _singleCollateralStrictDebt);
     }
 
     function ownerSetCategoryStruct(
@@ -187,11 +184,11 @@ contract BitmapRiskOverrideSetter is
             _singleCollateralMarketId -= 1;
             SingleCollateralStrictDebtStruct memory strictDebt = s.singleCollateralStrictDebt[_singleCollateralMarketId];
 
-            for (uint256 j; j < strictDebt.debtBitmaps.length; ++j) {
-                uint256 map = strictDebt.debtBitmaps[j];
+            for (uint256 j; j < strictDebt.specificDebts.length; ++j) {
+                uint256 map = strictDebt.specificDebts[j].debtBitmap;
 
-                if (map & _debtBitmap == map) {
-                    return (strictDebt.marginRatioOverride, strictDebt.liquidationRewardOverride);
+                if (map & _debtBitmap == _debtBitmap) {
+                    return (strictDebt.specificDebts[j].marginRatioOverride, strictDebt.specificDebts[j].liquidationRewardOverride);
                 }
             }
 
@@ -210,7 +207,7 @@ contract BitmapRiskOverrideSetter is
         for (uint256 i; i < activeCategories.length; ++i) {
             CategoryStruct memory category = s.categories[activeCategories[i]];
 
-            if (category.bitmap & _collateralBitmap & _debtBitmap == category.bitmap) {
+            if (category.bitmap | (_collateralBitmap & _debtBitmap) == category.bitmap) {
                 return (category.marginRatioOverride, category.liquidationRewardOverride);
             }
         }

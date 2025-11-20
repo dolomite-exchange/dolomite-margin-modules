@@ -34,7 +34,7 @@ interface IBitmapRiskOverrideSetter {
     event ActiveCategoriesSet(Category[] categories);
     event BorrowOnlyBitmapSet(uint256 bitmap);
     event CategorySet(Category category, uint256 bitmap, IDolomiteStructs.Decimal marginRatioOverride, IDolomiteStructs.Decimal liquidationRewardOverride);
-    event SingleCollateralStrictDebtSet(uint256 collateralMarketId, uint256[] debtBitmaps, IDolomiteStructs.Decimal marginRatioOverride, IDolomiteStructs.Decimal liquidationRewardOverride);
+    event SingleCollateralStrictDebtSet(uint256 collateralMarketId, SingleCollateralStrictDebtStruct singleCollateralStrictDebt);
 
     enum Category {
         NONE,
@@ -51,11 +51,15 @@ interface IBitmapRiskOverrideSetter {
         IDolomiteStructs.Decimal liquidationRewardOverride;
     }
 
-    struct SingleCollateralStrictDebtStruct {
-        bool set;
-        uint256[] debtBitmaps;
+    struct SpecificDebtStruct {
+        uint256 debtBitmap;
         IDolomiteStructs.Decimal marginRatioOverride;
         IDolomiteStructs.Decimal liquidationRewardOverride;
+    }
+
+    struct SingleCollateralStrictDebtStruct {
+        bool set;
+        SpecificDebtStruct[] specificDebts;
     }
 
 }
