@@ -159,6 +159,19 @@ library DolomiteMarginVersionWrapperLib {
         }
     }
 
+    function getVersionedMarginRatioByAccount(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        IDolomiteStructs.AccountInfo memory _account
+    ) internal view returns (IDolomiteStructs.Decimal memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return _dolomiteMargin.getMarginRatio();
+        } else {
+            (IDolomiteStructs.Decimal memory marginRatio, ) = dv2(_dolomiteMargin).getAccountRiskOverrideByAccount(_account);
+            return marginRatio;
+        }
+    }
+
     // ===========================================
     // ============ Private Functions ============
     // ===========================================
