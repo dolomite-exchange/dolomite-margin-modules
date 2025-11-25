@@ -58,7 +58,6 @@ interface IDolomiteRegistry {
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
-    event MarketIdToDTokenSet(uint256 indexed _marketId, address _dToken);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
@@ -146,13 +145,6 @@ interface IDolomiteRegistry {
      *                              DolomiteMargin.
      */
     function ownerSetOracleAggregator(address _oracleAggregator) external;
-
-    /**
-     *
-     * @param  _marketId    The market ID
-     * @param  _dToken      The address of the dToken
-     */
-    function ownerSetMarketIdToDToken(uint256 _marketId, address _dToken) external;
 
     /**
      *
@@ -246,11 +238,6 @@ interface IDolomiteRegistry {
      * @return The address of the Redstone price oracle that's compatible with DolomiteMargin
      */
     function redstonePriceOracle() external view returns (IDolomitePriceOracle);
-
-    /**
-     * @return The address of the dToken for a given market ID
-     */
-    function marketIdToDToken(uint256 _marketId) external view returns (address);
 
     /**
      * @return The address of the oracle aggregator that's compatible with DolomiteMargin
