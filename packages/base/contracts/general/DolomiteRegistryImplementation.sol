@@ -53,6 +53,7 @@ contract DolomiteRegistryImplementation is
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _ADMIN_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.adminRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _BLACKLISTED_ADDRESSES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.blacklistedAddresses")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
@@ -116,6 +117,15 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAdminRegistry(_adminRegistry);
+    }
+
+    function ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBlacklistedAddresses(_blacklistedAddresses, _isBlacklisted);
     }
 
     function ownerSetBorrowPositionProxy(
@@ -305,6 +315,10 @@ contract DolomiteRegistryImplementation is
         return _getUint256FromMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trader) == 1;
     }
 
+    function isBlacklisted(address _address) public view returns (bool) {
+        return _getUint256FromMap(_BLACKLISTED_ADDRESSES_SLOT, _address) == 1;
+    }
+
     function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
         IsolationModeStorage storage ims;
         bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
@@ -344,6 +358,28 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_ADMIN_REGISTRY_SLOT, _adminRegistry);
         emit AdminRegistrySet(_adminRegistry);
+    }
+
+    function _ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    ) internal {
+        Require.that(
+            _blacklistedAddresses.length == _isBlacklisted.length,
+            _FILE,
+            "Array length mismatch"
+        );
+
+        for (uint256 i; i < _blacklistedAddresses.length; ++i) {
+            Require.that(
+                _blacklistedAddresses[i] != address(0),
+                _FILE,
+                "Invalid blacklistedAddress"
+            );
+            _setUint256InMap(_BLACKLISTED_ADDRESSES_SLOT, _blacklistedAddresses[i], _isBlacklisted[i] ? 1 : 0);
+        }
+
+        emit BlacklistedAddressesSet(_blacklistedAddresses, _isBlacklisted);
     }
 
     function _ownerSetBorrowPositionProxy(

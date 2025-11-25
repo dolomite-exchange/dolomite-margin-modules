@@ -53,6 +53,7 @@ contract DolomiteRegistryImplementation is
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _ADMIN_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.adminRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _BLACKLISTED_ADDRESSES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.blacklistedAddresses")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
@@ -62,7 +63,6 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _MARKET_ID_TO_DTOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketIdToDToken")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
@@ -118,6 +118,15 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAdminRegistry(_adminRegistry);
+    }
+
+    function ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBlacklistedAddresses(_blacklistedAddresses, _isBlacklisted);
     }
 
     function ownerSetBorrowPositionProxy(
@@ -249,15 +258,6 @@ contract DolomiteRegistryImplementation is
         _ownerSetIsolationModeMulticallFunctions(_selectors);
     }
 
-    function ownerSetMarketIdToDToken(
-        uint256 _marketId,
-        address _dToken
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMarketIdToDToken(_marketId, _dToken);
-    }
-
     // ========================== View Functions =========================
 
     function adminRegistry() public view returns (address) {
@@ -304,10 +304,6 @@ contract DolomiteRegistryImplementation is
         return IDolomitePriceOracle(_getAddress(_REDSTONE_PRICE_ORACLE_SLOT));
     }
 
-    function marketIdToDToken(uint256 _marketId) public view returns (address) {
-        return _getAddressFromMap(_MARKET_ID_TO_DTOKEN_SLOT, _marketId);
-    }
-
     function oracleAggregator() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
     }
@@ -318,6 +314,10 @@ contract DolomiteRegistryImplementation is
 
     function isTrustedInternalTrader(address _trader) public view returns (bool) {
         return _getUint256FromMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trader) == 1;
+    }
+
+    function isBlacklisted(address _address) public view returns (bool) {
+        return _getUint256FromMap(_BLACKLISTED_ADDRESSES_SLOT, _address) == 1;
     }
 
     function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
@@ -360,6 +360,30 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_ADMIN_REGISTRY_SLOT, _adminRegistry);
         emit AdminRegistrySet(_adminRegistry);
+    }
+
+    function _ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    ) internal {
+        if (_blacklistedAddresses.length == _isBlacklisted.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _blacklistedAddresses.length == _isBlacklisted.length,
+            _FILE,
+            "Array length mismatch"
+        );
+
+        for (uint256 i; i < _blacklistedAddresses.length; ++i) {
+            if (_blacklistedAddresses[i] != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _blacklistedAddresses[i] != address(0),
+                _FILE,
+                "Invalid blacklistedAddress"
+            );
+            _setUint256InMap(_BLACKLISTED_ADDRESSES_SLOT, _blacklistedAddresses[i], _isBlacklisted[i] ? 1 : 0);
+        }
+
+        emit BlacklistedAddressesSet(_blacklistedAddresses, _isBlacklisted);
     }
 
     function _ownerSetBorrowPositionProxy(
@@ -512,21 +536,6 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_REDSTONE_PRICE_ORACLE_SLOT, _redstonePriceOracle);
         emit RedstonePriceOracleSet(_redstonePriceOracle);
-    }
-
-    function _ownerSetMarketIdToDToken(
-        uint256 _marketId,
-        address _dToken
-    ) internal {
-        if (_dToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _dToken != address(0),
-            _FILE,
-            "Invalid dToken"
-        );
-
-        _setAddressInMap(_MARKET_ID_TO_DTOKEN_SLOT, _marketId, _dToken);
-        emit MarketIdToDTokenSet(_marketId, _dToken);
     }
 
     function _ownerSetOracleAggregator(

@@ -80,6 +80,48 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetBlacklistedAddresses', () => {
+    it('should work normally', async () => {
+      expect(await registry.isBlacklisted(core.hhUser1.address)).to.equal(false);
+      const res = await registry.connect(core.governance).ownerSetBlacklistedAddresses(
+        [core.hhUser1.address],
+        [true]
+      );
+      await expectEvent(registry, res, 'BlacklistedAddressesSet', {
+        _blacklistedAddresses: [core.hhUser1.address],
+        _isBlacklisted: [true],
+      });
+      expect(await registry.isBlacklisted(core.hhUser1.address)).to.equal(true);
+
+      await registry.connect(core.governance).ownerSetBlacklistedAddresses(
+        [core.hhUser1.address],
+        [false]
+      );
+      expect(await registry.isBlacklisted(core.hhUser1.address)).to.equal(false);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBlacklistedAddresses([core.hhUser1.address], [true]),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if array length mismatch', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBlacklistedAddresses([core.hhUser1.address], [true, false]),
+        'DolomiteRegistryImplementation: Array length mismatch',
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBlacklistedAddresses([ZERO_ADDRESS], [true]),
+        'DolomiteRegistryImplementation: Invalid blacklistedAddress',
+      );
+    });
+  });
+
   describe('#ownerSetBorrowPositionProxy', () => {
     it('should work normally', async () => {
       const borrowPositionProxy = core.borrowPositionProxyV2.address;
@@ -551,34 +593,6 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetAdminRegistry(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetMarketIdToDToken', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetMarketIdToDToken(
-        core.marketIds.usdc,
-        core.dolomiteTokens.usdc.address
-      );
-      await expectEvent(registry, result, 'MarketIdToDTokenSet', {
-        _marketId: core.marketIds.usdc,
-        _dToken: core.dolomiteTokens.usdc.address,
-      });
-      expect(await registry.marketIdToDToken(core.marketIds.usdc)).to.equal(core.dolomiteTokens.usdc.address);
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetMarketIdToDToken(core.marketIds.usdc, ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid dToken',
-      );
-    });
-    
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetMarketIdToDToken(core.marketIds.usdc, OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

@@ -47,6 +47,7 @@ interface IDolomiteRegistry {
     // ========================================================
 
     event AdminRegistrySet(address indexed _adminRegistry);
+    event BlacklistedAddressesSet(address[] _blacklistedAddresses, bool[] _isBlacklisted);
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
@@ -58,7 +59,6 @@ interface IDolomiteRegistry {
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
-    event MarketIdToDTokenSet(uint256 indexed _marketId, address _dToken);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
@@ -76,6 +76,13 @@ interface IDolomiteRegistry {
      * @param  _adminRegistry    The new address of the admin registry
      */
     function ownerSetAdminRegistry(address _adminRegistry) external;
+
+    /**
+     *
+     * @param  _blacklistedAddresses    The addresses to blacklist
+     * @param  _isBlacklisted           Whether the addresses are blacklisted
+     */
+    function ownerSetBlacklistedAddresses(address[] memory _blacklistedAddresses, bool[] memory _isBlacklisted) external;
 
     /**
      *
@@ -146,13 +153,6 @@ interface IDolomiteRegistry {
      *                              DolomiteMargin.
      */
     function ownerSetOracleAggregator(address _oracleAggregator) external;
-
-    /**
-     *
-     * @param  _marketId    The market ID
-     * @param  _dToken      The address of the dToken
-     */
-    function ownerSetMarketIdToDToken(uint256 _marketId, address _dToken) external;
 
     /**
      *
@@ -248,11 +248,6 @@ interface IDolomiteRegistry {
     function redstonePriceOracle() external view returns (IDolomitePriceOracle);
 
     /**
-     * @return The address of the dToken for a given market ID
-     */
-    function marketIdToDToken(uint256 _marketId) external view returns (address);
-
-    /**
      * @return The address of the oracle aggregator that's compatible with DolomiteMargin
      */
     function oracleAggregator() external view returns (IDolomitePriceOracle);
@@ -278,6 +273,12 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * @param  _address  The address to check if it's blacklisted
+     * @return  Whether the address is blacklisted
+     */
+    function isBlacklisted(address _address) external view returns (bool);
 
     /**
      * @return The address of the treasury

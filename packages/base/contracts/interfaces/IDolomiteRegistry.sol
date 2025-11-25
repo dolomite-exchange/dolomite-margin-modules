@@ -47,6 +47,7 @@ interface IDolomiteRegistry {
     // ========================================================
 
     event AdminRegistrySet(address indexed _adminRegistry);
+    event BlacklistedAddressesSet(address[] _blacklistedAddresses, bool[] _isBlacklisted);
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
@@ -75,6 +76,16 @@ interface IDolomiteRegistry {
      * @param  _adminRegistry    The new address of the admin registry
      */
     function ownerSetAdminRegistry(address _adminRegistry) external;
+
+    /**
+     *
+     * @param  _blacklistedAddresses    The addresses to blacklist
+     * @param  _isBlacklisted           Whether the addresses are blacklisted
+     */
+    function ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    ) external;
 
     /**
      *
@@ -265,6 +276,13 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * 
+     * @param  _address  The address to check if it's blacklisted
+     * @return  Whether the address is blacklisted
+     */
+    function isBlacklisted(address _address) external view returns (bool);
 
     /**
      * @return The address of the treasury
