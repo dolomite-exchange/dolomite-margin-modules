@@ -80,8 +80,7 @@ contract LiquidatorProxyV6 is
         _chainId
     )
     GenericTraderProxyBase(_dolomiteRegistry)
-    {
-    }
+    {}
 
     // ============ External Functions ============
 
