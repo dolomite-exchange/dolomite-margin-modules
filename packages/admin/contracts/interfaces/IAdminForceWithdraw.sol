@@ -43,7 +43,5 @@ interface IAdminForceWithdraw {
 
     function ownerSetGracePeriod(uint256 _gracePeriod) external;
 
-    function forceWithdraw(
-        IDolomiteStructs.AccountInfo calldata _account
-    ) external;
+    function forceWithdraw(IDolomiteStructs.AccountInfo calldata _account) external;
 }
