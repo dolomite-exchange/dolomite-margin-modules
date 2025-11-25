@@ -21,17 +21,15 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminClaimExcessTokens } from "./interfaces/IAdminClaimExcessTokens.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
-import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 
 
 /**
@@ -69,8 +67,9 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
         address _receiver,
         bool _depositIntoDolomite
     )
-    external
-    checkPermission(this.claimExcessTokens.selector, msg.sender) {
+        external
+        checkPermission(this.claimExcessTokens.selector, msg.sender)
+    {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),

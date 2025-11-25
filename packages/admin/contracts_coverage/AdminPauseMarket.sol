@@ -27,6 +27,7 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminPauseMarket } from "./interfaces/IAdminPauseMarket.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 
@@ -37,7 +38,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  Contract that enables an admin to completely pause a market
  */
-contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPauseMarket {
+contract AdminPauseMarket is OnlyDolomiteMargin, AdminRegistryHelper, IDolomitePriceOracle, IAdminPauseMarket {
 
     // ===================================================================
     // ============================ Constants ============================
@@ -46,34 +47,23 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
     bytes32 private constant _FILE = "AdminPauseMarket";
     bytes32 public constant ADMIN_PAUSE_MARKET_ROLE = keccak256("AdminPauseMarket");
 
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+
     // ===================================================================
     // ========================= State Variables =========================
     // ===================================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-
-    mapping(address => bool) public tokenToPaused;
-    mapping(address => bool) public trustedCallers;
+    mapping(address => bool) internal _tokenToPaused;
 
     // ===================================================================
-    // ============================ Modifiers ============================
+    // =========================== Constructors ==========================
     // ===================================================================
-
-    modifier onlyTrustedCaller(address _sender) {
-        if (trustedCallers[_sender]) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            trustedCallers[_sender],
-            _FILE,
-            "Sender is not trusted caller"
-        );
-        _;
-    }
-
 
     constructor(
+        address _adminRegistry,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
@@ -81,26 +71,16 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
     // ============================ Admin Functions ======================
     // ===================================================================
 
-    function ownerSetTrustedCaller(
-        address _trustedCaller,
-        bool _trusted
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        if (_trustedCaller != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _trustedCaller != address(0),
-            _FILE,
-            "Caller is zero address"
-        );
-
-        trustedCallers[_trustedCaller] = _trusted;
-        emit TrustedCallerSet(_trustedCaller, _trusted);
-    }
-
-    function pauseMarket(uint256 _marketId) external onlyTrustedCaller(msg.sender) {
+    function pauseMarket(
+        uint256 _marketId
+    )
+        external
+        checkPermission(this.pauseMarket.selector, msg.sender)
+    {
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        if (!tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
+        if (!_tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            !tokenToPaused[token],
+            !_tokenToPaused[token],
             _FILE,
             "Market is already paused"
         );
@@ -114,22 +94,25 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
             )
         );
 
-        tokenToPaused[token] = true;
+        _tokenToPaused[token] = true;
         emit SetMarketPaused(_marketId, true);
     }
 
     function unpauseMarket(
         uint256 _marketId,
         address _priceOracle
-    ) external onlyTrustedCaller(msg.sender) {
+    )
+        external
+        checkPermission(this.unpauseMarket.selector, msg.sender)
+    {
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        if (_priceOracle != address(0) && tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
+        if (_priceOracle != address(0) && _tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _priceOracle != address(0) && tokenToPaused[token],
+            _priceOracle != address(0) && _tokenToPaused[token],
             _FILE,
             "Invalid parameters"
         );
-        tokenToPaused[token] = false;
+        _tokenToPaused[token] = false;
 
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
@@ -147,10 +130,16 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
     // ============================ View Functions =======================
     // ===================================================================
 
+    function isTokenPaused(
+        address _token
+    ) external view returns (bool) {
+        return _tokenToPaused[_token];
+    }
+
     function getPrice(
         address _token
     ) external view returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (tokenToPaused[_token]) {
+        if (_tokenToPaused[_token]) {
             return IDolomiteStructs.MonetaryPrice({
                 value: 0
             });

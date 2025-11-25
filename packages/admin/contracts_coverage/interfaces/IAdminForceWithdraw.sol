@@ -20,37 +20,30 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   IAdminPauseMarket
+ * @title   IAdminForceWithdraw
  * @author  Dolomite
  *
- * @notice  Interface for the AdminPauseMarket contract
+ * @notice  Interface for the AdminForceWithdraw contract
  */
-interface IAdminPauseMarket is IDolomitePriceOracle {
+interface IAdminForceWithdraw {
 
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
-    event SetMarketPaused(uint256 marketId, bool isPaused);
+    event GracePeriodSet(uint256 _gracePeriod);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function pauseMarket(uint256 _marketId) external;
+    function ownerSetGracePeriod(uint256 _gracePeriod) external;
 
-    function unpauseMarket(uint256 _marketId, address _priceOracle) external;
-
-    // ========================================================
-    // ==================== View Functions ====================
-    // ========================================================
-
-    function isTokenPaused(address _token) external view returns (bool);
-
-    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
+    function forceWithdraw(
+        IDolomiteStructs.AccountInfo calldata _account
+    ) external;
 }
