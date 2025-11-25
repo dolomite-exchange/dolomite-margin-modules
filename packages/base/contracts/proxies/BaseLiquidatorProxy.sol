@@ -346,6 +346,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     {
         uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
         uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
+
         if (liquidHeldValue < liquidOwedValue) {
             // The held collateral is worth less than the adjusted debt
             _cache.solidHeldUpdateWithReward = _cache.liquidHeldWei.value;

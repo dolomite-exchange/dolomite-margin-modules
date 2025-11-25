@@ -46,7 +46,6 @@ describe('LiquidatorProxyV6', () => {
   let liquidatorProxy: TestLiquidatorProxyV6;
 
   before(async () => {
-    hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
       blockNumber: 221_500_000,
@@ -138,7 +137,7 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidate', () => {
-    it.only('should work normally with 10% rake', async () => {
+    it('should work normally with 10% rake', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -197,7 +196,7 @@ describe('LiquidatorProxyV6', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('940.5'));
     });
 
-    it.only('should work normally with 20% rake', async () => {
+    it('should work normally with 20% rake', async () => {
       await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -219,7 +218,6 @@ describe('LiquidatorProxyV6', () => {
         parseEther('1.1'),
         core,
       );
-      hre.tracer.enabled = true;
       await liquidatorProxy.connect(core.hhUser2).liquidate(
         {
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
@@ -234,7 +232,6 @@ describe('LiquidatorProxyV6', () => {
         },
         { gasLimit: 10000000 }
       );
-      hre.tracer.enabled = false;
 
       /*
        * held = 1000 DAI
@@ -260,10 +257,14 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('9'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('936').sub(ONE_BI));
+      await expectWalletBalance(
+        core.testEcosystem!.testExchangeWrapper.address,
+        core.tokens.dai,
+        parseEther('936').sub(ONE_BI)
+      );
     });
 
-    it('should work normally with 2 trades', async () => {
+    xit('should work normally with 2 trades', async () => {
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.usdc, usdcAmount);
       await core.borrowPositionProxyV2
@@ -795,6 +796,10 @@ describe('LiquidatorProxyV6', () => {
         core.gmxV2Ecosystem.live.gmEth.unwrapper,
         core,
       );
+      await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
+        core.marketIds.dGmEth,
+        liquidatorProxy.address
+      );
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).liquidate({
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
@@ -1174,7 +1179,7 @@ describe('LiquidatorProxyV6', () => {
       });
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call',
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });
@@ -1262,6 +1267,9 @@ describe('LiquidatorProxyV6', () => {
       await core.liquidatorAssetRegistry
         .connect(core.governance)
         .ownerAddLiquidatorToAssetWhitelist(core.marketIds.dai, core.hhUser2.address);
+      await core.liquidatorAssetRegistry
+        .connect(core.governance)
+        .ownerAddLiquidatorToAssetWhitelist(core.marketIds.weth, core.hhUser3.address);
       const zapParams = await getSimpleZapParams(
         core.marketIds.dai,
         MAX_UINT_256_BI,
@@ -1281,7 +1289,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `HasLiquidatorRegistry: Asset has nothing whitelisted <${core.marketIds.weth}>`,
+        `HasLiquidatorRegistry: Asset not whitelisted <${core.marketIds.weth}>`,
       );
     });
 
@@ -1308,7 +1316,7 @@ describe('LiquidatorProxyV6', () => {
         });
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call',
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });

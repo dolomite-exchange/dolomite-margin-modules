@@ -341,10 +341,9 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
+        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
 
-        // @todo check case when held collateral < adjusted debt
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,

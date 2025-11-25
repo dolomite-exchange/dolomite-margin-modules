@@ -80,8 +80,7 @@ contract LiquidatorProxyV6 is
         _chainId
     )
     GenericTraderProxyBase(_dolomiteRegistry)
-    {
-    }
+    {}
 
     // ============ External Functions ============
 
@@ -347,7 +346,6 @@ contract LiquidatorProxyV6 is
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
         uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
 
-        // @todo check case when held collateral < adjusted debt
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,
