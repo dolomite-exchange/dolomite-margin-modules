@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'hardhat-tracer';
 import {
+  EVM_VERSION,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
@@ -189,6 +190,7 @@ export const base_config: HardhatUserConfig = {
       {
         version: '0.8.9',
         settings: {
+          evmVersion: EVM_VERSION,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -221,14 +223,14 @@ export const base_config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      [NetworkName.ArbitrumOne]: arbiscanApiKey,
-      [NetworkName.Base]: basescanApiKey,
-      [NetworkName.Berachain]: berascanApiKey,
+      [NetworkName.ArbitrumOne]: etherscanApiKey,
+      [NetworkName.Base]: etherscanApiKey,
+      [NetworkName.Berachain]: etherscanApiKey,
       [NetworkName.Botanix]: botanixApiKey,
       [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
-      [NetworkName.Mantle]: mantlescanApiKey,
-      [NetworkName.PolygonZkEvm]: polygonscanApiKey,
+      [NetworkName.Mantle]: etherscanApiKey,
+      [NetworkName.PolygonZkEvm]: etherscanApiKey,
       [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
@@ -237,7 +239,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.ArbitrumOne,
         chainId: parseInt(Network.ArbitrumOne, 10),
         urls: {
-          apiURL: 'https://api.arbiscan.io/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://arbiscan.io',
         },
       },
@@ -245,7 +247,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Base,
         chainId: parseInt(Network.Base, 10),
         urls: {
-          apiURL: 'https://api.basescan.org/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://basescan.org/',
         },
       },
@@ -253,7 +255,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Berachain,
         chainId: parseInt(Network.Berachain, 10),
         urls: {
-          apiURL: 'https://api.berascan.com/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://berascan.com',
         },
       },
@@ -269,7 +271,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Ethereum,
         chainId: parseInt(Network.Ethereum, 10),
         urls: {
-          apiURL: 'https://api.etherscan.io/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://etherscan.io',
         },
       },
@@ -285,7 +287,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Mantle,
         chainId: parseInt(Network.Mantle, 10),
         urls: {
-          apiURL: 'https://api.mantlescan.xyz/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://mantlescan.xyz',
         },
       },
@@ -293,7 +295,7 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.PolygonZkEvm,
         chainId: parseInt(Network.PolygonZkEvm, 10),
         urls: {
-          apiURL: 'https://api-zkevm.polygonscan.com/api',
+          apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://zkevm.polygonscan.com',
         },
       },

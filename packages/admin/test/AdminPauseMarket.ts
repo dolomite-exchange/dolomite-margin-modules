@@ -10,6 +10,7 @@ import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithA
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createAdminRegistry } from 'packages/base/test/utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance } from 'packages/base/test/utils/setup';
 import { AdminPauseMarket, AdminPauseMarket__factory } from '../src/types';
 
@@ -33,10 +34,11 @@ describe('AdminPauseMarket', () => {
     });
     await disableInterestAccrual(core, core.marketIds.usdc);
 
+    const adminRegistry = await createAdminRegistry(core);
     adminPauseMarket = await createContractWithAbi<AdminPauseMarket>(
       AdminPauseMarket__factory.abi,
       AdminPauseMarket__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+      [adminRegistry.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
 
     bypassTimelockRole = await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE();
@@ -58,7 +60,17 @@ describe('AdminPauseMarket', () => {
       .ownerAddRoleToAddressFunctionSelectors(adminPauseMarketRole, core.dolomiteMargin.address, [
         core.dolomiteMargin.interface.getSighash(core.dolomiteMargin.interface.getFunction('ownerSetPriceOracle')),
       ]);
-    await adminPauseMarket.connect(dolomiteOwnerImpersonator).ownerSetTrustedCaller(core.gnosisSafe.address, true);
+
+    await adminRegistry.connect(core.governance).grantPermission(
+      adminPauseMarket.interface.getSighash('pauseMarket'),
+      adminPauseMarket.address,
+      core.gnosisSafe.address
+    );
+    await adminRegistry.connect(core.governance).grantPermission(
+      adminPauseMarket.interface.getSighash('unpauseMarket'),
+      adminPauseMarket.address,
+      core.gnosisSafe.address
+    );
 
     snapshotId = await snapshot();
   });
@@ -74,33 +86,6 @@ describe('AdminPauseMarket', () => {
     });
   });
 
-  describe('#ownerSetTrustedCaller', () => {
-    it('should work normally', async () => {
-      const res = await adminPauseMarket
-        .connect(dolomiteOwnerImpersonator)
-        .ownerSetTrustedCaller(core.hhUser1.address, true);
-      await expectEvent(adminPauseMarket, res, 'TrustedCallerSet', {
-        trustedCaller: core.hhUser1.address,
-        isTrusted: true,
-      });
-      expect(await adminPauseMarket.trustedCallers(core.hhUser1.address)).to.equal(true);
-    });
-
-    it('should fail if the trusted caller is the zero address', async () => {
-      await expectThrow(
-        adminPauseMarket.connect(dolomiteOwnerImpersonator).ownerSetTrustedCaller(ADDRESS_ZERO, true),
-        'AdminPauseMarket: Caller is zero address',
-      );
-    });
-
-    it('should fail if the sender is not the owner', async () => {
-      await expectThrow(
-        adminPauseMarket.connect(core.hhUser1).ownerSetTrustedCaller(core.hhUser1.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
   describe('#pauseMarket', () => {
     it('should work normally to pause a market', async () => {
       await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
@@ -108,7 +93,7 @@ describe('AdminPauseMarket', () => {
 
       const res = await adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc);
       await expectEvent(adminPauseMarket, res, 'SetMarketPaused', { marketId: core.marketIds.usdc, isPaused: true });
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(true);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(true);
 
       await expectThrow(
         depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount),
@@ -123,13 +108,13 @@ describe('AdminPauseMarket', () => {
         .connect(core.gnosisSafe)
         .unpauseMarket(core.marketIds.usdc, core.oracleAggregatorV2.address);
       await expectEvent(adminPauseMarket, res2, 'SetMarketPaused', { marketId: core.marketIds.usdc, isPaused: false });
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(false);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(false);
       await withdrawFromDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
     });
 
     it('should fail if already paused', async () => {
       await adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc);
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(true);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(true);
 
       await expectThrow(
         adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc),
@@ -140,7 +125,7 @@ describe('AdminPauseMarket', () => {
     it('should fail if the sender is not a trusted caller', async () => {
       await expectThrow(
         adminPauseMarket.connect(core.hhUser1).pauseMarket(core.marketIds.usdc),
-        'AdminPauseMarket: Sender is not trusted caller',
+        `AdminRegistryHelper: Caller does not have permission <${core.hhUser1.addressLower}>`,
       );
     });
   });
@@ -148,13 +133,13 @@ describe('AdminPauseMarket', () => {
   describe('#unpauseMarket', () => {
     it('should work normally to unpause a market', async () => {
       await adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc);
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(true);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(true);
 
       const res = await adminPauseMarket
         .connect(core.gnosisSafe)
         .unpauseMarket(core.marketIds.usdc, core.oracleAggregatorV2.address);
       await expectEvent(adminPauseMarket, res, 'SetMarketPaused', { marketId: core.marketIds.usdc, isPaused: false });
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(false);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(false);
     });
 
     it('should fail if token is not paused', async () => {
@@ -166,7 +151,7 @@ describe('AdminPauseMarket', () => {
 
     it('should fail if price oracle is zero address', async () => {
       await adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc);
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(true);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(true);
 
       await expectThrow(
         adminPauseMarket.connect(core.gnosisSafe).unpauseMarket(core.marketIds.usdc, ADDRESS_ZERO),
@@ -176,11 +161,11 @@ describe('AdminPauseMarket', () => {
 
     it('should fail if the sender is not a trusted caller', async () => {
       await adminPauseMarket.connect(core.gnosisSafe).pauseMarket(core.marketIds.usdc);
-      expect(await adminPauseMarket.tokenToPaused(core.tokens.usdc.address)).to.equal(true);
+      expect(await adminPauseMarket.isTokenPaused(core.tokens.usdc.address)).to.equal(true);
 
       await expectThrow(
         adminPauseMarket.connect(core.hhUser1).unpauseMarket(core.marketIds.usdc, core.oracleAggregatorV2.address),
-        'AdminPauseMarket: Sender is not trusted caller',
+        `AdminRegistryHelper: Caller does not have permission <${core.hhUser1.addressLower}>`,
       );
     });
   });

@@ -332,7 +332,10 @@ describe('DolomiteERC20', () => {
 
     it('should fail if invalid receiver', async () => {
       const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
-      await core.dolomiteAccountRegistry.connect(dolomiteOwnerImpersonator).ownerSetRestrictedAccount(core.hhUser2.address, true);
+      await core.dolomiteAccountRegistry.connect(dolomiteOwnerImpersonator).ownerSetRestrictedAccount(
+        core.hhUser2.address,
+        true
+      );
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue),
         'ERC20: Transfers can only be made to valid receivers',

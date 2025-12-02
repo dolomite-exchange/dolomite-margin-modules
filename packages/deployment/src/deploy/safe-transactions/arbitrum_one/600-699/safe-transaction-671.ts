@@ -8,7 +8,7 @@ import {
   UpperPercentage,
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -24,28 +24,28 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const tokens = core.tokens;
   const transactions: EncodedTransaction[] = [
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.nativeUsdc,
       LowerPercentage._12,
       UpperPercentage._50,
       OptimalUtilizationRate._91,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdt,
       LowerPercentage._12,
       UpperPercentage._50,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdc,
       LowerPercentage._12,
       UpperPercentage._60,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.dai,
       LowerPercentage._12,
@@ -53,7 +53,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       OptimalUtilizationRate._90,
     ),
 
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.weth,
       LowerPercentage._8,
@@ -61,7 +61,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       OptimalUtilizationRate._90,
     ),
 
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.wbtc,
       LowerPercentage._6,

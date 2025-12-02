@@ -22,7 +22,7 @@ import {
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { parseEther } from 'ethers/lib/utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:

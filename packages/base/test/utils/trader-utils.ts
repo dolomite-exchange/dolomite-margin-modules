@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import crypto from 'crypto';
 import querystring from 'querystring';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../../../.env') });
 
@@ -23,6 +24,7 @@ const api_config = {
 
 const ODOS_API_URL = 'https://api.odos.xyz';
 const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
+const ENSO_API_URL = 'https://api.enso.finance';
 
 export interface TraderOutput {
   calldata: string;
@@ -45,6 +47,47 @@ export enum ParaswapSwapSelector {
   Mega = '0x46c67b6d',
   Multi = '0xa94e78ef',
   Simple = '0x54e3f31b',
+}
+
+export async function getCalldataForEnso<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  inputAmount: BigNumber,
+  inputToken: { address: address },
+  outputToken: { address: address },
+  trader: { address: address },
+): Promise<TraderOutput> {
+  const ensoApiKey = process.env.ENSO_API_KEY;
+  const api = axios.create({
+    baseURL: ENSO_API_URL,
+    headers: {
+      Authorization: `Bearer ${ensoApiKey}`,
+    },
+  });
+
+  const result = await api.post('/api/v1/shortcuts/route', {
+    chainId: core.config.network,
+    fromAddress: trader.address,
+    amountIn: '$amount1',
+    slippage: '50',
+    tokenIn: inputToken.address,
+    tokenOut: outputToken.address,
+    routingStrategy: 'router',
+    variableEstimates: {
+      $amount1: inputAmount.toString(),
+    },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.log(error.response.data);
+      throw error;
+    });
+
+  const [indices, updatedCalldata] = getEnsoPointerIndexAndUpdateCalldata(result.tx.data);
+
+  return {
+    calldata: defaultAbiCoder.encode(['uint256[]', 'uint256', 'bytes'], [indices, inputAmount, updatedCalldata]),
+    outputAmount: BigNumber.from(result.amountOut),
+  };
 }
 
 export async function getCalldataForOdos<T extends DolomiteNetwork>(
@@ -160,12 +203,22 @@ export async function getCalldataForOkx<T extends DolomiteNetwork>(
 }
 
 export async function getCalldataForOogaBooga(
+  chainId: Network,
   inputToken: { address: address },
   inputAmount: BigNumber,
   outputToken: { address: address },
   receiver: { address: address },
 ): Promise<TraderOutput> {
-  const result = await axios.get('https://mainnet.api.oogabooga.io/v1/swap', {
+  let url: string;
+  if (chainId === Network.Berachain) {
+    url = 'https://mainnet.api.oogabooga.io';
+  } else if (chainId === Network.Botanix) {
+    url = 'https://botanix.api.oogabooga.io';
+  } else {
+    return Promise.reject(new Error(`Invalid network, found: ${chainId}`));
+  }
+
+  const result = await axios.get(`${url}/v1/swap`, {
     headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
     params: {
       tokenIn: inputToken.address,
@@ -183,7 +236,7 @@ export async function getCalldataForOogaBooga(
 
   return {
     calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
-    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin), // @follow-up Use min or quote here?
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin),
   };
 }
 
@@ -324,4 +377,20 @@ function createSignature(method: string, request_path: string, params: Record<st
   const message = preHash(timestamp, method, request_path, params);
   const signature = sign(message, api_config['secret_key']!);
   return { signature, timestamp };
+}
+
+function getEnsoPointerIndexAndUpdateCalldata(calldata: string): [number[], string] {
+  const indices: number[] = [];
+  let calldataCopy = calldata;
+
+  while (calldataCopy.includes('{$amount1}')) {
+    const index = calldataCopy.indexOf('{$amount1}');
+    // replace {$amount1} with bytes32(0) and remove the 0x prefix
+    calldataCopy = calldataCopy.replace('{$amount1}', defaultAbiCoder.encode(['uint256'], [0]).slice(2));
+    indices.push((index - 10) / 2);
+  }
+
+  // we remove the first 10 characters of the calldata (0x + function selector)
+  // then divide index by 2 because 2 char = 1 byte
+  return [indices, `0x${calldataCopy.slice(10)}`];
 }

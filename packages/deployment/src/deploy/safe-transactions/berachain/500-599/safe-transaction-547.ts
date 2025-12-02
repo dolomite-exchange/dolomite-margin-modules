@@ -8,7 +8,7 @@ import {
   UpperPercentage,
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -24,42 +24,42 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const tokens = core.tokens;
   const transactions: EncodedTransaction[] = [
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.honey,
       LowerPercentage._7,
       UpperPercentage._50,
       OptimalUtilizationRate._91,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdc,
       LowerPercentage._7,
       UpperPercentage._50,
       OptimalUtilizationRate._91,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usde,
       LowerPercentage._7,
       UpperPercentage._50,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdt,
       LowerPercentage._7,
       UpperPercentage._50,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.byusd,
       LowerPercentage._7,
       UpperPercentage._60,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.rUsd,
       LowerPercentage._7,
@@ -67,7 +67,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       OptimalUtilizationRate._95,
     ),
 
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.wbera,
       LowerPercentage._45,
@@ -75,7 +75,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       OptimalUtilizationRate._75,
     ),
 
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.weth,
       LowerPercentage._3_9,
@@ -83,7 +83,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       OptimalUtilizationRate._90,
     ),
 
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.wbtc,
       LowerPercentage._4,

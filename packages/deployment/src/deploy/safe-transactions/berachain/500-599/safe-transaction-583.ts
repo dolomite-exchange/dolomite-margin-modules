@@ -7,9 +7,10 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import {
   encodeSetBorrowCapWithMagic,
   encodeSetSupplyCapWithMagic,
-  encodeUpdateInterestSetterData,
+
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -31,12 +32,12 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   for (let i = 0; i < core.marketIds.stablecoins.length; i += 1) {
     const marketId = core.marketIds.stablecoins[i];
     if (marketId === core.marketIds.byusd) {
-      transactions.push(await encodeUpdateInterestSetterData(core, marketId, {
+      transactions.push(await encodeUpdateModularInterestSetterParams(core, marketId, {
         lowerRate: LowerPercentage._8,
         upperRate: UpperPercentage._50,
       }));
     } else {
-      transactions.push(await encodeUpdateInterestSetterData(core, marketId, { lowerRate: LowerPercentage._8 }));
+      transactions.push(await encodeUpdateModularInterestSetterParams(core, marketId, { lowerRate: LowerPercentage._8 }));
     }
   }
 

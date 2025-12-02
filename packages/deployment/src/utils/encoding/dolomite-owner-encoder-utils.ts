@@ -2,6 +2,7 @@ import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-de
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { FunctionFragment } from '@ethersproject/abi';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { AdminRegistry } from 'packages/admin/src/types';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
@@ -14,8 +15,8 @@ export async function encodeGrantBypassTimelockAndExecutorRolesIfNecessary<T ext
   destination: { address: string },
 ) {
   return [
-    ...await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE(), destination),
-    ...await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.EXECUTOR_ROLE(), destination),
+    ...(await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE(), destination)),
+    ...(await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.EXECUTOR_ROLE(), destination)),
   ];
 }
 
@@ -75,6 +76,39 @@ export async function encodeAddressToFunctionSelectorForRole<T extends DolomiteN
         'ownerAddRoleToAddressFunctionSelectors',
         [role, destination.address, [selector]],
       ),
+    );
+  }
+
+  return transactions;
+}
+
+export const ALL_FUNCTIONS = '0x11111111';
+
+export async function encodeGrantAdminRegistryPermissionIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  adminRegistry: AdminRegistry,
+  selector: string | typeof ALL_FUNCTIONS,
+  contract: { address: string },
+  account: string | { address: string },
+) {
+  if (selector.length !== 10) {
+    return Promise.reject(new Error('Invalid selector'));
+  }
+
+  const transactions: EncodedTransaction[] = [];
+  if (
+    !(await adminRegistry.hasPermission(
+      selector,
+      contract.address,
+      typeof account === 'string' ? account : account.address,
+    ))
+  ) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(core, { adminRegistry }, 'adminRegistry', 'grantPermission', [
+        selector,
+        contract.address,
+        core.gnosisSafeAddress,
+      ]),
     );
   }
 

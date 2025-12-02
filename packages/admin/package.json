@@ -9,7 +9,7 @@
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts admin",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/PartnerClaimExcessTokens.ts\" --solcoverjs ../../.solcover.js",
     "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/PartnerClaimExcessTokens.ts",
-    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/AdminClaimExcessTokens.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/AdminRegistry.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix admin",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"

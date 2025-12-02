@@ -6,9 +6,10 @@ import { LowerPercentage } from '../../../../../../base/src/utils/constructors/d
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
   encodeSetSupplyCapWithMagic,
-  encodeUpdateInterestSetterData,
+
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 
 /**
  * This script encodes the following transactions:

@@ -46,6 +46,7 @@ interface IDolomiteRegistry {
     // ======================== Events ========================
     // ========================================================
 
+    event AdminRegistrySet(address indexed _adminRegistry);
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
@@ -68,6 +69,12 @@ interface IDolomiteRegistry {
     // ========================================================
 
     function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
+
+    /**
+     *
+     * @param  _adminRegistry    The new address of the admin registry
+     */
+    function ownerSetAdminRegistry(address _adminRegistry) external;
 
     /**
      *
@@ -176,6 +183,11 @@ interface IDolomiteRegistry {
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
+
+    /**
+     * @return The address of the admin registry
+     */
+    function adminRegistry() external view returns (address);
 
     /**
      * @return  The address of the borrow position proxy

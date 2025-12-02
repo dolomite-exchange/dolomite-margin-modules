@@ -6,6 +6,7 @@ import {
   CoreProtocolWithChainsightV3,
   CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
+  CoreProtocolWithERC4626,
   CoreProtocolWithRedstone,
 } from 'packages/oracles/src/oracles-constructors';
 import {
@@ -27,9 +28,8 @@ import {
   INVALID_TOKEN_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '../../../../base/src/utils/constants';
-import { ADDRESS_ZERO, Network, DolomiteNetwork, ONE_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, DolomiteNetwork, Network, ONE_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { impersonate } from '../../../../base/test/utils';
-import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolXLayer } from '../../../../base/test/utils/core-protocols/core-protocol-x-layer';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import ModuleDeployments from '../../deploy/deployments.json';
@@ -516,6 +516,42 @@ export async function encodeInsertRedstoneOracleV3<T extends DolomiteNetwork>(
   ];
 }
 
+export async function encodeInsertERC4626Oracle<T extends DolomiteNetwork>(
+  core: CoreProtocolWithERC4626<T>,
+  token: IERC20,
+  tokenPairAddress: string,
+): Promise<EncodedTransaction[]> {
+  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { erc4626Oracle: core.erc4626Oracle },
+      'erc4626Oracle',
+      'ownerInsertOrUpdateToken',
+      [token.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.erc4626Oracle.address,
+              tokenPair: tokenPairAddress,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
 export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
   core: CoreProtocolWithRedstone<T>,
   token: IERC20,
@@ -526,7 +562,7 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
 }
 
 export async function encodeInsertOracle<T extends DolomiteNetwork>(
-  core: CoreProtocolWithRedstone<T>,
+  core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
   tokenPair: IERC20 | undefined,

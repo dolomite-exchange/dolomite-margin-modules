@@ -156,14 +156,15 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
 
         uint256 bal = DOLOMITE_MARGIN().getAccountWei(accounts[_VAULT_ACCOUNT_ID], FACTORY.marketId()).value;
         uint256 usdcAmount = usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
+
         delete usdcRedemptionAmount[_vault][_redemptionParams.accountNumber];
-        
+
         // @dev optimistically set the max length
         uint256 actionsLength;
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](5);
 
         if (bal > 0) {
-            _appendUnwrapActions(
+            actionsLength += _appendUnwrapActions(
                 actions,
                 _VAULT_ACCOUNT_ID,
                 _vault,
@@ -171,16 +172,17 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
                 _redemptionParams.outputMarketId,
                 _redemptionParams.minOutputAmountWei
             );
-            actionsLength += 2;
         }
 
-        actions[actionsLength++] = AccountActionLib.encodeTransferAction(
-            _USDC_FUND_ACCOUNT_ID,
-            _VAULT_ACCOUNT_ID,
-            USDC_MARKET_ID,
-            IDolomiteStructs.AssetDenomination.Wei,
-            usdcAmount
-        );
+        if (usdcAmount > 0) {
+            actions[actionsLength++] = AccountActionLib.encodeTransferAction(
+                _USDC_FUND_ACCOUNT_ID,
+                _VAULT_ACCOUNT_ID,
+                USDC_MARKET_ID,
+                IDolomiteStructs.AssetDenomination.Wei,
+                usdcAmount
+            );
+        }
 
         // @dev if default account, transfer USDC and output token to vault owner
         if (_redemptionParams.accountNumber == 0) {
@@ -199,7 +201,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
                 type(uint256).max
             );
         }
-        
+
         // overwrite the actual actions length
         assembly {
             mstore(actions, actionsLength)
@@ -210,14 +212,15 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
 
     /**
      * Appends the unwrap actions for the operation
-     * 
+     *
      * @dev Unwrapping GLP is always 2 actions
-     * 
+     *
      * @param  _actions             The actions to append to
      * @param  _vault               The address of the GLP vault
      * @param  _accountNumber       The account number of the GLP vault
      * @param  _outputMarketId      The market id of the output token
      * @param  _minOutputAmountWei  The minimum amount of output token to receive
+     * @return The number of actions involved in the unwrapping
      */
     function _appendUnwrapActions(
         IDolomiteStructs.ActionArgs[] memory _actions,
@@ -226,7 +229,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         uint256 _accountNumber,
         uint256 _outputMarketId,
         uint256 _minOutputAmountWei
-    ) internal view {
+    ) internal view returns (uint256) {
         IDolomiteStructs.ActionArgs[] memory unwrapActions = UNWRAPPER_TRADER.createActionsForUnwrapping(
             IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams({
                 primaryAccountId: _vaultAccountId,
@@ -252,5 +255,7 @@ contract GLPRedemptionOperator is OnlyDolomiteMargin, IGLPRedemptionOperator {
         for (uint256 i; i < unwrapActions.length; ++i) {
             _actions[i] = unwrapActions[i];
         }
+
+        return unwrapActions.length;
     }
 }

@@ -52,6 +52,7 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
+    bytes32 private constant _ADMIN_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.adminRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
@@ -108,6 +109,14 @@ contract DolomiteRegistryImplementation is
     }
 
     // ===================== Functions =====================
+
+    function ownerSetAdminRegistry(
+        address _adminRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetAdminRegistry(_adminRegistry);
+    }
 
     function ownerSetBorrowPositionProxy(
         address _borrowPositionProxy
@@ -240,6 +249,10 @@ contract DolomiteRegistryImplementation is
 
     // ========================== View Functions =========================
 
+    function adminRegistry() public view returns (address) {
+        return _getAddress(_ADMIN_REGISTRY_SLOT);
+    }
+
     function borrowPositionProxy() public view returns (IBorrowPositionProxyV2) {
         return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
     }
@@ -319,6 +332,19 @@ contract DolomiteRegistryImplementation is
     }
 
     // ===================== Internal Functions =====================
+
+    function _ownerSetAdminRegistry(
+        address _adminRegistry
+    ) internal {
+        Require.that(
+            _adminRegistry != address(0),
+            _FILE,
+            "Invalid adminRegistry"
+        );
+
+        _setAddress(_ADMIN_REGISTRY_SLOT, _adminRegistry);
+        emit AdminRegistrySet(_adminRegistry);
+    }
 
     function _ownerSetBorrowPositionProxy(
         address _borrowPositionProxy

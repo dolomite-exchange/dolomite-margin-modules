@@ -1,26 +1,26 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { getAndCheckSpecificNetwork } from '../../../../../../../base/src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../../../../../base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '../../../../../../../base/test/utils';
+import { setupCoreProtocol } from '../../../../../../../base/test/utils/setup';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../../utils/encoding/base-encoder-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../../utils/dry-run-utils';
+import getScriptName from '../../../../../utils/get-script-name';
+import { encodeAddMarket } from '../../../../../utils/encoding/add-market-encoder-utils';
 import { parseEther } from 'ethers/lib/utils';
-import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
-import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
+import { encodeInsertChainlinkOracleV3 } from '../../../../../utils/encoding/oracle-encoder-utils';
+import { IERC20 } from '../../../../../../../base/src/types';
 import {
   LowerPercentage,
   OptimalUtilizationRate,
   TargetCollateralization,
   TargetLiquidationPenalty,
   UpperPercentage,
-} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
+} from '../../../../../../../base/src/utils/constructors/dolomite';
 import { BigNumber, BigNumberish } from 'ethers';
-import { encodeModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
-import { CoreProtocolBotanix } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-botanix';
-import { parseUsdc, parseUsdt } from '@dolomite-exchange/modules-base/src/utils/math-utils';
+import { encodeSetModularInterestSetterParams } from '../../../../../utils/encoding/interest-setter-encoder-utils';
+import { CoreProtocolBotanix } from '../../../../../../../base/test/utils/core-protocols/core-protocol-botanix';
+import { parseUsdc, parseUsdt } from '../../../../../../../base/src/utils/math-utils';
 
 enum InterestSetter {
   AlwaysZero,
@@ -86,35 +86,35 @@ async function main(): Promise<DryRunOutput<Network.Botanix>> {
     ),
 
     // Interest setters
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.weth,
       LowerPercentage._3,
       UpperPercentage._125,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.pbtc,
       LowerPercentage._10,
       UpperPercentage._80,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdc,
       LowerPercentage._12,
       UpperPercentage._80,
       OptimalUtilizationRate._90,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.stBtc,
       LowerPercentage._10,
       UpperPercentage._70,
       OptimalUtilizationRate._70,
     ),
-    await encodeModularInterestSetterParams(
+    await encodeSetModularInterestSetterParams(
       core,
       tokens.usdt,
       LowerPercentage._12,
