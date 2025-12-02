@@ -14,7 +14,7 @@ import { IRamsesCLPool } from "../interfaces/IRamsesCLPool.sol";
  */
 library OracleLibrary {
 
-    function consult(address _pool, uint32 _period) internal view returns (int24 timeWeightedAverageTick) {
+    function consultAlgebraPool(address _pool, uint32 _period) internal view returns (int24 timeWeightedAverageTick) {
         require(_period != 0); // solhint-disable-line reason-string
 
         uint32[] memory secondAgos = new uint32[](2);
