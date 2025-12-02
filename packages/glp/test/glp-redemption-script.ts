@@ -1,0 +1,248 @@
+import axios from 'axios';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { disableInterestAccrual, setupCoreProtocol, setupNativeUSDCBalance } from 'packages/base/test/utils/setup';
+import {
+  GLPRedemptionOperator,
+  GLPRedemptionOperator__factory,
+} from 'packages/glp/src/types';
+
+const USDC_REDEMPTION_AMOUNT = BigNumber.from('176953980000');
+const GLP_SUPPLIED_AMOUNT = BigNumber.from('134145049679972225550400');
+const defaultAccountNumber = ZERO_BI;
+
+const glpUnwrapperTraderAddress = '0xaacDc43568f9adC4D3b67a26BD04159Ded39D79d';
+
+// Bad users:  [
+//   '0x02b72485ecdaabd5f9af68d9a5d2b2ca54d5339b', // $.42
+//   '0xfb408fa20c6f6da099a7492107bc3531911896e3', // $.85
+//   '0x97a7ec1b7157d12b99fb43d54f206ab9745a23dd', // $.15
+//   '0x72195dda0361f43ce544b750f318d04b35836933', // $.01
+//   '0x545b0cd987cfc162e5118eed0a21adb6e4968533', // roughly $2k
+//   '0x5253752071aeaa485040b368ab6ecb49e3bdd68d', // $.83
+//   '0xd36ddb07b9bba83a2aefc8272c40bcaf6843eb0e', // $.12
+//   '0x5b2d776723f14c881bc69b5a479fa7ea0e6e3dc1', // $.17
+//   '0xe9417f49d7301ee3931ec023803710a1001d8dad', // $.35
+//   '0x622eaa37f684496216d4ea87709711b03f51b056', // $.35
+//   '0x2218a37513b2bdd11226e43a22ce6732bf07323b', // $.63
+//   '0x8c580556fdb1f57853e49f409ae9b89f7658e7a2', // $7
+//   '0xf42c2b956bcab51abb6555f5a06ee582e4581c71', // $2
+//   '0x0d3e354fadfa4e2f8f596a3f089a49fae4995bb0', // $.25
+//   '0x4614b16551a21f7e29b57a4f8a8a4b63579d3cf4', // $1
+//   '0x25c68aa03c5197b643e5a6bceb13289e9874344d', // $1
+//   '0x57f5e6359497f74fa7bee41a7129695d9505845e', // $.15
+//   '0x21cd90999c0ff1ebab47b8adbdd6204715320f39', // $.28
+//   '0x0b268ed6c35b187e781dbe92d02ba78fbc2ab9b7', // $.14
+//   '0x6409655c63a843cfc056e811b376debead767a5c', // $.37
+//   '0xcbc2ee786c1893811ae64584d1547cee05edeea5', // $.26
+//   '0x15f55e3d1dcaa88d16732808c2df5f8438f11a9f', // $3
+//   '0x1a7228605ad816861b61e9ec1944346660fe52d7', // $.001
+//   '0xa6323e19ea4b1f74499de026691239c69508888a', // $2
+//   '0x4c30ffc4945b6297fa75bd0931f937ea7bc8e9b2', // $.03
+//   '0xf23ca6755d7f6a715b3e1e12816dbf9a899ea519', // $.17
+//   '0x55432fda702a12e32c3d44c5c90533fe4daff779', // $.28
+//   '0xc9af09e3f0fe8e35d533eb62e4fec19c309ee1cd', // $7
+//   '0xe6656eb70af7d8c489eae135bae1b53c2a261a68', // $.13
+//   '0xb3d79ea767610555eba816bf79c7a1be14f81c7c'  // $2.5
+// ]
+
+describe('glp-redemption-script', () => {
+  let snapshotId: string;
+
+  let core: CoreProtocolArbitrumOne;
+  let redemptionOperator: GLPRedemptionOperator;
+
+  before(async () => {
+    core = await setupCoreProtocol({
+      blockNumber: 382_895_500,
+      network: Network.ArbitrumOne,
+    });
+    await disableInterestAccrual(core, core.marketIds.usdc);
+    await disableInterestAccrual(core, core.marketIds.wbtc);
+
+    redemptionOperator = await createContractWithAbi<GLPRedemptionOperator>(
+      GLPRedemptionOperator__factory.abi,
+      GLPRedemptionOperator__factory.bytecode,
+      [
+        core.hhUser4.address, // handler
+        core.hhUser5.address, // usdc fund
+        core.marketIds.nativeUsdc,
+        core.gmxEcosystem.live.dGlp.address,
+        glpUnwrapperTraderAddress,
+        core.dolomiteMargin.address
+      ]
+    );
+
+    // @audit Make sure there are no issues with freezable where user can use the vault when we set the token converter
+    await core.gmxEcosystem.live.dGlp.connect(core.governance).setIsTokenConverterTrusted(
+      glpUnwrapperTraderAddress,
+      true
+    );
+    await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
+      core.marketIds.dfsGlp,
+      redemptionOperator.address
+    );
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(redemptionOperator.address, true);
+
+    await setupNativeUSDCBalance(core, core.hhUser5, USDC_REDEMPTION_AMOUNT, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(
+      core,
+      core.hhUser5,
+      defaultAccountNumber,
+      core.marketIds.nativeUsdc,
+      USDC_REDEMPTION_AMOUNT
+    );
+
+    snapshotId = await snapshot();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#script', () => {
+    it('should work normally', async () => {
+      /**
+       * Set the redemption amounts for all users
+       */
+
+      // get all users with balance at block number
+      const url = 'https://api.dolomite.io/balances/42161/6?blockNumber=355880236';
+      const response = await fetch(url);
+      const data = await response.json();
+
+      let sum = ZERO_BI;
+      for (const user of data['Result']) {
+        // get user full reward amount
+        const effectiveBalance = parseEther(user['effective_balance']);
+        const vaultAddress = await core.gmxEcosystem.live.dGlp.getVaultByAccount(user['address']);
+        const query = `
+        {
+          marginAccounts(
+            where: {supplyTokens_: {id: "0x34df4e8062a8c8ae97e3382b452bd7bf60542698"}, user: "${vaultAddress.toLowerCase()}"}
+          ) {
+            accountNumber
+            id
+            user {
+              id
+            }
+            tokenValues(where: { token: "0x34df4e8062a8c8ae97e3382b452bd7bf60542698" }) {
+              valuePar
+              token {
+                id
+                name
+              }
+            }
+          }
+        }`;
+
+        const result = await axios.post(
+          'https://api.goldsky.com/api/public/project_clyuw4gvq4d5801tegx0aafpu/subgraphs/dolomite-arbitrum/latest/gn',
+          {
+            query,
+          },
+        ).then(response => response.data.data.marginAccounts);
+
+        const fullRewardAmount = effectiveBalance.mul(USDC_REDEMPTION_AMOUNT).div(GLP_SUPPLIED_AMOUNT);
+        let usedRewardAmount = ZERO_BI;
+
+        const accountNumbers = [];
+        const usdcRedemptionAmounts = [];
+        for (const marginAccount of result) {
+          if (marginAccount.accountNumber === '0') {
+            continue;
+          }
+
+          expect(marginAccount.tokenValues.length).to.eq(1);
+          expect(marginAccount.tokenValues[0].token.id).to.eq(core.tokens.dfsGlp.address.toLowerCase());
+
+          const glpBal = parseEther(marginAccount.tokenValues[0].valuePar);
+          const accountAmount = glpBal.mul(fullRewardAmount).div(effectiveBalance);
+          accountNumbers.push(marginAccount.accountNumber);
+          usdcRedemptionAmounts.push(accountAmount);
+
+          usedRewardAmount = usedRewardAmount.add(accountAmount);
+        }
+
+        // Set redemption amounts
+        const defaultRewardAmount = fullRewardAmount.sub(usedRewardAmount);
+        if (defaultRewardAmount.gt(ZERO_BI)) {
+          accountNumbers.push('0');
+          usdcRedemptionAmounts.push(defaultRewardAmount);
+        }
+        expect(accountNumbers.length).to.eq(usdcRedemptionAmounts.length);
+        if (accountNumbers.length > 0) {
+          await redemptionOperator.connect(core.hhUser4).handlerSetRedemptionAmounts(
+            vaultAddress,
+            accountNumbers,
+            usdcRedemptionAmounts
+          );
+        }
+        const userSum = usdcRedemptionAmounts.reduce((acc: BigNumber, n) => acc.add(n), BigNumber.from('0'));
+        expect(userSum).to.eq(fullRewardAmount);
+        sum = sum.add(userSum);
+      }
+      expect(sum).to.lte(USDC_REDEMPTION_AMOUNT);
+
+      /**
+       * Execute each vault
+       */
+
+      for (const user of data['Result']) {
+        const vaultAddress = await core.gmxEcosystem.live.dGlp.getVaultByAccount(user['address']);
+        const query = `
+        {
+          marginAccounts(
+            where: {supplyTokens_: {id: "0x34df4e8062a8c8ae97e3382b452bd7bf60542698"}, user: "${vaultAddress.toLowerCase()}"}
+          ) {
+            accountNumber
+            id
+            user {
+              id
+            }
+            tokenValues(where: { token: "0x34df4e8062a8c8ae97e3382b452bd7bf60542698" }) {
+              valuePar
+              token {
+                id
+                name
+              }
+            }
+          }
+        }`;
+
+        const result = await axios.post(
+          'https://api.goldsky.com/api/public/project_clyuw4gvq4d5801tegx0aafpu/subgraphs/dolomite-arbitrum/latest/gn',
+          {
+            query,
+          },
+        ).then(response => response.data.data.marginAccounts);
+
+        const redemptionParams = [];
+        for (const marginAccount of result) {
+          const glpBal = parseEther(marginAccount.tokenValues[0].valuePar);
+          const outputMarket = glpBal.lte(parseEther('.02')) ? core.marketIds.usdc : core.marketIds.wbtc;
+          redemptionParams.push({
+            accountNumber: marginAccount.accountNumber,
+            outputMarketId: outputMarket,
+            minOutputAmountWei: ONE_BI
+          });
+        }
+
+        try {
+          await redemptionOperator.connect(core.hhUser4).handlerExecuteVault(
+          vaultAddress,
+            redemptionParams
+          );
+        } catch (error) {
+          console.log(`Error executing vault for ${user['address']}: ${error}`);
+        }
+        console.log(`Executed vault for ${user['address']}`);
+      }
+    });
+  });
+});

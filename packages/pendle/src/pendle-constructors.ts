@@ -80,7 +80,7 @@ export async function getPendleRegistryConstructorParams<T extends DolomiteNetwo
   syToken: IPendleSyToken,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
-    core.pendleEcosystem!.pendleRouterV3.address,
+    core.pendleEcosystem.pendleRouterV3.address,
     ptMarket.address,
     ptOracle.address,
     syToken.address,
@@ -165,7 +165,7 @@ export function getPendlePtPriceOracleConstructorParams<T extends DolomiteNetwor
 
 export function getPendlePtPriceOracleV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
-  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory | IPendlePtToken,
   pendleRegistry: IPendleRegistry | PendleRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
