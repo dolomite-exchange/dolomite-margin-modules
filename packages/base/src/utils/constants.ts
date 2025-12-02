@@ -2550,7 +2550,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [RS_ETH_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
+      aggregatorAddress: '0x3A917e6B5732dFCc4A45257e3930979fAE6a3737',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [RS_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
