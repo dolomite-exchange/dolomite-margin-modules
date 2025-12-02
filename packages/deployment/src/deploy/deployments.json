@@ -3809,6 +3809,13 @@
       "isVerified": true
     }
   },
+  "GLPRedemptionOperatorV1": {
+    "42161": {
+      "address": "0x845596dE9C58E4Ca12202Bbab6fBA4709cE3f74D",
+      "transaction": "0xc66a337b9fba6a0c75fe0d506f1e4946a38bb0b99b45f48dee3d0e93080427c4",
+      "isVerified": true
+    }
+  },
   "GLPUnwrapperTraderV2": {
     "42161": {
       "address": "0x54E523208Ed40A591d9f54eE949C5C374D1131ea",
