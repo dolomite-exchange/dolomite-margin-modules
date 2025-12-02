@@ -1,14 +1,15 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import { printPriceForVisualCheck } from 'packages/deployment/src/utils/invariant-utils';
+import { ConstantPriceOracle__factory } from 'packages/oracles/src/types';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
-import { ConstantPriceOracle__factory } from 'packages/oracles/src/types';
-import { printPriceForVisualCheck } from 'packages/deployment/src/utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -25,27 +26,21 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const constantPriceOracleAddress = await deployContractAndSave(
     'ConstantPriceOracle',
-    [[core.tokens.usdy.address], [ONE_ETH_BI], core.dolomiteMargin.address], // @follow-up @Corey, this hardcodes the price to $1, but please check which price you want
+    [[core.tokens.usdy.address], [parseEther(`${1.11}`)], core.dolomiteMargin.address],
     'ConstantPriceOracleV1',
   );
   const constantPriceOracle = ConstantPriceOracle__factory.connect(constantPriceOracleAddress, core.governance);
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetIsClosing',
-      [core.marketIds.usdy, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetMaxSupplyWei',
-      [core.marketIds.usdy, 1],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetIsClosing', [
+      core.marketIds.usdy,
+      true,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetMaxSupplyWei', [
+      core.marketIds.usdy,
+      ONE_BI,
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { oracleAggregatorV2: core.oracleAggregatorV2 },
