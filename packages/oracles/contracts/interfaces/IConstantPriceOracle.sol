@@ -40,14 +40,12 @@ interface IConstantPriceOracle is IDolomitePriceOracle {
     // ============ Admin Functions ============
 
     /**
-     * @dev Set the price for a token. This function can only be called by the owner of DolomiteMargin.
-     *
-     * @param  _token   The token whose price should be set
-     * @param  _price   The price of the token
+     * Sets the price for a token.
+     * 
+     * @dev The price NEEDS to be in 36 - token decimals format.
+     * 
+     * @param  _token   The token to set the price for.
+     * @param  _price   The price to set for the token.
      */
-    function ownerSetTokenPrice(
-        address _token,
-        uint256 _price
-    )
-    external;
+    function ownerSetTokenPrice(address _token, uint256 _price) external;
 }
