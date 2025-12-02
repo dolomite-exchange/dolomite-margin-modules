@@ -1149,6 +1149,13 @@
       "isVerified": true
     }
   },
+  "ConstantPriceOracleV1": {
+    "5000": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0xabbf2a4d8e8716675226a483a38d32ed05df0e068cec1414f5958608cf73dd7b",
+      "isVerified": true
+    }
+  },
   "CREATE3Factory": {
     "1": {
       "address": "0xa8F7e7A361De6A2172fcb2accE68bd21597599F7",
