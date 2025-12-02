@@ -49,7 +49,7 @@ const executionFee = ONE_ETH_BI;
 const gasLimit = 40_000_000;
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 
-describe('GlvV2.2Upgrade', () => {
+describe('GlvV2.2B', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -69,7 +69,7 @@ describe('GlvV2.2Upgrade', () => {
     hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 403_662_800
+      blockNumber: 406_474_200
     });
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
@@ -130,7 +130,7 @@ describe('GlvV2.2Upgrade', () => {
       core.marketIds.weth,
       wethAmount,
       glvMarketId,
-      minAmountOut,
+      parseEther('.0001'),
       glvWrapper
     );
     const res = await core.genericTraderRouter.connect(core.hhUser1).swapExactInputForOutput(
@@ -147,7 +147,7 @@ describe('GlvV2.2Upgrade', () => {
       { value: executionFee }
     );
 
-    await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, glvMarketId, minAmountOut);
+    await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, glvMarketId, parseEther('.0001'));
     await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, core.marketIds.weth, 0);
     expect(await glvVault.isVaultFrozen()).to.eq(true);
     expect(await glvVault.shouldSkipTransfer()).to.eq(false);

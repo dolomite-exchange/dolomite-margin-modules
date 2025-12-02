@@ -1375,11 +1375,11 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xBB4C47CDfb90e281cAAE873c9531A25eBe2eD343',
+  [Network.ArbitrumOne]: '0x749291a06b1Eb031288A5c864F68de83e4091Ff8',
 };
 
 export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x7A74946892569Fd488012D015436a5a9cBf37BEf',
+  [Network.ArbitrumOne]: '0x1EEA01a3592b8943737977b93ed24be7842D2427',
 };
 
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
