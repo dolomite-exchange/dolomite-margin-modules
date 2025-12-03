@@ -25,6 +25,8 @@ import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Registry,
+  GmxV2Registry__factory,
   IEventEmitterRegistry,
   IGmxMarketToken,
   IGmxRoleStore__factory,
@@ -78,6 +80,14 @@ describe('GmxV2.2B', () => {
     gmxV2Factory = core.gmxV2Ecosystem.live.gmEthUsd.factory.connect(core.hhUser1);
     gmxV2Wrapper = core.gmxV2Ecosystem.live.gmEthUsd.wrapper.connect(core.hhUser1);
     gmxV2Unwrapper = core.gmxV2Ecosystem.live.gmEthUsd.unwrapper.connect(core.hhUser1);
+
+    // Upgrade registry
+    const registryImpl =await createContractWithAbi<GmxV2Registry>(
+      GmxV2Registry__factory.abi,
+      GmxV2Registry__factory.bytecode,
+      [],
+    );
+    await core.gmxV2Ecosystem.live.registryProxy.connect(core.governance).upgradeTo(registryImpl.address);
 
     // Update exchange router, reader
     await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouter.address);
