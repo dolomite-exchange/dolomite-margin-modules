@@ -22,6 +22,7 @@ import { expectEvent, expectThrow } from '../utils/assertions';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from(123);
@@ -64,10 +65,12 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       blockNumber: 1_130_000,
     });
 
+    await createAndUpgradeDolomiteRegistry(core);
+
     const riskOverrideSetterImplementation = await createContractWithAbi<DolomiteAccountRiskOverrideSetter>(
       DolomiteAccountRiskOverrideSetter__factory.abi,
       DolomiteAccountRiskOverrideSetter__factory.bytecode,
-      [core.dolomiteMargin.address],
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     const calldata = (await riskOverrideSetterImplementation.populateTransaction.initialize()).data!;
     const proxy = await createContractWithAbi<RegistryProxy>(
@@ -535,6 +538,17 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
   });
 
   describe('#getAccountRiskOverride', () => {
+    it('should work normally when user has no debt', async () => {
+      await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
+
+      const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
+      );
+      expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
+      expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
+    });
+
     it('should work normally with borrow only', async () => {
       // setup USDC to be "borrow_only"
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
@@ -776,6 +790,16 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       );
       expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
       expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
+    });
+
+    it('should fail if account is blacklisted', async () => {
+      await core.dolomiteRegistry.connect(core.governance).ownerSetBlacklistedAddresses([core.hhUser1.address], [true]);
+      await expectThrow(
+        riskOverrideSetter.getAccountRiskOverride(
+          { owner: core.hhUser1.address, number: ZERO_BI }
+        ),
+        `AccountRiskOverrideSetter: Account is blacklisted <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
 
     it('should fail if user is using borrow only as collateral', async () => {

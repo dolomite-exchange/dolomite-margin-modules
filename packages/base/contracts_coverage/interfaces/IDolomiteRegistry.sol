@@ -82,7 +82,10 @@ interface IDolomiteRegistry {
      * @param  _blacklistedAddresses    The addresses to blacklist
      * @param  _isBlacklisted           Whether the addresses are blacklisted
      */
-    function ownerSetBlacklistedAddresses(address[] memory _blacklistedAddresses, bool[] memory _isBlacklisted) external;
+    function ownerSetBlacklistedAddresses(
+        address[] memory _blacklistedAddresses,
+        bool[] memory _isBlacklisted
+    ) external;
 
     /**
      *
@@ -275,6 +278,7 @@ interface IDolomiteRegistry {
     function isTrustedInternalTrader(address _trader) external view returns (bool);
 
     /**
+     *
      * @param  _address  The address to check if it's blacklisted
      * @return  Whether the address is blacklisted
      */

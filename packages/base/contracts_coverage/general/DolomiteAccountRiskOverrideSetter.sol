@@ -28,6 +28,7 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginV2 } from "../protocol/interfaces/IDolomiteMarginV2.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 
 
 /**
@@ -56,7 +57,11 @@ contract DolomiteAccountRiskOverrideSetter is
     uint256 private constant _MASK_CATEGORY_ETH = 0x0F00;
     uint256 private constant _MASK_CATEGORY_STABLE = 0xF000;
 
-    constructor(address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {}
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+
+    constructor(address _dolomiteRegistry, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    }
 
     // ===================== External Functions =====================
 
@@ -183,6 +188,14 @@ contract DolomiteAccountRiskOverrideSetter is
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         uint256[] memory marketIds = dolomiteMargin.getAccountMarketsWithBalances(_account);
         uint256 marketIdsLength = marketIds.length;
+
+        if (!DOLOMITE_REGISTRY.isBlacklisted(_account.owner)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !DOLOMITE_REGISTRY.isBlacklisted(_account.owner),
+            _FILE,
+            "Account is blacklisted",
+            _account.owner
+        );
 
         if (marketIdsLength == 0 || dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) == 0) {
             // The Dolomite Margin call this contract for various readers
