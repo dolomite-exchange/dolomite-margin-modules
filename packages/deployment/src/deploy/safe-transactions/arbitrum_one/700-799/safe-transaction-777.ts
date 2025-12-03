@@ -5,6 +5,8 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 /**
  * This script encodes the following transactions:
@@ -17,7 +19,32 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
 
+  const gmxRegistryImplAddress =await deployContractAndSave(
+    'GmxV2Registry',
+    [],
+    'GmxV2RegistryImplementationV4',
+  );
+  const glvRegistryImplAddress =await deployContractAndSave(
+    'GlvRegistry',
+    [],
+    'GlvRegistryImplementationV4',
+  );
+
   transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxV2Ecosystem.live,
+      'registryProxy',
+      'upgradeTo',
+      [gmxRegistryImplAddress],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.glvEcosystem.live,
+      'registryProxy',
+      'upgradeTo',
+      [glvRegistryImplAddress],
+    ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.gmxV2Ecosystem.live,
@@ -56,7 +83,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
       addExecuteImmediatelyTransactions: true,
     },
-    invariants: async () => {},
+    invariants: async () => {
+      assertHardhatInvariant(
+        await core.gmxV2Ecosystem.live.registry.isHandler(core.gmxV2Ecosystem.gmxDepositHandlerV2.address),
+        'isHandler check failing for gmx deposit handler'
+      );
+      assertHardhatInvariant(
+        await core.gmxV2Ecosystem.live.registry.isHandler(core.gmxV2Ecosystem.gmxWithdrawalHandlerV2.address),
+        'isHandler check failing for gmx withdrawal handler'
+      );
+      assertHardhatInvariant(
+        await core.glvEcosystem.live.registry.isHandler(core.glvEcosystem.glvDepositHandler.address),
+        'isHandler check failing for glv deposit handler'
+      );
+    },
   };
 }
 
