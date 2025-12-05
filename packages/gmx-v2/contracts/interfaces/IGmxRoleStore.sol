@@ -38,4 +38,6 @@ interface IGmxRoleStore {
      * @return          The members of the role.
      */
     function getRoleMembers(bytes32 _roleKey, uint256 _start, uint256 _end) external view returns (address[] memory);
+
+    function hasRole(address _account, bytes32 _roleKey) external view returns (bool);
 }
