@@ -1154,6 +1154,11 @@
       "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
       "transaction": "0xabbf2a4d8e8716675226a483a38d32ed05df0e068cec1414f5958608cf73dd7b",
       "isVerified": true
+    },
+    "42161": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x9e4b0f6e773bfb0a0f02bef9f5ec201e22a76ac6539aaf0c3f71c17b4f69da5d",
+      "isVerified": true
     }
   },
   "CREATE3Factory": {
