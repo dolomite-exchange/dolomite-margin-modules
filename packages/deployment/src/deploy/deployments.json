@@ -4019,6 +4019,13 @@
       "isVerified": true
     }
   },
+  "GlvRegistryImplementationV4": {
+    "42161": {
+      "address": "0x1bB4dBe7F505380d6D1deD1A0412Cea6A5168c3c",
+      "transaction": "0x900efed7a2d249029e7732bd8f129e8ecdb31338501ad3336de29e3dd2b42531",
+      "isVerified": true
+    }
+  },
   "GlvRegistryProxy": {
     "42161": {
       "address": "0x14F7137BAD9339c0901Df6728FF4B798F0f4429C",
@@ -4821,6 +4828,13 @@
     "42161": {
       "address": "0xE4E6BAED81eCd90ACb96da2F6e7B9EF17DF9aC53",
       "transaction": "0x034295b3fb139ed2ff90a6ec0f979e0942d7ee7288c8c449554afa2fcdd9c1bc",
+      "isVerified": true
+    }
+  },
+  "GmxV2RegistryImplementationV4": {
+    "42161": {
+      "address": "0xc443B96c4769ce9d38795F701100DAe91fC8f1B0",
+      "transaction": "0xa5efe53941c0f2ab6a2514ea1f0f86745231bd7c9409f1044964ee02f87b7f56",
       "isVerified": true
     }
   },

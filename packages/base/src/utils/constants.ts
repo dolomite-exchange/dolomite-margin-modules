@@ -1381,16 +1381,24 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
+export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x749291a06b1Eb031288A5c864F68de83e4091Ff8',
+};
+
+export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x1EEA01a3592b8943737977b93ed24be7842D2427',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
 export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x6a9505D0B44cFA863d9281EA5B0b34cB36243b45',
+  [Network.ArbitrumOne]: '0x2C670A23f1E798184647288072e84054938B5497',
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x105b5aFe50FBCe7759051974fB1710ce331C77B3',
+  [Network.ArbitrumOne]: '0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1410,7 +1418,7 @@ export const GMX_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_DEPOSIT_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xfe2Df84627950A0fB98EaD49c69a1DE3F66867d6',
+  [Network.ArbitrumOne]: '0x33871b8568eDC4adf33338cdD8cF52a0eCC84D42',
 };
 
 export const GMX_DEPOSIT_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1422,7 +1430,7 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x900173A66dbD345006C51fA35fA3aB760FcD843b',
+  [Network.ArbitrumOne]: '0x1C3fa76e6E1088bCE750f23a5BFcffa1efEF6A41',
 };
 
 export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1626,7 +1634,7 @@ export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x0537C767cDAC0726c76Bb89e92904fe28fd02fE1',
+  [Network.ArbitrumOne]: '0x470fbC46bcC0f16532691Df360A07d8Bf5ee0789',
 };
 
 export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1649,7 +1657,7 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x64fbD82d9F987baF5A59401c64e823232182E8Ed',
+  [Network.ArbitrumOne]: '0x11e9E7464f3Bc887a7290ec41fCd22f619b177fd',
 };
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {

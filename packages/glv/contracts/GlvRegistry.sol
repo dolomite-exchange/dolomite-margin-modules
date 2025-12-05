@@ -47,7 +47,9 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     bytes32 private constant _FILE = "GlvRegistry";
 
+
     // solhint-disable max-line-length
+    bytes32 private constant _CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
     bytes32 private constant _GLV_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvHandler")) - 1);
@@ -190,10 +192,6 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     // ==================== Views ====================
 
-    function gmxDataStore() external view returns (IGmxDataStore) {
-        return IGmxDataStore(_getAddress(_GMX_DATASTORE_SLOT));
-    }
-
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter) {
         return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT));
     }
@@ -226,7 +224,19 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
-            || _handler == address(glvHandler());
+            || gmxDataStore().roleStore().hasRole(_handler, _CONTROLLER_ROLE);
+    }
+
+    function gmxDataStore() public view returns (IGmxDataStore) {
+        return IGmxDataStore(_getAddress(_GMX_DATASTORE_SLOT));
+    }
+
+    function glvDepositHandler() public view returns (address) {
+        return IGlvRouter(_getAddress(_GLV_ROUTER_SLOT)).glvDepositHandler();
+    }
+
+    function glvWithdrawalHandler() public view returns (address) {
+        return IGlvRouter(_getAddress(_GLV_ROUTER_SLOT)).glvWithdrawalHandler();
     }
 
     function glvHandler() public view returns (IGlvHandler) {
