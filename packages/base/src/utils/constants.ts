@@ -866,10 +866,14 @@ export const SOL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const SOLV_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const SOLV_BTC_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x541FD749419CA806a8bc7da8ac23D346f2dF8B77',
     marketId: 23,
+  },
+  [Network.Ethereum]: {
+    address: '0x7A56E1C57C7475CCf742a1832B028F0456652F97',
+    marketId: 17,
   },
 };
 
@@ -2665,11 +2669,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
   },
   [Network.Ethereum]: {
-    [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
-      aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
-    },
     [AAVE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x547a514d5e3769680Ce22B2361c10Ea13619e8a9',
+    },
+    [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
     },
     [CRV_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f',
@@ -2683,6 +2687,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
     [S_USDE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099',
+    },
+    [SOLV_BTC_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x936B31C428C29713343E05D631e69304f5cF5f49',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Ethereum].address,
     },
     [USD1_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xF0d9bb015Cd7BfAb877B7156146dc09Bf461370d',
