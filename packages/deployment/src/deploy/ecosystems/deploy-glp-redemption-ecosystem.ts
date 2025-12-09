@@ -102,7 +102,8 @@ async function main() {
   }
 
   for (const user of allUsers) {
-    if (user['isExecuted'] || user['isFailure']) {
+    // if (user['isExecuted'] || user['isFailure']) {
+    if (user['isExecuted']) {
       continue;
     }
 
@@ -159,6 +160,7 @@ async function main() {
       if (!receipt.status) {
         user['isFailure'] = true;
       } else {
+        delete user['isFailure'];
         user['isExecuted'] = true;
       }
     } catch (e: any) {
