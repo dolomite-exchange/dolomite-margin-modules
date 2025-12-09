@@ -1,0 +1,3218 @@
+[
+  {
+    "address": "0x852e45ed1a6502406af4c409df4e0eef3cc0a0e3",
+    "effective_balance": "2.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x39e8c751afa78950ea6e560138c75165f43697b4",
+    "effective_balance": "0.013884953257038440",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcc0e6d05981d000bc8987c443ea909256bd1c8c7",
+    "effective_balance": "4.591783811745224689",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0f8988cb31ece73fad5c2c7b3844b5c4228ab7c2",
+    "effective_balance": "0.035095321080575256",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdc012098c2f1d3279c292eb8a9d322066d58ffe4",
+    "effective_balance": "0.132199270914499077",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x45de8ebc6345d389a6fc603b4469374941bb4dbd",
+    "effective_balance": "1.068974490697836537",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa9bc90da88bdac8e0fd90339f3c3d56b1dbf2c2c",
+    "effective_balance": "2.343576000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x367b22f56f3b01a4c90d508f9388e9c7ac06ed67",
+    "effective_balance": "0.070832899856536999",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbbe98d590d7eb99f4a236587f2441826396053d3",
+    "effective_balance": "50471.504413926888610583",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbcc8cb0a825c61355a460da85159f1b43d5d49ab",
+    "effective_balance": "1.573591000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4271d22292aa37e13cd0c68b8210a7a6af194407",
+    "effective_balance": "0.217068456856271864",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x38911306a53a357a98d0a4d6b83f79a5f8f1c8ac",
+    "effective_balance": "0.380004167769504026",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdb4787e25a4a0c99ddba9537390f143d53d6b40f",
+    "effective_balance": "0.037193914387323714",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x50d2dec635c48f5e8cede341df87c651c6cd5318",
+    "effective_balance": "2.885281044438278340",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb8bd8f4c420ada4d999f2619503d5aaa139ed7c2",
+    "effective_balance": "12.730451000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x69eeae3a39d5365a93081a3d95ee473ba317ad81",
+    "effective_balance": "10.753204573855505609",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa7f053d0a4df46577428b84fb3a59e98775ee698",
+    "effective_balance": "4.176698000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcc9073c44aa42048dc6bec970dba45e986fc024a",
+    "effective_balance": "0.116492401142087844",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x68edb06e565f1c4e7f4be85310fa99c001b5c53c",
+    "effective_balance": "0.000024000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcb7ed8e406094d63c84c70e816a12596394261a6",
+    "effective_balance": "0.002049453086600965",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf89da8aa289399096ebd0672697ac44a62a78234",
+    "effective_balance": "0.030216251741652535",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3b76fbc3e1c44eb8ecf4b711ced5160042dba80c",
+    "effective_balance": "54.778158000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7e4c51597dba086fd1a07751db43836a3acd20bf",
+    "effective_balance": "0.011936264422370377",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4fd4fc0fd4908e96fde01f7ae92ec63f6537c3b9",
+    "effective_balance": "19.039234213996296812",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6b00ea6fc7a9b699ce17bd7825bc16d45d2b3455",
+    "effective_balance": "3.942608383016443968",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x89513c8f26c6617aca7bebd1ba3b04f3fd25d37a",
+    "effective_balance": "8.769624211360925238",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x90bc88154c9728838b1b688a7613bf4561ee8e32",
+    "effective_balance": "0.244000416358743885",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xee9a0bbd2ce67fc008fe3f7f6a86f2c6da5f7a65",
+    "effective_balance": "13.675639120720433738",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa0444624a5abcd830cc9986e3247a6db810695a9",
+    "effective_balance": "0.181044651156033243",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd47248d5cc7bd078d111b9bae350587621a5aab6",
+    "effective_balance": "0.025998440373833836",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x68a8fb23e6fe18d29da22929c75be33e43bd81b3",
+    "effective_balance": "0.100000696686708875",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbcc0e414edf349a1a11ec0ff6ad0828fa7c4c874",
+    "effective_balance": "0.725304064512938493",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x35bc5e7db28ee51ff280aa3b0d1fbfc9bde2b89b",
+    "effective_balance": "0.032761325813531141",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x818bb80a26ff5a6dfd52bab54b3a651c5da9e514",
+    "effective_balance": "0.000038000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x70d628288d3b2244b9c2fe12b8c987162380c642",
+    "effective_balance": "0.871801759352352851",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xae7ae37d9d97abc1099995036f17701fd55cefe5",
+    "effective_balance": "16.809533366064266958",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa1ebf2043e76446efa2724bd1ec18321776096ff",
+    "effective_balance": "0.021893214013239271",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x07d89899a36cf64d54aea7bf4a2f10c41930da08",
+    "effective_balance": "0.789579982360423524",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x38430336153468dcf36af5cea7d6bc472425633a",
+    "effective_balance": "169.117412306893438136",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2a209589119688574e65cb9fba546e33012a9edc",
+    "effective_balance": "28.380482137314927706",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa49a2db9814998a5b95a4e9271187f36dad0bbdd",
+    "effective_balance": "1.423807400119267388",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x52bb0d2213502a51d05f4f7dbf6d0cc8c1a97083",
+    "effective_balance": "0.000020198793262300",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x49f65fe360a0aee3ff2c5fe7ea4f154d48095853",
+    "effective_balance": "12.633443942461275037",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdc578989421e1b4f591fa1005426c9687db222f2",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x77984dc88aab3d9c843256d7aabdc82540c94f69",
+    "effective_balance": "0.023100000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0b997e226b63fded87673bc8b43ba24477b8147a",
+    "effective_balance": "32.934800000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe811cb17af7e635c11091a49581cd40b69ffc320",
+    "effective_balance": "100.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc9535b697e0b430798443c6ca5a8be257ad368b0",
+    "effective_balance": "12.345556677833228317",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa02a1ab39ef37b7d860d7a791661703023389149",
+    "effective_balance": "0.010970517211887136",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa1a940afb30354032bf9dbb3b2fca3382a891471",
+    "effective_balance": "0.799740857844270217",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1cbf55d2d460122339dc1adf8a176fda197be176",
+    "effective_balance": "0.099999105540042359",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x869270a79f36cd5dd13e8a39de05a92e1f09f562",
+    "effective_balance": "0.480577581506357397",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc1eccb200494a359aafc05873b51d295f1525078",
+    "effective_balance": "1.797309587788037611",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x28e832311f9fbc2189ae8b7547db25844a4afd75",
+    "effective_balance": "0.000094000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3cb004dc0f60bca7cd9d724546c1c8ec56cd9ff8",
+    "effective_balance": "6.800824618970545962",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9c2b07dd951edae10fbf58bb98a1448cde417f58",
+    "effective_balance": "0.068680000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc83cad05674a73f09182a73bd78174295ce2493b",
+    "effective_balance": "7.909779566777054224",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x02b72485ecdaabd5f9af68d9a5d2b2ca54d5339b",
+    "effective_balance": "0.314866000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8560293f8d0583118cc1386133d307ace5acc8b6",
+    "effective_balance": "0.000008399343050314",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x990a1ea6c18ecc73699bb034498414a5d2f583f3",
+    "effective_balance": "0.000047133523794715",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x53ae707382d1231a4414ad1e982d775842f6a934",
+    "effective_balance": "1.744705006853758802",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x9d8bc7c70735c4428c30bd86b283f2381814432b",
+    "effective_balance": "0.382731218840525371",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x162b2fb2f8658f262828e12d044390d6bc6342c6",
+    "effective_balance": "0.052000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6d4f97bc946e75b3e7ecdd88dedacbe46cd41870",
+    "effective_balance": "50.484933155221421543",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2074cd9a4eda63c9523b02f3f5ecfc7a2e90c2c6",
+    "effective_balance": "1054.317050492015919227",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x47a6b229aaf701ae7e7dbbb2d814ae7418876bba",
+    "effective_balance": "0.000013936994506310",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x856565db827588a88780454863f98a4a323e13aa",
+    "effective_balance": "0.675802000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2c3eabe39593d985d5b4aa5c9a7c9f48bcf51aac",
+    "effective_balance": "2.017547985893155692",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x9b31254723e0c5e6887294ed4ce98d809dddfcba",
+    "effective_balance": "0.100000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfb0191315a4dbc61d3a4b029b8455fd30231f49d",
+    "effective_balance": "0.020000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x441e39c498a2d06a9d6631ec7e25f4376a5b0de9",
+    "effective_balance": "1.713034045239795000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x63ad6db35480e74f3ac7b2adf8e90bb752ff1bdf",
+    "effective_balance": "70.400000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x22a5093037b4c599a5732013eacaf2d325c841ed",
+    "effective_balance": "0.188880844445797791",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3f973ba2936c3484d04b1e5f8367d6b8079e4752",
+    "effective_balance": "3.460000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf3d25cabd6e4fb4ea41f1b03b6bb5f6ffbeec3ef",
+    "effective_balance": "0.500007471245040712",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x41d2f3add533465d1038bfac72855e8430f92eec",
+    "effective_balance": "2.123018316063844952",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x22df8f85ad9850151582f89e37237bf0517f87dd",
+    "effective_balance": "2.792516733677422235",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xa110d783a5b6b0b2a2c867094364e8f9752d5b93",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xad7a2cbe0a2595d7d0036f49f92b24a688ce9755",
+    "effective_balance": "0.651108117627983893",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9db844d225f5737e6e72e4a1b1cdc4dcf92a64e1",
+    "effective_balance": "0.200481192504622070",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6766d4e08fbd2417868139b1ebe21626787b4b73",
+    "effective_balance": "0.428068217540104862",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x0bf7fb51211b4842bad8e831ba2f42fcb836c7e1",
+    "effective_balance": "0.000000977790856067",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xae3f36d1570b50da6238225695a241e1edf7a86a",
+    "effective_balance": "1.962286000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1f32f3c8b28b7b94f0160da9fb7ba86470bd0f07",
+    "effective_balance": "9.476672116143821526",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6277e399f3fce201a3d41bc982b4abb516b391d2",
+    "effective_balance": "0.259276952630215861",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x848887741b3e38233cd858c5dd7b48ca9197fc08",
+    "effective_balance": "7.410794634173663607",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf750a96b81eda6224de065428ac18c4882edebf8",
+    "effective_balance": "0.799146258401030521",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcd088e347ac400327ed62494fa274d5e69359fea",
+    "effective_balance": "5.646836488808892944",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x59aad2c81b86df6e4a0dae51c5c5bd45ba451875",
+    "effective_balance": "43.245934451909672854",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x988682054ca48d89adbd5c027d750a36c86b0493",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1241de051c6c822809e405806418c0211fd027ca",
+    "effective_balance": "0.005642623816794768",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3953edc69bfad109c8b6a94070adb327cbe40f07",
+    "effective_balance": "0.219000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x57786979c5088e17807fed6a6e4faa5330d63079",
+    "effective_balance": "0.091848856099509383",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xf1b4165eda3a3c392d8224591af6c298ed0ec94f",
+    "effective_balance": "0.197980294618229640",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa8f4a971e71bba82514e669075326c7a923ea6b8",
+    "effective_balance": "0.160000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2abc0feccb3d06c5c9394ea3bab1f87358624331",
+    "effective_balance": "201.404356913675107434",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x902d4fa0b0948fe2358a593435872579bd665f89",
+    "effective_balance": "3.000400000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbbb7b32a5e384829fa67e200041d64e4dd8a6105",
+    "effective_balance": "7004.529592491204223286",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf60fd90fc72e1eb4d2054a24f5dcf7658f166eda",
+    "effective_balance": "0.077999114916037941",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6e12541f29c3b3dbfe723dd5eb21e7ab2f046f3c",
+    "effective_balance": "0.909008659463978461",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7bdfe11c4981dd4c33e1aa62457b8773253791b3",
+    "effective_balance": "0.000002000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb49246408599e36f67d46e3d79dc0736936a144f",
+    "effective_balance": "172.715412000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x00068f0bd662fa683d1923c12129976eb8d7ccd3",
+    "effective_balance": "24.459531940973976427",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3264473150ead02a604812c7b5b70fef4a9b4503",
+    "effective_balance": "11.091571000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xc565316add6454bbf49b2c7e3970312898a784f7",
+    "effective_balance": "0.205384623111676011",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd5705c8f1349be21aad241cab369be049749886e",
+    "effective_balance": "0.190129695692565816",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xbc8819c1821bc52b5d30d2dd52f0cb6110510005",
+    "effective_balance": "0.000003660582348880",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe302fd7564e20b56fdace48fd21dca17e28f4d49",
+    "effective_balance": "0.000000925658548111",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfb408fa20c6f6da099a7492107bc3531911896e3",
+    "effective_balance": "0.530000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xffd3003a187d9951e49bda206f32a6e765360427",
+    "effective_balance": "7.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb14130755bdc32f3540b8ff1ab417304c80d0eef",
+    "effective_balance": "41.446602861333991425",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x271b68a4aa515a78b8d6dd0b2628fed2f1224643",
+    "effective_balance": "6.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7640b5ff361a45249f12e8793ac17d91a0e76ece",
+    "effective_balance": "0.907711602416803973",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2d83d947e46d1baba92db00f40eadc4bb2a32966",
+    "effective_balance": "0.000009000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd213f746d52002e3e84517790603018d7fcd2cea",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x39bff8c8e9cc9bd59b88190ac0961d1c944020f1",
+    "effective_balance": "0.008712053581721603",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x5fced39a22dbd5ed7be32d420b89b302b6183d81",
+    "effective_balance": "0.200000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x97a7ec1b7157d12b99fb43d54f206ab9745a23dd",
+    "effective_balance": "0.850004168305258533",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6b732ad3898af56055024f2f920147b85be04176",
+    "effective_balance": "930.695643930751473842",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2250f6383c55f6bdde9da798097b234270d34074",
+    "effective_balance": "0.810000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7f5fca0617f76cbfd7cf36a94b5b318f13bb0338",
+    "effective_balance": "0.180732833537355996",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbe3c90d34b757587c62852dcd57f7c8e1bc5547c",
+    "effective_balance": "3.411026558673282805",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x772e58a3fb3a65da6845e1b278cba648dd4db36f",
+    "effective_balance": "0.572855867134195104",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x0b3b33cc7aad4d334eff76b21218679179c0a84f",
+    "effective_balance": "0.007669078565040440",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x408329a24c6a3ae7dbab6e12237e921b1cb9450f",
+    "effective_balance": "16.992900242478502634",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa2d35e418814a8b6367c66a5ac2fec8ea16332b2",
+    "effective_balance": "3.007952601546940182",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb78d17ce309ff0df2a363a6c8c4a43e0f61f62f8",
+    "effective_balance": "0.008041000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x81e877dd467f65b79aff559a8fafed6e95f01ad8",
+    "effective_balance": "0.100102272106559284",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd7040140b51125fbff24f6b6d3df096c9757fb85",
+    "effective_balance": "2.899453013446554963",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x16a10d3d31b6201f766e393382885e184b36b354",
+    "effective_balance": "19.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfdea00766af5716eb7a971845fb36832ba626478",
+    "effective_balance": "5.387169838958999448",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1dcd82d9a210e5b4d0a59437f926dce3b9af161d",
+    "effective_balance": "9.760401000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x100fea55da1316ba7c624a7e5e86ee9861e3ffb7",
+    "effective_balance": "0.049314155498208182",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x0ebabd3787d889e6b5e4b165906bff09050940ac",
+    "effective_balance": "2.761631236622597805",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x72195dda0361f43ce544b750f318d04b35836933",
+    "effective_balance": "0.101388159269049767",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x7246a35ffcae7fbbc1cd4fc6f78d3eeb4ce58f0c",
+    "effective_balance": "1.462076656401545176",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xad5c6297483f0c06d00b71723ccc853281fb45cb",
+    "effective_balance": "0.000100000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1e7a998b09132b295b48d70085fb2b80b929093c",
+    "effective_balance": "0.000744000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf286e07ed6889658a3285c05c4f736963cf41456",
+    "effective_balance": "0.000065846803252831",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbf110bec0ad59ce25faad8aea4e2671422996e31",
+    "effective_balance": "3.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x50a852203b68861968786fa057b0716860775b3a",
+    "effective_balance": "43752.621751295592251410",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf4b742228f151b891a995064a8226e4c8ca31497",
+    "effective_balance": "0.022853495378739354",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xeafefb44c6b5802df613877b37d1bc7ddb81300b",
+    "effective_balance": "44.646560787899557045",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf8bd80783318b8d26e22eb51d7f6c078872a3026",
+    "effective_balance": "0.707323773504095169",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "effective_balance": "0.000004000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x545b0cd987cfc162e5118eed0a21adb6e4968533",
+    "effective_balance": "1499.571564925934365321",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1ce34ffdfda1ca60e7336002e2d9cb970f10412c",
+    "effective_balance": "2.618699242150856602",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x671f8edb620b99790739f49d337dd2b0ed56634f",
+    "effective_balance": "2.886570059378883938",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa2d36f11e2225d1b89146f443350e825f15b8b68",
+    "effective_balance": "55.244684427227372599",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x75599d8bafce6838243f5db6ad3a3428152c666b",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x479725be70de39195d6f820d2527921801767ba6",
+    "effective_balance": "3.331205430654376500",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x369c1f1be366e2b4f1df3a570c8b32bc0dbad33a",
+    "effective_balance": "0.011608000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x411d209e4874e00dd550de43190224515b28fafe",
+    "effective_balance": "0.054065004106781600",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x64bea49dd8d3a328a4aa4c739d776b0bfdda6128",
+    "effective_balance": "2.802274375073863693",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa2311e75bebdca24a3dfab4c50aae4988de1ace8",
+    "effective_balance": "0.001000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x05120363ceaa374e696f9148a0c9df15435a2434",
+    "effective_balance": "0.708894956232819555",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7a5fe89a0350bcda945ed1e6f2be126b33472418",
+    "effective_balance": "0.000006748020502531",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xee18828ad75e51a662a96aa55ffa7a252223be21",
+    "effective_balance": "1.931343612002714493",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0ce17eb3dbca900b4bb585711aeab365e282c670",
+    "effective_balance": "0.225970533857547945",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x264f66719f3ca44067772d33a4a1f8f52b58d898",
+    "effective_balance": "0.064310008448463516",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x67037da0acc7cfea5994eb21f922e19bf18110b8",
+    "effective_balance": "0.064460434399628017",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6cc78993fc28d60b6653a2e7e89d6a5b69975e6b",
+    "effective_balance": "5.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc040794468e2c5180312e5a10b093a33a486742f",
+    "effective_balance": "0.182939178361071250",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x20e4bcb679d47b9ab7aaa46333d65eb524212101",
+    "effective_balance": "0.510005254174954461",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6a098ce7dde301eb35e17b4de2e26135248f028a",
+    "effective_balance": "4.445140777259727889",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd7a2df79e0a43710bc938b5d28cc92353e622614",
+    "effective_balance": "2.599995855440935839",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfb43d81e71cb6310bed2e1af3ae597fb0d1b0ae7",
+    "effective_balance": "0.191457165942810904",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2446f1a75162f045d02f23d1d3b0f5a2c0f9a4cb",
+    "effective_balance": "0.000484806256221169",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1466f5596c439142b6f39723eed27c117a97f8ed",
+    "effective_balance": "0.716566476992497675",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x19a648cb41e2944f4826d86712fbf3b0a19e5fa5",
+    "effective_balance": "0.160892693907582370",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf706bc1b284e37ec672865eb56491e82dc7ab141",
+    "effective_balance": "0.622776126058098729",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5b60de565583c1d81bb997220ac29740d842148d",
+    "effective_balance": "0.005613363930295216",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3b312a1496322f0c3633241d85a59ae0889b8150",
+    "effective_balance": "2.137110593206568643",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0534c96ac39b2e1bdd90587a7fac6bf9606c60ac",
+    "effective_balance": "0.064344570698557549",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x28d424ca841f4f1d08d76d491f3a221783c85581",
+    "effective_balance": "0.170254154938987176",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x609470c2f08ff626078ba64ceb905d73b155089d",
+    "effective_balance": "1.249035970531973938",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3cf1e953aae3a98f2358474a15da936c3ae1077e",
+    "effective_balance": "0.286039247076441125",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5253752071aeaa485040b368ab6ecb49e3bdd68d",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xc99a108448cb2f972f80a2d146122d3ec8ac04fa",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x984886312107a9ae23b8290d6c1d519a737283a2",
+    "effective_balance": "0.123520304267823025",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x74102bc480a41681e66add3ec9378ae6f3a79652",
+    "effective_balance": "14.945000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1c6e47d1eff818156781d8c0155153ccff2e1aed",
+    "effective_balance": "0.000085000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0f2a4e496a508c53ea3938737a65b21bc96186b7",
+    "effective_balance": "0.000099000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x661d9f2a1081afba720b5cd77a2a5ef444216aca",
+    "effective_balance": "0.435742785719638748",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb0730882e292bd042fdbb3d31f8b51102a1965ae",
+    "effective_balance": "1.981866459448380396",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfe95b935eabda9fc47233223c057c590e95ce47b",
+    "effective_balance": "849.864488974068344763",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc622150e5f4841b147d20d5c4a5b0982bb2b94e4",
+    "effective_balance": "0.572731225532589983",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7f6314aab783af61551310d56e926a410f9b6ca7",
+    "effective_balance": "2.038147555191686645",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8798716242a3b6ed6a11dd841853d392587dfde1",
+    "effective_balance": "0.165015631377686220",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd101d8d87a4a9b7315a280e6727bed32318b941c",
+    "effective_balance": "0.500014727579548962",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x80b70c055f4595544f325f3671cb98bd97ed65f3",
+    "effective_balance": "2.681444793559003246",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x93adf181c0d477568aa8c18014ced7fe5074b561",
+    "effective_balance": "1.680605196346934893",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1f4150c5266e24c61f7109b650ff391ac17ebca3",
+    "effective_balance": "8.981925840714213286",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x33a288bcf61807582bbee86011f696830fc2a599",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4eeea630371391fd5f5fc048e933e075f4548445",
+    "effective_balance": "40.190807462661618844",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf8dda9a12eadbbd4cf98da27beba8c69af866966",
+    "effective_balance": "0.024440909378344690",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa89eb2c1df095987aa1f1a68885a4809ffbfc79b",
+    "effective_balance": "0.528487332097271040",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1d8c4d80464270afb50576cab66f08a29903747f",
+    "effective_balance": "4.974230000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xced5c5bd48d49eb75a1345f5c2837d27713d225f",
+    "effective_balance": "0.083779081894046143",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe90d4b9883282925710fcff88c15cdd5137e135e",
+    "effective_balance": "20.006066274160809455",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x05b2a9aef1ed363e9b4e518d879e580eee6d89d2",
+    "effective_balance": "0.000075159160802234",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa10ff7eb74497f809352409ab96e8c84eeae7119",
+    "effective_balance": "0.124835441982038973",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x94061e6dff5e6474987be0d3b75975db9b1a846c",
+    "effective_balance": "9.081323509418277533",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8bbbcdd1807f0aa1661bb8e5c6859b1934a53a63",
+    "effective_balance": "0.000000495600000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3fc602c3529dde58e44f7d62c4d8506bd42d319e",
+    "effective_balance": "0.763848765382363558",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2256fac6db57f5b68ecd2c809411910bd71d946b",
+    "effective_balance": "16.144888595193163785",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x20a6a6acb4f7cae11d302c52dfdc159154387161",
+    "effective_balance": "0.000287418863115211",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x77251861b501dda74dbdce4fda3da2fc96529e87",
+    "effective_balance": "2.036807965319598475",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1234c7506e84335c0e5761a7a6ff368cdd94ca37",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xc4a2fe5b6676d9393335317404bbad4d0082e3d9",
+    "effective_balance": "0.000013000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc65aa07a7134b08a558cbc29aba93cebdfb02a33",
+    "effective_balance": "0.246552103503995762",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd36ddb07b9bba83a2aefc8272c40bcaf6843eb0e",
+    "effective_balance": "0.162671424849366537",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfcedcb5e28b1f0b7caf46029a6058d365c5f070f",
+    "effective_balance": "0.025101009887198566",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xad7a185b2456d5afd85838a50c7d8ace3ab2f871",
+    "effective_balance": "10.922451000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb1b86cc078870a9c0f998f7c24dc27ac3dd46cf1",
+    "effective_balance": "318.572478442000664632",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2d96daa63b1719da208a72264e15b32ff818e79f",
+    "effective_balance": "0.725528298406568731",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5b2d776723f14c881bc69b5a479fa7ea0e6e3dc1",
+    "effective_balance": "0.114260871862714725",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc28466bbd0f2f519829feaeba61470a381c5d07b",
+    "effective_balance": "2.413063466198675493",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe9417f49d7301ee3931ec023803710a1001d8dad",
+    "effective_balance": "0.688529684903822828",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x139791013f6dcc26f4052e6a7b8ed50099e7d15b",
+    "effective_balance": "19.630597215666983274",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xa8ee946fcfb3a4229e8b052d09e115d243feff13",
+    "effective_balance": "0.213600000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x750e9a7b449904f47b793b805db469fa6e025e33",
+    "effective_balance": "0.019553921875603101",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x52540c17b227fd5ad746256612800a0aaad5a39c",
+    "effective_balance": "0.104228396761227655",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4a9026e6332b3dcb52e3d4d3ccbdfa3eeb73c23f",
+    "effective_balance": "0.000000086720330202",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x622eaa37f684496216d4ea87709711b03f51b056",
+    "effective_balance": "0.876997398606995767",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdf7da78f864f436b59e954d1fbc30f6a2249e93c",
+    "effective_balance": "2.066174000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8416e9a778c339bd4c1c347cf8356dffdb15730c",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4442318189da6b7fbc2fca5ed4a67ebeedb7a9ec",
+    "effective_balance": "0.000000002163112334",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2c2fa8a0b0aa01169d1f7e2dc70829572c263d58",
+    "effective_balance": "3.212786456126268728",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x28da3dde285d8f1f87b2d858f89961bb8b9af180",
+    "effective_balance": "1.474195272849485277",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6a4379f763b3e444c8548ccb7b7c061db3ad7cb8",
+    "effective_balance": "0.183591076972462140",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x70e1169e6e7340f531b20bf96a2d6d6a77918be1",
+    "effective_balance": "0.150583453552753359",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0507b3ffe3836ad0f256f3d53b8fa7653e54e2eb",
+    "effective_balance": "0.000000138783322035",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2218a37513b2bdd11226e43a22ce6732bf07323b",
+    "effective_balance": "2.149924512610952378",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4dcba122d0ab15ee406acbcd38b8116138c16312",
+    "effective_balance": "14.094680687160041161",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2a03278590cd1962de28f9abc855cf3774fe3eb6",
+    "effective_balance": "2.436669888513565857",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbff74e3830ebd7a67905a51e9359080d7b228337",
+    "effective_balance": "1.400000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6073e895631712c0bca0ff58af13acd61d8eb2f3",
+    "effective_balance": "0.000300000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8c580556fdb1f57853e49f409ae9b89f7658e7a2",
+    "effective_balance": "7.904184000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1eb322c016815ee5b29c071586c1b75be5934576",
+    "effective_balance": "0.013558875551798860",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1c548493930d6de8db946bda03011e8af93ddae4",
+    "effective_balance": "0.020152366641020382",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe796b856f6d0caf88dfd7dcbe83804a02b6d9283",
+    "effective_balance": "3.570294095643764313",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6aa845e1b36f2fde1dbd6d55df4b27367321f7d5",
+    "effective_balance": "8.263048000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0cd090a3c64856c0780a6839aac63c095906291a",
+    "effective_balance": "0.000153000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xef29525effdf573fedd059e660439d0b1084f08a",
+    "effective_balance": "0.579732924341779889",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd518f2fc3def43e2008632090d4753782206aaf7",
+    "effective_balance": "1.176612000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x6d910bea79aaf318e7170c6fb8318d9c466b2164",
+    "effective_balance": "1.494473660425788665",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x21093947278aec469f300a7e4515999316885783",
+    "effective_balance": "0.001000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x4a1ba2718bf1c8e6f24f7ebadbaa4dea07d03204",
+    "effective_balance": "1.747615298930228201",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x770b9ad59cf92a0967dc47ab083d8b798a240fca",
+    "effective_balance": "730.579000530877119219",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa6d0f1e8a1bd8bf46fa7844847528aef7e309093",
+    "effective_balance": "1.245829395174425719",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xea299647c0cd6abaf2867b8a337ad548c74b0484",
+    "effective_balance": "0.264009210368687251",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x5326a62a0d7bbf84057c78c049894152c414368f",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x90f5d58dd8322e02d6bbf200a701a57c71d42e44",
+    "effective_balance": "0.002985795295521859",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x37633c9f778c44e852914c7056cbbbf75323dfd6",
+    "effective_balance": "0.049868656427039106",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa02971f439bfb25f077867a6159e21dbaa4157f4",
+    "effective_balance": "0.002049453086600965",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xf92c1876e9d35a2d58936deb7eb3c2c84f490329",
+    "effective_balance": "0.128492118508106579",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8a2fa09530f858d2b064d5539aa755e8b901033a",
+    "effective_balance": "0.000007201431869262",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x672b678bf3b2e6b7a6a1ed66ad3a2bbf767c8b8c",
+    "effective_balance": "0.738562000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x110d16292db23bf99bde9b227ca910b319043349",
+    "effective_balance": "1.054431437954781593",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2c499adf6965b29771a61b3f5092001b1fd2d8d0",
+    "effective_balance": "2.784813645955018428",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf42c2b956bcab51abb6555f5a06ee582e4581c71",
+    "effective_balance": "1.157556777295537608",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x54426307974b659b48e70b1faa44f17aa0e3c4cf",
+    "effective_balance": "0.090947076417257669",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4dc100cfba6f8842c50a2f7e5b7b7c89e5f9209b",
+    "effective_balance": "67.866936716038365692",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x840d686b4665cea38e5e34f07be9e43c8bb38069",
+    "effective_balance": "0.000000753916068078",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8dc005d141f529a11607f556d88834432e2c65d6",
+    "effective_balance": "0.000000446366075898",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2ef9ebf18c2108f2b8a8b01db5bd633f2ce202c6",
+    "effective_balance": "0.708082311505568507",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd61a31d72046525c53665e2137aa5076189d3a07",
+    "effective_balance": "0.253655061374702583",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xbdc338f3ca019e6db3818d04d21660f685bb80e8",
+    "effective_balance": "150.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5b8f4c08cd8a75b33fb7705bb079c16024177e73",
+    "effective_balance": "0.008129558333210099",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb697f9714dd5ce3f0bae03f68aec003c9b0ab5c7",
+    "effective_balance": "0.000086000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x196b473f7d74820029e269a98baf3517c463fa89",
+    "effective_balance": "4.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x38c2d9a73bfb23972c91af9c9f91e6d20f58ca18",
+    "effective_balance": "0.100000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4560a82501efa87a90a2bca4c247bfd884dc9368",
+    "effective_balance": "0.142155458442243096",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe751970824f3bcbf97e611e351c1136776be1ce9",
+    "effective_balance": "22.429083623688006092",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x70ec29bb2d63cc4fa10dface1fbe1c3a125c8598",
+    "effective_balance": "0.015989000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xab01ab744f11833c512b0cbedcf3b29820b4f356",
+    "effective_balance": "0.017389778071518667",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xcc660e4a6b1b1766911bf5e75e10b6aa66683b48",
+    "effective_balance": "0.000005000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x03270912905f63b1b2b99b9a520a86810aa07f89",
+    "effective_balance": "134.679774166052086393",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x939e1b3fa48b1f733ddf8ea2f98eb93549933458",
+    "effective_balance": "2.150700910742726324",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0d3e354fadfa4e2f8f596a3f089a49fae4995bb0",
+    "effective_balance": "0.400000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd9785f0188823327cc02f6b9d382f1ad61f621e8",
+    "effective_balance": "20.841497701615119286",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x39be44cddd5e3f3d1edc66fd8c2b0d5ed355b64b",
+    "effective_balance": "2.878101914974428468",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0f2cd0c6474594b2d3830e1076f40d6828641a0f",
+    "effective_balance": "0.000056000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2654ddf31e5d8dda52fe8c1d759be186d316d8a6",
+    "effective_balance": "1.074644446497418145",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdd0206010ca82ff22303b58863b3a6f3006c86c4",
+    "effective_balance": "3.298888000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8a4faba71d0dc287d7fc33278b09e36bae1f22b5",
+    "effective_balance": "0.148520865885201615",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x25b3708f4187985544e9c147dde746f90ffd9f14",
+    "effective_balance": "4456.818320602036754029",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb5b374d91c77c9a4b7e9b24d68f1f49a3af4d7eb",
+    "effective_balance": "10.542564117558896563",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9debadcaae4820092c8ff7dc741c9ec7d9e95027",
+    "effective_balance": "0.009603703934727934",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x93efec89db80176895b2c7a4e00af808bbc69239",
+    "effective_balance": "0.000065000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x9bb98140f36553db71fe4a570ac0b1401bc61b4f",
+    "effective_balance": "100.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x499fc8a72a0622a7156a70b236a143b78c6d075e",
+    "effective_balance": "0.060000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1b757c273d5c8a6d005329f7d535b44dc1c98155",
+    "effective_balance": "1.897438401112665850",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0cb3dbaecac7a8cce19463e0d1f973f3004bbcc5",
+    "effective_balance": "0.845583700927318957",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xce6e27e298bd6024e91be5028762d57d857bb5c5",
+    "effective_balance": "0.003124744881827204",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe1be969218eaaaa06390396ffac2389bea87809f",
+    "effective_balance": "0.010005911850569675",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xf01a41aaf989d9087103021ccbbcaf3f825279f3",
+    "effective_balance": "0.999977763125318962",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdb8d9a4fc8368dba0a527cf7c7c6d795c3e40971",
+    "effective_balance": "14.306966497595048174",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb512ddb203cb1b46d59d66e1f90f243f7b831d90",
+    "effective_balance": "0.020000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x420c50bab71673372b48309389e37e770e4d5773",
+    "effective_balance": "0.276848358027093309",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x72972367c691190bcfc542fe4762fb2be6ae070d",
+    "effective_balance": "118.250862934692526435",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0015ef0897d6f05cddee8f8eeb2cfb55bbc5b67b",
+    "effective_balance": "0.000002000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x6471d0848c6fd0df3e82f05b9e581462464b9eef",
+    "effective_balance": "0.024904453879137585",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf42aca604b91f8ac764cf8908ab34a73b9a0295b",
+    "effective_balance": "0.409265851842423265",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9cf111619d5cbf8e04491d3493b2b1927d16f978",
+    "effective_balance": "0.310024568134032712",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x52cc1bc45d387a52ce48a9c051614a6265529bba",
+    "effective_balance": "0.108765977501611364",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x08cce1a81d8c1bad66573d211c2f52fa01c7378a",
+    "effective_balance": "0.739685336838704564",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4614b16551a21f7e29b57a4f8a8a4b63579d3cf4",
+    "effective_balance": "1.108793514562428014",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfdd8bdcd65c77c36acbdb9155ee9e9259f5658f6",
+    "effective_balance": "0.142405705772835969",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x85c5489f74fe5000ff0701535d9ec8ef49dfe704",
+    "effective_balance": "57.684732453044608986",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe5657dfa63971ba46487ad8376b2bc986d7b6441",
+    "effective_balance": "1036.091444320436962638",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x50a0d247dfc06a86360bc148a9377be14a970d29",
+    "effective_balance": "5.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4bb12cc382e36b4b6faf7bdca7708969aed258ef",
+    "effective_balance": "3.973753910447590553",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd8f3676a7567842295170b3f6ae4bd466a878374",
+    "effective_balance": "1.357418775584020163",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdf30911df2aa5f7a7abd5c8b26392384c8042a78",
+    "effective_balance": "0.092485973225032021",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x97e620556c626cc3312e3ea40a908045c550651e",
+    "effective_balance": "2.043052000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7c88b0345983c709426b3b0648bb10ba1a5fd8da",
+    "effective_balance": "19.182339255341622980",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfb4b0015ccb490f631087a4867405b76ebfce79a",
+    "effective_balance": "10.811609437440164697",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcfb5203b3d340e6f5dc01b9488f4e84acbe92d21",
+    "effective_balance": "0.499056872033455926",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf36b1902bb6fed4413ef1b9d5bdb86044abedff0",
+    "effective_balance": "0.211962933140802602",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc63c28fcc3462d042a262928649416fb0b4bf743",
+    "effective_balance": "7.249423316395836298",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x08d26f88cc1394f91b066019f0039f223f950f10",
+    "effective_balance": "4006.999999503374368446",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0fd90b9d61af052c4328bc2fa9a1529627af0a7d",
+    "effective_balance": "0.020177443235702589",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa9188c4a8df1c448427c51fda67527cfb4a0c49d",
+    "effective_balance": "1.566012526617047174",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x25c68aa03c5197b643e5a6bceb13289e9874344d",
+    "effective_balance": "1.157556777295552963",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x14c55eb9867e957bed83e1bf663e86060fad604d",
+    "effective_balance": "0.005525112765600214",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x79192c49a2faeac5416616a2199212e52623250a",
+    "effective_balance": "0.046257887512566241",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5eadc7b7c89f8f5b9831d0c9b2f568d0e07fe381",
+    "effective_balance": "2.300000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x138f9166f056a10b3ba573d17b2edee4196c3ca8",
+    "effective_balance": "0.230003834199086661",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x37fd691e6a2010cf780995964c184f6b0dd0572a",
+    "effective_balance": "0.423512269549207457",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe05e8d94cd2570d6d47e57104e150d22cc4f030e",
+    "effective_balance": "1.682642322328679954",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x57f5e6359497f74fa7bee41a7129695d9505845e",
+    "effective_balance": "0.270209756393070319",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xdd0ae174d1e641031e1f26d96338f2552ef03220",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc1269b5614c6f5cc50affa5e62d403622c6cdb3f",
+    "effective_balance": "1.361853085011524864",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x35e655ff0f4d722907771069420b7a502da70a8a",
+    "effective_balance": "0.147580887541894032",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd48f4255d46569bfbaad253e278b4a47000fa3d8",
+    "effective_balance": "0.004584504273982919",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb3a29e6bee26663772e4d9d38b453a5add44433e",
+    "effective_balance": "1.191184989577145316",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x595095acbc628473ad817e58a3a79ae861f8848f",
+    "effective_balance": "0.030000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x21cd90999c0ff1ebab47b8adbdd6204715320f39",
+    "effective_balance": "0.420005388093602757",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdd0cdf8d98d9ad3adfaa49aaecd444bfa01d9c9a",
+    "effective_balance": "6.487587579735344133",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3496cc53d6d8650ec936891038e656a85475126b",
+    "effective_balance": "2.914966850410783685",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xccc9ba81cde53e38cd5cf38d635daa8deb9160ec",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x39032520c46c965f0995dafaf2a26c1c12546690",
+    "effective_balance": "0.970949523309022415",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x22b2ccb53963da600c83191db1ce3f61f92dcf45",
+    "effective_balance": "0.000496152602470236",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfd2f351d335ab6a24f7a96a1e7f54fb09e4150da",
+    "effective_balance": "0.100000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd6f631c796a56a5d448dd88a01f15058c4a0be52",
+    "effective_balance": "14.046961201958926304",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7df79ad0787527b308024e6a82994aefb7b72929",
+    "effective_balance": "0.017030370112131195",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8a8841f4ab46a052139e0de31b1e693382193813",
+    "effective_balance": "1.215049664725410065",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x28581d2854fbc981dbc9ea109105d73a70c527e7",
+    "effective_balance": "6.327453868935734568",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc492cbb19aa66b829ba5ee42fb94e73bc724a6f8",
+    "effective_balance": "3.804542776568701001",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3858e36f636fa28cc0269b6941c1de748bdbe8ba",
+    "effective_balance": "5.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x910813e05327c9bfe3400f43740adc4173eda3cb",
+    "effective_balance": "415.397417096949736122",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xbf6cef24bd481ce07b8113217bd8e892e285b837",
+    "effective_balance": "0.184596762026767323",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8f70df82081d324b0e379eba7ea7dbd25c2738ce",
+    "effective_balance": "0.395037290775253390",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x13108ab5c6eb7efdcd7ba6f8cc55d265eae6176f",
+    "effective_balance": "0.035948069716181945",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x10bcf0faa9f4e068d78c8e6776cfd78f7645c134",
+    "effective_balance": "4.233771447514497058",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6f69286d7c51de0f0cf5f3c03c8ca3eda8a322f9",
+    "effective_balance": "5.010189887131843660",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9345ac21f12041fce6f5bc09cd9ce69e9f16becb",
+    "effective_balance": "0.030000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb750aa796a631585b8dbbe1088357f69d540a228",
+    "effective_balance": "9.999900000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9a0ec5ba7912018b8523f110d84a6e1ab7b0d900",
+    "effective_balance": "938.532564439064770032",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x40a24ea5b6a248f3a138e6bfe3366e78d1cc71cb",
+    "effective_balance": "0.000000524688481479",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb25024c421d4f8bebe468d3dc353e07868c99901",
+    "effective_balance": "0.343670615092761141",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3ef9ecb11004681503fabd8835a50a97f54bd2d7",
+    "effective_balance": "0.029404808602019734",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0b268ed6c35b187e781dbe92d02ba78fbc2ab9b7",
+    "effective_balance": "0.127499071533573927",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x808979e64e19d52d36a2b0d3afa72a60d1f12019",
+    "effective_balance": "143.152328139240143317",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc32b7438b3df7844c9ee799930a2224fe6e26426",
+    "effective_balance": "0.009000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xcb7958ddf673aa8f21614346d3e1c46182a9454d",
+    "effective_balance": "5.368665365173907370",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xad5d9b9e062555ef621fbed3c8bd86e618f2f0d3",
+    "effective_balance": "6.957680725630579124",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xec0b486655b6d2c22219dfda19995ca3c0cc484c",
+    "effective_balance": "0.000000710176361520",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe0e81214635e051427a182c97f1fbdd1f6ab31ea",
+    "effective_balance": "0.009000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x5e51f3248ce714b7e1d2cc1946461ccb71fa1c4f",
+    "effective_balance": "0.000944219972297776",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x4b445de07860f86484c38e093e9d3187cd034e7c",
+    "effective_balance": "0.733202417949460859",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4cb75146e98562c9d79b31649c6c739e4dcb7cd5",
+    "effective_balance": "11.850471941161175046",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x435b7d470767cb121f37dd296b2ac7913fdf5427",
+    "effective_balance": "0.236350712476274830",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6409655c63a843cfc056e811b376debead767a5c",
+    "effective_balance": "0.630003171028058878",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfa0009083c0725c09b23b6916ee6bf6f897ac6b5",
+    "effective_balance": "0.596091955858115255",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe63e2cdd24695464c015b2f5ef723ce17e96886b",
+    "effective_balance": "32.350330000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe05679941535c722d9d3a5ca60d18ca757c24330",
+    "effective_balance": "98.600000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa7e6f51af4fbd7d1f4d95764bbc965cec4ad5b91",
+    "effective_balance": "0.011270566763122381",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xdee9be8bdedecab8213c517c45bfe71e440b5260",
+    "effective_balance": "1.099122645829132249",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x25dfd3ad1fb9ffe02234775c9ae41613a19a6802",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xa2e7002e0ffc42e4228292d67c13a81fdd191870",
+    "effective_balance": "0.035604636451374201",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc42d3a7bfaee32dd9763f41deb8188ea797ef4fc",
+    "effective_balance": "6.050637000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x537b6f941ce307ab8c99a3340ce137197be5225f",
+    "effective_balance": "1.299541542464434461",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9595f24afd22ab291be3d9dfdf978a2e1c454c51",
+    "effective_balance": "0.064844541675907866",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7bf6c9223d20e19b2d02df8a2a81b13ed6e33eef",
+    "effective_balance": "1.192873673148335058",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x59a9f07bc3c3d3765e835e825c8f942232d017c0",
+    "effective_balance": "6.711155221089324991",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x56b0dac37a3196a9d75604f081eb77c32688a740",
+    "effective_balance": "3.760734764146568967",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x34d372684f5a00dba6a025adfbc56c1e209725ed",
+    "effective_balance": "0.474033339375667878",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf34e13b94257e1932cb39a05fa35674f66effc23",
+    "effective_balance": "8.754890834800214142",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x959e733604f66c733309ae94cbb14683ecde60af",
+    "effective_balance": "1.713919724947907533",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xcbc2ee786c1893811ae64584d1547cee05edeea5",
+    "effective_balance": "1.100004923753020596",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa5ebe5d1871cc87480b23126fac13d7161a5c1d9",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x105cbc298a189fff6062f8ba5038de91d3d4b3e1",
+    "effective_balance": "0.300007911648301547",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x40714715bd35bfd52a8ac0917745103da5595704",
+    "effective_balance": "68.539545775709827066",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xfab10aa58bf87a3499bd5b603af8c442fc48cbac",
+    "effective_balance": "0.000000686848323605",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xcee064b3e0c8bde8e2c8d599fe6cd54b1c06c7c2",
+    "effective_balance": "4.954544928849002983",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x15f55e3d1dcaa88d16732808c2df5f8438f11a9f",
+    "effective_balance": "1.780843333261538242",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd67ab36c800c2415d2c0a7760dd2c40b0edd6ff4",
+    "effective_balance": "0.212035558595780712",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb1d3d9d3f606459f0ac826a24ad9b6096e83c348",
+    "effective_balance": "0.000064051129962847",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x37d0371d17e5e587b236504515a4baabc08da619",
+    "effective_balance": "0.201425725213470158",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1a7228605ad816861b61e9ec1944346660fe52d7",
+    "effective_balance": "0.001724776525872202",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x4f49c34759b7e888ce77de9dd34fec63d63495cc",
+    "effective_balance": "0.084984153160529423",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8f4177caeebc7b25ac4bbab7e5f38830237ccb3b",
+    "effective_balance": "10.104907873996067482",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x063ae79a21d7794f69d2afae38b73bb9a957efd3",
+    "effective_balance": "0.019115357939207514",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x78b7063e57767474e54f911f8ba51e57bd263fee",
+    "effective_balance": "6.051167278711773295",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x44f6ccf0d09ef0d4991eb74d8c26d77a52a1ba9e",
+    "effective_balance": "1.371845839750944554",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x99b40b9b57c370aca09de4f58d26e2dec9086e1b",
+    "effective_balance": "0.061677254769492690",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3e7d81b7b1fae155201d1a2a6f73b66c97dede76",
+    "effective_balance": "8.587045059244369785",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x979d606d736d4847bbb5ba9714ac0f1543beffbe",
+    "effective_balance": "4.941956000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x857b99db33fee6038c95d9314739dffc324d6636",
+    "effective_balance": "0.025684262677011758",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xce60cf2ecd9497eb9cc472de3d33d94de098a2e3",
+    "effective_balance": "0.149846809121962285",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5811b5d57cb3f803151768fea0d22046b1ebd65c",
+    "effective_balance": "355.460457000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbeca610feec013a9707476b870fd8967ee00ce08",
+    "effective_balance": "2.367929104346906689",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x68292357e9b0b35e08861ccdb53290bdb92999c5",
+    "effective_balance": "0.262897509203447392",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x52256ef863a713ef349ae6e97a7e8f35785145de",
+    "effective_balance": "1003.947979646131347495",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8953ce43e0d0fc561bea844d3242d74825f5793b",
+    "effective_balance": "0.000000045162887300",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x49dd94f8bf3d408275d326df4a45057aa48cf7f8",
+    "effective_balance": "0.039065052529938113",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x5d145ad5135a7202c6128ffb2299c35e0577fcb2",
+    "effective_balance": "0.306924124175763487",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb7785a26008d03fcac5338e8e5bc0c0633c6fed1",
+    "effective_balance": "1.120002126232020723",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa1eb8451e2ade77af398ac81637538d4436b29ed",
+    "effective_balance": "0.595011253351068028",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x88df4d4240d4f388a88d9edc1dbc7d0154b996cf",
+    "effective_balance": "0.420000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd113a6a043c7c284de9a570171859d12c43a4f83",
+    "effective_balance": "20.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc50e57720785b3d827cf5394006a5c7755d725c0",
+    "effective_balance": "0.237500000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7374a389311c1d46e9afdf86ec12e2a0e73f34eb",
+    "effective_balance": "0.023210819646816608",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa6323e19ea4b1f74499de026691239c69508888a",
+    "effective_balance": "2.667536750942837220",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x9f9ebce72c0715cdbad4d589986eb22f6782a1ce",
+    "effective_balance": "26.442619676388313847",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x4c30ffc4945b6297fa75bd0931f937ea7bc8e9b2",
+    "effective_balance": "0.021299000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd8b2b7f42873f111348c835563e26865474337db",
+    "effective_balance": "0.448164054680837077",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7b2aef922cace6ed4b0ba971aae24b6876518aa8",
+    "effective_balance": "1.530584338204446002",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa855fdb57e7a1d84026ccf1825d81f66177f21a8",
+    "effective_balance": "150.712860000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x97d7846316efe4581a5a1ef3de3e88814ba75e25",
+    "effective_balance": "0.022061544201940730",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb3ca07f3aee4338cb217eb1cc272d7a1276bc12b",
+    "effective_balance": "2.586163914509584693",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xbce49959edb00ebc509e6a9e11dce059582e7756",
+    "effective_balance": "2.303957000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8d1dc91f8b7487317ba4f616c88b7a5fabb87b91",
+    "effective_balance": "0.000061000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb8187b9ef4f81061ee346f0e320896a881542e10",
+    "effective_balance": "0.018116877831332808",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3aedbc38b51ba03cc3797eadc6a76fe2827c8770",
+    "effective_balance": "1.015314110765201074",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xed9490eb47478b11e0c6352446fa70542a093ef5",
+    "effective_balance": "3.720870976996274835",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x4e182b2176992f5fa6a178bdee1d1160396974fe",
+    "effective_balance": "0.447740000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd7135c7306cb384f59b6a2e2389f2c9291f7829f",
+    "effective_balance": "0.173061140389032212",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x83b33ba5b1446955bee0b3110c163150f555e40e",
+    "effective_balance": "8.637733974487137751",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x49c23962a5bc0da329785eacf43fc44f98eacb12",
+    "effective_balance": "0.100000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x88bf5a2e82510847e5dcbf33f44a9f611f1c1df5",
+    "effective_balance": "0.000000421621397771",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x70af8f0b836448799844b062f489b02a47d93fcd",
+    "effective_balance": "14.185606319852313420",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf53464037f6f20ff02bae163f55008358b01644d",
+    "effective_balance": "1.010395071460042909",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x28cd5d6ff8972bdde34e8fa5fec8070ff3ddd72d",
+    "effective_balance": "0.000093000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xf930f29bcbcf4a31676b1d3f7a868f02fb414fbb",
+    "effective_balance": "0.000000087212926925",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x26abc9e54b5a0894b9e6d834d1f1a7e7768ea00a",
+    "effective_balance": "1.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5c0796ed4f0b1de9f9eda9fd6fe29562b2a60296",
+    "effective_balance": "0.000009000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xf5fa0f11364cc7695c2e8c3f7c9a7de3ea2483f1",
+    "effective_balance": "0.012594000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x38345b9d3b617e6125082963af9fc4255157366e",
+    "effective_balance": "0.637500000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x186b4e576e34974c776ab8048970aefd9c71468e",
+    "effective_balance": "4.343870543192069833",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa23a8b951eafdb3ceac3fb82cf0b84aa235da182",
+    "effective_balance": "0.220015215841293619",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8c66ac5284fec2676a2c79acc2c27e2a3df143d7",
+    "effective_balance": "0.010000000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1fb99c83110726b40ba6bace5044580675d22f04",
+    "effective_balance": "0.367073881698842219",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7dbb2448fbc5d34691097c871595dd7a51d1ee16",
+    "effective_balance": "2546.166598013053763514",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x78f801b373e49ee378275b0e55342b7ab7b3c53f",
+    "effective_balance": "1383.102571435938509370",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xdbc88e5858fd2cd02b2670383100b04804fe2f27",
+    "effective_balance": "0.000062000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x2600544f150db80438004be4bbc7114aa21615a9",
+    "effective_balance": "0.241113278963721344",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x600c360af2c0189bd193a60e7b591285213cd22d",
+    "effective_balance": "0.188404279407782002",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x0a5e1766366e278ff415d0521fde933c5adb36f3",
+    "effective_balance": "1.726416325870516518",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x0dcdbe12dfbfbd7ed09f2b380c3008049ef08401",
+    "effective_balance": "0.240008521018549582",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf23ca6755d7f6a715b3e1e12816dbf9a899ea519",
+    "effective_balance": "0.246852937776030994",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x7cee6442f491d871c055de3d2adef6512a87682a",
+    "effective_balance": "0.100000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1299be28376fe9d218919da47a84af25e4514c85",
+    "effective_balance": "2.198636000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x8fc642d66492c830da43d95da7fe3f027f4f3246",
+    "effective_balance": "8.622497114919200514",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd086eecb20cf564d5868755e58fd55a1db9b6d12",
+    "effective_balance": "0.000088628405276201",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x50eee3982edaa8db9f86e3b47c525f7e10a5a926",
+    "effective_balance": "15.005595366643760195",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9ae9c6af182d1ff4575081b77bcec4dc42770a9f",
+    "effective_balance": "0.000004000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1a96db12ad7f0c9f91c538d16c39c360b5e8fb21",
+    "effective_balance": "1000.092500000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x9a90d610ea0b6a756487b5ebd39e6b10a1027f9d",
+    "effective_balance": "50.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x55432fda702a12e32c3d44c5c90533fe4daff779",
+    "effective_balance": "0.605504152787787078",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd6f14caf5db98820628e0acd3e3a7009b96c8861",
+    "effective_balance": "99.116564758968220255",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x18a4d5d0b312d1965eacf4b7e24ec3dbac3f66f6",
+    "effective_balance": "0.000055390324038534",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1702acf734116cd8faf86d139aa91843f81510a1",
+    "effective_balance": "1.449457908871555940",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5143c6dea00d78884cc85591d08ce6a4e6a7d956",
+    "effective_balance": "0.999988103027778068",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x470d235ca1caff614abee02d98ac3aa89a6758bd",
+    "effective_balance": "0.979968313916844921",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xfb2a59ab6f86434c6a57d8b7133e73b17dc7be46",
+    "effective_balance": "0.056827207509520333",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x7f8da5fbd700a134842109c54aba576d5c3712b8",
+    "effective_balance": "0.000367829648472222",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xe6b532e63f228087e26a5897131f2e1d043e27f2",
+    "effective_balance": "2.327971970168138374",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe9a830ab84558da8fbb7995306bdeda3f1f6d1de",
+    "effective_balance": "0.383285185812344613",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8102c13f090cee4b9b8ff58abab42da5896fbacc",
+    "effective_balance": "0.108611222379679521",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5952f70fef1cbc26856d149646d4a8f97e923ee7",
+    "effective_balance": "0.500000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xcb6222f4df04385ea08e8da2a5871131ff5f6cba",
+    "effective_balance": "215.171710501043592881",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x134a8cf663a8ca0efbe0d2a24c4915216d5a3a68",
+    "effective_balance": "10.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x179c4d74de5284519b96a44543c918665bade088",
+    "effective_balance": "3957.941599313804432972",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc9af09e3f0fe8e35d533eb62e4fec19c309ee1cd",
+    "effective_balance": "0.003900000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x0e971c01d4f3221cb6ea0998c22e24d63db963d2",
+    "effective_balance": "16.927498252507346389",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x5a1c829a78c98f1a79277e21f866cc7ca417659f",
+    "effective_balance": "0.010047591349213916",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xbd9382dfd0fef5490b92620bb083a880470224c2",
+    "effective_balance": "15.530000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x99daaf637e697c53afaa67d6ff27e336db925812",
+    "effective_balance": "216.603417000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xec5ca1812ded2994d128aa7dd56dc62765c685d8",
+    "effective_balance": "0.405985849714709493",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xe6656eb70af7d8c489eae135bae1b53c2a261a68",
+    "effective_balance": "0.320007050866336846",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x7c353b84d329212223d50740ef5d61b6c0464eac",
+    "effective_balance": "0.133900000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x529d67727cc18ed45c305bd2517d674a81923b3d",
+    "effective_balance": "1.835868770334883034",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x092e6362c5e0213041876b3864ac8732418693a6",
+    "effective_balance": "4.933050514370353539",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x33df8400b73136c3ed3d658a4384353f5d903eab",
+    "effective_balance": "1.000081468010233169",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xd334533980c201c1b93e39bbe6bd1e04be5c0f5d",
+    "effective_balance": "8.008760578666282704",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x672a318833ee156c3972c57c0ec6f933886dbe7f",
+    "effective_balance": "0.110000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x3025d523b34444f7af66c9d6a747f4c93b9ab062",
+    "effective_balance": "0.074465336077358643",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x2a61e85d71ba1d31b00e28e859ab7d034a749b04",
+    "effective_balance": "17.303046027248623311",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x15a884c3858fdf00552eedc08e93f0b5113e1b08",
+    "effective_balance": "0.000009686994722661",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x9b370d8eb68a7a36535cb4c2d1996e95f74d4a3a",
+    "effective_balance": "53.521414003570004348",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb4fbd802d9dc5c0208346c311bcb6b9ecff468c6",
+    "effective_balance": "0.117221817345431472",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1b4dc70984f8bd79d2f96ca7ecf6d0ae9df44a6e",
+    "effective_balance": "19.542373512348937525",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb0399dac8f4d4100b49b2a7b3873481114229d18",
+    "effective_balance": "2.273932000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xefce38f31ebeb9637e85d3487595261fdf6ebeeb",
+    "effective_balance": "0.000003503746164167",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x7326357e2b2feb661f9961bb897944045dc63ca6",
+    "effective_balance": "20.000000000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xeaa797ac2a00795edb588a54cc4ca1aed0f22a00",
+    "effective_balance": "0.508972595524909733",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xa8f62eac6e5c15c180a5d7649c38b889e183d59e",
+    "effective_balance": "0.000025000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3c1d1bca512027b0795e6bc29df53dbac2205161",
+    "effective_balance": "20.740757110217749649",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x6f568ab3967774119713ce3ee5df49fde29aab30",
+    "effective_balance": "0.038990696653967552",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x8b01c0e3d5f6eb7ce7ca16355ab02c14ec70fced",
+    "effective_balance": "0.002048745158073641",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd5de81e7e5e4f740a26ebb254d6052e1d03b4787",
+    "effective_balance": "2087.494560307798860659",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x1fd2978ac57fb2f459ef1ab7812b58f29ab437ba",
+    "effective_balance": "1.768700000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf626e9a2fddbf55b0b1a87c56128a7ba6723a85a",
+    "effective_balance": "80.505872119854413378",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xee5a98f93bfbb0a054b3e05067625ca232473282",
+    "effective_balance": "0.130792705399348645",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1a08d81cbb0138dcc73d0d06c49f0ef027c75d75",
+    "effective_balance": "0.024099198544685277",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x36f4e1803f6ff34562db567f347dea00dec87246",
+    "effective_balance": "0.000040556655955408",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xedb9394b623723cf030fb94a358297b8ed4e16c3",
+    "effective_balance": "0.177730249036214410",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x25659eefd7cae21566a257420bbcb0c8317ef94f",
+    "effective_balance": "1.731510175694376886",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x65f8f6fc92d58aa586da5b678c994e1413d9e939",
+    "effective_balance": "0.100172690779108947",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x1f0203e7d0c9043ee64f7601b46ee3dc16ec3627",
+    "effective_balance": "2.035910245539572543",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x09c43ad91571c7d7e683f60d44b5967ab6f3e8b2",
+    "effective_balance": "16.919041966678530466",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xb733e74f89e438ef78f256ea74ef7e760bc3e07b",
+    "effective_balance": "0.000000968474060149",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0x3f4f2eaa0ac911de570294c556b387c5b792e206",
+    "effective_balance": "0.000007675490083459",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb3d79ea767610555eba816bf79c7a1be14f81c7c",
+    "effective_balance": "2.424081164302093217",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xb942e0b051be81b96e7efd2118a59740c785c295",
+    "effective_balance": "0.426870574598205132",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x89ec941f01eec9c8d2e1e924cc807ca4a1233617",
+    "effective_balance": "0.000002000000000000",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xd4f71c2c5bf80c77563b2629ed11b1a92b2b3e44",
+    "effective_balance": "0.403322001916756362",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xc47c4c896afe31e0c37ecdb54df7836313b6504c",
+    "effective_balance": "244.528367218598096259",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0xf572d207af78a35b0c773684c9c98e5c9b9b0ca9",
+    "effective_balance": "0.000080435968558927",
+    "isSet": true,
+    "isFailure": true
+  },
+  {
+    "address": "0xc1a205b8beca8513275768ebcd1e52dfb93e3f29",
+    "effective_balance": "2.069433000000000000",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x32cd32b45277bf025c1df7bb4388e6a412b77fe5",
+    "effective_balance": "0.182342366733434657",
+    "isSet": true,
+    "isExecuted": true
+  },
+  {
+    "address": "0x56bd88e6c083f685e9830b5db49cc49d70f792a5",
+    "effective_balance": "0.002958042815128027",
+    "isSet": true,
+    "isFailure": true
+  }
+]

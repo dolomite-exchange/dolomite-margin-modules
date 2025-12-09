@@ -11,6 +11,7 @@ import {
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import dotenv from 'dotenv';
+import { parseEther } from 'ethers/lib/utils';
 import { HardhatUserConfig } from 'hardhat/types';
 import 'tsconfig-paths/register';
 import path from 'path';
@@ -109,6 +110,14 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 80_000_000,
       blockGasLimit: 100000000429720,
+      accounts: process.env.DEPLOYER_PRIVATE_KEY
+        ? [
+            {
+              privateKey: process.env.DEPLOYER_PRIVATE_KEY,
+              balance: parseEther('1').toString(),
+            },
+          ]
+        : undefined,
       chainId: parseInt(Network.Berachain, 10),
       chains: {
         [Network.PolygonZkEvm]: {
