@@ -153,7 +153,7 @@
     "address": "0x89513c8f26c6617aca7bebd1ba3b04f3fd25d37a",
     "effective_balance": "8.769624211360925238",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x90bc88154c9728838b1b688a7613bf4561ee8e32",
@@ -351,7 +351,7 @@
     "address": "0x8560293f8d0583118cc1386133d307ace5acc8b6",
     "effective_balance": "0.000008399343050314",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x990a1ea6c18ecc73699bb034498414a5d2f583f3",
@@ -363,7 +363,7 @@
     "address": "0x53ae707382d1231a4414ad1e982d775842f6a934",
     "effective_balance": "1.744705006853758802",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x9d8bc7c70735c4428c30bd86b283f2381814432b",
@@ -405,7 +405,7 @@
     "address": "0x2c3eabe39593d985d5b4aa5c9a7c9f48bcf51aac",
     "effective_balance": "2.017547985893155692",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x9b31254723e0c5e6887294ed4ce98d809dddfcba",
@@ -417,7 +417,7 @@
     "address": "0xfb0191315a4dbc61d3a4b029b8455fd30231f49d",
     "effective_balance": "0.020000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x441e39c498a2d06a9d6631ec7e25f4376a5b0de9",
@@ -459,7 +459,7 @@
     "address": "0x22df8f85ad9850151582f89e37237bf0517f87dd",
     "effective_balance": "2.792516733677422235",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xa110d783a5b6b0b2a2c867094364e8f9752d5b93",
@@ -483,13 +483,13 @@
     "address": "0x6766d4e08fbd2417868139b1ebe21626787b4b73",
     "effective_balance": "0.428068217540104862",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x0bf7fb51211b4842bad8e831ba2f42fcb836c7e1",
     "effective_balance": "0.000000977790856067",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xae3f36d1570b50da6238225695a241e1edf7a86a",
@@ -543,7 +543,7 @@
     "address": "0x1241de051c6c822809e405806418c0211fd027ca",
     "effective_balance": "0.005642623816794768",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3953edc69bfad109c8b6a94070adb327cbe40f07",
@@ -555,7 +555,7 @@
     "address": "0x57786979c5088e17807fed6a6e4faa5330d63079",
     "effective_balance": "0.091848856099509383",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xf1b4165eda3a3c392d8224591af6c298ed0ec94f",
@@ -603,7 +603,7 @@
     "address": "0x7bdfe11c4981dd4c33e1aa62457b8773253791b3",
     "effective_balance": "0.000002000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb49246408599e36f67d46e3d79dc0736936a144f",
@@ -621,7 +621,7 @@
     "address": "0x3264473150ead02a604812c7b5b70fef4a9b4503",
     "effective_balance": "11.091571000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xc565316add6454bbf49b2c7e3970312898a784f7",
@@ -633,19 +633,19 @@
     "address": "0xd5705c8f1349be21aad241cab369be049749886e",
     "effective_balance": "0.190129695692565816",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xbc8819c1821bc52b5d30d2dd52f0cb6110510005",
     "effective_balance": "0.000003660582348880",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xe302fd7564e20b56fdace48fd21dca17e28f4d49",
     "effective_balance": "0.000000925658548111",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xfb408fa20c6f6da099a7492107bc3531911896e3",
@@ -675,25 +675,25 @@
     "address": "0x7640b5ff361a45249f12e8793ac17d91a0e76ece",
     "effective_balance": "0.907711602416803973",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2d83d947e46d1baba92db00f40eadc4bb2a32966",
     "effective_balance": "0.000009000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd213f746d52002e3e84517790603018d7fcd2cea",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x39bff8c8e9cc9bd59b88190ac0961d1c944020f1",
     "effective_balance": "0.008712053581721603",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x5fced39a22dbd5ed7be32d420b89b302b6183d81",
@@ -735,13 +735,13 @@
     "address": "0x772e58a3fb3a65da6845e1b278cba648dd4db36f",
     "effective_balance": "0.572855867134195104",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x0b3b33cc7aad4d334eff76b21218679179c0a84f",
     "effective_balance": "0.007669078565040440",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x408329a24c6a3ae7dbab6e12237e921b1cb9450f",
@@ -759,13 +759,13 @@
     "address": "0xb78d17ce309ff0df2a363a6c8c4a43e0f61f62f8",
     "effective_balance": "0.008041000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x81e877dd467f65b79aff559a8fafed6e95f01ad8",
     "effective_balance": "0.100102272106559284",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd7040140b51125fbff24f6b6d3df096c9757fb85",
@@ -795,7 +795,7 @@
     "address": "0x100fea55da1316ba7c624a7e5e86ee9861e3ffb7",
     "effective_balance": "0.049314155498208182",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x0ebabd3787d889e6b5e4b165906bff09050940ac",
@@ -807,7 +807,7 @@
     "address": "0x72195dda0361f43ce544b750f318d04b35836933",
     "effective_balance": "0.101388159269049767",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x7246a35ffcae7fbbc1cd4fc6f78d3eeb4ce58f0c",
@@ -867,7 +867,7 @@
     "address": "0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
     "effective_balance": "0.000004000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x545b0cd987cfc162e5118eed0a21adb6e4968533",
@@ -909,13 +909,13 @@
     "address": "0x369c1f1be366e2b4f1df3a570c8b32bc0dbad33a",
     "effective_balance": "0.011608000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x411d209e4874e00dd550de43190224515b28fafe",
     "effective_balance": "0.054065004106781600",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x64bea49dd8d3a328a4aa4c739d776b0bfdda6128",
@@ -939,7 +939,7 @@
     "address": "0x7a5fe89a0350bcda945ed1e6f2be126b33472418",
     "effective_balance": "0.000006748020502531",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xee18828ad75e51a662a96aa55ffa7a252223be21",
@@ -957,7 +957,7 @@
     "address": "0x264f66719f3ca44067772d33a4a1f8f52b58d898",
     "effective_balance": "0.064310008448463516",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x67037da0acc7cfea5994eb21f922e19bf18110b8",
@@ -1029,7 +1029,7 @@
     "address": "0x5b60de565583c1d81bb997220ac29740d842148d",
     "effective_balance": "0.005613363930295216",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3b312a1496322f0c3633241d85a59ae0889b8150",
@@ -1131,7 +1131,7 @@
     "address": "0x8798716242a3b6ed6a11dd841853d392587dfde1",
     "effective_balance": "0.165015631377686220",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd101d8d87a4a9b7315a280e6727bed32318b941c",
@@ -1191,7 +1191,7 @@
     "address": "0xced5c5bd48d49eb75a1345f5c2837d27713d225f",
     "effective_balance": "0.083779081894046143",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xe90d4b9883282925710fcff88c15cdd5137e135e",
@@ -1221,7 +1221,7 @@
     "address": "0x8bbbcdd1807f0aa1661bb8e5c6859b1934a53a63",
     "effective_balance": "0.000000495600000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3fc602c3529dde58e44f7d62c4d8506bd42d319e",
@@ -1239,7 +1239,7 @@
     "address": "0x20a6a6acb4f7cae11d302c52dfdc159154387161",
     "effective_balance": "0.000287418863115211",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x77251861b501dda74dbdce4fda3da2fc96529e87",
@@ -1251,7 +1251,7 @@
     "address": "0x1234c7506e84335c0e5761a7a6ff368cdd94ca37",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xc4a2fe5b6676d9393335317404bbad4d0082e3d9",
@@ -1317,7 +1317,7 @@
     "address": "0x139791013f6dcc26f4052e6a7b8ed50099e7d15b",
     "effective_balance": "19.630597215666983274",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xa8ee946fcfb3a4229e8b052d09e115d243feff13",
@@ -1329,7 +1329,7 @@
     "address": "0x750e9a7b449904f47b793b805db469fa6e025e33",
     "effective_balance": "0.019553921875603101",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x52540c17b227fd5ad746256612800a0aaad5a39c",
@@ -1341,7 +1341,7 @@
     "address": "0x4a9026e6332b3dcb52e3d4d3ccbdfa3eeb73c23f",
     "effective_balance": "0.000000086720330202",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x622eaa37f684496216d4ea87709711b03f51b056",
@@ -1365,7 +1365,7 @@
     "address": "0x4442318189da6b7fbc2fca5ed4a67ebeedb7a9ec",
     "effective_balance": "0.000000002163112334",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2c2fa8a0b0aa01169d1f7e2dc70829572c263d58",
@@ -1395,7 +1395,7 @@
     "address": "0x0507b3ffe3836ad0f256f3d53b8fa7653e54e2eb",
     "effective_balance": "0.000000138783322035",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2218a37513b2bdd11226e43a22ce6732bf07323b",
@@ -1425,7 +1425,7 @@
     "address": "0x6073e895631712c0bca0ff58af13acd61d8eb2f3",
     "effective_balance": "0.000300000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8c580556fdb1f57853e49f409ae9b89f7658e7a2",
@@ -1437,7 +1437,7 @@
     "address": "0x1eb322c016815ee5b29c071586c1b75be5934576",
     "effective_balance": "0.013558875551798860",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1c548493930d6de8db946bda03011e8af93ddae4",
@@ -1461,19 +1461,19 @@
     "address": "0x0cd090a3c64856c0780a6839aac63c095906291a",
     "effective_balance": "0.000153000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xef29525effdf573fedd059e660439d0b1084f08a",
     "effective_balance": "0.579732924341779889",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd518f2fc3def43e2008632090d4753782206aaf7",
     "effective_balance": "1.176612000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x6d910bea79aaf318e7170c6fb8318d9c466b2164",
@@ -1485,7 +1485,7 @@
     "address": "0x21093947278aec469f300a7e4515999316885783",
     "effective_balance": "0.001000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x4a1ba2718bf1c8e6f24f7ebadbaa4dea07d03204",
@@ -1509,19 +1509,19 @@
     "address": "0xea299647c0cd6abaf2867b8a337ad548c74b0484",
     "effective_balance": "0.264009210368687251",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x5326a62a0d7bbf84057c78c049894152c414368f",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x90f5d58dd8322e02d6bbf200a701a57c71d42e44",
     "effective_balance": "0.002985795295521859",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x37633c9f778c44e852914c7056cbbbf75323dfd6",
@@ -1533,19 +1533,19 @@
     "address": "0xa02971f439bfb25f077867a6159e21dbaa4157f4",
     "effective_balance": "0.002049453086600965",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xf92c1876e9d35a2d58936deb7eb3c2c84f490329",
     "effective_balance": "0.128492118508106579",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8a2fa09530f858d2b064d5539aa755e8b901033a",
     "effective_balance": "0.000007201431869262",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x672b678bf3b2e6b7a6a1ed66ad3a2bbf767c8b8c",
@@ -1587,13 +1587,13 @@
     "address": "0x840d686b4665cea38e5e34f07be9e43c8bb38069",
     "effective_balance": "0.000000753916068078",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8dc005d141f529a11607f556d88834432e2c65d6",
     "effective_balance": "0.000000446366075898",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2ef9ebf18c2108f2b8a8b01db5bd633f2ce202c6",
@@ -1605,7 +1605,7 @@
     "address": "0xd61a31d72046525c53665e2137aa5076189d3a07",
     "effective_balance": "0.253655061374702583",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xbdc338f3ca019e6db3818d04d21660f685bb80e8",
@@ -1617,13 +1617,13 @@
     "address": "0x5b8f4c08cd8a75b33fb7705bb079c16024177e73",
     "effective_balance": "0.008129558333210099",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb697f9714dd5ce3f0bae03f68aec003c9b0ab5c7",
     "effective_balance": "0.000086000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x196b473f7d74820029e269a98baf3517c463fa89",
@@ -1653,19 +1653,19 @@
     "address": "0x70ec29bb2d63cc4fa10dface1fbe1c3a125c8598",
     "effective_balance": "0.015989000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xab01ab744f11833c512b0cbedcf3b29820b4f356",
     "effective_balance": "0.017389778071518667",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xcc660e4a6b1b1766911bf5e75e10b6aa66683b48",
     "effective_balance": "0.000005000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x03270912905f63b1b2b99b9a520a86810aa07f89",
@@ -1701,7 +1701,7 @@
     "address": "0x0f2cd0c6474594b2d3830e1076f40d6828641a0f",
     "effective_balance": "0.000056000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2654ddf31e5d8dda52fe8c1d759be186d316d8a6",
@@ -1737,13 +1737,13 @@
     "address": "0x9debadcaae4820092c8ff7dc741c9ec7d9e95027",
     "effective_balance": "0.009603703934727934",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x93efec89db80176895b2c7a4e00af808bbc69239",
     "effective_balance": "0.000065000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x9bb98140f36553db71fe4a570ac0b1401bc61b4f",
@@ -1779,7 +1779,7 @@
     "address": "0xe1be969218eaaaa06390396ffac2389bea87809f",
     "effective_balance": "0.010005911850569675",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xf01a41aaf989d9087103021ccbbcaf3f825279f3",
@@ -1797,13 +1797,13 @@
     "address": "0xb512ddb203cb1b46d59d66e1f90f243f7b831d90",
     "effective_balance": "0.020000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x420c50bab71673372b48309389e37e770e4d5773",
     "effective_balance": "0.276848358027093309",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x72972367c691190bcfc542fe4762fb2be6ae070d",
@@ -1815,7 +1815,7 @@
     "address": "0x0015ef0897d6f05cddee8f8eeb2cfb55bbc5b67b",
     "effective_balance": "0.000002000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x6471d0848c6fd0df3e82f05b9e581462464b9eef",
@@ -1833,7 +1833,7 @@
     "address": "0x9cf111619d5cbf8e04491d3493b2b1927d16f978",
     "effective_balance": "0.310024568134032712",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x52cc1bc45d387a52ce48a9c051614a6265529bba",
@@ -1893,7 +1893,7 @@
     "address": "0xdf30911df2aa5f7a7abd5c8b26392384c8042a78",
     "effective_balance": "0.092485973225032021",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x97e620556c626cc3312e3ea40a908045c550651e",
@@ -1959,7 +1959,7 @@
     "address": "0x14c55eb9867e957bed83e1bf663e86060fad604d",
     "effective_balance": "0.005525112765600214",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x79192c49a2faeac5416616a2199212e52623250a",
@@ -1977,7 +1977,7 @@
     "address": "0x138f9166f056a10b3ba573d17b2edee4196c3ca8",
     "effective_balance": "0.230003834199086661",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x37fd691e6a2010cf780995964c184f6b0dd0572a",
@@ -2019,7 +2019,7 @@
     "address": "0xd48f4255d46569bfbaad253e278b4a47000fa3d8",
     "effective_balance": "0.004584504273982919",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb3a29e6bee26663772e4d9d38b453a5add44433e",
@@ -2055,7 +2055,7 @@
     "address": "0xccc9ba81cde53e38cd5cf38d635daa8deb9160ec",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x39032520c46c965f0995dafaf2a26c1c12546690",
@@ -2067,7 +2067,7 @@
     "address": "0x22b2ccb53963da600c83191db1ce3f61f92dcf45",
     "effective_balance": "0.000496152602470236",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xfd2f351d335ab6a24f7a96a1e7f54fb09e4150da",
@@ -2085,7 +2085,7 @@
     "address": "0x7df79ad0787527b308024e6a82994aefb7b72929",
     "effective_balance": "0.017030370112131195",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8a8841f4ab46a052139e0de31b1e693382193813",
@@ -2115,13 +2115,13 @@
     "address": "0x910813e05327c9bfe3400f43740adc4173eda3cb",
     "effective_balance": "415.397417096949736122",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xbf6cef24bd481ce07b8113217bd8e892e285b837",
     "effective_balance": "0.184596762026767323",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8f70df82081d324b0e379eba7ea7dbd25c2738ce",
@@ -2169,13 +2169,13 @@
     "address": "0x40a24ea5b6a248f3a138e6bfe3366e78d1cc71cb",
     "effective_balance": "0.000000524688481479",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb25024c421d4f8bebe468d3dc353e07868c99901",
     "effective_balance": "0.343670615092761141",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3ef9ecb11004681503fabd8835a50a97f54bd2d7",
@@ -2199,7 +2199,7 @@
     "address": "0xc32b7438b3df7844c9ee799930a2224fe6e26426",
     "effective_balance": "0.009000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xcb7958ddf673aa8f21614346d3e1c46182a9454d",
@@ -2217,19 +2217,19 @@
     "address": "0xec0b486655b6d2c22219dfda19995ca3c0cc484c",
     "effective_balance": "0.000000710176361520",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xe0e81214635e051427a182c97f1fbdd1f6ab31ea",
     "effective_balance": "0.009000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x5e51f3248ce714b7e1d2cc1946461ccb71fa1c4f",
     "effective_balance": "0.000944219972297776",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x4b445de07860f86484c38e093e9d3187cd034e7c",
@@ -2277,19 +2277,19 @@
     "address": "0xa7e6f51af4fbd7d1f4d95764bbc965cec4ad5b91",
     "effective_balance": "0.011270566763122381",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xdee9be8bdedecab8213c517c45bfe71e440b5260",
     "effective_balance": "1.099122645829132249",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x25dfd3ad1fb9ffe02234775c9ae41613a19a6802",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xa2e7002e0ffc42e4228292d67c13a81fdd191870",
@@ -2301,7 +2301,7 @@
     "address": "0xc42d3a7bfaee32dd9763f41deb8188ea797ef4fc",
     "effective_balance": "6.050637000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x537b6f941ce307ab8c99a3340ce137197be5225f",
@@ -2349,7 +2349,7 @@
     "address": "0x959e733604f66c733309ae94cbb14683ecde60af",
     "effective_balance": "1.713919724947907533",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xcbc2ee786c1893811ae64584d1547cee05edeea5",
@@ -2367,7 +2367,7 @@
     "address": "0x105cbc298a189fff6062f8ba5038de91d3d4b3e1",
     "effective_balance": "0.300007911648301547",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x40714715bd35bfd52a8ac0917745103da5595704",
@@ -2379,7 +2379,7 @@
     "address": "0xfab10aa58bf87a3499bd5b603af8c442fc48cbac",
     "effective_balance": "0.000000686848323605",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xcee064b3e0c8bde8e2c8d599fe6cd54b1c06c7c2",
@@ -2391,7 +2391,7 @@
     "address": "0x15f55e3d1dcaa88d16732808c2df5f8438f11a9f",
     "effective_balance": "1.780843333261538242",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd67ab36c800c2415d2c0a7760dd2c40b0edd6ff4",
@@ -2403,7 +2403,7 @@
     "address": "0xb1d3d9d3f606459f0ac826a24ad9b6096e83c348",
     "effective_balance": "0.000064051129962847",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x37d0371d17e5e587b236504515a4baabc08da619",
@@ -2415,13 +2415,13 @@
     "address": "0x1a7228605ad816861b61e9ec1944346660fe52d7",
     "effective_balance": "0.001724776525872202",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x4f49c34759b7e888ce77de9dd34fec63d63495cc",
     "effective_balance": "0.084984153160529423",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8f4177caeebc7b25ac4bbab7e5f38830237ccb3b",
@@ -2433,7 +2433,7 @@
     "address": "0x063ae79a21d7794f69d2afae38b73bb9a957efd3",
     "effective_balance": "0.019115357939207514",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x78b7063e57767474e54f911f8ba51e57bd263fee",
@@ -2505,19 +2505,19 @@
     "address": "0x8953ce43e0d0fc561bea844d3242d74825f5793b",
     "effective_balance": "0.000000045162887300",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x49dd94f8bf3d408275d326df4a45057aa48cf7f8",
     "effective_balance": "0.039065052529938113",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x5d145ad5135a7202c6128ffb2299c35e0577fcb2",
     "effective_balance": "0.306924124175763487",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb7785a26008d03fcac5338e8e5bc0c0633c6fed1",
@@ -2559,13 +2559,13 @@
     "address": "0xa6323e19ea4b1f74499de026691239c69508888a",
     "effective_balance": "2.667536750942837220",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x9f9ebce72c0715cdbad4d589986eb22f6782a1ce",
     "effective_balance": "26.442619676388313847",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x4c30ffc4945b6297fa75bd0931f937ea7bc8e9b2",
@@ -2613,13 +2613,13 @@
     "address": "0x8d1dc91f8b7487317ba4f616c88b7a5fabb87b91",
     "effective_balance": "0.000061000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb8187b9ef4f81061ee346f0e320896a881542e10",
     "effective_balance": "0.018116877831332808",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3aedbc38b51ba03cc3797eadc6a76fe2827c8770",
@@ -2661,7 +2661,7 @@
     "address": "0x88bf5a2e82510847e5dcbf33f44a9f611f1c1df5",
     "effective_balance": "0.000000421621397771",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x70af8f0b836448799844b062f489b02a47d93fcd",
@@ -2673,19 +2673,19 @@
     "address": "0xf53464037f6f20ff02bae163f55008358b01644d",
     "effective_balance": "1.010395071460042909",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x28cd5d6ff8972bdde34e8fa5fec8070ff3ddd72d",
     "effective_balance": "0.000093000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xf930f29bcbcf4a31676b1d3f7a868f02fb414fbb",
     "effective_balance": "0.000000087212926925",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x26abc9e54b5a0894b9e6d834d1f1a7e7768ea00a",
@@ -2697,13 +2697,13 @@
     "address": "0x5c0796ed4f0b1de9f9eda9fd6fe29562b2a60296",
     "effective_balance": "0.000009000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xf5fa0f11364cc7695c2e8c3f7c9a7de3ea2483f1",
     "effective_balance": "0.012594000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x38345b9d3b617e6125082963af9fc4255157366e",
@@ -2721,13 +2721,13 @@
     "address": "0xa23a8b951eafdb3ceac3fb82cf0b84aa235da182",
     "effective_balance": "0.220015215841293619",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8c66ac5284fec2676a2c79acc2c27e2a3df143d7",
     "effective_balance": "0.010000000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1fb99c83110726b40ba6bace5044580675d22f04",
@@ -2751,7 +2751,7 @@
     "address": "0xdbc88e5858fd2cd02b2670383100b04804fe2f27",
     "effective_balance": "0.000062000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x2600544f150db80438004be4bbc7114aa21615a9",
@@ -2763,7 +2763,7 @@
     "address": "0x600c360af2c0189bd193a60e7b591285213cd22d",
     "effective_balance": "0.188404279407782002",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x0a5e1766366e278ff415d0521fde933c5adb36f3",
@@ -2793,7 +2793,7 @@
     "address": "0x1299be28376fe9d218919da47a84af25e4514c85",
     "effective_balance": "2.198636000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x8fc642d66492c830da43d95da7fe3f027f4f3246",
@@ -2805,7 +2805,7 @@
     "address": "0xd086eecb20cf564d5868755e58fd55a1db9b6d12",
     "effective_balance": "0.000088628405276201",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x50eee3982edaa8db9f86e3b47c525f7e10a5a926",
@@ -2817,7 +2817,7 @@
     "address": "0x9ae9c6af182d1ff4575081b77bcec4dc42770a9f",
     "effective_balance": "0.000004000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1a96db12ad7f0c9f91c538d16c39c360b5e8fb21",
@@ -2835,7 +2835,7 @@
     "address": "0x55432fda702a12e32c3d44c5c90533fe4daff779",
     "effective_balance": "0.605504152787787078",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd6f14caf5db98820628e0acd3e3a7009b96c8861",
@@ -2847,7 +2847,7 @@
     "address": "0x18a4d5d0b312d1965eacf4b7e24ec3dbac3f66f6",
     "effective_balance": "0.000055390324038534",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1702acf734116cd8faf86d139aa91843f81510a1",
@@ -2865,19 +2865,19 @@
     "address": "0x470d235ca1caff614abee02d98ac3aa89a6758bd",
     "effective_balance": "0.979968313916844921",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xfb2a59ab6f86434c6a57d8b7133e73b17dc7be46",
     "effective_balance": "0.056827207509520333",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x7f8da5fbd700a134842109c54aba576d5c3712b8",
     "effective_balance": "0.000367829648472222",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xe6b532e63f228087e26a5897131f2e1d043e27f2",
@@ -2925,7 +2925,7 @@
     "address": "0xc9af09e3f0fe8e35d533eb62e4fec19c309ee1cd",
     "effective_balance": "0.003900000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x0e971c01d4f3221cb6ea0998c22e24d63db963d2",
@@ -2937,7 +2937,7 @@
     "address": "0x5a1c829a78c98f1a79277e21f866cc7ca417659f",
     "effective_balance": "0.010047591349213916",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xbd9382dfd0fef5490b92620bb083a880470224c2",
@@ -2979,7 +2979,7 @@
     "address": "0x092e6362c5e0213041876b3864ac8732418693a6",
     "effective_balance": "4.933050514370353539",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x33df8400b73136c3ed3d658a4384353f5d903eab",
@@ -2991,7 +2991,7 @@
     "address": "0xd334533980c201c1b93e39bbe6bd1e04be5c0f5d",
     "effective_balance": "8.008760578666282704",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x672a318833ee156c3972c57c0ec6f933886dbe7f",
@@ -3015,7 +3015,7 @@
     "address": "0x15a884c3858fdf00552eedc08e93f0b5113e1b08",
     "effective_balance": "0.000009686994722661",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x9b370d8eb68a7a36535cb4c2d1996e95f74d4a3a",
@@ -3027,7 +3027,7 @@
     "address": "0xb4fbd802d9dc5c0208346c311bcb6b9ecff468c6",
     "effective_balance": "0.117221817345431472",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1b4dc70984f8bd79d2f96ca7ecf6d0ae9df44a6e",
@@ -3045,7 +3045,7 @@
     "address": "0xefce38f31ebeb9637e85d3487595261fdf6ebeeb",
     "effective_balance": "0.000003503746164167",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x7326357e2b2feb661f9961bb897944045dc63ca6",
@@ -3063,7 +3063,7 @@
     "address": "0xa8f62eac6e5c15c180a5d7649c38b889e183d59e",
     "effective_balance": "0.000025000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3c1d1bca512027b0795e6bc29df53dbac2205161",
@@ -3081,7 +3081,7 @@
     "address": "0x8b01c0e3d5f6eb7ce7ca16355ab02c14ec70fced",
     "effective_balance": "0.002048745158073641",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd5de81e7e5e4f740a26ebb254d6052e1d03b4787",
@@ -3105,7 +3105,7 @@
     "address": "0xee5a98f93bfbb0a054b3e05067625ca232473282",
     "effective_balance": "0.130792705399348645",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1a08d81cbb0138dcc73d0d06c49f0ef027c75d75",
@@ -3117,13 +3117,13 @@
     "address": "0x36f4e1803f6ff34562db567f347dea00dec87246",
     "effective_balance": "0.000040556655955408",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xedb9394b623723cf030fb94a358297b8ed4e16c3",
     "effective_balance": "0.177730249036214410",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x25659eefd7cae21566a257420bbcb0c8317ef94f",
@@ -3135,7 +3135,7 @@
     "address": "0x65f8f6fc92d58aa586da5b678c994e1413d9e939",
     "effective_balance": "0.100172690779108947",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x1f0203e7d0c9043ee64f7601b46ee3dc16ec3627",
@@ -3153,13 +3153,13 @@
     "address": "0xb733e74f89e438ef78f256ea74ef7e760bc3e07b",
     "effective_balance": "0.000000968474060149",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0x3f4f2eaa0ac911de570294c556b387c5b792e206",
     "effective_balance": "0.000007675490083459",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xb3d79ea767610555eba816bf79c7a1be14f81c7c",
@@ -3177,7 +3177,7 @@
     "address": "0x89ec941f01eec9c8d2e1e924cc807ca4a1233617",
     "effective_balance": "0.000002000000000000",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xd4f71c2c5bf80c77563b2629ed11b1a92b2b3e44",
@@ -3195,7 +3195,7 @@
     "address": "0xf572d207af78a35b0c773684c9c98e5c9b9b0ca9",
     "effective_balance": "0.000080435968558927",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   },
   {
     "address": "0xc1a205b8beca8513275768ebcd1e52dfb93e3f29",
@@ -3213,6 +3213,6 @@
     "address": "0x56bd88e6c083f685e9830b5db49cc49d70f792a5",
     "effective_balance": "0.002958042815128027",
     "isSet": true,
-    "isFailure": true
+    "isExecuted": true
   }
 ]

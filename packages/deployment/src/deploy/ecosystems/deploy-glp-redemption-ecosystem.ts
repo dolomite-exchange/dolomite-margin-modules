@@ -144,7 +144,8 @@ async function main() {
     const redemptionParams = [];
     for (const marginAccount of result) {
       const glpBal = parseEther(marginAccount.tokenValues[0].valuePar);
-      const outputMarket = glpBal.lte(parseEther('.02')) ? core.marketIds.usdc : core.marketIds.wbtc;
+      // const outputMarket = glpBal.lte(parseEther('.02')) ? core.marketIds.usdc : core.marketIds.wbtc;
+      const outputMarket = core.marketIds.weth;
       redemptionParams.push({
         accountNumber: marginAccount.accountNumber,
         outputMarketId: outputMarket,
