@@ -341,12 +341,12 @@ export async function createGmxEcosystem(network: Network, signer: SignerWithAdd
         signer,
       ),
       glpIsolationModeUnwrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
+        (Deployments.GLPIsolationModeUnwrapperTraderV4 as any)[network]?.address,
         GLPIsolationModeUnwrapperTraderV1__factory.connect,
         signer,
       ),
       glpIsolationModeWrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeWrapperTraderV1 as any)[network]?.address,
+        (Deployments.GLPIsolationModeWrapperTraderV4 as any)[network]?.address,
         GLPIsolationModeWrapperTraderV1__factory.connect,
         signer,
       ),
