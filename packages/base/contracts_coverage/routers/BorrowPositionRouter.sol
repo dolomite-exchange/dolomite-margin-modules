@@ -25,6 +25,8 @@ import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolat
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
@@ -123,6 +125,48 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         vault.closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
       }
     }
+  }
+
+  function transferBorrowPosition(
+    uint256 _borrowAccountNumber,
+    address _recipient,
+    uint256 _toAccountNumber
+  ) external nonReentrant {
+    IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
+    accounts[0] = IDolomiteStructs.AccountInfo({
+      owner: msg.sender,
+      number: _borrowAccountNumber
+    });
+    accounts[1] = IDolomiteStructs.AccountInfo({
+      owner: _recipient,
+      number: _toAccountNumber
+    });
+
+    {
+      uint256[] memory recipientMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(accounts[1]);
+      if (recipientMarkets.length == 0 && DOLOMITE_MARGIN().getIsLocalOperator(accounts[1].owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
+      Require.that(
+          recipientMarkets.length == 0 && DOLOMITE_MARGIN().getIsLocalOperator(accounts[1].owner, msg.sender),
+        _FILE,
+        "Invalid recipient"
+      );
+    }
+
+    uint256[] memory marketIds = DOLOMITE_MARGIN().getAccountMarketsWithBalances(accounts[0]);
+    IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](marketIds.length);
+
+    for (uint256 i; i < marketIds.length; ++i) {
+      actions[i] = AccountActionLib.encodeTransferAction(
+        /* _fromAccountId = */ 0,
+        /* _toAccountId = */ 1,
+        marketIds[i],
+        IDolomiteStructs.AssetDenomination.Wei,
+        type(uint256).max
+      );
+    }
+
+    DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_recipient, _toAccountNumber);
+    DOLOMITE_MARGIN().operate(accounts, actions);
   }
 
   function transferBetweenAccounts(
