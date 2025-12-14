@@ -2,16 +2,18 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { getMaxDeploymentVersionAddressByDeploymentKey } from 'packages/deployment/src/utils/deploy-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetIsCollateralOnly,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+
+const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 /**
  * This script encodes the following transactions:
- * - Run final settlement for wUSDM holders
+ * - Remove the unwrapper as a GLP trusted token converter
+ * - Remove all liquidators except the dead address
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -20,9 +22,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const unwrapperAddress = await getMaxDeploymentVersionAddressByDeploymentKey(
+    'GLPIsolationModeUnwrapperTrader',
+    network,
+  );
+
   const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.wusdm, 16_567),
-    await encodeSetIsCollateralOnly(core, core.marketIds.wusdm, false),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxEcosystem.live, 'dGlp', 'setIsTokenConverterTrusted', [
+      unwrapperAddress,
+      true,
+    ]),
   ];
 
   return {
@@ -38,7 +47,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      assertHardhatInvariant(
+        await core.gmxEcosystem.live.dGlp.isTokenConverterTrusted(unwrapperAddress),
+        'Expected unwrapper to be untrusted',
+      );
+    },
   };
 }
 

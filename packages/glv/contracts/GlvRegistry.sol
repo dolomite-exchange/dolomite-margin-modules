@@ -47,9 +47,9 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     bytes32 private constant _FILE = "GlvRegistry";
 
-    bytes32 public constant CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
 
     // solhint-disable max-line-length
+    bytes32 private constant _CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
     bytes32 private constant _GLV_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvHandler")) - 1);

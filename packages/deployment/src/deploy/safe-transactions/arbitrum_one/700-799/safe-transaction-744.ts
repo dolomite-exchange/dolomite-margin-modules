@@ -2,16 +2,14 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetIsCollateralOnly,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Run final settlement for wUSDM holders
+ * - Update GMX V2 callback gas limit for GLV
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -21,8 +19,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.wusdm, 16_567),
-    await encodeSetIsCollateralOnly(core, core.marketIds.wusdm, false),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.uni, 400_000),
   ];
 
   return {

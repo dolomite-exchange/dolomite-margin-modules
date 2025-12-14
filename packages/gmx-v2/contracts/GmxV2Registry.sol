@@ -47,9 +47,8 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     bytes32 private constant _FILE = "GmxV2Registry";
 
-    bytes32 public constant CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
-
     // solhint-disable max-line-length
+    bytes32 private constant _CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
@@ -169,7 +168,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
-            || gmxDataStore().roleStore().hasRole(_handler, CONTROLLER_ROLE);
+            || gmxDataStore().roleStore().hasRole(_handler, _CONTROLLER_ROLE);
     }
 
     function gmxDepositHandler() public view returns (IGmxDepositHandler) {
