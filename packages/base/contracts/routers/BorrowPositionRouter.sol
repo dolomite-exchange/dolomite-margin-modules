@@ -129,7 +129,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   function transferBorrowPosition(
     uint256 _borrowAccountNumber,
     address _recipient,
-    uint256 _toAccountNumber
+    uint256 _recipientAccountNumber
   ) external nonReentrant {
     IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
     accounts[0] = IDolomiteStructs.AccountInfo({
@@ -138,7 +138,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     });
     accounts[1] = IDolomiteStructs.AccountInfo({
       owner: _recipient,
-      number: _toAccountNumber
+      number: _recipientAccountNumber
     });
 
     {
@@ -163,7 +163,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     }
 
-    DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_recipient, _toAccountNumber);
+    DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_recipient, _recipientAccountNumber);
     DOLOMITE_MARGIN().operate(accounts, actions);
   }
 
