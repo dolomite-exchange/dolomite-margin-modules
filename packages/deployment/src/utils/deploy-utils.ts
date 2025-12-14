@@ -25,7 +25,9 @@ import {
   NETWORK_TO_NETWORK_NAME_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -62,11 +64,8 @@ import {
 import { Wallet } from '@ethersproject/wallet/src.ts';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { ETHERSCAN_V2_API_URL } from '@nomicfoundation/hardhat-verify/internal/etherscan';
-import type { EtherscanVerifyResponse } from '@nomicfoundation/hardhat-verify/src/internal/etherscan.types';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
-import { EtherscanResponse } from '@nomiclabs/hardhat-etherscan/dist/src/etherscan/EtherscanService';
 import { sleep } from '@openzeppelin/upgrades';
-import axios, { AxiosResponse } from 'axios';
 import { BigNumber, BigNumberish, ethers, Signer } from 'ethers';
 import { keccak256, parseEther, parseUnits } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
@@ -221,59 +220,6 @@ export async function verifyContract(
       return Promise.reject(e);
     }
   }
-}
-
-async function verify(
-  etherscan: Etherscan,
-  contractAddress: string,
-  sourceCode: string,
-  contractName: string,
-  compilerVersion: string,
-  constructorArguments: string,
-): Promise<EtherscanResponse> {
-  const parameters = new FormData();
-  parameters.set('chainId', etherscan.chainId!.toString());
-  parameters.set('codeformat', 'solidity-standard-json-input');
-  parameters.set('sourceCode', sourceCode);
-  parameters.set('constructorArguements', constructorArguments);
-  parameters.set('contractaddress', contractAddress);
-  parameters.set('contractname', contractName);
-  parameters.set('compilerversion', compilerVersion);
-  parameters.set('module', 'contract');
-  parameters.set('action', 'verifysourcecode');
-  parameters.set('apikey', etherscan.apiKey);
-
-  const url = new URL(etherscan.apiUrl);
-  url.searchParams.append('chainid', String(etherscan.chainId));
-
-  let response: AxiosResponse | undefined;
-  let json: EtherscanVerifyResponse | undefined;
-  try {
-    response = await axios.post<EtherscanVerifyResponse>(url.toString(), parameters, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    json = response?.data as EtherscanVerifyResponse;
-  } catch (e: any) {
-    throw e;
-  }
-
-  if (response.status < 200 || response.status > 299) {
-    throw new Error([url.toString(), response.status, JSON.stringify(json)].join(', '));
-  }
-
-  const etherscanResponse = new EtherscanResponse(json);
-
-  if (etherscanResponse.isBytecodeMissingInNetworkError()) {
-    throw new Error([etherscan.apiUrl, contractAddress].join(', '));
-  }
-
-  if (!etherscanResponse.isOk()) {
-    throw new Error(etherscanResponse.message);
-  }
-
-  return etherscanResponse;
 }
 
 async function retryWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number, retries: number): Promise<T> {

@@ -132,7 +132,7 @@ contract TWAPPriceOracleV1 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
             address poolToken0 = currentPair.token0();
             address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
 
-            int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
+            int24 tick = OracleLibrary.consultAlgebraPool(address(currentPair), observationInterval);
             uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
             IDolomiteStructs.MonetaryPrice memory price =
                 DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(outputToken));

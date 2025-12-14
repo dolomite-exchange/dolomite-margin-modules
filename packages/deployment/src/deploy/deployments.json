@@ -1005,6 +1005,13 @@
       "isVerified": true
     }
   },
+  "BoycoClaimProxy": {
+    "80094": {
+      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
+      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
+      "isVerified": true
+    }
+  },
   "BoycoPartnerClaimProxy": {
     "80094": {
       "address": "0x232FaF2D9163DcA0f62d0ecDE2C2C259AA5eF44B",
@@ -1139,6 +1146,18 @@
     "80094": {
       "address": "0xb6B3EaF640707688186e7df34aC7d21fAbAf4359",
       "transaction": "0xbb0e82ae0924beba597fbe24dd02cb396536826dea3274a8195ddea8c302c4b9",
+      "isVerified": true
+    }
+  },
+  "ConstantPriceOracleV1": {
+    "5000": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0xabbf2a4d8e8716675226a483a38d32ed05df0e068cec1414f5958608cf73dd7b",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x9e4b0f6e773bfb0a0f02bef9f5ec201e22a76ac6539aaf0c3f71c17b4f69da5d",
       "isVerified": true
     }
   },
@@ -3057,6 +3076,13 @@
       "isVerified": true
     }
   },
+  "DolomiteWgBera4626Token": {
+    "80094": {
+      "address": "0x561Fee9518c2417d9E85dC295c829eEeE7BFC255",
+      "transaction": "0x6c99a21cdaf9cbb4cd040ea4ecf1bcf8b57e99fca8883dd7d624ae47c8a04ead",
+      "isVerified": true
+    }
+  },
   "DolomiteWhitelistForGlpDepositorV2": {
     "42161": {
       "address": "0xD873e5D8020cfd47b6268CA5d3732c4F75ccA7EC",
@@ -3802,6 +3828,13 @@
       "isVerified": true
     }
   },
+  "GLPRedemptionOperatorV1": {
+    "42161": {
+      "address": "0x845596dE9C58E4Ca12202Bbab6fBA4709cE3f74D",
+      "transaction": "0xc66a337b9fba6a0c75fe0d506f1e4946a38bb0b99b45f48dee3d0e93080427c4",
+      "isVerified": true
+    }
+  },
   "GLPUnwrapperTraderV2": {
     "42161": {
       "address": "0x54E523208Ed40A591d9f54eE949C5C374D1131ea",
@@ -4016,6 +4049,13 @@
     "42161": {
       "address": "0x6175D3B8472F683d23D0D58bCf3fcD6C974fA83d",
       "transaction": "0x15619c2ab17b414a75f667d67d39cd45aca455649a47d36b77cd26e42ead7e78",
+      "isVerified": true
+    }
+  },
+  "GlvRegistryImplementationV4": {
+    "42161": {
+      "address": "0x1bB4dBe7F505380d6D1deD1A0412Cea6A5168c3c",
+      "transaction": "0x900efed7a2d249029e7732bd8f129e8ecdb31338501ad3336de29e3dd2b42531",
       "isVerified": true
     }
   },
@@ -4849,6 +4889,13 @@
     "42161": {
       "address": "0xE4E6BAED81eCd90ACb96da2F6e7B9EF17DF9aC53",
       "transaction": "0x034295b3fb139ed2ff90a6ec0f979e0942d7ee7288c8c449554afa2fcdd9c1bc",
+      "isVerified": true
+    }
+  },
+  "GmxV2RegistryImplementationV4": {
+    "42161": {
+      "address": "0xc443B96c4769ce9d38795F701100DAe91fC8f1B0",
+      "transaction": "0xa5efe53941c0f2ab6a2514ea1f0f86745231bd7c9409f1044964ee02f87b7f56",
       "isVerified": true
     }
   },
@@ -8201,6 +8248,13 @@
       "isVerified": true
     }
   },
+  "PendleIBgtDec2025RegistryProxy": {
+    "80094": {
+      "address": "0x3EE75e3B85aC0e3Aa6cD4499f700B8c0fC955F22",
+      "transaction": "0x31b6651e9773de51f238e23e64e14d5d06f469c9c3ba829c79afd26afd953650",
+      "isVerified": true
+    }
+  },
   "PendlemETHDec2024RegistryProxy": {
     "5000": {
       "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",
@@ -8646,6 +8700,13 @@
     "42161": {
       "address": "0x162aBcE9bBf515cF86aF4b5FBFA31979aabC35cA",
       "transaction": "0x971c9470c6e7b29abb1f79629a3f8d0eeb78c97ab2ea02b2ecd19b5c80ad6220",
+      "isVerified": true
+    }
+  },
+  "PendlePtIBgtDec2025PriceOracleV2": {
+    "80094": {
+      "address": "0x5f1F10Cd988E566DD01a6F8f91316c095214cFe7",
+      "transaction": "0x362a0f15d1e5a1125f57d694b7fee134fe1e489dec3e32e6a58050c6f02650cf",
       "isVerified": true
     }
   },
@@ -9814,6 +9875,11 @@
       "address": "0x4f64f834BC6C8A09995e0A76D71ad0F4DadF1c14",
       "transaction": "0x8705a93cf06c48430ac3f7dfea26fa20cf0e4465196bea9bf07eb80c1f121f6c",
       "isVerified": true
+    },
+    "80094": {
+      "address": "0x40e6D35B6E73d49E81658Fdc8A779F0127602Bc3",
+      "transaction": "0x8fa1fd322c8a29aa3aa60a5bfb888f0806f60b610fd36397fc20fb921e566b75",
+      "isVerified": true
     }
   },
   "PendleREthJun2025RegistryProxy": {
@@ -10645,14 +10711,6 @@
       "address": "0xbe801A96E18a131D4AFD164704a2A42cCb1be376",
       "transaction": "0xfdf68e1003bc967ec87e595deb30587d70d1d803332f181125bbe12dfcc76415",
       "isVerified": true
-    }
-  },
-  "VeTokenClaimProxy": {
-    "80094": {
-      "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
-      "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
-      "isVerified": true,
-      "extraName": "Boyco"
     }
   },
   "VoterAlwaysActive": {
