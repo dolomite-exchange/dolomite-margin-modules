@@ -27,6 +27,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IInfraredMerkleDistributor } from "./interfaces/IInfraredMerkleDistributor.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
@@ -56,6 +57,9 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 1 ether;
 
+    IERC20 public immutable IR;
+    IInfraredMerkleDistributor public immutable IR_CLAIMER;
+
     // ==================================================================
     // =========================== Modifiers ============================
     // ==================================================================
@@ -80,10 +84,24 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     }
 
     // ==================================================================
+    // ========================== Constructor ===========================
+    // ==================================================================
+
+    constructor(address _ir, address _irClaimer) {
+        IR = IERC20(_ir);
+        IR_CLAIMER = IInfraredMerkleDistributor(_irClaimer);
+    }
+
+    // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
     receive() external payable {}
+
+    function claimIRAirdrop(uint256 _amount, bytes32[] memory _proof) external onlyMetaVaultOwner(msg.sender) {
+        IR_CLAIMER.claim(_amount, _proof);
+        IR.safeTransfer(msg.sender, _amount);
+    }
 
     function setDefaultRewardVaultTypeByAsset(
         address _asset,

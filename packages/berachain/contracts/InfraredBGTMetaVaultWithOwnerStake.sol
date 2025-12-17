@@ -45,7 +45,11 @@ contract InfraredBGTMetaVaultWithOwnerStake is InfraredBGTMetaVault, OnlyDolomit
 
     bytes32 private constant _FILE = "InfraredBGTMetaVaultOwnerStake";
 
-    constructor(address _dolomiteMargin) InfraredBGTMetaVault() OnlyDolomiteMargin(_dolomiteMargin) {}
+    constructor(
+        address _ir,
+        address _irClaimer,
+        address _dolomiteMargin
+    ) InfraredBGTMetaVault(_ir, _irClaimer) OnlyDolomiteMargin(_dolomiteMargin) {}
 
     function ownerStakeDolomiteToken(
         address _asset,
