@@ -1,0 +1,347 @@
+[
+  {
+    "user": "0x4271d22292aa37e13cd0c68b8210a7a6af194407",
+    "vaultAddress": "0x05c0cC00aABA5c2f36Ee43F9A97198E42ee50Bd0",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x7e4c51597dba086fd1a07751db43836a3acd20bf",
+    "vaultAddress": "0x0c7E3940Db15b14EF00e6209cbDD4a5Db441c7BB",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x49f65fe360a0aee3ff2c5fe7ea4f154d48095853",
+    "vaultAddress": "0x14b72C4b924d7987A4cF480c44CD1cb56ba97b9b",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x2074cd9a4eda63c9523b02f3f5ecfc7a2e90c2c6",
+    "vaultAddress": "0x1E05498B750D2cf2eFe88f27Ab0f32CDeA49bFdc",
+    "usdcRedemptionAmount": "1390775125"
+  },
+  {
+    "user": "0x2c3eabe39593d985d5b4aa5c9a7c9f48bcf51aac",
+    "vaultAddress": "0x218e578FDE6470d5463E1886fA6242fAF551c896",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x441e39c498a2d06a9d6631ec7e25f4376a5b0de9",
+    "vaultAddress": "0x21DCE7c4AFC99B82e718d354baD14d2aEeB6D310",
+    "usdcRedemptionAmount": "2259704"
+  },
+  {
+    "user": "0x988682054ca48d89adbd5c027d750a36c86b0493",
+    "vaultAddress": "0x2c858A79824E5B1eF149cf7a30904860F68a722d",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x57786979c5088e17807fed6a6e4faa5330d63079",
+    "vaultAddress": "0x2dA9C5FAe724ce1DBBEE5dc5009D1825ea1C0F19",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x6e12541f29c3b3dbfe723dd5eb21e7ab2f046f3c",
+    "vaultAddress": "0x30438eAd417c0EDc43d2561E93aB911eBFDd7387",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xfb408fa20c6f6da099a7492107bc3531911896e3",
+    "vaultAddress": "0x3498F35eA35500C92598b0DA8Dc101424416c96c",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xb14130755bdc32f3540b8ff1ab417304c80d0eef",
+    "vaultAddress": "0x356349d261087e5BBe33cC3a2037395491f7B0B9",
+    "usdcRedemptionAmount": "54672602"
+  },
+  {
+    "user": "0xbe3c90d34b757587c62852dcd57f7c8e1bc5547c",
+    "vaultAddress": "0x3D0fDB15532b6F7057f1EA962cC0fE3d41CC1639",
+    "usdcRedemptionAmount": "777243"
+  },
+  {
+    "user": "0xd7040140b51125fbff24f6b6d3df096c9757fb85",
+    "vaultAddress": "0x40d1BF27c134b05928C1Bb497C1740E5E56e234a",
+    "usdcRedemptionAmount": "84029"
+  },
+  {
+    "user": "0x100fea55da1316ba7c624a7e5e86ee9861e3ffb7",
+    "vaultAddress": "0x42e8c9A2DE47623fbacB30859a8b1FfC9Be09c7F",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x50a852203b68861968786fa057b0716860775b3a",
+    "vaultAddress": "0x47D746940fC01aA4CF6C6107DE9B6b8E05E53795",
+    "usdcRedemptionAmount": "57715141727"
+  },
+  {
+    "user": "0x545b0cd987cfc162e5118eed0a21adb6e4968533",
+    "vaultAddress": "0x4a1861633433A2ba0D3A0414AF3D0A28dBC5048D",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x479725be70de39195d6f820d2527921801767ba6",
+    "vaultAddress": "0x4cdD878857afb4D6FdCadE7980950c6aA35Da8E8",
+    "usdcRedemptionAmount": "105532"
+  },
+  {
+    "user": "0x64bea49dd8d3a328a4aa4c739d776b0bfdda6128",
+    "vaultAddress": "0x4E8fD60c592A7758f8e317ac56dD8db054888FB4",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xd7a2df79e0a43710bc938b5d28cc92353e622614",
+    "vaultAddress": "0x575Df9842826E57b11489865eb5e7bBaca8AA5Fb",
+    "usdcRedemptionAmount": "2"
+  },
+  {
+    "user": "0x1466f5596c439142b6f39723eed27c117a97f8ed",
+    "vaultAddress": "0x587A8Db22f540aCc298A74301c2248427d19BcEf",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xf706bc1b284e37ec672865eb56491e82dc7ab141",
+    "vaultAddress": "0x593F17141c20e73f65bb9c216270594478Af12c3",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x28d424ca841f4f1d08d76d491f3a221783c85581",
+    "vaultAddress": "0x5a4b77Ae7fb21108C74761bd9bfFe6efe5111906",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x8798716242a3b6ed6a11dd841853d392587dfde1",
+    "vaultAddress": "0x5f919b8dC9Bc4B059eAe57f932F14A3635669dFe",
+    "usdcRedemptionAmount": "2"
+  },
+  {
+    "user": "0x1d8c4d80464270afb50576cab66f08a29903747f",
+    "vaultAddress": "0x64aeC80d9a2bd8150547512663033f5a43f578d2",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xced5c5bd48d49eb75a1345f5c2837d27713d225f",
+    "vaultAddress": "0x64BddC344317FC390D59e93dD490044240478558",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xc65aa07a7134b08a558cbc29aba93cebdfb02a33",
+    "vaultAddress": "0x6a1Ca29c95EfDd8320CBA9d93e9e529B2a5AbB9D",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xd36ddb07b9bba83a2aefc8272c40bcaf6843eb0e",
+    "vaultAddress": "0x6A452b837A84C97c52fEdefcBFfCeb245919C40e",
+    "usdcRedemptionAmount": "122174"
+  },
+  {
+    "user": "0xad7a185b2456d5afd85838a50c7d8ace3ab2f871",
+    "vaultAddress": "0x6af498b0b7aCC4b140ef5e9D7426c45419cf5dAe",
+    "usdcRedemptionAmount": "2"
+  },
+  {
+    "user": "0xb1b86cc078870a9c0f998f7c24dc27ac3dd46cf1",
+    "vaultAddress": "0x6BC7C46aF35453D3B6Bc51346e44c801fe561601",
+    "usdcRedemptionAmount": "420236662"
+  },
+  {
+    "user": "0x2218a37513b2bdd11226e43a22ce6732bf07323b",
+    "vaultAddress": "0x6f31577EC611B19081Ab7f5f064d091f1D301907",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x4dcba122d0ab15ee406acbcd38b8116138c16312",
+    "vaultAddress": "0x71529a3f7C7E2721f30D2B583830799E6b6E6205",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xbff74e3830ebd7a67905a51e9359080d7b228337",
+    "vaultAddress": "0x726324e8AAbFfaBe657c47448a4FAc47A55Ce1fd",
+    "usdcRedemptionAmount": "2"
+  },
+  {
+    "user": "0x8c580556fdb1f57853e49f409ae9b89f7658e7a2",
+    "vaultAddress": "0x73b68a4F8C98d62Cb763341bf2459ce9F5a86280",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xf42c2b956bcab51abb6555f5a06ee582e4581c71",
+    "vaultAddress": "0x7eb7FBe33836c97e31324E4E63634eE98962060B",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xe751970824f3bcbf97e611e351c1136776be1ce9",
+    "vaultAddress": "0x823783BaeD4f02397Adef1187428d4B046d3D5De",
+    "usdcRedemptionAmount": "29586746"
+  },
+  {
+    "user": "0xab01ab744f11833c512b0cbedcf3b29820b4f356",
+    "vaultAddress": "0x8286a1A8de506038b39E1b2Be0e60062a6EA527B",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xdd0206010ca82ff22303b58863b3a6f3006c86c4",
+    "vaultAddress": "0x86d385618bC9a07ea8a8223D31F3a32515116b67",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xce6e27e298bd6024e91be5028762d57d857bb5c5",
+    "vaultAddress": "0x8b26e82490F66cBed9f1B6f5ED1D62A60Ff0741d",
+    "usdcRedemptionAmount": "1030"
+  },
+  {
+    "user": "0x4614b16551a21f7e29b57a4f8a8a4b63579d3cf4",
+    "vaultAddress": "0x92aD5a2658d7e0D912fDF36e2adF58F9d2533abF",
+    "usdcRedemptionAmount": "205751"
+  },
+  {
+    "user": "0xdf30911df2aa5f7a7abd5c8b26392384c8042a78",
+    "vaultAddress": "0x9799D1A423F8241B9f90A823aA0bd18333A3b10F",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xf36b1902bb6fed4413ef1b9d5bdb86044abedff0",
+    "vaultAddress": "0x9b838e11C50bDbC3ac0d61936cA5d6eFDa353EE3",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x25c68aa03c5197b643e5a6bceb13289e9874344d",
+    "vaultAddress": "0x9e9013d89D983057aD7417F0D1cD034256C346D0",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x57f5e6359497f74fa7bee41a7129695d9505845e",
+    "vaultAddress": "0xA277793A4329cA4B79ED3282D2C5a42fbD34d2A8",
+    "usdcRedemptionAmount": "184679"
+  },
+  {
+    "user": "0x9a0ec5ba7912018b8523f110d84a6e1ab7b0d900",
+    "vaultAddress": "0xb3A3B109Fa0811C563D691c088324a4F8F7a7429",
+    "usdcRedemptionAmount": "1238041008"
+  },
+  {
+    "user": "0x0b268ed6c35b187e781dbe92d02ba78fbc2ab9b7",
+    "vaultAddress": "0xb461D8488AE96609eF6946125b62cD4C2463Eb57",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xc32b7438b3df7844c9ee799930a2224fe6e26426",
+    "vaultAddress": "0xB5DEaa41472cC9485044C3DaB950ADE3B42ddab2",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x4b445de07860f86484c38e093e9d3187cd034e7c",
+    "vaultAddress": "0xb7f5456BE5f0f14D1d84712035C46A37515cA8B6",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x4cb75146e98562c9d79b31649c6c739e4dcb7cd5",
+    "vaultAddress": "0xB82c4b1Be91F7cD73eB5463650acffA57d602AE4",
+    "usdcRedemptionAmount": "15632244"
+  },
+  {
+    "user": "0x6409655c63a843cfc056e811b376debead767a5c",
+    "vaultAddress": "0xB8726Ac3F83655c340052aB79bbA64528DFC2766",
+    "usdcRedemptionAmount": "408929"
+  },
+  {
+    "user": "0xe63e2cdd24695464c015b2f5ef723ce17e96886b",
+    "vaultAddress": "0xB8E058E5152344E2095a089690764B6A8C7b5B6A",
+    "usdcRedemptionAmount": "5"
+  },
+  {
+    "user": "0xdee9be8bdedecab8213c517c45bfe71e440b5260",
+    "vaultAddress": "0xB9b79D308bC667D28f6657a45936909F83f431D5",
+    "usdcRedemptionAmount": "2"
+  },
+  {
+    "user": "0x59a9f07bc3c3d3765e835e825c8f942232d017c0",
+    "vaultAddress": "0xBc882580868832Cf779136847258432953003150",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xf34e13b94257e1932cb39a05fa35674f66effc23",
+    "vaultAddress": "0xbe1472aD5Bb326F029Aa7C665a5FD41fB55C102f",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x4f49c34759b7e888ce77de9dd34fec63d63495cc",
+    "vaultAddress": "0xC4783dF32C04Dea6B63e178DaaeC3B1062e967A7",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x68292357e9b0b35e08861ccdb53290bdb92999c5",
+    "vaultAddress": "0xc920916DD8A677BD7f2C3EeF7531bd0183d83234",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x49dd94f8bf3d408275d326df4a45057aa48cf7f8",
+    "vaultAddress": "0xc9EB6684Be64689Bc38977E1D4700bE255d3e338",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x26abc9e54b5a0894b9e6d834d1f1a7e7768ea00a",
+    "vaultAddress": "0xd6F6CC6B8518605Bc4E1d7AC2A1BC62A2Dd98181",
+    "usdcRedemptionAmount": "1319124"
+  },
+  {
+    "user": "0xf5fa0f11364cc7695c2e8c3f7c9a7de3ea2483f1",
+    "vaultAddress": "0xD831CB28775fc64bC9538381ACB869F2EfECFA24",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x8fc642d66492c830da43d95da7fe3f027f4f3246",
+    "vaultAddress": "0xDfc1d184958DA5e5638b766ffc8c01299841735b",
+    "usdcRedemptionAmount": "9891031"
+  },
+  {
+    "user": "0xfb2a59ab6f86434c6a57d8b7133e73b17dc7be46",
+    "vaultAddress": "0xE514725A35668510657C29a49b34fD1773396A6c",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xc9af09e3f0fe8e35d533eb62e4fec19c309ee1cd",
+    "vaultAddress": "0xe7432294d79957b1Fd010E715c019a1B0FD3C35C",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x99daaf637e697c53afaa67d6ff27e336db925812",
+    "vaultAddress": "0xe7BDBd86dB0e892063237fE5F6876a0DE549a9f5",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xec5ca1812ded2994d128aa7dd56dc62765c685d8",
+    "vaultAddress": "0xE8fd467CBE4798900b4A9469c92f71Ba245D8174",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xe6656eb70af7d8c489eae135bae1b53c2a261a68",
+    "vaultAddress": "0xe96FdFa82FFc1fBe58246eBcf3d9C1c5CF848426",
+    "usdcRedemptionAmount": "211061"
+  },
+  {
+    "user": "0x9b370d8eb68a7a36535cb4c2d1996e95f74d4a3a",
+    "vaultAddress": "0xEeB47E1442B2a77A041b1F5D64df5Ae3eeCa2D77",
+    "usdcRedemptionAmount": "11062348"
+  },
+  {
+    "user": "0xd5de81e7e5e4f740a26ebb254d6052e1d03b4787",
+    "vaultAddress": "0xF42b850282bA40cE60D5D3964C2920a677b5A87b",
+    "usdcRedemptionAmount": "2753664570"
+  },
+  {
+    "user": "0xedb9394b623723cf030fb94a358297b8ed4e16c3",
+    "vaultAddress": "0xf5bF1565B26a41c2d9A0B8e5f39f151DFc727d6e",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0x65f8f6fc92d58aa586da5b678c994e1413d9e939",
+    "vaultAddress": "0xf672Aca09dfF3ed2C02AE533760FF41E909C3A77",
+    "usdcRedemptionAmount": "1"
+  },
+  {
+    "user": "0xb3d79ea767610555eba816bf79c7a1be14f81c7c",
+    "vaultAddress": "0xfc16Ad381A1a60Ca22D1ee07B9200975011E5bf2",
+    "usdcRedemptionAmount": "1"
+  }
+]
