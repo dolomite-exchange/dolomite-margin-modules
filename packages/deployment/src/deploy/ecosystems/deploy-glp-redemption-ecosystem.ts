@@ -14,6 +14,9 @@ import { ModuleDeployments } from '../../utils';
 const VAULTS_PATH = `${__dirname}/../../../../glp/glp-snapshot-holders-block-355880236.json`;
 const USDC_REDEMPTION_AMOUNT = BigNumber.from('176953980000');
 const GLP_SUPPLIED_AMOUNT = BigNumber.from('134145049679972225550400');
+const ONE_PENNY = '10000000000000000000000000000000000';
+const TEN_CENTS = '100000000000000000000000000000000000';
+const ONE_DOLLAR = '1000000000000000000000000000000000000';
 
 async function main() {
   const network = Network.ArbitrumOne;
@@ -143,8 +146,16 @@ async function main() {
 
     const redemptionParams = [];
     for (const marginAccount of result) {
-      const glpBal = parseEther(marginAccount.tokenValues[0].valuePar);
-      // const outputMarket = glpBal.lte(parseEther('.02')) ? core.marketIds.usdc : core.marketIds.wbtc;
+      const [supply, borrow] = await core.dolomiteMargin.getAdjustedAccountValues({
+        owner: vaultAddress,
+        number: marginAccount.accountNumber,
+      });
+      if (supply.value.lt(borrow.value.mul(115).div(100)) && supply.value.lt(ONE_DOLLAR)) {
+        // SKIP for now
+        console.log('Skipping small underwater sub account');
+        continue;
+      }
+
       const outputMarket = core.marketIds.weth;
       redemptionParams.push({
         accountNumber: marginAccount.accountNumber,
@@ -155,7 +166,7 @@ async function main() {
 
     try {
       const transaction = await redemptionOperator.handlerExecuteVault(vaultAddress, redemptionParams, {
-        gasLimit: 15_000_000,
+        gasLimit: 25_000_000,
       });
       const receipt = await transaction.wait();
       if (!receipt.status) {
