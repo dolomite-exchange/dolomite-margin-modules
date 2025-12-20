@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { RouterBase } from "./RouterBase.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -36,6 +37,7 @@ import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
  * @notice  Router contract for opening borrow positions
  */
 contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
+  using Address for address;
 
   // ========================================================
   // ====================== Constants =======================
@@ -73,9 +75,9 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
 
       DOLOMITE_REGISTRY.borrowPositionProxy().openBorrowPositionWithDifferentAccounts(
-        msg.sender,
+        /* _fromAccountOwner = */ msg.sender,
         _fromAccountNumber,
-        msg.sender,
+        /* _toAccountOwner = */ msg.sender,
         _toAccountNumber,
         _marketId,
         _amount,
@@ -127,10 +129,23 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   }
 
   function transferBorrowPosition(
+    uint256 _isolationModeMarketId,
     uint256 _borrowAccountNumber,
     address _recipient,
     uint256 _recipientAccountNumber
   ) external nonReentrant {
+    Require.that(
+      _recipient != address(0),
+      _FILE,
+      "Invalid recipient"
+    );
+
+    Require.that(
+      DOLOMITE_MARGIN().getIsLocalOperator(_recipient, msg.sender),
+      _FILE,
+      "Unauthorized transfer"
+    );
+
     IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
     accounts[0] = IDolomiteStructs.AccountInfo({
       owner: msg.sender,
@@ -141,12 +156,18 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       number: _recipientAccountNumber
     });
 
+    if (_isolationModeMarketId != 0) {
+      MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
+      accounts[0].owner = address(_validateIsolationModeMarketAndGetVault(marketInfo, accounts[0].owner));
+      accounts[1].owner = address(_validateIsolationModeMarketAndGetVault(marketInfo, accounts[1].owner));
+    }
+
     {
-      uint256[] memory recipientMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(accounts[1]);
+      uint256 marketCount = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(accounts[1]);
       Require.that(
-        recipientMarkets.length == 0 && DOLOMITE_MARGIN().getIsLocalOperator(accounts[1].owner, msg.sender),
+        marketCount == 0,
         _FILE,
-        "Invalid recipient"
+        "Recipient cannot have markets"
       );
     }
 
@@ -163,7 +184,9 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     }
 
-    DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_recipient, _recipientAccountNumber);
+    if (_recipientAccountNumber != 0) {
+      DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(accounts[1].owner, _recipientAccountNumber);
+    }
     DOLOMITE_MARGIN().operate(accounts, actions);
   }
 

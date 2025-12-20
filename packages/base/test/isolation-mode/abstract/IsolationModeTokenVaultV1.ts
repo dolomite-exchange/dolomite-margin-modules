@@ -21,7 +21,7 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
@@ -33,12 +33,7 @@ import {
   createIsolationModeTokenVaultV1ActionsImpl,
 } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -79,7 +74,7 @@ describe('IsolationModeTokenVaultV1', () => {
     const genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -129,7 +124,7 @@ describe('IsolationModeTokenVaultV1', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize(
-      [tokenUnwrapper.address, tokenWrapper.address]
+      [tokenUnwrapper.address, tokenWrapper.address],
     );
 
     await factory.createVault(core.hhUser1.address);
@@ -247,7 +242,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail if calldata is less than 4 bytes', async () => {
       await expectThrow(
         userVault.multicall(['0x1234']),
-        'IsolationModeVaultV1ActionsImpl: Invalid calldata length'
+        'IsolationModeVaultV1ActionsImpl: Invalid calldata length',
       );
     });
 
@@ -361,7 +356,7 @@ describe('IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         isolationModeMarketId,
         amountWei,
-        0
+        0,
       );
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -385,11 +380,11 @@ describe('IsolationModeTokenVaultV1', () => {
       const routerImpersonator = await impersonate(router.address, true);
       const data = await userVault.populateTransaction.routerDepositUnderlyingTokenIntoVault(
         defaultAccountNumber,
-        amountWei
+        amountWei,
       );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -403,7 +398,7 @@ describe('IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        0
+        0,
       );
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, amountWei);
     });
@@ -413,7 +408,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault.connect(core.hhUser1).routerDepositOtherTokenIntoVault(
           otherMarketId1,
           defaultAccountNumber,
-          amountWei
+          amountWei,
         ),
         `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -428,7 +423,7 @@ describe('IsolationModeTokenVaultV1', () => {
       );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -497,7 +492,7 @@ describe('IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         isolationModeMarketId,
         amountWei,
-        0
+        0,
       );
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -518,7 +513,7 @@ describe('IsolationModeTokenVaultV1', () => {
       );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -532,7 +527,7 @@ describe('IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        0
+        0,
       );
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, amountWei);
 
@@ -541,7 +536,7 @@ describe('IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectWalletBalance(core.hhUser1, otherToken1, amountWei);
@@ -553,7 +548,7 @@ describe('IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           otherMarketId1,
           otherAmountWei,
-          0
+          0,
         ),
         `IsolationModeTokenVaultV1: Only deposit router can call <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -565,11 +560,11 @@ describe('IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        0
+        0,
       );
       await expectThrow(
         userVault.connect(routerImpersonator).testReentrancyOnOtherFunction(data.data!),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });

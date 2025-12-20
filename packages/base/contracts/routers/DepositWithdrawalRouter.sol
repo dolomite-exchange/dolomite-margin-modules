@@ -205,7 +205,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             marketId,
             _amountPar,
             _isolationModeMarketId,
-            true
+            /* _isDeposit = */ true
         );
         Require.that(
             msg.value >= amountWei,
@@ -287,7 +287,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _marketId,
             _amountPar,
             _isolationModeMarketId,
-            false
+            /* _isDeposit = */ false
         );
 
         _withdrawWei(
@@ -441,6 +441,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             }),
             _balanceCheckFlag
         );
+
         if (isPayableWithdraw) {
             _setUint256(_PAYABLE_WITHDRAW_SLOT, 0);
         }
@@ -575,8 +576,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 _balanceCheckFlag
             );
         } else {
-            // @follow-up @Corey, I did not add specific checks here for if marketId is not isolation mode. I think we are fine without it
-            // but please look at it too
+            MarketInfo memory marketInfo = _getMarketInfo(_marketId);
+            assert(_isolationModeMarketId == 0 && !marketInfo.isIsolationModeAsset);
+
             AccountActionLib.withdraw(
                 DOLOMITE_MARGIN(),
                 msg.sender,
@@ -659,15 +661,15 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             owner: _accountOwner,
             number: _accountNumber
         });
-        IDolomiteStructs.Par memory parBalance = DOLOMITE_MARGIN().getAccountPar(accountInfo, _marketId);
+        IDolomiteStructs.Par memory parBalanceBefore = DOLOMITE_MARGIN().getAccountPar(accountInfo, _marketId);
         IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
             sign: _isDeposit,
             value: _amountPar.to128()
         });
-        parBalance = parBalance.add(deltaPar);
+        IDolomiteStructs.Par memory parBalanceAfter = parBalanceBefore.add(deltaPar);
 
-        IDolomiteStructs.Wei memory weiBalanceBefore = DOLOMITE_MARGIN().getAccountWei(accountInfo, _marketId);
-        IDolomiteStructs.Wei memory weiBalanceAfter = DOLOMITE_MARGIN().parToWei(_marketId, parBalance);
+        IDolomiteStructs.Wei memory weiBalanceBefore = DOLOMITE_MARGIN().parToWei(_marketId, parBalanceBefore);
+        IDolomiteStructs.Wei memory weiBalanceAfter= DOLOMITE_MARGIN().parToWei(_marketId, parBalanceAfter);
         return weiBalanceAfter.sub(weiBalanceBefore).value;
     }
 
