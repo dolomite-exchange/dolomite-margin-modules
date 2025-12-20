@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGmxV2Registry } from "./IGmxV2Registry.sol";
-import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
+import { IGmxV22WithdrawalCallbackReceiver } from "./IGmxV22WithdrawalCallbackReceiver.sol";
 
 /**
  * @title   IGmxV2IsolationModeUnwrapperTraderV2
@@ -31,7 +31,7 @@ import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver
  */
 interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IUpgradeableAsyncIsolationModeUnwrapperTrader,
-    IGmxWithdrawalCallbackReceiver
+    IGmxV22WithdrawalCallbackReceiver
 {
 
     function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);

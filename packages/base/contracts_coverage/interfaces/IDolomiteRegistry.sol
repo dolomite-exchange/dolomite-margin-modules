@@ -28,6 +28,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
 
 
 /**
@@ -48,6 +49,7 @@ interface IDolomiteRegistry {
 
     event AdminRegistrySet(address indexed _adminRegistry);
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
+    event DepositWithdrawalRouterSet(address indexed _depositWithdrawalRouter);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
     event FeeAgentSet(address indexed _feeAgent);
@@ -58,7 +60,6 @@ interface IDolomiteRegistry {
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
-    event MarketIdToDTokenSet(uint256 indexed _marketId, address _dToken);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
@@ -82,6 +83,12 @@ interface IDolomiteRegistry {
      * @param  _borrowPositionProxy  The new address of the borrow position proxy
      */
     function ownerSetBorrowPositionProxy(address _borrowPositionProxy) external;
+
+    /**
+     *
+     * @param  _depositWithdrawalRouter  The new address of the deposit withdrawal router
+     */
+    function ownerSetDepositWithdrawalRouter(address _depositWithdrawalRouter) external;
 
     /**
      *
@@ -149,13 +156,6 @@ interface IDolomiteRegistry {
 
     /**
      *
-     * @param  _marketId    The market ID
-     * @param  _dToken      The address of the dToken
-     */
-    function ownerSetMarketIdToDToken(uint256 _marketId, address _dToken) external;
-
-    /**
-     *
      * @param  _dolomiteAccountRegistry    The new address of the Dolomite address registry
      */
     function ownerSetDolomiteAccountRegistry(address _dolomiteAccountRegistry) external;
@@ -203,6 +203,11 @@ interface IDolomiteRegistry {
     function borrowPositionProxy() external view returns (IBorrowPositionProxyV2);
 
     /**
+     * @return  The address of the deposit withdrawal router
+     */
+    function depositWithdrawalRouter() external view returns (IDepositWithdrawalRouter);
+
+    /**
      * @return  The address of the generic trader proxy for making zaps
      */
     function genericTraderProxy() external view returns (IGenericTraderProxyV2);
@@ -246,11 +251,6 @@ interface IDolomiteRegistry {
      * @return The address of the Redstone price oracle that's compatible with DolomiteMargin
      */
     function redstonePriceOracle() external view returns (IDolomitePriceOracle);
-
-    /**
-     * @return The address of the dToken for a given market ID
-     */
-    function marketIdToDToken(uint256 _marketId) external view returns (address);
 
     /**
      * @return The address of the oracle aggregator that's compatible with DolomiteMargin

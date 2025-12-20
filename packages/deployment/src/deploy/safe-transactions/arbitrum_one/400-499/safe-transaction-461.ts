@@ -28,19 +28,19 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeUnwrapperTraderImplementationV3',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...core.libraries.unwrapperTraderImpl },
+    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, ...core.libraries.unwrapperTraderImpl },
   );
   const glvWrapperAddress = await deployContractAndSave(
     'GlvIsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeWrapperTraderImplementationV3',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...core.libraries.wrapperTraderImpl },
+    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, ...core.libraries.wrapperTraderImpl },
   );
   const glvTokenVaultAddress = await deployContractAndSave(
     'GlvIsolationModeTokenVaultV1',
     [core.tokens.weth.address, core.config.network],
     'GlvIsolationModeTokenVaultImplementationV3',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...core.libraries.tokenVaultActionsImpl },
+    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, ...core.libraries.tokenVaultActionsImpl },
   );
 
   const transactions: EncodedTransaction[] = [];

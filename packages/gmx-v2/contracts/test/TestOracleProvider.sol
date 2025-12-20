@@ -34,22 +34,29 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 contract TestOracleProvider {
 
     bytes32 private constant _FILE = "TestOracleProvider";
+    address private constant _AIXBT = 0xcA543Cb8bCC76e4E0A034F56EB40a1029bDFd70E;
     address private constant _APT = 0x3f8f0dCE4dCE4d0D1d0871941e79CDA82cA50d0B;
     address private constant _ATOM = 0x248C35760068cE009a13076D573ed3497A47bCD4;
     address private constant _BONK = 0x1FD10E767187A92f0AB2ABDEEF4505e319cA06B2;
+    address private constant _CRV = 0xe5f01aeAcc8288E9838A60016AB00d7b6675900b;
     address private constant _EIGEN = 0x606C3e5075e5555e79Aa15F1E9FACB776F96C248;
+    address private constant _FET = 0x83D5944E7f5EF1d8432002d3cb062e1012f6F8e6;
+    address private constant _MNT = 0x955cd91eEaE618F5a7b49E1e3c7482833B10DAb4;
     address private constant _NEAR = 0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C;
+    address private constant _ONDO = 0xEcFB4718aD19b626A77491895a2f99ea0cedEd08;
     address private constant _PEPE = 0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00;
     address private constant _POL = 0x9c74772b713a1B032aEB173E28683D937E51921c;
     address private constant _RENDER = 0x82BB89fcc64c5d4016C5Ed1AB016bB0D1C20D6C3;
     address private constant _SEI = 0x55e85A147a1029b985384822c0B2262dF8023452;
     address private constant _SHIB = 0x3E57D02f9d196873e55727382974b02EdebE6bfd;
+    address private constant _SPX6900 = 0xb736be525A65326513351058427d1f47B0CfB045;
     address private constant _SUI = 0x197aa2DE1313c7AD50184234490E12409B2a1f95;
     address private constant _TIA = 0x38676f62d166f5CE7De8433F51c6B3D6D9d66C19;
     address private constant _TON = 0xB2f7cefaeEb08Aa347705ac829a7b8bE2FB560f3;
     address private constant _TRX = 0xb06aa7E4af937C130dDade66f6ed7642716fe07A;
     address private constant _WLD = 0x75B9AdD873641b253718810E6c65dB6d72311FD0;
     address private constant _XRP = 0xc14e065b0067dE91534e032868f5Ac6ecf2c6868;
+    address private constant _SOMETHING = 0x3B6f801C0052Dfe0Ac80287D611F31B7c47B9A6b;
 
     IDolomitePriceOracle public immutable ORACLE_AGGREGATOR;
     uint256 public constant GMX_DECIMAL_ADJUSTMENT = 10 ** 6;
@@ -66,6 +73,14 @@ contract TestOracleProvider {
         ORACLE_AGGREGATOR = IDolomitePriceOracle(_oracleAggregator);
     }
 
+    function shouldAdjustTimestamp() external view returns (bool) {
+        return true;
+    }
+
+    function isChainlinkOnChainProvider() external view returns (bool) {
+        return true;
+    }
+
     function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
         try ORACLE_AGGREGATOR.getPrice(_token) returns (IDolomiteStructs.MonetaryPrice memory price) {
             uint256 priceUint = price.value / GMX_DECIMAL_ADJUSTMENT;
@@ -78,22 +93,27 @@ contract TestOracleProvider {
                 provider: address(this)
             });
         } catch {
-            require(
-                block.number < 279_600_000 + 10_000,
-                "Invalid block number for test provider!"
-            );
-
             uint256 price;
-            if (_token == _APT) {
+            if (_token == _AIXBT) {
+                price = 117615760027;
+            } else if (_token == _APT) {
                 price = 13000000000000;
             } else if (_token == _ATOM) {
                 price = 8500000000000;
             } else if (_token == _BONK) {
                 price = 44007067;
+            } else if (_token == _CRV) {
+                price = 896201926741;
             } else if (_token == _EIGEN) {
                 price = 3540000000000;
+            } else if (_token == _FET) {
+                price = 698390880799;
+            } else if (_token == _MNT) {
+                price = 1151285518580;
             } else if (_token == _NEAR) {
                 price = 6900000000000;
+            } else if (_token == _ONDO) {
+                price = 996900201269;
             } else if (_token == _PEPE) {
                 price = 20257067;
             } else if (_token == _POL) {
@@ -102,6 +122,8 @@ contract TestOracleProvider {
                 price = 8750000000000;
             } else if (_token == _SEI) {
                 price = 650000000000;
+            } else if (_token == _SPX6900) {
+                price = 10000000000000;
             }  else if (_token == _SHIB) {
                 price = 29007067;
             } else if (_token == _SUI) {
@@ -116,13 +138,16 @@ contract TestOracleProvider {
                 price = 2900000000000;
             } else if (_token == _XRP) {
                 price = 1900000000000;
+            } else if (_token == _SOMETHING) {
+                price = 10000000000000;
             } else {
-                Require.that(
-                    false,
-                    _FILE,
-                    "Invalid token",
-                    _token
-                );
+                // Require.that(
+                //     false,
+                //     _FILE,
+                //     "Invalid token",
+                //     _token
+                // );
+                price = 10000000000000;
             }
 
             return ValidatedPrice({

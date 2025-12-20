@@ -30,7 +30,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV5',
     {
-      ...core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
       AsyncIsolationModeWrapperTraderImpl: wrapperTraderLibAddress,
     },
   );

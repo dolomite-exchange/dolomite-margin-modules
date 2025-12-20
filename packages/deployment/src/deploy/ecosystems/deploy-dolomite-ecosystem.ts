@@ -345,6 +345,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     dolomiteRegistry,
     dolomiteRegistryProxy,
     CoreDeployments.BorrowPositionProxyV2[network].address,
+    depositWithdrawalRouterProxyAddress,
     dolomiteAccountRegistryProxy,
     dolomiteMigratorAddress,
     genericTraderProxy,

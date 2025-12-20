@@ -47,7 +47,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     bytes32 private constant _FILE = "GmxV2Registry";
 
-
     // solhint-disable max-line-length
     bytes32 private constant _CONTROLLER_ROLE = keccak256(abi.encode("CONTROLLER"));
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
