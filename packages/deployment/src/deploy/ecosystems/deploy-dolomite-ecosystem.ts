@@ -227,7 +227,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 4),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 5),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -242,7 +242,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const borrowPositionRouterImplementationAddress = await deployContractAndSave(
     'BorrowPositionRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 2),
   );
   const borrowPositionRouterCalldata = await BorrowPositionRouter__factory.connect(
     borrowPositionRouterImplementationAddress,

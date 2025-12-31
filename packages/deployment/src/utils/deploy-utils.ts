@@ -202,7 +202,7 @@ export async function verifyContract(
 
     console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
-    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 15_000, 3);
+    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 30_000, 3);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
@@ -234,7 +234,7 @@ async function retryWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number, retr
         throw err;
       }
       console.warn(`\tAttempt ${attempt + 1} failed:`, err);
-      if (err.message.includes('does not have bytecode')) {
+      if (err.message?.includes('does not have bytecode')) {
         await sleep(timeoutMs);
       }
     }
