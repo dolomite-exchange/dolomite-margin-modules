@@ -17,6 +17,7 @@
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:enso-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts enso",
+    "deploy:glp-redemption-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts glp-redemption",
     "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",

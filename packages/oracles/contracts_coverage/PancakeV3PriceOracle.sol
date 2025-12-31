@@ -35,7 +35,7 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
  * @title   PancakeV3PriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
+ * An implementation of the ITWAPPriceOracleV1 interface that makes gets the TWAP from an LP pool
  */
 contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -69,6 +69,8 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+
+        /*assert(IAlgebraV3Pool(_pair).token0() == _token || IAlgebraV3Pool(_pair).token1() == _token);*/
     }
 
     // ========================= Admin Functions =========================

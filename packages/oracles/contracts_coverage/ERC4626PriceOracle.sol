@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IERC4626PriceOracle } from "./interfaces/IERC4626PriceOracle.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC4626PriceOracle } from "./interfaces/IERC4626PriceOracle.sol";
 
 
 /**
@@ -46,11 +46,11 @@ contract ERC4626PriceOracle is IERC4626PriceOracle, OnlyDolomiteMargin {
     // ============================ Constructor ============================
 
     constructor(
-        address[] memory _tokens,
+        address[] memory _initialTokens,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            _ownerInsertOrUpdateToken(_tokens[i], true);
+        for (uint256 i = 0; i < _initialTokens.length; i++) {
+            _ownerInsertOrUpdateToken(_initialTokens[i], true);
         }
     }
 
@@ -99,11 +99,7 @@ contract ERC4626PriceOracle is IERC4626PriceOracle, OnlyDolomiteMargin {
     function standardizeNumberOfDecimals(
         uint8 _tokenDecimals,
         uint256 _tokenAmount
-    )
-        public
-        pure
-        returns (uint)
-    {
+    ) public pure returns (uint256) {
         uint256 tokenDecimalsFactor = 10 ** (36 - _tokenDecimals * 2);
         return _tokenAmount * tokenDecimalsFactor;
     }

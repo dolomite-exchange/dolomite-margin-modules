@@ -866,10 +866,14 @@ export const SOL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const SOLV_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const SOLV_BTC_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x541FD749419CA806a8bc7da8ac23D346f2dF8B77',
     marketId: 23,
+  },
+  [Network.Ethereum]: {
+    address: '0x7A56E1C57C7475CCf742a1832B028F0456652F97',
+    marketId: 17,
   },
 };
 
@@ -1381,16 +1385,24 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
+export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x749291a06b1Eb031288A5c864F68de83e4091Ff8',
+};
+
+export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x1EEA01a3592b8943737977b93ed24be7842D2427',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
 export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x6a9505D0B44cFA863d9281EA5B0b34cB36243b45',
+  [Network.ArbitrumOne]: '0x2C670A23f1E798184647288072e84054938B5497',
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x105b5aFe50FBCe7759051974fB1710ce331C77B3',
+  [Network.ArbitrumOne]: '0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1410,7 +1422,7 @@ export const GMX_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_DEPOSIT_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xfe2Df84627950A0fB98EaD49c69a1DE3F66867d6',
+  [Network.ArbitrumOne]: '0x33871b8568eDC4adf33338cdD8cF52a0eCC84D42',
 };
 
 export const GMX_DEPOSIT_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1422,7 +1434,7 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x900173A66dbD345006C51fA35fA3aB760FcD843b',
+  [Network.ArbitrumOne]: '0x1C3fa76e6E1088bCE750f23a5BFcffa1efEF6A41',
 };
 
 export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1626,7 +1638,7 @@ export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x0537C767cDAC0726c76Bb89e92904fe28fd02fE1',
+  [Network.ArbitrumOne]: '0x470fbC46bcC0f16532691Df360A07d8Bf5ee0789',
 };
 
 export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1649,7 +1661,7 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x64fbD82d9F987baF5A59401c64e823232182E8Ed',
+  [Network.ArbitrumOne]: '0x11e9E7464f3Bc887a7290ec41fCd22f619b177fd',
 };
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -2550,7 +2562,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [RS_ETH_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
+      aggregatorAddress: '0x3A917e6B5732dFCc4A45257e3930979fAE6a3737',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [RS_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
@@ -2657,11 +2669,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
   },
   [Network.Ethereum]: {
-    [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
-      aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
-    },
     [AAVE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x547a514d5e3769680Ce22B2361c10Ea13619e8a9',
+    },
+    [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
     },
     [CRV_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f',
@@ -2675,6 +2687,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
     [S_USDE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099',
+    },
+    [SOLV_BTC_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x936B31C428C29713343E05D631e69304f5cF5f49',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Ethereum].address,
     },
     [USD1_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xF0d9bb015Cd7BfAb877B7156146dc09Bf461370d',

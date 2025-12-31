@@ -2,16 +2,19 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getMaxDeploymentVersionAddressByDeploymentKey } from 'packages/deployment/src/utils/deploy-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
+import { ModuleDeployments } from '../../../../utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import {
-  encodeSetIsCollateralOnly,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+
+const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 /**
  * This script encodes the following transactions:
- * - Run final settlement for wUSDM holders
+ * - Remove the unwrapper as a GLP trusted token converter
+ * - Remove all liquidators except the dead address
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -21,8 +24,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCapWithMagic(core, core.marketIds.wusdm, 16_567),
-    await encodeSetIsCollateralOnly(core, core.marketIds.wusdm, false),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.dGmPendleUsd, 125_000),
   ];
 
   return {
