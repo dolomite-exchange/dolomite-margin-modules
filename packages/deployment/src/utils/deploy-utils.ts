@@ -518,7 +518,7 @@ export async function deployContractAndSave(
         };
         nonce += 1;
       } else {
-        console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
+        console.warn(`\t${contractRename} was already deployed to ${contractAddress}. Filling in 0x0 for hash...`);
         contract = {
           address: contractAddress,
           transactionHash: BYTES_ZERO,
