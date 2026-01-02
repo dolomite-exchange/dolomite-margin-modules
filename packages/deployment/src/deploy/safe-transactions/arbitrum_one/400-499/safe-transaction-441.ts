@@ -58,7 +58,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeTokenVaultImplementationV1',
     {
       ...core.glvEcosystem.live.glvLibraryMap,
-      ...core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
       ...core.libraries.tokenVaultActionsImpl,
     },
   );
@@ -68,7 +68,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeUnwrapperTraderImplementationV2',
     {
       ...core.glvEcosystem.live.glvLibraryMap,
-      ...core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
       ...core.libraries.unwrapperTraderImpl,
     },
   );
@@ -78,7 +78,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeWrapperTraderImplementationV2',
     {
       ...core.glvEcosystem.live.glvLibraryMap,
-      ...core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
       ...core.libraries.wrapperTraderImpl,
     },
   );

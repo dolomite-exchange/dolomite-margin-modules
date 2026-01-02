@@ -24,13 +24,12 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IGenericTraderProxyV2.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GmxV2VaultLibrary } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2VaultLibrary.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -131,7 +130,7 @@ contract GlvIsolationModeTokenVaultV1 is
     )
     internal
     override {
-        GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
+        GmxV2VaultLibrary.validateExecutionFeeAndUsage(/* _vault = */ this, _toAccountNumber);
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
@@ -144,7 +143,7 @@ contract GlvIsolationModeTokenVaultV1 is
     )
     internal
     override {
-        GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
+        GmxV2VaultLibrary.validateExecutionFeeAndUsage(/* _vault = */ this, _toAccountNumber);
         super._openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
@@ -181,7 +180,7 @@ contract GlvIsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _tradersPath = GmxV2VaultLibrary.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
@@ -211,7 +210,7 @@ contract GlvIsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _tradersPath = GmxV2VaultLibrary.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ IGmxV2IsolationModeTokenVaultV1(address(this)),
             _borrowAccountNumber,
             _tradersPath
@@ -235,7 +234,7 @@ contract GlvIsolationModeTokenVaultV1 is
         virtual
         override
     {
-        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _params.tradersPath = GmxV2VaultLibrary.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ IGmxV2IsolationModeTokenVaultV1(address(this)),
             _params.tradeAccountNumber,
             _params.tradersPath
@@ -251,24 +250,21 @@ contract GlvIsolationModeTokenVaultV1 is
         bool _isLiquidation,
         bytes calldata _extraData
     ) internal override {
-        IGlvIsolationModeVaultFactory factory = IGlvIsolationModeVaultFactory(VAULT_FACTORY());
-        GmxV2Library.validateInitiateUnwrapping(factory, factory.glvRegistry(), _outputToken);
-
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry().getUnwrapperByToken(factory);
-        IERC20(UNDERLYING_TOKEN()).safeApprove(address(unwrapper), _inputAmount);
-        unwrapper.vaultInitiateUnwrapping{ value: ethExecutionFee }(
+        GmxV2VaultLibrary.vaultInitiateUnwrapping(
+            IGmxV2IsolationModeTokenVaultV1(address(this)),
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
             _minOutputAmount,
             _isLiquidation,
-            _extraData
+            _extraData,
+            ethExecutionFee
         );
     }
 
@@ -296,7 +292,7 @@ contract GlvIsolationModeTokenVaultV1 is
             number: _tradeAccountNumber
         });
 
-        GmxV2Library.validateMinAmountIsNotTooLargeForLiquidation(
+        GmxV2VaultLibrary.validateMinAmountIsNotTooLargeForLiquidation(
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()),
             liquidAccount,
             _inputAmount,

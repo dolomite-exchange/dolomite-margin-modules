@@ -16,6 +16,7 @@ import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-d
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
+  createAsyncIsolationModeTokenVaultV1ActionsImpl,
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
   createIsolationModeTokenVaultV1ActionsImpl,
@@ -24,7 +25,7 @@ import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-ut
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import { TestOracleProvider } from 'packages/gmx-v2/src/types';
-import { createGmxV2Library, getOracleProviderForTokenKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { createGmxV2Library, createGmxV2VaultLibrary, getOracleProviderForTokenKey, getOracleProviderForTokenKeyWithOracle } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import {
   ChaosLabsPriceOracleV3,
@@ -53,6 +54,7 @@ import {
   GlvRegistry,
   GlvRegistry__factory,
   GmxV2Library,
+  GmxV2TraderLibrary,
   IERC20__factory,
   IGlvIsolationModeVaultFactory,
   IGlvRegistry,
@@ -114,18 +116,18 @@ export async function createGlvLibrary(): Promise<GlvLibrary> {
 export async function createTestGlvIsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
 ): Promise<TestGlvIsolationModeTokenVaultV1> {
-  const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
+  const actionsLib = await createAsyncIsolationModeTokenVaultV1ActionsImpl();
   const safeDelegateCallLibrary = await createSafeDelegateLibrary();
   const glvLibrary = await createGlvLibrary();
-  const gmxV2Library = await createGmxV2Library();
+  const gmxV2VaultLibrary = await createGmxV2VaultLibrary();
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGlvIsolationModeTokenVaultV1');
   return await createContractWithLibraryAndArtifact<TestGlvIsolationModeTokenVaultV1>(
     artifact,
     {
       GlvLibrary: glvLibrary.address,
-      GmxV2Library: gmxV2Library.address,
+      GmxV2VaultLibrary: gmxV2VaultLibrary.address,
       SafeDelegateCallLib: safeDelegateCallLibrary.address,
-      IsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
+      AsyncIsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
     },
     getGlvIsolationModeTokenVaultConstructorParams(core),
   );
@@ -207,13 +209,13 @@ export async function createGlvRegistry(
 export async function createGlvIsolationModeUnwrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
   glvLibrary: GlvLibrary,
-  gmxV2Library: GmxV2Library,
+  gmxV2TraderLibrary: GmxV2TraderLibrary,
 ): Promise<GlvIsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GlvIsolationModeUnwrapperTraderV2>(
     artifact,
-    { GlvLibrary: glvLibrary.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    { GlvLibrary: glvLibrary.address, GmxV2TraderLibrary: gmxV2TraderLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -269,13 +271,13 @@ export async function createTestGlvIsolationModeUnwrapperTraderV2(
 export async function createGlvIsolationModeWrapperTraderV2Implementation(
   core: CoreProtocolArbitrumOne,
   library: GlvLibrary,
-  gmxV2Library: GmxV2Library,
+  gmxV2TraderLibrary: GmxV2TraderLibrary,
 ): Promise<GlvIsolationModeWrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeWrapperTraderV2');
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   return await createContractWithLibraryAndArtifact<GlvIsolationModeWrapperTraderV2>(
     artifact,
-    { GlvLibrary: library.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    { GlvLibrary: library.address, GmxV2TraderLibrary: gmxV2TraderLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
@@ -385,6 +387,7 @@ export async function getGlvOracleParams(
   controller: SignerWithAddressWithSafety,
   glvToken: GlvToken,
   provider: TestOracleProvider,
+  oracle: string
 ) {
   const tokens = [];
   const providers = [];
@@ -394,13 +397,13 @@ export async function getGlvOracleParams(
   const glvTokenInfo = await core.glvEcosystem.glvReader.getGlvInfo(dataStore.address, glvToken.glvToken.address);
   let tokenKey;
 
-  tokenKey = getOracleProviderForTokenKey({ address: glvTokenInfo.glv.shortToken });
+  tokenKey = getOracleProviderForTokenKeyWithOracle(oracle, { address: glvTokenInfo.glv.shortToken });
   await dataStore.connect(controller).setAddress(tokenKey, provider.address);
   tokens.push(glvTokenInfo.glv.shortToken);
   providers.push(provider.address);
   data.push(BYTES_EMPTY);
 
-  tokenKey = getOracleProviderForTokenKey({ address: glvTokenInfo.glv.longToken });
+  tokenKey = getOracleProviderForTokenKeyWithOracle(oracle, { address: glvTokenInfo.glv.longToken });
   await dataStore.connect(controller).setAddress(tokenKey, provider.address);
   tokens.push(glvTokenInfo.glv.longToken);
   providers.push(provider.address);
@@ -409,7 +412,7 @@ export async function getGlvOracleParams(
   for (const market of glvTokenInfo.markets) {
     const index = (await core.gmxV2Ecosystem.gmxReader.getMarket(dataStore.address, market)).indexToken;
     if (!tokens.includes(index)) {
-      tokenKey = getOracleProviderForTokenKey({ address: index });
+      tokenKey = getOracleProviderForTokenKeyWithOracle(oracle, { address: index });
       await dataStore.connect(controller).setAddress(tokenKey, provider.address);
       tokens.push(index);
       providers.push(provider.address);

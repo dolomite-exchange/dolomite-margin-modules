@@ -25,7 +25,7 @@ import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
-import { SafeDelegateCallLib } from "../../../lib/SafeDelegateCallLib.sol";
+import { InternalSafeDelegateCallLib } from "../../../lib/InternalSafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
@@ -34,6 +34,7 @@ import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { BaseLiquidatorProxy } from "../../../proxies/BaseLiquidatorProxy.sol";
 import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IDepositWithdrawalRouter } from "../../../routers/interfaces/IDepositWithdrawalRouter.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -77,28 +78,55 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 "Disallowed multicall function"
             );
 
-            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+            InternalSafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
         }
     }
 
     function depositIntoVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) public {
         // This implementation requires we deposit into index 0
         _checkToAccountNumberIsZero(_toAccountNumber);
-        IIsolationModeVaultFactory(_vault.VAULT_FACTORY()).depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
+
+        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
+        if (_isViaRouter) {
+            IDepositWithdrawalRouter router = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
+            router.vaultExecuteDepositUnderlyingToken(
+                _vault.marketId(),
+                _toAccountNumber,
+                _amountWei
+            );
+        } else {
+            factory.depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
+        }
     }
 
     function withdrawFromVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) public {
         // This implementation requires we withdraw from index 0
         _checkFromAccountNumberIsZero(_fromAccountNumber);
-        IIsolationModeVaultFactory(_vault.VAULT_FACTORY()).withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
+
+        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
+        if (_isViaRouter) {
+            IDepositWithdrawalRouter depositWithdrawalRouter = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
+            depositWithdrawalRouter.vaultExecuteWithdrawUnderlyingToken(
+                _vault.marketId(),
+                _fromAccountNumber,
+                _amountWei
+            );
+        } else {
+            factory.withdrawFromDolomiteMargin(
+                _fromAccountNumber,
+                _amountWei
+            );
+        }
     }
 
     function openBorrowPosition(
@@ -235,20 +263,29 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
         bool _checkAllowableCollateralMarketFlag,
-        bool _bypassAccountNumberCheck
+        bool _bypassAccountNumberCheck,
+        bool _fromWallet
     ) public {
         _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, _bypassAccountNumberCheck);
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
-        _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ _vault.OWNER(),
-            _fromAccountNumber,
-            /* _toAccountOwner = */ address(this),
-            _borrowAccountNumber,
-            _marketId,
-            _amountWei,
-            _balanceCheckFlag
-        );
+        if (_fromWallet) {
+            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteDepositOtherToken(
+                _marketId,
+                _borrowAccountNumber,
+                _amountWei
+            );
+        } else {
+            _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
+                /* _fromAccountOwner = */ _vault.OWNER(),
+                _fromAccountNumber,
+                /* _toAccountOwner = */ address(this),
+                _borrowAccountNumber,
+                _marketId,
+                _amountWei,
+                _balanceCheckFlag
+            );
+        }
 
         if (_checkAllowableCollateralMarketFlag) {
             _checkAllowableCollateralMarket(
@@ -285,20 +322,30 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
-        bool _bypassAccountNumberCheck
+        bool _bypassAccountNumberCheck,
+        bool _toWallet
     ) public {
         _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, _bypassAccountNumberCheck);
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
-        _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this),
-            _borrowAccountNumber,
-            /* _toAccountOwner = */ _vault.OWNER(),
-            _toAccountNumber,
-            _marketId,
-            _amountWei,
-            _balanceCheckFlag
-        );
+        if (_toWallet) {
+            _vault.dolomiteRegistry().depositWithdrawalRouter().vaultExecuteWithdrawOtherToken(
+                _marketId,
+                _borrowAccountNumber,
+                _amountWei,
+                _balanceCheckFlag
+            );
+        } else {
+            _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
+                /* _fromAccountOwner = */ address(this),
+                _borrowAccountNumber,
+                /* _toAccountOwner = */ _vault.OWNER(),
+                _toAccountNumber,
+                _marketId,
+                _amountWei,
+                _balanceCheckFlag
+            );
+        }
 
         _checkAllowableDebtMarket(_vault, address(this), _borrowAccountNumber, _marketId);
     }
@@ -368,7 +415,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 _inputAmountWei,
                 AccountBalanceLib.BalanceCheckFlag.From,
                 /* _checkAllowableCollateralMarketFlag = */ false,
-                /* _bypassAccountNumberCheck = */ true
+                /* _bypassAccountNumberCheck = */ true,
+                /* _fromWallet = */ false
             );
         }
 
@@ -455,7 +503,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 outputMarketId,
                 balanceDelta.value,
                 AccountBalanceLib.BalanceCheckFlag.None, // we always transfer the exact amount out; no need to check
-                /* _bypassAccountNumberCheck = */ true
+                /* _bypassAccountNumberCheck = */ true,
+                /* _toWallet = */ false
             );
         }
     }
@@ -510,28 +559,6 @@ library IsolationModeTokenVaultV1ActionsImpl {
         if (_checkOutputMarketIdFlag) {
             _checkAllowableCollateralMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
             _checkAllowableDebtMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
-        }
-    }
-
-    function validateDepositIntoVaultAfterTransfer(
-        IIsolationModeTokenVaultV1 _vault,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) public view {
-        if (_marketId != _vault.marketId()) {
-            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
-            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
-        }
-    }
-
-    function validateWithdrawalFromVaultAfterTransfer(
-        IIsolationModeTokenVaultV1 _vault,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) public view {
-        if (_marketId != _vault.marketId()) {
-            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
-            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
         }
     }
 

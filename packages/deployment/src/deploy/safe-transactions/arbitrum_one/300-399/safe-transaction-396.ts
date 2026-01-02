@@ -120,7 +120,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         longMarketId === -1,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
-      core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+      core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
     );
     const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 

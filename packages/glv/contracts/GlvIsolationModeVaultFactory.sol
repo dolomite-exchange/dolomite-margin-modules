@@ -24,7 +24,7 @@ pragma solidity ^0.8.9;
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
 import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GmxV2VaultLibrary } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2VaultLibrary.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
@@ -97,12 +97,12 @@ contract GlvIsolationModeVaultFactory is
             ? type(uint256).max
             : DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
-        GmxV2Library.validateInitialMarketIds(
+        GmxV2VaultLibrary.validateInitialMarketIds(
             _params.initialAllowableDebtMarketIds,
             LONG_TOKEN_MARKET_ID,
             SHORT_TOKEN_MARKET_ID
         );
-        GmxV2Library.validateInitialMarketIds(
+        GmxV2VaultLibrary.validateInitialMarketIds(
             _params.initialAllowableCollateralMarketIds,
             LONG_TOKEN_MARKET_ID,
             SHORT_TOKEN_MARKET_ID

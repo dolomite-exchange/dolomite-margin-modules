@@ -7,8 +7,8 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts base",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/general/DolomiteRegistry.ts\" --solcoverjs ../../.solcover.js",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/traders/OogaBoogaAggregatorTrader-botanix.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/routers/BorrowPositionRouter.ts\" --solcoverjs ../../.solcover.js",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/routers/BorrowPositionRouter.ts",
     "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/routers/GenericTraderRouter.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix base",
@@ -23,5 +23,8 @@
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
     "directory": "packages/base"
   },
-  "license": "GPL-2.0"
+  "license": "GPL-2.0",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.3"
+  }
 }

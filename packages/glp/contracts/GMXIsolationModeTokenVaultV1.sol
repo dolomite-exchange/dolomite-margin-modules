@@ -251,9 +251,10 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) internal override {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, _isViaRouter);
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
@@ -300,7 +301,7 @@ contract GMXIsolationModeTokenVaultV1 is
         if (_gmxValue > 0) {
             _setShouldSkipTransfer(true);
             _setUint256(_TEMP_BALANCE_SLOT, _gmxValue);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxValue);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxValue, /* _isViaRouter */ false);
             assert(!shouldSkipTransfer());
         }
 
@@ -327,7 +328,7 @@ contract GMXIsolationModeTokenVaultV1 is
             );
             _setShouldSkipTransfer(true);
             _setUint256(_TEMP_BALANCE_SLOT, 0);
-            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBalance);
+            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBalance, /* _isViaRouter */ false);
             assert(!shouldSkipTransfer());
         }
         emit AccountTransferCanceled();

@@ -218,26 +218,28 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
         _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
     {
-        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei, _isViaRouter);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
-        uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _accountNumber,
+        uint256 _amountWei,
+        bool _isViaRouter
     )
         internal
         virtual
         override
-        _withdrawFromVaultForDolomiteMarginPausableValidator(_fromAccountNumber)
+        _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
     {
-        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_accountNumber, _amountWei, _isViaRouter);
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
@@ -333,7 +335,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _toWallet
     )
         internal
         virtual
@@ -351,7 +354,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            _toWallet
         );
     }
 
@@ -429,32 +433,6 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         IsolationModeTokenVaultV1._swapExactInputForOutput(
             _params
         );
-    }
-
-    function _validateDepositIntoVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _depositIntoVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
-    {
-        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
-    }
-
-    function _validateWithdrawalFromVaultAfterTransfer(
-        uint256 _accountNumber,
-        uint256 _marketId
-    )
-        internal
-        virtual
-        override
-        view
-        _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
-    {
-        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     // ===================================================
