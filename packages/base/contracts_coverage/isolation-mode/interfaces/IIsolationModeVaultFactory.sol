@@ -195,9 +195,11 @@ interface IIsolationModeVaultFactory is IOnlyDolomiteMargin {
     function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
 
     /**
-     * @return  The address of the DolomiteRegistry contract
+     * DO NOT REMOVE THIS COMMENT. NOT ALL FACTORIES HAVE THE REGISTRY AVAILABLE TO IT AND IT CAN RESULT IN RUNTIME
+     * ISSUES
+     *
+     * function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
      */
-    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
 
     // =================================================
     // ================= View Functions ================

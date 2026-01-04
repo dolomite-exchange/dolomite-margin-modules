@@ -25,7 +25,7 @@ import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
-import { SafeDelegateCallLib } from "../../../lib/SafeDelegateCallLib.sol";
+import { InternalSafeDelegateCallLib } from "../../../lib/InternalSafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
@@ -79,7 +79,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 "Disallowed multicall function"
             );
 
-            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+            InternalSafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
         }
     }
 
@@ -94,7 +94,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
         if (_isViaRouter) {
-            IDepositWithdrawalRouter router = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
+            IDepositWithdrawalRouter router = _vault.dolomiteRegistry().depositWithdrawalRouter();
             router.vaultExecuteDepositUnderlyingToken(
                 _vault.marketId(),
                 _toAccountNumber,
@@ -116,7 +116,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(_vault.VAULT_FACTORY());
         if (_isViaRouter) {
-            IDepositWithdrawalRouter depositWithdrawalRouter = factory.DOLOMITE_REGISTRY().depositWithdrawalRouter();
+            IDepositWithdrawalRouter depositWithdrawalRouter = _vault.dolomiteRegistry().depositWithdrawalRouter();
             depositWithdrawalRouter.vaultExecuteWithdrawUnderlyingToken(
                 _vault.marketId(),
                 _fromAccountNumber,

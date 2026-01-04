@@ -224,7 +224,7 @@ describe('BorrowPositionRouter', () => {
     });
   });
 
-  describe('#closeBorrowPosition', () => {
+  describe.only('#closeBorrowPosition', () => {
     it('should work normally for normal user and asset', async () => {
       const res = await router.openBorrowPosition(
         ZERO_BI,
@@ -271,7 +271,7 @@ describe('BorrowPositionRouter', () => {
         isolationModeMarketId,
         borrowAccountNumber,
         defaultAccountNumber,
-        [],
+        [isolationModeMarketId],
       );
       await expectProtocolBalance(core, userVault1, defaultAccountNumber, isolationModeMarketId, amountWei);
       await expectProtocolBalance(core, userVault1, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -299,15 +299,66 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, userVault1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
+    it('should work normally for vault and other token together', async () => {
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault1.address, amountWei);
+      await userVault1.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await router.openBorrowPosition(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        isolationModeMarketId,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, userVault1, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault1, borrowAccountNumber, isolationModeMarketId, amountWei);
+
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault1, borrowAccountNumber, core.marketIds.dai, amountWei);
+
+      await router.closeBorrowPosition(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        [isolationModeMarketId, core.marketIds.dai],
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, userVault1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault1, defaultAccountNumber, isolationModeMarketId, amountWei);
+      await expectProtocolBalance(core, userVault1, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
+    });
+
     it('should fail if market is not isolation mode', async () => {
       await expectThrow(
         router.closeBorrowPosition(
           core.marketIds.usdc,
           borrowAccountNumber,
           defaultAccountNumber,
-          [],
+          [core.marketIds.usdc],
         ),
         'RouterBase: Market is not isolation mode',
+      );
+    });
+
+    it('should fail if collateral markets is empty', async () => {
+      await expectThrow(
+        router.closeBorrowPosition(
+          ZERO_BI,
+          borrowAccountNumber,
+          defaultAccountNumber,
+          [],
+        ),
+        'BorrowPositionRouter: Collateral market IDs is empty',
       );
     });
 

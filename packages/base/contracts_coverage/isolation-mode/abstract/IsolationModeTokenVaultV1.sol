@@ -441,10 +441,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         return IIsolationModeVaultFactory(VAULT_FACTORY()).DOLOMITE_MARGIN();
     }
 
-    function DOLOMITE_REGISTRY() public view returns (IDolomiteRegistry) {
-        return IIsolationModeVaultFactory(VAULT_FACTORY()).DOLOMITE_REGISTRY();
-    }
-
     function BORROW_POSITION_PROXY() public view returns (IBorrowPositionProxyV2) {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).BORROW_POSITION_PROXY();
     }
@@ -747,9 +743,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyDepositWithdrawalRouter(address _from) internal virtual view {
-        if (_from == address(DOLOMITE_REGISTRY().depositWithdrawalRouter())) { /* FOR COVERAGE TESTING */ }
+        if (_from == address(dolomiteRegistry().depositWithdrawalRouter())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _from == address(DOLOMITE_REGISTRY().depositWithdrawalRouter()),
+            _from == address(dolomiteRegistry().depositWithdrawalRouter()),
             _FILE,
             "Only deposit router can call",
             _from

@@ -108,6 +108,12 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256 _toAccountNumber,
     uint256[] calldata _collateralMarketIds
   ) external nonReentrant {
+    Require.that(
+      _collateralMarketIds.length != 0,
+      _FILE,
+      "Collateral market IDs is empty"
+    );
+
     if (_isolationModeMarketId == 0) {
       DOLOMITE_REGISTRY.borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
         msg.sender,
@@ -120,10 +126,33 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
       IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
-      if (_collateralMarketIds.length == 0) {
+      bool foundUnderlying = false;
+      for (uint256 i; i < _collateralMarketIds.length; ++i) {
+        if (_collateralMarketIds[i] == _isolationModeMarketId) {
+          foundUnderlying = true;
+          break;
+        }
+      }
+
+      uint256 cursor = 0;
+      uint256[] memory collateralMarketIdsWithoutUnderlying = new uint256[](
+        _collateralMarketIds.length - (foundUnderlying ? 1 : 0)
+      );
+      for (uint256 i; i < _collateralMarketIds.length; ++i) {
+        if (_collateralMarketIds[i] != _isolationModeMarketId) {
+          collateralMarketIdsWithoutUnderlying[cursor++] = _collateralMarketIds[i];
+        }
+      }
+
+      if (foundUnderlying) {
         vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
-      } else {
-        vault.closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+      }
+      if (collateralMarketIdsWithoutUnderlying.length != 0) {
+        vault.closeBorrowPositionWithOtherTokens(
+          _borrowAccountNumber,
+          _toAccountNumber,
+          collateralMarketIdsWithoutUnderlying
+        );
       }
     }
   }

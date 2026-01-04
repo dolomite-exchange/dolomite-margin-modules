@@ -461,6 +461,13 @@
       "isVerified": true
     }
   },
+  "ARBIsolationModeTokenVaultV13": {
+    "42161": {
+      "address": "0x6a696A038Bf20DE637C3aB72350153E59713EA4e",
+      "transaction": "0xb4836934a3a348568a2a0951b7c92934a04649b7ed5a7307b6a12b1dd1b76d43",
+      "isVerified": true
+    }
+  },
   "ARBIsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x0234D14F457d17C851C64Ac67F364f5969e0db31",
@@ -1016,6 +1023,58 @@
     "80094": {
       "address": "0x15460Ec9201869E651612b41D85b4B4AD2bE83ec",
       "transaction": "0x84dbe78e782d61b57dd5c9d1bc905a0acd70bce578d091f417f5d3fd369ef153",
+      "isVerified": true
+    }
+  },
+  "BorrowPositionRouterImplementationV3": {
+    "1": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x60aa24899f90252c3848467c90539faee9ae9bd412477dc7f6c483ec09890826",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0xed82e21daaf1aa8ba61bd1ce5cdbe150a7e006dca225fd7e1c52b1496d361b2c",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x7a9025811e1fd746b6c25900ec9f69ccd5d6d8180ef47d21c55e2debe5d9f9ef",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0xd08b86879969f4c9490a2bce5a2a5d2ac0d8a26aeb8ace78de24c2957888a1c4",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x8c923679a22e824f7e41475ba65c767205859d3c392a30637865b6a983edeb68",
+      "isVerified": true
+    },
+    "5330": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x8847e437ca2a997c0e876346f5d9924a963e95d6ae1a64926676f36ab6be5667",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x5be5985092dfe1381531443b5f1c936caae50413f091d8eef7d507df6e46924b",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x1b5b69368c5b72eb0e2e5c3370e034dfb140bb540d7e85771317717c9f300925",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0xc2906c343db6eae96e1e5dcd33de7f5bd4e95102989a5d0a9e0bdee93ce22544",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0xe6756A1f8df1a50DBdA1AA0833140781A9fA7145",
+      "transaction": "0x9b3ff0963adb84a6ecbd653329fd582559665f1dc8b00cb808dabed0bf628adc",
       "isVerified": true
     }
   },
@@ -3942,6 +4001,13 @@
       "isVerified": true
     }
   },
+  "GLPIsolationModeTokenVaultV14": {
+    "42161": {
+      "address": "0xF5C80Da52D9076e6e2082e064Fa6B1d10c8B7c07",
+      "transaction": "0xde504072e5e55548420bc8579e443a6deeece3b7f7ead81592879451e2f74d86",
+      "isVerified": true
+    }
+  },
   "GLPIsolationModeUnwrapperTraderV1": {
     "42161": {
       "address": "0xe2E26241E8572912d0fA3c213b935D10a4Fe2268",
@@ -4145,6 +4211,13 @@
       "isVerified": true
     }
   },
+  "GlvIsolationModeTokenVaultImplementationV9": {
+    "42161": {
+      "address": "0xF29100A3273101fb72837541F5ABAEFDC3125387",
+      "transaction": "0x03f0321030d341a889a761f3f00ca4842a19e44b46e139bc05b15fe774c0848c",
+      "isVerified": true
+    }
+  },
   "GlvIsolationModeUnwrapperTraderImplementationV2": {
     "42161": {
       "address": "0x997cF88Fea4309F3866cE97D9fB70c8086F079b3",
@@ -4338,6 +4411,13 @@
     "42161": {
       "address": "0xe5E6B8709d346DC22a9D7383B4f665B76A887464",
       "transaction": "0x753335da501c3a5ac444a1d47198feca119279f870d0a4f3222164057b424bbf",
+      "isVerified": true
+    }
+  },
+  "GMXIsolationModeTokenVaultV12": {
+    "42161": {
+      "address": "0xE37615B3A1223232Ff2B11472600a1460ad95e92",
+      "transaction": "0x10f759a1713d3a94a15fc0b19d35443776841235299e5fc5aac961df0a8fd17b",
       "isVerified": true
     }
   },
@@ -4737,6 +4817,13 @@
     "42161": {
       "address": "0xC148C7D701A51E1b7c8A7652309b6285ceEd66A9",
       "transaction": "0xcabf80ddca32479c5a5aca8c1e74640d86bab4f3ce971e18e672601843dd9c2f",
+      "isVerified": true
+    }
+  },
+  "GmxV2IsolationModeTokenVaultImplementationV27": {
+    "42161": {
+      "address": "0x98F62Cb11E96Db5674B9D3406fF4b8D6aA33E92F",
+      "transaction": "0x26752a20372c46acb37561d33366be836ad492e26e8fa2cceeb2aaa1dd0abf2c",
       "isVerified": true
     }
   },
@@ -5440,6 +5527,20 @@
       "isVerified": true
     }
   },
+  "InfraredBGTIsolationModeTokenVaultV3": {
+    "80094": {
+      "address": "0x3DfF57E77384478743746C382cE5179CfeE3d319",
+      "transaction": "0x5473adb748936fd1cdf8ebb1e3947f886cb3673f78248cff3e8e0347dea636aa",
+      "isVerified": true
+    }
+  },
+  "InfraredBGTIsolationModeTokenVaultV4": {
+    "80094": {
+      "address": "0xa0b448A513862A2631fc4BB974ADEE3270F1a4a2",
+      "transaction": "0x941176f6d3d908b767171f34cbb1e5b3e0e8b2a7b9aae25a77111d2bb4ea9ca4",
+      "isVerified": true
+    }
+  },
   "InfraredBGTIsolationModeUnwrapperTraderV2": {
     "80094": {
       "address": "0x34E08961BFF5FE27b44F814A470970dB6e90108A",
@@ -5869,6 +5970,58 @@
       "isVerified": true
     }
   },
+  "IsolationModeTokenVaultV1ActionsImplV13": {
+    "1": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x74595f2300fc98378ee58653d3c5576a20f87178eafc0764372ef431db90b5a9",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x5e0333087d3ebe403a6f6e40fa1f969e623a8d92820c32fb28c183d38ece7236",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x20bc90719638bb039a8bd8466f3b6fb710810bdd6f9317404c7d44a5eecd0ed8",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0xf7002263fabdf6886eb1b0c581c9259071cb8d249eb670aa29e0a9e55f644063",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x2d949c272007c115c44b9dbf6ae2c4ad6e24f37c1d477dc69f5ec44068ec9fb5",
+      "isVerified": true
+    },
+    "5330": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0xa1026e3d086ef1c25ee5239341c65044a76d036542f8c26539ca315ddb48f55d",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x85a1d95d84c2ccb6fdcd12b3e9984828c1359459cd57a623fa108b059762ed6b",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x029528dd1646a6fd2d9e348261d8e5c6664bd00533c4a1b4aedc25a91dbe1e18",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0xb5f29c9f81a17226b8d5e78c6dc9cab93c279481ce8d2586281a758b3261e933",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0x183A1A3F1d8816eEe71B0720D9444934891BdbBd",
+      "transaction": "0x267df7281bd2ef0536aaf811e84a1b12a7a472a88316d046011ae7d442f5a42b",
+      "isVerified": true
+    }
+  },
   "JonesIsolationModeTokenVaultMigratorV1": {
     "42161": {
       "address": "0x6b4ab9B50f451F58f41A36BcA95d61Dd02c384a8",
@@ -6111,6 +6264,13 @@
     "42161": {
       "address": "0xD29e150b34c76C6b719B7B6adeA52629e2f815Be",
       "transaction": "0x06c487810333ef18b58c0c42f9a6e3eeb60335c65047596c958a8aa5da998a49",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeTokenVaultV9": {
+    "42161": {
+      "address": "0xb6CaC2a3E4a0549fDF6ab4Ae355DB4b6E6D2B598",
+      "transaction": "0xac802464f87e676f0608ca0a399cc6d9b1c6ddf8d41f64efc2dde48075875cb8",
       "isVerified": true
     }
   },
@@ -8596,6 +8756,20 @@
       "isVerified": true
     }
   },
+  "PendlePtcmETHFeb2025IsolationModeTokenVaultV8": {
+    "5000": {
+      "address": "0xffA43e13D041Fcd80a88101f82fb757Fa6942F68",
+      "transaction": "0xe4370639fd3d658c7ba231557816a9ebe049b71b7ce762420c2fca3425ebe5c4",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeTokenVaultV9": {
+    "5000": {
+      "address": "0xB350d1a3B6fD94Eaa26c7eDFE17EAB4D7ba97E16",
+      "transaction": "0xb2f1f8baa0c7ac60cee1f0847851e17529992322a8e54f356197849a49ef38fc",
+      "isVerified": true
+    }
+  },
   "PendlePtcmETHFeb2025IsolationModeUnwrapperTraderV3": {
     "5000": {
       "address": "0x0D8724Ee17AB67B42a07d5FeAC99218019b534Ec",
@@ -8680,6 +8854,13 @@
       "isVerified": true
     }
   },
+  "PendlePtEzETHJun2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x31d873A6e40538DD03d72355c7C21d86f3811a6f",
+      "transaction": "0xadd26a8fc62f5f3500f32859dcf72058a81e0a36d97b6cfc30e2e79165a8b48e",
+      "isVerified": true
+    }
+  },
   "PendlePtEzETHJun2024IsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x561bFE6479B84785e01442422Aef5ae728d3C9A6",
@@ -8761,6 +8942,13 @@
     "42161": {
       "address": "0x1bf0536A450CF1E6eb18e889C1A62E013074E402",
       "transaction": "0x1f58fb63cc0eadea4ad413cb7cfcbcebf647ffaae7ac4978b15bbc690d37ebf3",
+      "isVerified": true
+    }
+  },
+  "PendlePtEzETHSep2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x21e1822fACECE8Ea4a938Eb5eF7CB0d12bE84058",
+      "transaction": "0x4d442d51b57495605b4910bcf8ce233ad4777fb662b22927201affa77c100a2d",
       "isVerified": true
     }
   },
@@ -8866,6 +9054,13 @@
     "42161": {
       "address": "0x2593367e0d5750C87fDb426e4A2E70a3185dBaF3",
       "transaction": "0x3db11cdac4c05b18cefbcca2daf95d405d574192f03f8aba0a90d04da72aefec",
+      "isVerified": true
+    }
+  },
+  "PendlePtGLPMar2024IsolationModeTokenVaultV11": {
+    "42161": {
+      "address": "0x4DFb57fACD78e0AaF234027508e01DF3408b7953",
+      "transaction": "0xccf0d0c345e3f219e7d947d3aabc30bbdf3748df544c2dd920c42dc7fbd62409",
       "isVerified": true
     }
   },
@@ -8981,6 +9176,13 @@
       "isVerified": true
     }
   },
+  "PendlePtGLPSep2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x6c40a01667F6a1bABD47318E95bd1fE5674a1557",
+      "transaction": "0x3d3f9c5e3ef499db57a682406b190c8aa49e31a69e35bd0e96490f0772c5b0ee",
+      "isVerified": true
+    }
+  },
   "PendlePtGLPSep2024IsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x202c0759C4125C79C29840e2c694b3807ce29a10",
@@ -9079,6 +9281,20 @@
       "isVerified": true
     }
   },
+  "PendlePtmETHDec2024IsolationModeTokenVaultV8": {
+    "5000": {
+      "address": "0x08Ee12A438a0f63c8df7d18F8847441B9096bAbC",
+      "transaction": "0xb949ff8ea75b22feaafb04d7cb705976814e10ffa857e9660299136047b39e10",
+      "isVerified": true
+    }
+  },
+  "PendlePtmETHDec2024IsolationModeTokenVaultV9": {
+    "5000": {
+      "address": "0xB863F464a44E3ff81f48505eAB97fA6b968741E5",
+      "transaction": "0x3b0c8aa3bdfea7a1e1a8d492056e8dbe1378506c0b8b7f9bd2dcbdc97e2256c0",
+      "isVerified": true
+    }
+  },
   "PendlePtmETHDec2024IsolationModeUnwrapperTraderV3": {
     "5000": {
       "address": "0x63BD442334D457B58742a72B88abeaeFfef6D451",
@@ -9160,6 +9376,20 @@
     "5000": {
       "address": "0x5889F6C03824DB94AD1Ba1176F2078a035b9fE14",
       "transaction": "0xb44f1a5bf03df6a5a2de74731e14c60a3c6736be6f07a4568b61c96ac1bd17b8",
+      "isVerified": true
+    }
+  },
+  "PendlePtMntOct2024IsolationModeTokenVaultV8": {
+    "5000": {
+      "address": "0x6994bcc133eA6dB938616265Dc3C37642a6234c5",
+      "transaction": "0xdc67bc93e032aa0fd5c1dd8a82729778a4e4c634c968524c62ff3b412eef37f5",
+      "isVerified": true
+    }
+  },
+  "PendlePtMntOct2024IsolationModeTokenVaultV9": {
+    "5000": {
+      "address": "0xC5b21dc3465089b48EE9b4106a037caCc144bAE3",
+      "transaction": "0xa77f7b42dd5bd5a9179bc186463d206a69d7dfb4b5ce140c0bce8b22448adff6",
       "isVerified": true
     }
   },
@@ -9265,6 +9495,13 @@
     "42161": {
       "address": "0x3a80C44cEF4191eed6b91e454bc1e56a3294Cf0B",
       "transaction": "0xdd62ecabd6aecd88816d110dcbda742aff9bd2b1c53d7531ed7d061d20990738",
+      "isVerified": true
+    }
+  },
+  "PendlePtREthJun2025IsolationModeTokenVaultV11": {
+    "42161": {
+      "address": "0x4b68ABCCdeE18641F9fE0B76541A26Aa8DC7E7C6",
+      "transaction": "0x4c025b83d71a7ea91bbe557a9b6f1477ee53d24e8d9b2c363234bc16116b9843",
       "isVerified": true
     }
   },
@@ -9380,6 +9617,13 @@
       "isVerified": true
     }
   },
+  "PendlePtRsETHDec2024IsolationModeTokenVaultV6": {
+    "42161": {
+      "address": "0xbEf173d036E568d7CaB4D96b8115Ac329cEaB04c",
+      "transaction": "0xf76bd175d6b1386090733f1dc4dfc45286a84c0ce61315b061566a50df0307f6",
+      "isVerified": true
+    }
+  },
   "PendlePtRsETHDec2024IsolationModeUnwrapperTraderV3": {
     "42161": {
       "address": "0x64429D6681aF74174913B74Ac457FDF9C890B76E",
@@ -9454,6 +9698,13 @@
     "42161": {
       "address": "0x7721bdda18cF5C304295aC8824f1Da2910723660",
       "transaction": "0x660fa026c0b2468f24c6ee04578ce7c6065f6992f49a32c282020375f61f3b23",
+      "isVerified": true
+    }
+  },
+  "PendlePtRsETHSep2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0xe7f4735dC6985F9C6609E842D56A7CE53C3c1613",
+      "transaction": "0x37e213750b5a6e831e628dfaad636ec494bd25cf66fd10a906c061b7c13cef51",
       "isVerified": true
     }
   },
@@ -9545,6 +9796,20 @@
     "5000": {
       "address": "0x7d5D7512E4cf3c4a7855c73F74cFe509cA8D86aC",
       "transaction": "0x41629668ba09f24e247dd986d2922e97847b3c07d2d83d38cbf5e6ad404f8bcd",
+      "isVerified": true
+    }
+  },
+  "PendlePtUSDeDec2024IsolationModeTokenVaultV9": {
+    "5000": {
+      "address": "0x00A816082DCA91C58AE14E43312Acee32e30a30b",
+      "transaction": "0x342f7426b0e2f1aaf24257a90e76f80ce875154fce4b86ce2cf134fe871a9736",
+      "isVerified": true
+    }
+  },
+  "PendlePtUSDeDec2024IsolationModeTokenVaultV10": {
+    "5000": {
+      "address": "0x650e7A64A8ac7BcB390c89138D386Ac2ed467545",
+      "transaction": "0x8180cc3d6a1e92d5e3e7a2d1e252b83f70414d71a6b2151fe34ed03761028b12",
       "isVerified": true
     }
   },
@@ -9646,6 +9911,20 @@
       "isVerified": true
     }
   },
+  "PendlePtUSDeJul2024IsolationModeTokenVaultV10": {
+    "5000": {
+      "address": "0xb21F7B30261fB21829679BD3F8d2Be3909d3EFD6",
+      "transaction": "0x5988d24aaa10ec0d66e52c5658c9721a69da991c06c789ab7996ca43544bb57f",
+      "isVerified": true
+    }
+  },
+  "PendlePtUSDeJul2024IsolationModeTokenVaultV11": {
+    "5000": {
+      "address": "0x06731E802E329B0dDB1D4ea3DF0f4c3b7a702F2E",
+      "transaction": "0x15633b75f23abcbd409d0c9f6f29f6def2a13a11a8365203fbe9475994a89235",
+      "isVerified": true
+    }
+  },
   "PendlePtUSDeJul2024IsolationModeUnwrapperTraderV3": {
     "5000": {
       "address": "0xDfB6BAA334712cBBeb26B7537f62B81C2a87B1E8",
@@ -9720,6 +9999,13 @@
     "42161": {
       "address": "0x98dF2C5C3D5Df3BbD11fd873da2F51A3434810AD",
       "transaction": "0x5256830562619c68c247482654e4c5085b6d598309790a4fdf0e647457b2c75e",
+      "isVerified": true
+    }
+  },
+  "PendlePtWeETHApr2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x57CFFa52a0C155ac04d1c9b3dd12cE3eeE823004",
+      "transaction": "0x434da482772864ced5b16e7ad4c710c89027234d16166de6397d2fa9e2bd7614",
       "isVerified": true
     }
   },
@@ -9807,6 +10093,13 @@
       "isVerified": true
     }
   },
+  "PendlePtWeETHDec2024IsolationModeTokenVaultV6": {
+    "42161": {
+      "address": "0x1Fd3d48b93988cdd92b8B68B0e000F438a06aCC7",
+      "transaction": "0xe6ca3a2c3356e74a1d0ee8be8ba6bcb57b92cc97a1bc648ffb5a32ecab6048d7",
+      "isVerified": true
+    }
+  },
   "PendlePtWeETHDec2024IsolationModeUnwrapperTraderV3": {
     "42161": {
       "address": "0x68ae4eC21721DF90191270E7E143B6De36913245",
@@ -9881,6 +10174,13 @@
     "42161": {
       "address": "0x7282f568Cd27133bC6a970952105596E8c059847",
       "transaction": "0xcbc9278c427548c4012d7d2fc2e5710b1e5531c6ecd66a0258c02ac9cb850705",
+      "isVerified": true
+    }
+  },
+  "PendlePtWeETHJun2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x7e7f757ad08De4A3F0FAeA110d4Ae6BE1875A385",
+      "transaction": "0xa50601db276cdbb75b6edc6eb4be8206bc63770e86ef09fc982bf4fd0a5be616",
       "isVerified": true
     }
   },
@@ -9965,6 +10265,13 @@
     "42161": {
       "address": "0x1Bfa0534aCDb33919A4de68785770Bb027B3E54f",
       "transaction": "0x1f9130484bf047247c92844869a8d112648dff90bc1d57ca8b09a265c81409b2",
+      "isVerified": true
+    }
+  },
+  "PendlePtWeETHSep2024IsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x0385c12Be52d79DB96d056095d5eccfd81eA5eDe",
+      "transaction": "0x5631dd47510d11114b532cf09acea8518b0f0664538848e81496f37c08eae416",
       "isVerified": true
     }
   },
@@ -10070,6 +10377,13 @@
     "42161": {
       "address": "0x5755879348b02e67052D7A37b19536f2E0F8f42C",
       "transaction": "0x73aa756f336eb5cea23342a554e5863dec5fe6a0936126c006495c264679746b",
+      "isVerified": true
+    }
+  },
+  "PendlePtWstEthJun2024IsolationModeTokenVaultV11": {
+    "42161": {
+      "address": "0xE64287e94a63cA8904b5790d48dFF820545F8349",
+      "transaction": "0x6aeff32a6593279e4f7ba7ab1a8c8c491c69419ab2ac73d8b3c5a43363bcb5be",
       "isVerified": true
     }
   },
@@ -10217,6 +10531,13 @@
     "42161": {
       "address": "0x01bd4c3db03657deD6A2815F798604F394fA24Ad",
       "transaction": "0x695f74fc4c34f73de3674f3ec5af5d20b9c221943c724b51ecad0bfe83f50c40",
+      "isVerified": true
+    }
+  },
+  "PendlePtWstEthJun2025IsolationModeTokenVaultV11": {
+    "42161": {
+      "address": "0xaA396f0AC553e95f1a32450601F1c93C603FC7A4",
+      "transaction": "0x53fc29c076b1e81882dbe9d63775a4186cd1e6b1c6d7c80c75a84b95f0164452",
       "isVerified": true
     }
   },
@@ -10454,6 +10775,13 @@
       "isVerified": true
     }
   },
+  "PendleYtGLPMar2024IsolationModeTokenVaultV10": {
+    "42161": {
+      "address": "0xe2E5346F326E8d933D201d6E2DCF62a70C36c8Ec",
+      "transaction": "0x97ddac1018fc4bfc063164619ba9767903a9e9cff44ff02828b49300b4e94dd9",
+      "isVerified": true
+    }
+  },
   "PendleYtGLPMar2024IsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x921a2A4dCB88d7430A6CcB59b77BF268fa49ffA6",
@@ -10580,6 +10908,13 @@
       "isVerified": true
     }
   },
+  "PlutusVaultGLPIsolationModeTokenVaultV11": {
+    "42161": {
+      "address": "0xdFe893FcdBd9844A14293C214b54b224436d01B3",
+      "transaction": "0x10d61830ad7833806226028980749bd526b597f092598126a3ad95470b549657",
+      "isVerified": true
+    }
+  },
   "PlutusVaultGLPIsolationModeUnwrapperTraderV1": {
     "42161": {
       "address": "0xB5010ba20fD127aF143cCFd9d77fd4c6923f6d37",
@@ -10696,6 +11031,20 @@
     "80094": {
       "address": "0xaD52BbFfD959b17A14c03B34f61A8e5C98c94A94",
       "transaction": "0xa821e8424835266b24dffd2913e2ea90c5aa884525d08bce970fc7bee1b9c3ec",
+      "isVerified": true
+    }
+  },
+  "POLIsolationModeTokenVaultImplementationV3": {
+    "80094": {
+      "address": "0xe75e2Bebd366157e0DC26cC9eC7AEa93e90a6663",
+      "transaction": "0x88db7d6c9f3bf853baf2e665448046695dcd4234690b8d8bdefd101cc983e124",
+      "isVerified": true
+    }
+  },
+  "POLIsolationModeTokenVaultImplementationV4": {
+    "80094": {
+      "address": "0x5cb6277E93DCB7c3D3E79C3317899e2DD7ffD72B",
+      "transaction": "0x8d034fd4a1aad080cf6ea379b83de1af1bbe593666709a335285775bded59ff8",
       "isVerified": true
     }
   },
@@ -11262,6 +11611,20 @@
     "5000": {
       "address": "0x13D2e6AB25cdAe48AdCE277CcE73249E4b56Eb4D",
       "transaction": "0x5c3051f7ae16e65971a1432cc3cc390e07ba7ed23a7e8bf91a27e222594a46c7",
+      "isVerified": true
+    }
+  },
+  "WMNTIsolationModeTokenVaultV9": {
+    "5000": {
+      "address": "0x9555C1031beFD00B0971A941d9E0570cAC169F4F",
+      "transaction": "0x413052769dc420b789af389c4424d2e720994261643e4094ee6e53c86c8028d8",
+      "isVerified": true
+    }
+  },
+  "WMNTIsolationModeTokenVaultV10": {
+    "5000": {
+      "address": "0x807D2132071768842d79b90a68C3273D24AFA6c6",
+      "transaction": "0x299c90cdfade51076b8add3b9fdd1dc6028fbb22394752a81c430569b4fd1446",
       "isVerified": true
     }
   }
