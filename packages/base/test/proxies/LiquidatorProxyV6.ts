@@ -48,7 +48,7 @@ describe('LiquidatorProxyV6', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 221_500_000,
+      blockNumber: 417_155_000,
     });
 
     await createAndUpgradeDolomiteRegistry(core);
@@ -68,7 +68,8 @@ describe('LiquidatorProxyV6', () => {
         core.expiry.address,
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
-        core.liquidatorAssetRegistry.address
+        core.liquidatorAssetRegistry.address,
+        core.dolomiteAccountRiskOverrideSetterProxy.address
       ],
     );
     const data = await liquidatorProxyImplementation.populateTransaction.initialize();
@@ -81,6 +82,7 @@ describe('LiquidatorProxyV6', () => {
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
     await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
+    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('.95'));
 
     await setupWETHBalance(core, core.hhUser2, parseEther('5'), core.dolomiteMargin);
     await core.tokens.weth
@@ -137,6 +139,68 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidate', () => {
+    it.only('should work normally with partial liquidation and no rake', async () => {
+      await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
+      await core.borrowPositionProxyV2
+        .connect(core.hhUser1)
+        .transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.weth,
+          parseEther('1'),
+          BalanceCheckFlag.None,
+        );
+
+      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.dai,
+        MAX_UINT_256_BI,
+        core.marketIds.weth,
+        parseEther('.6'),
+        core,
+      );
+      await liquidatorProxy.connect(core.hhUser2).liquidate({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+
+      /*
+       * held = 1000 DAI
+       * owed = 1 WETH
+       * heldPrice = $1
+       * owedPrice = $900
+       * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
+       *
+       * After liquidation action:
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5 - 2.25 = 470.25
+       *     solid account weth = -.5
+       *     dolomite rake account dai = 2.25 DAI
+       *
+       * After trade action where solid account swaps 472.5 dai for .6 weth:
+       *     solid account dai = 0
+       *     solid account weth = .6
+       */
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
+    });
+
     it('should work normally with 10% rake', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);

@@ -31,6 +31,7 @@ import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 
 
 /**
@@ -41,6 +42,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
+    using DecimalLib for uint256;
     using TypesLib for IDolomiteMargin.Par;
     using DolomiteMarginVersionWrapperLib for *;
 
@@ -91,10 +93,14 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     // ============ Immutable Fields ============
 
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
+    IDolomiteAccountRiskOverrideSetter public immutable DOLOMITE_ACCOUNT_RISK_OVERRIDE; // solhint-disable-line var-name-mixedcase
+
+    uint256 public partialLiquidationThreshold;
 
     // ================ Constructor ===============
 
     constructor(
+        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
@@ -105,6 +111,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         EXPIRY = IExpiry(_expiry);
+        DOLOMITE_ACCOUNT_RISK_OVERRIDE = IDolomiteAccountRiskOverrideSetter(_dolomiteAccountRiskOverride);
     }
 
     // ============ Internal Functions ============
@@ -339,11 +346,32 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
      * Calculate the maximum amount that can be liquidated on `liquidAccount`
      */
     function _calculateAndSetMaxLiquidationAmount(
-        LiquidatorProxyCache memory _cache
+        LiquidatorProxyCache memory _cache,
+        LiquidatorProxyConstants memory _constants
     )
         internal
-        pure
+        view
     {
+        (IDolomiteMargin.Decimal memory marginRatioOverride,) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
+        (
+            IDolomiteMargin.MonetaryValue memory supplyValue,
+            IDolomiteMargin.MonetaryValue memory borrowValue
+        ) = _getAdjustedAccountValues(
+            _constants.markets,
+            _constants.liquidAccount,
+            _constants.liquidMarkets,
+            marginRatioOverride
+        );
+
+        if (marginRatioOverride.value == 0) {
+            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
+        }
+        uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
+        uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+        if (partialLiquidationThreshold > 0 && healthFactor > partialLiquidationThreshold) {
+            _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
+        }
+
         uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
         uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
 

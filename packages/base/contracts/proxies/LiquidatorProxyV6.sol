@@ -71,9 +71,11 @@ contract LiquidatorProxyV6 is
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry
+        address _liquidatorAssetRegistry,
+        address _dolomiteAccountRiskOverride
     )
     BaseLiquidatorProxy(
+        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
@@ -120,7 +122,23 @@ contract LiquidatorProxyV6 is
     function ownerSetDolomiteRake(
         IDolomiteStructs.Decimal memory _dolomiteRake
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetDolomiteRake(_dolomiteRake);
+        Require.that(
+            _dolomiteRake.value < _ONE,
+            _FILE,
+            "Invalid dolomite rake"
+        );
+        dolomiteRake = _dolomiteRake;
+        emit DolomiteRakeSet(_dolomiteRake);
+    }
+
+    function ownerSetPartialLiquidationThreshold(uint256 _partialLiquidationThreshold) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _partialLiquidationThreshold < _ONE,
+            _FILE,
+            "Invalid partial threshold"
+        );
+        partialLiquidationThreshold = _partialLiquidationThreshold;
+        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
     }
 
     // ============ Internal Functions ============
@@ -180,7 +198,7 @@ contract LiquidatorProxyV6 is
         _checkBasicRequirements(constants);
 
         // get the max liquidation amount
-        _calculateAndSetMaxLiquidationAmount(liquidatorCache);
+        _calculateAndSetMaxLiquidationAmount(liquidatorCache, constants);
 
         (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
         _calculateAndSetActualLiquidationAmount(
@@ -250,13 +268,6 @@ contract LiquidatorProxyV6 is
     function _ownerSetDolomiteRake(
         IDolomiteStructs.Decimal memory _dolomiteRake
     ) internal {
-        Require.that(
-            _dolomiteRake.value < _ONE,
-            _FILE,
-            "Invalid dolomite rake"
-        );
-        dolomiteRake = _dolomiteRake;
-        emit DolomiteRakeSet(_dolomiteRake);
     }
 
     function _appendWithdrawRewardAction(
