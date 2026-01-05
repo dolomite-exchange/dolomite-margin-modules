@@ -364,7 +364,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         );
 
         if (marginRatioOverride.value == 0) {
-            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
+            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio().onePlus();
         }
         uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
