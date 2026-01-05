@@ -6,6 +6,7 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { TxResult } from '@dolomite-margin/dist/src';
 import { FunctionFragment } from '@ethersproject/abi';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
@@ -44,6 +45,7 @@ export interface EncodedTransaction {
 
 export interface DenJsonUpload {
   addExecuteImmediatelyTransactions?: boolean;
+  logGasUsage?: boolean;
   chainId: DolomiteNetwork;
   transactions: EncodedTransaction[];
 }
@@ -161,6 +163,12 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
             throw new Error(invalidOwnerError);
           }
         }
+
+        if (result.upload.logGasUsage) {
+          const index = result.upload.transactions.indexOf(transaction);
+          const receipt = await txResult.wait();
+          console.log(`\tGas usage for submission [${index}]: ${receipt.gasUsed.toNumber().toLocaleString()}`);
+        }
       }
 
       let secondsTimeLocked: number;
@@ -187,22 +195,29 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       async function executeAdminFunctions(transactionIds: BigNumberish[]) {
         for (const transactionId of transactionIds) {
           try {
+            let txResult: TransactionResponse | undefined;
             if (ownerAddress === result.core.ownerAdapterV1.address) {
-              await executeTransactionAndTraceOnFailure(result.core, () =>
+              txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
                 result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
               );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-              await executeTransactionAndTraceOnFailure(result.core, () =>
+              txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
                 result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
               );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
-              await executeTransactionAndTraceOnFailure(result.core, () =>
+              txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
                 result.core.delayedMultiSig.executeTransaction(transactionId, {}),
               );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');
             } else {
               return Promise.reject(new Error(invalidOwnerError));
+            }
+
+            if (result.upload.logGasUsage && txResult) {
+              const receipt = await txResult.wait();
+              const gasUsed = receipt.gasUsed.toNumber().toLocaleString();
+              console.log(`\tGas usage for execution[${transactionId}]: ${gasUsed}`);
             }
           } catch (e: any) {
             const transactionIndex = BigNumber.from(transactionId).sub(transactionIds[0]).toNumber();

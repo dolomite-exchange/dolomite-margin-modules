@@ -260,10 +260,10 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     tokenAddress: DPT_WE_ETH_JUN_2024_MAP[network].address,
   },
   [DJ_USDC_V2[network].marketId]: {
-    contractName: 'JonesUSDCIsolationModeTokenVaultV3',
+    contractName: 'JonesUSDCIsolationModeTokenVaultV4',
     contractRenameWithoutVersion: 'JonesUSDCV2IsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('JonesUSDCV2IsolationModeTokenVault', network),
-    constructorParams: [],
+    constructorParams: ['0x52256ef863a713Ef349ae6E97A7E8f35785145dE'],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
     tokenAddress: DJ_USDC_V2[network].address,
