@@ -29,6 +29,7 @@ import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolat
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 
 
 /**
@@ -89,7 +90,8 @@ contract IsolationModeFreezableLiquidatorProxy is
             "Invalid liquid account",
             _params.liquidAccount.owner
         );
-        MarketInfo[] memory marketInfos = _getMarketInfos(
+        MarketInfo[] memory marketInfos = LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
             /* _solidMarketIds = */ new uint256[](0),
             DOLOMITE_MARGIN().getAccountMarketsWithBalances(_params.liquidAccount)
         );
