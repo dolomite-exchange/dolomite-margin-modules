@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
  // solhint-disable max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IsolationModeFreezableLiquidatorProxy } from "../proxies/IsolationModeFreezableLiquidatorProxy.sol";
+import { LiquidatorProxyLib } from "../proxies/LiquidatorProxyLib.sol";
  // solhint-enable max-line-length
 
 
@@ -84,7 +85,8 @@ contract TestIsolationModeFreezableLiquidatorProxy is
     function testCheckIsLiquidatable(
         IDolomiteStructs.AccountInfo memory _liquidAccount
     ) external view {
-        MarketInfo[] memory marketInfos = _getMarketInfos(
+        MarketInfo[] memory marketInfos = LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
             /* _solidMarketIds = */ new uint256[](0),
             DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
         );

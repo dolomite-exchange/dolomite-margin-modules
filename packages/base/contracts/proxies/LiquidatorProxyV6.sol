@@ -32,6 +32,7 @@ import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
+import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 
 
 /**
@@ -184,18 +185,18 @@ contract LiquidatorProxyV6 is
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
 
-        _checkConstants(constants);
+        LiquidatorProxyLib.checkConstants(DOLOMITE_MARGIN(), constants);
 
         constants.liquidMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.liquidAccount);
-        constants.markets = _getMarketInfos(
-            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidateParams.solidAccount),
+        constants.markets = LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.solidAccount),
             constants.liquidMarkets
         );
-
         LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
 
         // validate the msg.sender and that the expiration matches (if being used)
-        _checkBasicRequirements(constants);
+        LiquidatorProxyLib.checkBasicRequirements(DOLOMITE_MARGIN(), EXPIRY, constants);
 
         // get the max liquidation amount
         _calculateAndSetMaxLiquidationAmount(liquidatorCache, constants);

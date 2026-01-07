@@ -26,11 +26,8 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { BitsLib } from "../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { Require } from "../protocol/lib/Require.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 
 
@@ -43,7 +40,6 @@ import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolo
 abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
     using DecimalLib for uint256;
-    using TypesLib for IDolomiteMargin.Par;
     using DolomiteMarginVersionWrapperLib for *;
 
     // ============ Structs ============
@@ -176,90 +172,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     }
 
     /**
-     * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
-     *    not just what's being liquidated)
-     */
-    function _checkConstants(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    {
-        // panic if the developer didn't set these variables already
-        assert(_constants.solidAccount.owner != address(0));
-        assert(_constants.liquidAccount.owner != address(0));
-
-        Require.that(
-            _constants.owedMarket != _constants.heldMarket,
-            _FILE,
-            "Owed market equals held market",
-            _constants.owedMarket
-        );
-
-        Require.that(
-            !DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
-            _FILE,
-            "Owed market cannot be positive",
-            _constants.owedMarket
-        );
-
-        Require.that(
-            DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
-            _FILE,
-            "Held market cannot be negative",
-            _constants.heldMarket
-        );
-
-        Require.that(
-            uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
-            _FILE,
-            "Expiration timestamp overflows",
-            _constants.expirationTimestamp
-        );
-
-        Require.that(
-            _constants.expirationTimestamp <= block.timestamp,
-            _FILE,
-            "Borrow not yet expired",
-            _constants.expirationTimestamp
-        );
-    }
-
-    /**
-     * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender has the permission to use the solid account
-     *  - Require that the liquid account is liquidatable if using an expiration timestamp
-     */
-    function _checkBasicRequirements(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    {
-        Require.that(
-            _constants.solidAccount.owner == msg.sender
-                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)
-                || DOLOMITE_MARGIN().getIsGlobalOperator(msg.sender),
-            _FILE,
-            "Sender not operator",
-            msg.sender
-        );
-
-        if (_constants.expirationTimestamp != 0) {
-            // check the expiration is valid
-            uint32 expirationTimestamp = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
-            Require.that(
-                expirationTimestamp == _constants.expirationTimestamp,
-                _FILE,
-                "Expiration timestamp mismatch",
-                expirationTimestamp,
-                _constants.expirationTimestamp
-            );
-        }
-    }
-
-    /**
      * Gets the current total supplyValue and borrowValue for some account. Takes into account what
      * the current index will be once updated.
      */
@@ -309,37 +221,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
             /* _adjustForMarginPremiums = */ true,
             _marginRatioOverride
         );
-    }
-
-    function _getMarketInfos(
-        uint256[] memory _solidMarketIds,
-        uint256[] memory _liquidMarketIds
-    ) internal view returns (MarketInfo[] memory) {
-        uint[] memory marketBitmaps = BitsLib.createBitmaps(DOLOMITE_MARGIN().getNumMarkets());
-        uint256 marketsLength = 0;
-        marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
-        marketsLength = _addMarketsToBitmap(_liquidMarketIds, marketBitmaps, marketsLength);
-
-        uint256 counter = 0;
-        MarketInfo[] memory marketInfos = new MarketInfo[](marketsLength);
-        for (uint256 i; i < marketBitmaps.length && counter != marketsLength; ++i) {
-            uint256 bitmap = marketBitmaps[i];
-            while (bitmap != 0) {
-                uint256 nextSetBit = BitsLib.getLeastSignificantBit(bitmap);
-                uint256 marketId = BitsLib.getMarketIdFromBit(i, nextSetBit);
-
-                marketInfos[counter++] = MarketInfo({
-                    marketId: marketId,
-                    price: DOLOMITE_MARGIN().getMarketPrice(marketId),
-                    index: DOLOMITE_MARGIN().getMarketCurrentIndex(marketId)
-                });
-
-                // unset the set bit
-                bitmap = BitsLib.unsetBit(bitmap, nextSetBit);
-            }
-        }
-
-        return marketInfos;
     }
 
     /**
@@ -505,20 +386,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         }
 
         return (supplyValue, borrowValue);
-    }
-
-    function _addMarketsToBitmap(
-        uint256[] memory _markets,
-        uint256[] memory _bitmaps,
-        uint256 _marketsLength
-    ) private pure returns (uint) {
-        for (uint256 i; i < _markets.length; ++i) {
-            if (!BitsLib.hasBit(_bitmaps, _markets[i])) {
-                BitsLib.setBit(_bitmaps, _markets[i]);
-                _marketsLength += 1;
-            }
-        }
-        return _marketsLength;
     }
 
     function _binarySearch(
