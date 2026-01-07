@@ -250,7 +250,9 @@ contract LiquidatorProxyV6 is
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            _liquidateParams.inputAmountWei - dolomiteRakeAmount,
+            _liquidateParams.inputAmountWei == liquidatorCache.solidHeldUpdateWithReward
+                ? _liquidateParams.inputAmountWei - dolomiteRakeAmount
+                : _liquidateParams.inputAmountWei,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -263,11 +265,6 @@ contract LiquidatorProxyV6 is
             );
         }
         genericCache.dolomiteMargin.operate(accounts, actions);
-    }
-
-    function _ownerSetDolomiteRake(
-        IDolomiteStructs.Decimal memory _dolomiteRake
-    ) internal {
     }
 
     function _appendWithdrawRewardAction(
@@ -352,8 +349,13 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount;
+        if (_constants.expirationTimestamp > 0) {
+            dolomiteRakeAmount = 0;
+        } else {
+            uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
+            dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        }
 
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,

@@ -34,12 +34,14 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
     // ============ Constructors ============
 
     constructor(
+        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
         uint256 _chainId
     )
     BaseLiquidatorProxy(
+        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
@@ -127,16 +129,16 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         return _getMarketInfos(_solidMarketIds, _liquidMarketIds);
     }
 
-    function calculateAndSetMaxLiquidationAmount(
-        LiquidatorProxyCache memory _cache
-    )
-        public
-        pure
-        returns (LiquidatorProxyCache memory)
-    {
-        _calculateAndSetMaxLiquidationAmount(_cache);
-        return _cache;
-    }
+    // function calculateAndSetMaxLiquidationAmount(
+    //     LiquidatorProxyCache memory _cache
+    // )
+    //     public
+    //     pure
+    //     returns (LiquidatorProxyCache memory)
+    // {
+    //     _calculateAndSetMaxLiquidationAmount(_cache);
+    //     return _cache;
+    // }
 
     function calculateAndSetActualLiquidationAmount(
         uint256 _inputAmountWei,

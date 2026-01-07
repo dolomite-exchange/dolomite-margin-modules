@@ -352,26 +352,28 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         internal
         view
     {
-        (IDolomiteMargin.Decimal memory marginRatioOverride,) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
-        (
-            IDolomiteMargin.MonetaryValue memory supplyValue,
-            IDolomiteMargin.MonetaryValue memory borrowValue
-        ) = _getAdjustedAccountValues(
-            _constants.markets,
-            _constants.liquidAccount,
-            _constants.liquidMarkets,
-            marginRatioOverride
-        );
+        if (_constants.expirationTimestamp == 0) {
+            (IDolomiteMargin.Decimal memory marginRatioOverride,) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
+            (
+                IDolomiteMargin.MonetaryValue memory supplyValue,
+                IDolomiteMargin.MonetaryValue memory borrowValue
+            ) = _getAdjustedAccountValues(
+                _constants.markets,
+                _constants.liquidAccount,
+                _constants.liquidMarkets,
+                marginRatioOverride
+            );
 
-        if (marginRatioOverride.value == 0) {
-            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
-        }
-        marginRatioOverride = marginRatioOverride.onePlus();
+            if (marginRatioOverride.value == 0) {
+                marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
+            }
+            marginRatioOverride = marginRatioOverride.onePlus();
 
-        uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
-        uint256 healthFactor = collateralRatio.div(marginRatioOverride);
-        if (partialLiquidationThreshold > 0 && healthFactor > partialLiquidationThreshold) {
-            _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
+            uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
+            uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+            if (partialLiquidationThreshold > 0 && healthFactor > partialLiquidationThreshold) {
+                _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
+            }
         }
 
         uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;

@@ -71,9 +71,11 @@ contract LiquidatorProxyV6 is
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry
+        address _liquidatorAssetRegistry,
+        address _dolomiteAccountRiskOverride
     )
     BaseLiquidatorProxy(
+        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
@@ -120,7 +122,25 @@ contract LiquidatorProxyV6 is
     function ownerSetDolomiteRake(
         IDolomiteStructs.Decimal memory _dolomiteRake
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetDolomiteRake(_dolomiteRake);
+        if (_dolomiteRake.value < _ONE) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _dolomiteRake.value < _ONE,
+            _FILE,
+            "Invalid dolomite rake"
+        );
+        dolomiteRake = _dolomiteRake;
+        emit DolomiteRakeSet(_dolomiteRake);
+    }
+
+    function ownerSetPartialLiquidationThreshold(uint256 _partialLiquidationThreshold) external onlyDolomiteMarginOwner(msg.sender) {
+        if (_partialLiquidationThreshold < _ONE) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _partialLiquidationThreshold < _ONE,
+            _FILE,
+            "Invalid partial threshold"
+        );
+        partialLiquidationThreshold = _partialLiquidationThreshold;
+        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
     }
 
     // ============ Internal Functions ============
@@ -180,7 +200,7 @@ contract LiquidatorProxyV6 is
         _checkBasicRequirements(constants);
 
         // get the max liquidation amount
-        _calculateAndSetMaxLiquidationAmount(liquidatorCache);
+        _calculateAndSetMaxLiquidationAmount(liquidatorCache, constants);
 
         (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
         _calculateAndSetActualLiquidationAmount(
@@ -232,7 +252,9 @@ contract LiquidatorProxyV6 is
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            _liquidateParams.inputAmountWei - dolomiteRakeAmount,
+            _liquidateParams.inputAmountWei == liquidatorCache.solidHeldUpdateWithReward
+                ? _liquidateParams.inputAmountWei - dolomiteRakeAmount
+                : _liquidateParams.inputAmountWei,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -245,19 +267,6 @@ contract LiquidatorProxyV6 is
             );
         }
         genericCache.dolomiteMargin.operate(accounts, actions);
-    }
-
-    function _ownerSetDolomiteRake(
-        IDolomiteStructs.Decimal memory _dolomiteRake
-    ) internal {
-        if (_dolomiteRake.value < _ONE) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _dolomiteRake.value < _ONE,
-            _FILE,
-            "Invalid dolomite rake"
-        );
-        dolomiteRake = _dolomiteRake;
-        emit DolomiteRakeSet(_dolomiteRake);
     }
 
     function _appendWithdrawRewardAction(
@@ -343,8 +352,13 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice;
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
+        uint256 dolomiteRakeAmount;
+        if (_constants.expirationTimestamp > 0) {
+            dolomiteRakeAmount = 0;
+        } else {
+            uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
+            dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        }
 
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,

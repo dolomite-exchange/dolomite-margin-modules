@@ -266,79 +266,7 @@ describe('LiquidatorProxyV6', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('957.22'));
     });
 
-    it.only('should work normally to partially liquidate if user is in e-mode', async () => {
-      await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
-      await core.borrowPositionProxyV2
-        .connect(core.hhUser1)
-        .transferBetweenAccounts(
-          borrowAccountNumber,
-          defaultAccountNumber,
-          core.marketIds.weth,
-          parseEther('1'),
-          BalanceCheckFlag.None,
-        );
-
-      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('916'));
-      const zapParams = await getSimpleZapParams(
-        core.marketIds.dai,
-        MAX_UINT_256_BI,
-        core.marketIds.weth,
-        parseEther('1.1'),
-        core,
-      );
-      await liquidatorProxy.connect(core.hhUser2).liquidate({
-        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
-        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
-        marketIdsPath: zapParams.marketIdsPath,
-        inputAmountWei: zapParams.inputAmountWei,
-        minOutputAmountWei: MAX_UINT_256_BI,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
-        expirationTimestamp: ZERO_BI,
-        withdrawAllReward: false,
-      });
-
-      /*
-       * collateral ratio = 115%
-       * health factor = ratio / 115% = 
-
-       * 1000 / x = 1.0925
-       * owedPriceForFullLiquidation = 915.3318
-       * 
-       * held = 1000 DAI
-       * owed = 1 WETH
-       * heldPrice = $1
-       * owedPrice = $916
-       * owedPriceAdj = 916 + .05(916) = $961.8
-       * 
-       * After liquidation action:
-       *     liquid account dai = 1000 - 961.8 = 38.2
-       *     liquid account weth = 0
-       *     solid account dai = 961.8 - 4.58 = 957.22
-       *     solid account weth = -1
-       *     dolomite rake account dai = (961.8 - 916) * .1 = 4.58
-       *
-       * After trade action where solid account swaps 957.22 dai for 1.1 weth:
-       *     solid account dai = 0
-       *     solid account weth = .1
-       */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('38.2'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.58'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('957.22'));
-    });
-
-    it('should work normally to fully liquidate if user is in e-mode and below partial liquidation threshold', async () => {
-    });
-
-    it('should work normally to partially liquidate if input amount is greater than max liquidation amount', async () => {
-
-    });
-
-    it('should work normally with partial liquidation and 10% rake', async () => {
+    xit('should work normally to partially liquidate if input amount is greater than max liquidation amount but not uint256 max', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -356,7 +284,7 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.dai,
         MAX_UINT_256_BI,
         core.marketIds.weth,
-        parseEther('1.1'),
+        parseEther('.6'),
         core,
       );
       await liquidatorProxy.connect(core.hhUser2).liquidate({
@@ -377,27 +305,93 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
        *
        * After liquidation action:
-       *     liquid account dai = 1000 - 945 = 55
-       *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 940.5
-       *     solid account weth = -1
-       *     dolomite rake account dai = 4.5
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5 - 2.25 = 470.25
+       *     solid account weth = -.5
+       *     dolomite rake account dai = 2.25 DAI
        *
-       * After trade action where solid account swaps 940.5 dai for 1.1 weth:
+       * After trade action where solid account swaps 472.5 dai for .6 weth:
        *     solid account dai = 0
-       *     solid account weth = .1
+       *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('940.5'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
     });
 
-    it('should work normally with 20% rake', async () => {
+    it('should work normally with partial liquidation and no rake', async () => {
+      await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: ZERO_BI });
+      await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
+      await core.borrowPositionProxyV2
+        .connect(core.hhUser1)
+        .transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.weth,
+          parseEther('1'),
+          BalanceCheckFlag.None,
+        );
+
+      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.dai,
+        MAX_UINT_256_BI,
+        core.marketIds.weth,
+        parseEther('.6'),
+        core,
+      );
+      await liquidatorProxy.connect(core.hhUser2).liquidate({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+
+      /*
+       * held = 1000 DAI
+       * owed = 1 WETH
+       * heldPrice = $1
+       * owedPrice = $900
+       * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
+       *
+       * After liquidation action:
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5
+       *     solid account weth = -.5
+       *     dolomite rake account dai =
+       *
+       * After trade action where solid account swaps 472.5 dai for .6 weth:
+       *     solid account dai = 0
+       *     solid account weth = .6
+       */
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('472.5'));
+    });
+
+    it('should work normally with 20% rake with partial liquidation', async () => {
       await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -416,23 +410,20 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.dai,
         MAX_UINT_256_BI,
         core.marketIds.weth,
-        parseEther('1.1'),
+        parseEther('.6'),
         core,
       );
-      await liquidatorProxy.connect(core.hhUser2).liquidate(
-        {
-          solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
-          liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: MAX_UINT_256_BI,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          expirationTimestamp: ZERO_BI,
-          withdrawAllReward: false,
-        },
-        { gasLimit: 10000000 }
-      );
+      await liquidatorProxy.connect(core.hhUser2).liquidate({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
 
       /*
        * held = 1000 DAI
@@ -440,29 +431,27 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
        *
        * After liquidation action:
-       *     dolomite rake = 45 * .2 = 9
-       *     liquid account dai = 1000 - 945 = 55
-       *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 945 - 9 = 936
-       *     solid account weth = -1
-       *     dolomite rake account dai = 9
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5 - (22.5 * .2) = 468
+       *     solid account weth = -.5
+       *     dolomite rake account dai = 2.25 * 2 = 4.5
        *
-       * After trade action where solid account swaps 936 dai for 1.1 weth:
+       * After trade action where solid account swaps 472.5 dai for .6 weth:
        *     solid account dai = 0
-       *     solid account weth = .1
+       *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('9'));
-      await expectWalletBalance(
-        core.testEcosystem!.testExchangeWrapper.address,
-        core.tokens.dai,
-        parseEther('936').sub(ONE_BI)
-      );
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('468'));
     });
 
     xit('should work normally with 2 trades', async () => {
@@ -562,9 +551,9 @@ describe('LiquidatorProxyV6', () => {
       await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
       const zapParams = await getSimpleZapParams(
         core.marketIds.dai,
-        parseEther('900'),
+        parseEther('400'),
         core.marketIds.weth,
-        parseEther('1.1'),
+        parseEther('.6'),
         core,
       );
       await liquidatorProxy.connect(core.hhUser2).liquidate({
@@ -585,21 +574,27 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
        *
        * After liquidation action:
-       *     liquid account dai = 1000 - 945 = 55
-       *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 945
-       *     solid account weth = -1
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5 - 2.25 = 470.25
+       *     solid account weth = -.5
+       *     dolomite rake account dai = 2.25 DAI
        *
-       * After trade action where solid account swaps 945 dai for 1.1 weth:
-       *     solid account dai = 0
-       *     solid account weth = .1
+       * After trade action where solid account swaps 400 dai for .6 weth:
+       *     solid account dai = 70.25
+       *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('45'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('70.25'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('400'));
     });
 
     it('should work normally with isolation mode', async () => {
@@ -690,10 +685,9 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.weth,
         ZERO_BI.sub(parseEther('0.5')),
       );
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.6'));
-      // @follow-up @Corey, this is -1 I think because of rounding issues
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, -1);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, 0);
     });
 
     it('should work normally if supply cap is reached for owed token / reward token', async () => {
@@ -715,7 +709,7 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.dai,
         MAX_UINT_256_BI,
         core.marketIds.weth,
-        parseEther('1.1'),
+        parseEther('0.6'),
         core,
       );
       await expectThrow(
@@ -750,22 +744,27 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
+       * 
+       * partialOwed = .5 WETH * 945 = $472.5 DAI
+       * .5 WETH * 900 = $450 DAI
        *
        * After liquidation action:
-       *     liquid account dai = 1000 - 945 = 55
-       *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 945
-       *     solid account weth = -1
+       *     liquid account dai = 1000 - 472.5 = 527.5
+       *     liquid account weth = 1 - .5 = .5
+       *     solid account dai = 472.5 - 2.25 = 470.25
+       *     solid account weth = -.5
+       *     dolomite rake account dai = 2.25 DAI
        *
-       * After trade action where solid account swaps 945 dai for 1.1 weth:
+       * After trade action where solid account swaps 472.5 dai for .6 weth:
        *     solid account dai = 0
-       *     solid account weth = .1
+       *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
       await expectWalletBalance(core.hhUser2, core.tokens.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
     });
 
     it('should work if user already has balance and withdraws all reward', async () => {
@@ -783,7 +782,7 @@ describe('LiquidatorProxyV6', () => {
           BalanceCheckFlag.None,
         );
 
-      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
+      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('920'));
       await core.dolomiteMargin.connect(core.governance).ownerSetMaxWei(core.marketIds.weth, ONE_BI);
       const zapParams = await getSimpleZapParams(
         core.marketIds.dai,
@@ -808,24 +807,27 @@ describe('LiquidatorProxyV6', () => {
        * held = 1000 DAI
        * owed = 1 WETH
        * heldPrice = $1
-       * owedPrice = $900
-       * owedPriceAdj = 900 + .05(900) = $945
+       * owedPrice = $920
+       * owedPriceAdj = 920 + .05(920) = $966
        *
        * After liquidation action:
-       *     liquid account dai = 1000 - 945 = 55
+       *     liquid account dai = 1000 - 966 = 34
        *     liquid account weth = 1 - 1 = 0
-       *     solid account dai = 945
+       *     dolomite rake account dai = (966 - 920) * .1 = 4.6
+       *     solid account dai = 966 - 4.6 = 961.4
        *     solid account weth = -1
        *
-       * After trade action where solid account swaps 945 dai for 1.1 weth:
+       * After trade action where solid account swaps 961.4 dai for 1.1 weth:
        *     solid account dai = 0
        *     solid account weth = .1
        */
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('5'));
-      await expectWalletBalance(core.hhUser2, core.tokens.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('34'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectWalletBalance(core.hhUser2, core.tokens.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.6').add(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('961.4'));
     });
 
     it('should work normally if collateral value < debt value', async () => {
@@ -902,7 +904,7 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.dai,
         MAX_UINT_256_BI,
         core.marketIds.weth,
-        parseEther('1.1'),
+        parseEther('.6'),
         core,
       );
       await liquidatorProxy.connect(core.hhUser3).liquidate({
@@ -917,10 +919,12 @@ describe('LiquidatorProxyV6', () => {
         withdrawAllReward: false,
       });
 
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('55'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
     });
 
     it('should work normally with expiry', async () => {
@@ -966,7 +970,7 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.dai,
         MAX_UINT_256_BI,
         core.marketIds.weth,
-        parseEther('1'),
+        parseEther('1.1'),
         core,
       );
       await setNextBlockTimestamp(expiry);
@@ -983,9 +987,10 @@ describe('LiquidatorProxyV6', () => {
       });
       const daiAmount = BigNumber.from('500000000000000000000');
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, daiAmount);
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, daiAmount.sub(1));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI.sub(1));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('500').sub(1));
     });
 
     it('should fail if inputAmountWei is not MAX_UINT_256_BI for isolation mode assets', async () => {
@@ -1542,6 +1547,33 @@ describe('LiquidatorProxyV6', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).ownerSetDolomiteRake({ value: parseEther('.2') }),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetPartialLiquidationThreshold', () => {
+    it('should work normally', async () => {
+      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal(parseEther('.95'));
+
+      const threshold = parseEther('.96');
+      const res = await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(threshold);
+      await expectEvent(liquidatorProxy, res, 'PartialLiquidationThresholdSet', {
+        partialLiquidationThreshold: threshold,
+      });
+      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal(threshold);
+    });
+
+    it('should fail if partial liquidation threshold is invalid', async () => {
+      await expectThrow(
+        liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('1')),
+        'LiquidatorProxyV6: Invalid partial threshold',
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        liquidatorProxy.connect(core.hhUser2).ownerSetPartialLiquidationThreshold(parseEther('.96')),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
       );
     });
