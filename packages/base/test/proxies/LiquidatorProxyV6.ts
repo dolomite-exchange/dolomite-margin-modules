@@ -59,10 +59,11 @@ describe('LiquidatorProxyV6', () => {
 
     await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
 
+    const liquidatorProxyLib = await createContractWithName('LiquidatorProxyLib', []);
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
     const liquidatorProxyImplementation = await createContractWithLibrary(
       'TestLiquidatorProxyV6',
-      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      { GenericTraderProxyV2Lib: genericTraderLib.address, LiquidatorProxyLib: liquidatorProxyLib.address },
       [
         Network.ArbitrumOne,
         core.expiry.address,
@@ -178,7 +179,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -236,17 +237,17 @@ describe('LiquidatorProxyV6', () => {
 
       /*
        * collateral ratio = 115%
-       * health factor = ratio / 115% = 
+       * health factor = ratio / 115% =
 
        * 1000 / x = 1.0925
        * owedPriceForFullLiquidation = 915.3318
-       * 
+       *
        * held = 1000 DAI
        * owed = 1 WETH
        * heldPrice = $1
        * owedPrice = $916
        * owedPriceAdj = 916 + .05(916) = $961.8
-       * 
+       *
        * After liquidation action:
        *     liquid account dai = 1000 - 961.8 = 38.2
        *     liquid account weth = 0
@@ -305,7 +306,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -368,7 +369,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -431,7 +432,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -574,7 +575,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -744,7 +745,7 @@ describe('LiquidatorProxyV6', () => {
        * heldPrice = $1
        * owedPrice = $900
        * owedPriceAdj = 900 + .05(900) = $945
-       * 
+       *
        * partialOwed = .5 WETH * 945 = $472.5 DAI
        * .5 WETH * 900 = $450 DAI
        *
@@ -1064,7 +1065,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Owed market equals held market <${core.marketIds.dai.toString()}>`,
+        `LiquidatorProxyLib: Owed market equals held market <${core.marketIds.dai.toString()}>`,
       );
     });
 
@@ -1091,7 +1092,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Owed market cannot be positive <${core.marketIds.weth.toString()}>`,
+        `LiquidatorProxyLib: Owed market cannot be positive <${core.marketIds.weth.toString()}>`,
       );
     });
 
@@ -1136,7 +1137,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Held market cannot be negative <${core.marketIds.usdt.toString()}>`,
+        `LiquidatorProxyLib: Held market cannot be negative <${core.marketIds.usdt.toString()}>`,
       );
     });
 
@@ -1172,7 +1173,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: MAX_UINT_256_BI,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Expiration timestamp overflows <${MAX_UINT_256_BI.toString()}>`,
+        `LiquidatorProxyLib: Expiration timestamp overflows <${MAX_UINT_256_BI.toString()}>`,
       );
     });
 
@@ -1210,7 +1211,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: futureTimestamp,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Borrow not yet expired <${futureTimestamp.toString()}>`,
+        `LiquidatorProxyLib: Borrow not yet expired <${futureTimestamp.toString()}>`,
       );
     });
 
@@ -1324,7 +1325,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `BaseLiquidatorProxy: Sender not operator <${core.hhUser3.address.toLowerCase()}>`,
+        `LiquidatorProxyLib: Sender not operator <${core.hhUser3.address.toLowerCase()}>`,
       );
     });
 
@@ -1360,7 +1361,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ONE_BI,
           withdrawAllReward: false,
         }),
-        'BaseLiquidatorProxy: Expiration timestamp mismatch <0, 1>',
+        'LiquidatorProxyLib: Expiration timestamp mismatch <0, 1>',
       );
     });
 

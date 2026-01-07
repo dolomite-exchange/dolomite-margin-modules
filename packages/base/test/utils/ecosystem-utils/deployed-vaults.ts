@@ -1,7 +1,9 @@
 import { marketToIsolationModeVaultInfoBase } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/base';
 import { marketToIsolationModeVaultInfoBotanix } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/botanix';
 import { marketToIsolationModeVaultInfoEthereum } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ethereum';
-import { marketToIsolationModeVaultInfoInk } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ink';
+import {
+  marketToIsolationModeVaultInfoInk,
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/ink';
 import { marketToIsolationModeVaultInfoPolygonZkEvm } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/polygon-zkevm';
 import { marketToIsolationModeVaultInfoSuperSeed } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/super-seed';
 import { marketToIsolationModeVaultInfoXLayer } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/xlayer';

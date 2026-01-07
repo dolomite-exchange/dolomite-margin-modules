@@ -136,13 +136,13 @@ describe('LiquidatorProxyV6_e-mode', () => {
 
        * 1000 / x = 1.0555555555
        * owedPriceForFullLiquidation = 947.368 / 900 = $1.0526315789
-       * 
+       *
        * held = 1000 USDC
        * owed = 900 HONEY
        * heldPrice = $1
        * owedPrice = $1.05
        * owedPriceAdj = 1.05 + .04(1.05) = $1.092
-       * 
+       *
        * After liquidation action:
        *     liquid account usdc = 1000 - (450 * 1.092) = 508.6
        *     liquid account honey = -450
@@ -202,13 +202,13 @@ describe('LiquidatorProxyV6_e-mode', () => {
 
        * 1000 / x = 1.0555555555
        * owedPriceForFullLiquidation = 947.368 / 900 = $1.0526315789
-       * 
+       *
        * held = 1000 USDC
        * owed = 900 HONEY
        * heldPrice = $1
        * owedPrice = $1.06
        * owedPriceAdj = 1.06 + .04(1.06) = $1.1024
-       * 
+       *
        * After liquidation action:
        *     liquid account usdc = 1000 - (900 * 1.1024) = 7.84
        *     liquid account honey = 0

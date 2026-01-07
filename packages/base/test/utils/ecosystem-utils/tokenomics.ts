@@ -76,7 +76,10 @@ export async function createTokenomicsEcosystem(
     rollingClaims: RollingClaims__factory.connect(Deployments.ODoloRollingClaimsProxy[network].address, signer),
     rollingClaimsProxy: RegistryProxy__factory.connect(Deployments.ODoloRollingClaimsProxy[network].address, signer),
     strategicInvestorClaims: VestingClaims__factory.connect(Deployments.StrategicVestingProxy[network].address, signer),
-    strategicInvestorClaimsProxy: RegistryProxy__factory.connect(Deployments.StrategicVestingProxy[network].address, signer),
+    strategicInvestorClaimsProxy: RegistryProxy__factory.connect(
+      Deployments.StrategicVestingProxy[network].address,
+      signer,
+    ),
     veDolo: VotingEscrow__factory.connect(Deployments.VotingEscrowProxy[network].address, signer),
     veDoloProxy: UpgradeableProxy__factory.connect(Deployments.VotingEscrowProxy[network].address, signer),
     veExternalVester: IVeExternalVesterV1__factory.connect(Deployments.VeExternalVesterProxy[network].address, signer),
