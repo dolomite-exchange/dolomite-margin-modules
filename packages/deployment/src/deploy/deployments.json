@@ -6372,6 +6372,20 @@
       "isVerified": true
     }
   },
+  "KdkBeraTWAPPriceOracleV3": {
+    "80094": {
+      "address": "0xB71B907FaA70eD3D661Ac30D5039ab81D10FE6D2",
+      "transaction": "0x6078964b42437f2636f777379f13f0a29b63795ae57c6d99dd47abd98961c2de",
+      "isVerified": true
+    }
+  },
+  "KdkUsdtTWAPPriceOracleV3": {
+    "80094": {
+      "address": "0x8FdF7eeb20408E9AFf37182B1Ee811Da495809Ef",
+      "transaction": "0xcb8be377926a3df2240401c16bb7ca7ec938272799cc3178bb79f3c4a988e94a",
+      "isVerified": true
+    }
+  },
   "LinearStepFunction10L90U90OInterestSetter": {
     "196": {
       "address": "0xc4d82e8e5240ac7C816aCA138eb41534c9aD76e1",
