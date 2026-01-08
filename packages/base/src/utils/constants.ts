@@ -1298,7 +1298,7 @@ export const WST_ETH_MAP: Record<Network.ArbitrumOne | Network.Ethereum, TokenWi
   },
   [Network.Ethereum]: {
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
-    marketId: -1,
+    marketId: 19,
   },
 };
 

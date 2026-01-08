@@ -46,7 +46,7 @@ describe('StEthExchangeRatePriceOracle', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await oracle.ST_ETH()).to.eq(lido.address);
+      expect(await oracle.LIDO()).to.eq(lido.address);
       expect(await oracle.WST_ETH()).to.eq(core.tokens.wstEth.address);
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
