@@ -63,6 +63,8 @@ describe('StEthExchangeRatePriceOracle', () => {
       const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const price = await core.oracleAggregatorV2.getPrice(core.tokens.wstEth.address);
       expect(price.value).to.eq(exchangeRate.mul(wethPrice).div(ONE_ETH_BI));
+      console.log('exchangeRate: ', formatEther(exchangeRate));
+      console.log('wethPrice: ', formatEther(wethPrice));
       console.log('price: ', formatEther(price.value));
     });
 
