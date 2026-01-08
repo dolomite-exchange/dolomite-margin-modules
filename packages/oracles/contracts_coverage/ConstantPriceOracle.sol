@@ -75,14 +75,7 @@ contract ConstantPriceOracle is IConstantPriceOracle, OnlyDolomiteMargin {
 
     // ========================= Admin Functions =========================
 
-    /**
-     * Sets the price for a token.
-     *
-     * @dev The price NEEDS to be in 36 - token decimals format.
-     *
-     * @param _token   The token to set the price for.
-     * @param _price   The price to set for the token.
-     */
+    /// @inheritdoc IConstantPriceOracle
     function ownerSetTokenPrice(
         address _token,
         uint256 _price
