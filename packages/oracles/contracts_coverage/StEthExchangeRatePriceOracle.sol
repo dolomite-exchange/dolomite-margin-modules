@@ -36,11 +36,11 @@ contract StEthExchangeRatePriceOracle is IDolomitePriceOracle, OnlyDolomiteMargi
 
     bytes32 private constant _FILE = "StEthExchangeRatePriceOracle";
 
-    ILido public immutable ST_ETH;
+    ILido public immutable LIDO;
     address public immutable WST_ETH;
 
-    constructor(address _stEth, address _wstEth, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
-        ST_ETH = ILido(_stEth);
+    constructor(address _lido, address _wstEth, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
+        LIDO = ILido(_lido);
         WST_ETH = _wstEth;
     }
 
@@ -55,7 +55,7 @@ contract StEthExchangeRatePriceOracle is IDolomitePriceOracle, OnlyDolomiteMargi
         );
 
         return IDolomiteStructs.MonetaryPrice({
-            value: ST_ETH.getPooledEthByShares(1 ether)
+            value: LIDO.getPooledEthByShares(1 ether)
         });
     }
 }

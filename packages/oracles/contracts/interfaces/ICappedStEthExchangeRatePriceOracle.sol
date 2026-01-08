@@ -19,15 +19,23 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   ILido
+ * @title   ICappedStEthExchangeRatePriceOracle
  * @author  Dolomite
  *
- * An interface for the Lido protocol
+ * An interface for the CappedStEthExchangeRatePriceOracle
  */
-interface ILido {
+interface ICappedStEthExchangeRatePriceOracle is IDolomitePriceOracle {
+    event CapParametersSet(uint256 snapshotRatio, uint256 snapshotTimestamp, uint256 maxGrowthPerSecond);
 
-    function getPooledEthByShares(uint256 shares) external view returns (uint256);
+    struct SetCapParameters {
+        uint256 snapshotRatio;
+        uint256 snapshotTimestamp;
+        uint256 maxGrowthPerYear;
+    }
+
+    function ownerSetCapParameters(SetCapParameters memory _setCapParameters) external;
 }
