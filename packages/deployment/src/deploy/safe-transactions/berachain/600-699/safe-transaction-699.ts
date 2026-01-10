@@ -20,9 +20,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   // @follow-up Corey, we had a MetaVaultWithOwnerStake. I don't see it currently active, but please check which one it should be
+  // @follow-up Add a handler address where placeholder is
   const metaVaultImplementationAddress = await deployContractAndSave(
     'InfraredBGTMetaVault',
-    [core.tokens.ir.address, core.berachainRewardsEcosystem.infraredMerkleDistributor.address],
+    [core.tokens.ir.address, core.berachainRewardsEcosystem.infraredMerkleDistributor.address, PLACEHOLDER],
     'InfraredBGTMetaVaultImplementationV3',
   );
   const transactions: EncodedTransaction[] = [

@@ -20,6 +20,7 @@
     "deploy:glp-redemption-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts glp-redemption",
     "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
+    "deploy:infrared-airdrop-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts infrared-airdrop",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",
     "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
     "deploy:ooga-booga-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts ooga-booga",
