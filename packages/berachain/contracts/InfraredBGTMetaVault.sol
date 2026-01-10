@@ -59,6 +59,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     IERC20 public immutable IR;
     IInfraredMerkleDistributor public immutable IR_CLAIMER;
+    address public immutable HANDLER;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -87,9 +88,10 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     // ========================== Constructor ===========================
     // ==================================================================
 
-    constructor(address _ir, address _irClaimer) {
+    constructor(address _ir, address _irClaimer, address _handler) {
         IR = IERC20(_ir);
         IR_CLAIMER = IInfraredMerkleDistributor(_irClaimer);
+        HANDLER = _handler;
     }
 
     // ==================================================================
@@ -98,9 +100,15 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     receive() external payable {}
 
-    function claimIRAirdrop(uint256 _amount, bytes32[] memory _proof) external onlyMetaVaultOwner(msg.sender) {
+    function claimIRAirdrop(uint256 _amount, bytes32[] memory _proof) external {
+        Require.that(
+            msg.sender == HANDLER,
+            _FILE,
+            "Only handler can call"
+        );
+
         IR_CLAIMER.claim(_amount, _proof);
-        IR.safeTransfer(msg.sender, _amount);
+        IR.safeTransfer(OWNER(), _amount);
     }
 
     function setDefaultRewardVaultTypeByAsset(

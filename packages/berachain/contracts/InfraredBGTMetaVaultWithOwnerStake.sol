@@ -48,8 +48,9 @@ contract InfraredBGTMetaVaultWithOwnerStake is InfraredBGTMetaVault, OnlyDolomit
     constructor(
         address _ir,
         address _irClaimer,
+        address _handler,
         address _dolomiteMargin
-    ) InfraredBGTMetaVault(_ir, _irClaimer) OnlyDolomiteMargin(_dolomiteMargin) {}
+    ) InfraredBGTMetaVault(_ir, _irClaimer, _handler) OnlyDolomiteMargin(_dolomiteMargin) {}
 
     function ownerStakeDolomiteToken(
         address _asset,

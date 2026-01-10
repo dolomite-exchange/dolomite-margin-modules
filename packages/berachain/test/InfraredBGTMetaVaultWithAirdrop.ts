@@ -15,7 +15,7 @@ import axios from 'axios';
 const OWNER = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const METAVAULT = '0x76F103037601a2a8f042Caa259C55abbb34e30EB';
 
-describe('InfraredBGTMetaVault', () => {
+describe('InfraredBGTMetaVaultWithAirdrop', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
@@ -33,7 +33,7 @@ describe('InfraredBGTMetaVault', () => {
     const implementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
-      [core.tokens.ir.address, core.berachainRewardsEcosystem.infraredMerkleDistributor.address],
+      [core.tokens.ir.address, core.berachainRewardsEcosystem.infraredMerkleDistributor.address, core.hhUser5.address],
     );
     await core.berachainRewardsEcosystem.live.registry.connect(core.governance).ownerSetMetaVaultImplementation(
       implementation.address,
@@ -53,19 +53,19 @@ describe('InfraredBGTMetaVault', () => {
 
   describe('#claimIRAirdrop', () => {
     it('should work normally', async () => {
-      await expect(() => metavault.claimIRAirdrop(response.data.amount, response.data.proof))
+      await expect(() => metavault.connect(core.hhUser5).claimIRAirdrop(response.data.amount, response.data.proof))
         .to.changeTokenBalance(core.tokens.ir, user.address, response.data.amount);
     });
 
     it('should fail if proof is invalid', async () => {
       response.data.proof[0] = '0x88ff06e733f34d3e128569ec41af12013cdc464600574c4eacce58a9f87f4780';
-      await expectThrow(metavault.claimIRAirdrop(response.data.amount, response.data.proof));
+      await expectThrow(metavault.connect(core.hhUser5).claimIRAirdrop(response.data.amount, response.data.proof));
     });
 
-    it('should fail if not called by owner', async () => {
+    it('should fail if not called by handler', async () => {
       await expectThrow(
-        metavault.connect(core.hhUser1).claimIRAirdrop(response.data.amount, response.data.proof),
-        `InfraredBGTMetaVault: Only owner can call <${core.hhUser1.addressLower}>`,
+        metavault.connect(user).claimIRAirdrop(response.data.amount, response.data.proof),
+        'InfraredBGTMetaVault: Only handler can call',
       );
     });
   });
