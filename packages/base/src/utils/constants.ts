@@ -127,6 +127,13 @@ export const C_USD_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   },
 };
 
+export const CB_BTC_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
+    marketId: 18,
+  },
+};
+
 export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0xE6829d9a7eE3040e1276Fa75293Bde931859e8fA',
@@ -595,10 +602,24 @@ export const HONEY_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const IR_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xa1B644AEC990Ad6023811cED36E6A2d6D128C7C9',
+    marketId: 45,
+  },
+};
+
 export const JONES_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x10393c20975cF177a3513071bC110f7962CD67da',
     marketId: 25,
+  },
+};
+
+export const KDK_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xc0D1aC00A30fA4e30e44AFc7313d6312c87E21dF',
+    marketId: 46,
   },
 };
 
@@ -2683,6 +2704,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
     },
+    [CB_BTC_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x2665701293fCbEB223D11A08D826563EDcCE423A',
+    },
     [CRV_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f',
     },
@@ -3006,6 +3030,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     [E_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x09639692CE6ff12A06CA3AE9A24b3Aae4CD80DC8',
       tokenPairAddress: WBTC_MAP[Network.Berachain].address,
+    },
+    [IR_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x4F4E639745CfB234B6176E96c6afd83269baF52E',
     },
     [LBTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x84AD474c33c9cCefB1a2D8b77Bdd88bDc592f96b',

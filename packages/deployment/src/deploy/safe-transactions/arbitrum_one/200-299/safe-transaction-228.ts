@@ -24,7 +24,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const gmxV2Libraries = core.gmxV2Ecosystem.live.gmxV2LibraryMap;
+  const gmxV2Libraries = core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap;
 
   const tokenVaultActionsAddress = await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',

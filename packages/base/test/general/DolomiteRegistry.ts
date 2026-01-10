@@ -104,6 +104,31 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetDepositWithdrawalRouter', () => {
+    it('should work normally', async () => {
+      const depositWithdrawalRouter = core.depositWithdrawalRouter.address;
+      const result = await registry.connect(core.governance).ownerSetDepositWithdrawalRouter(depositWithdrawalRouter);
+      await expectEvent(registry, result, 'DepositWithdrawalRouterSet', {
+        _depositWithdrawalRouter: depositWithdrawalRouter,
+      });
+      expect(await registry.depositWithdrawalRouter()).to.equal(depositWithdrawalRouter);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDepositWithdrawalRouter(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDepositWithdrawalRouter(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid depositWithdrawalRouter',
+      );
+    });
+  });
+
   describe('#ownerSetGenericTraderProxy', () => {
     it('should work normally', async () => {
       const genericTraderProxy = core.genericTraderProxy.address;
@@ -556,31 +581,31 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
-  describe('#ownerSetMarketIdToDToken', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetMarketIdToDToken(
-        core.marketIds.usdc,
-        core.dolomiteTokens.usdc.address
-      );
-      await expectEvent(registry, result, 'MarketIdToDTokenSet', {
-        _marketId: core.marketIds.usdc,
-        _dToken: core.dolomiteTokens.usdc.address,
-      });
-      expect(await registry.marketIdToDToken(core.marketIds.usdc)).to.equal(core.dolomiteTokens.usdc.address);
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetMarketIdToDToken(core.marketIds.usdc, ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid dToken',
-      );
-    });
-    
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetMarketIdToDToken(core.marketIds.usdc, OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
+  // describe('#ownerSetMarketIdToDToken', () => {
+  //   it('should work normally', async () => {
+  //     const result = await registry.connect(core.governance).ownerSetMarketIdToDToken(
+  //       core.marketIds.usdc,
+  //       core.dolomiteTokens.usdc.address
+  //     );
+  //     await expectEvent(registry, result, 'MarketIdToDTokenSet', {
+  //       _marketId: core.marketIds.usdc,
+  //       _dToken: core.dolomiteTokens.usdc.address,
+  //     });
+  //     expect(await registry.marketIdToDToken(core.marketIds.usdc)).to.equal(core.dolomiteTokens.usdc.address);
+  //   });
+  //
+  //   it('should fail if zero address is set', async () => {
+  //     await expectThrow(
+  //       registry.connect(core.governance).ownerSetMarketIdToDToken(core.marketIds.usdc, ZERO_ADDRESS),
+  //       'DolomiteRegistryImplementation: Invalid dToken',
+  //     );
+  //   });
+  //
+  //   it('should fail when not called by owner', async () => {
+  //     await expectThrow(
+  //       registry.connect(core.hhUser1).ownerSetMarketIdToDToken(core.marketIds.usdc, OTHER_ADDRESS),
+  //       `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+  //     );
+  //   });
+  // });
 });

@@ -19,7 +19,7 @@ import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
 import { IBGT } from 'packages/berachain/src/types';
 import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
-import { CorePendleEcosystem, PendleEcosystemBerachain } from '../ecosystem-utils/pendle';
+import { PendleEcosystemBerachain } from '../ecosystem-utils/pendle';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
@@ -36,6 +36,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   iBera: IERC20;
   iBgt: IERC20;
   ir: IERC20;
+  kdk: IERC20;
   lbtc: IERC20;
   nect: IERC20;
   ohm: IERC20;
@@ -118,6 +119,8 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   honey: BigNumberish;
   iBera: BigNumberish;
   iBgt: BigNumberish;
+  ir: BigNumberish;
+  kdk: BigNumberish;
   lbtc: BigNumberish;
   nect: BigNumberish;
   ohm: BigNumberish;

@@ -227,7 +227,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 4),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 5),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -242,7 +242,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const borrowPositionRouterImplementationAddress = await deployContractAndSave(
     'BorrowPositionRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 3),
   );
   const borrowPositionRouterCalldata = await BorrowPositionRouter__factory.connect(
     borrowPositionRouterImplementationAddress,
@@ -269,7 +269,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     'GenericTraderRouterProxy',
   );
 
-  const safeDelegateCallLibAddress = await deployContractAndSave(
+  await deployContractAndSave(
     'SafeDelegateCallLib',
     [],
     getMaxDeploymentVersionNameByDeploymentKey('SafeDelegateCallLib', 1),
@@ -278,8 +278,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 11),
-    { SafeDelegateCallLib: safeDelegateCallLibAddress },
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 13),
   );
 
   await deployContractAndSave(
@@ -345,6 +344,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     dolomiteRegistry,
     dolomiteRegistryProxy,
     CoreDeployments.BorrowPositionProxyV2[network].address,
+    depositWithdrawalRouterProxyAddress,
     dolomiteAccountRegistryProxy,
     dolomiteMigratorAddress,
     genericTraderProxy,

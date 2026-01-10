@@ -34,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
     'GmxV2IsolationModeTokenVaultImplementationV13',
-    { ...core.libraries.tokenVaultActionsImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.libraries.tokenVaultActionsImpl, ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
 
   const factories = [

@@ -24,7 +24,7 @@ const skipDryRun = process.argv.some((arg) => arg === SKIP_DRY_RUN_KEY) || proce
 
 const lowerBound = Math.floor(scriptNumber / 100) * 100;
 const directory = `${lowerBound}-${lowerBound + 99}`;
-const filePath = path.resolve(__dirname, networkName, directory, `safe-transaction-${scriptNumber}.ts`);
+const filePath = path.resolve(__dirname, networkName, directory, `safe-transaction-${process.argv[2]}.ts`);
 
 if (dryRunOnly) {
   console.log('');

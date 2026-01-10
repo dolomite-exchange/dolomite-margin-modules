@@ -202,7 +202,7 @@ export async function verifyContract(
 
     console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
-    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 15_000, 3);
+    const verificationStatus = await retryWithTimeout(() => instance.getVerificationStatus(guid), 30_000, 3);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
@@ -234,7 +234,7 @@ async function retryWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number, retr
         throw err;
       }
       console.warn(`\tAttempt ${attempt + 1} failed:`, err);
-      if (err.message.includes('does not have bytecode')) {
+      if (err.message?.includes('does not have bytecode')) {
         await sleep(timeoutMs);
       }
     }
@@ -518,7 +518,7 @@ export async function deployContractAndSave(
         };
         nonce += 1;
       } else {
-        console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
+        console.warn(`\t${contractRename} was already deployed to ${contractAddress}. Filling in 0x0 for hash...`);
         contract = {
           address: contractAddress,
           transactionHash: BYTES_ZERO,
@@ -656,7 +656,7 @@ export async function deployGmxV2GlvTokenSystem(
       longMarketId.eq(-1),
     ),
     `Glv${glvName}IsolationModeVaultFactory`,
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+    { ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap },
   );
   const factory = GlvIsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
@@ -748,7 +748,7 @@ export async function deployGmxV2GmTokenSystem(
       longMarketId.eq(-1),
     ),
     `GmxV2${gmName}IsolationModeVaultFactory`,
-    core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+    core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap,
   );
   const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 

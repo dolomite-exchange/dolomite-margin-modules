@@ -169,6 +169,28 @@ export async function expectProtocolWeiBalanceChange<T extends DolomiteNetwork>(
   expect(amountWei).eq(balanceWeiPost.sub(balanceWeiPre));
 }
 
+export async function expectProtocolWeiBalanceChangeWithRoundingError<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  tx: ContractTransaction,
+  accountOwner: { address: address } | address,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
+  amountWei: BigNumberish,
+) {
+  const account = {
+    owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
+    number: accountNumber,
+  };
+  const rawBalanceWeiPre = await core.dolomiteMargin.getAccountWei(account, marketId, { blockTag: tx.blockNumber! - 1 });
+  const rawBalanceWeiPost = await core.dolomiteMargin.getAccountWei(account, marketId, { blockTag: tx.blockNumber! });
+
+  const balanceWeiPre = rawBalanceWeiPre.sign ? rawBalanceWeiPre.value : rawBalanceWeiPre.value.mul(-1);
+  const balanceWeiPost = rawBalanceWeiPost.sign ? rawBalanceWeiPost.value : rawBalanceWeiPost.value.mul(-1);
+  
+  const equal = balanceWeiPost.sub(balanceWeiPre).eq(amountWei) || balanceWeiPost.sub(balanceWeiPre.add(1)).eq(amountWei) || balanceWeiPost.sub(balanceWeiPre.sub(1)).eq(amountWei);
+  expect(equal).to.be.true;
+}
+
 export async function expectProtocolParBalance<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,

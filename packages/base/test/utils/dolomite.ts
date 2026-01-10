@@ -1,7 +1,9 @@
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
+import { AdminRegistry, AdminRegistry__factory } from 'packages/admin/src/types';
 import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
+import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 import {
   BorrowPositionRouter,
   BorrowPositionRouter__factory,
@@ -55,8 +57,6 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
-import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
-import { AdminRegistry, AdminRegistry__factory } from 'packages/admin/src/types';
 
 export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IDolomiteMargin
@@ -65,20 +65,12 @@ export type Expiry<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? 
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
   const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
-  const contract = await createContractWithLibrary(
-    'IsolationModeTokenVaultV1ActionsImpl',
-    { SafeDelegateCallLib: safeDelegateCallLib.address },
-    [],
-  );
+  const contract = await createContractWithLibrary('IsolationModeTokenVaultV1ActionsImpl', {}, []);
   return { IsolationModeTokenVaultV1ActionsImpl: contract.address };
 }
 
 export async function createAsyncIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
-  const contract = await createContractWithLibrary(
-    'AsyncIsolationModeTokenVaultV1ActionsImpl',
-    {},
-    [],
-  );
+  const contract = await createContractWithLibrary('AsyncIsolationModeTokenVaultV1ActionsImpl', {}, []);
   return { AsyncIsolationModeTokenVaultV1ActionsImpl: contract.address };
 }
 
@@ -116,7 +108,7 @@ export async function createRouterProxy(
   const calldata =
     typeof initializationCalldata === 'object' && 'data' in initializationCalldata
       ? initializationCalldata.data!
-      : initializationCalldata as string;
+      : (initializationCalldata as string);
   return createContractWithAbi(
     RouterProxy__factory.abi,
     RouterProxy__factory.bytecode,
@@ -232,18 +224,16 @@ export async function createDepositWithdrawalRouter(
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
-  const proxy = await createContractWithAbi(
-    RouterProxy__factory.abi,
-    RouterProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
-  );
+  const proxy = await createContractWithAbi(RouterProxy__factory.abi, RouterProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    initCalldata.data!,
+  ]);
   await proxy.connect(core.governance).ownerLazyInitialize(payableToken.address);
   return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
 }
 
-export async function createBorrowPositionRouter(
-  core: CoreProtocolType<any>,
-): Promise<BorrowPositionRouter> {
+export async function createBorrowPositionRouter(core: CoreProtocolType<any>): Promise<BorrowPositionRouter> {
   const implementation = await createContractWithAbi<BorrowPositionRouter>(
     BorrowPositionRouter__factory.abi,
     BorrowPositionRouter__factory.bytecode,
@@ -251,17 +241,15 @@ export async function createBorrowPositionRouter(
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
-  const proxy = await createContractWithAbi(
-    RouterProxy__factory.abi,
-    RouterProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
-  );
+  const proxy = await createContractWithAbi(RouterProxy__factory.abi, RouterProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    initCalldata.data!,
+  ]);
   return BorrowPositionRouter__factory.connect(proxy.address, core.hhUser1) as BorrowPositionRouter;
 }
 
-export async function createGenericTraderRouter(
-  core: CoreProtocolType<any>,
-): Promise<GenericTraderRouter> {
+export async function createGenericTraderRouter(core: CoreProtocolType<any>): Promise<GenericTraderRouter> {
   const implementation = await createContractWithAbi<GenericTraderRouter>(
     GenericTraderRouter__factory.abi,
     GenericTraderRouter__factory.bytecode,
@@ -269,65 +257,50 @@ export async function createGenericTraderRouter(
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
-  const proxy = await createContractWithAbi(
-    RouterProxy__factory.abi,
-    RouterProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
-  );
+  const proxy = await createContractWithAbi(RouterProxy__factory.abi, RouterProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    initCalldata.data!,
+  ]);
   return GenericTraderRouter__factory.connect(proxy.address, core.hhUser1) as GenericTraderRouter;
 }
 
 export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryName, address>> {
   const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2Lib', 'proxies');
-  const contract = await createContractWithLibraryAndArtifact(
-    artifact,
-    {},
-    [],
-  );
+  const contract = await createContractWithLibraryAndArtifact(artifact, {}, []);
   return { GenericTraderProxyV2Lib: contract.address };
 }
 
 export async function createGenericTraderProxyV2(core: CoreProtocolType<any>): Promise<GenericTraderProxyV2> {
   const libraries = await createGenericTraderProxyV2Lib();
   const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2', 'proxies');
-  return await createContractWithLibraryAndArtifact(
-    artifact,
-    libraries,
-    [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
-  );
+  return await createContractWithLibraryAndArtifact(artifact, libraries, [
+    Network.ArbitrumOne,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ]);
 }
 
-export async function createLiquidatorProxyV6(
-  core: CoreProtocolType<any>,
-): Promise<LiquidatorProxyV6> {
+export async function createLiquidatorProxyV6(core: CoreProtocolType<any>): Promise<LiquidatorProxyV6> {
   const libraries = await createGenericTraderProxyV2Lib();
   const artifact = await createArtifactFromBaseWorkspaceIfNotExists('LiquidatorProxyV6', 'proxies');
-  const liquidatorProxyImplementation = await createContractWithLibraryAndArtifact(
-    artifact,
-    libraries,
-    [
-      core.config.network,
-      core.expiry.address,
-      core.dolomiteMargin.address,
-      core.dolomiteRegistry.address,
-      core.liquidatorAssetRegistry.address,
-    ],
-  );
+  const liquidatorProxyImplementation = await createContractWithLibraryAndArtifact(artifact, libraries, [
+    core.config.network,
+    core.expiry.address,
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
+    core.liquidatorAssetRegistry.address,
+  ]);
   const data = await liquidatorProxyImplementation.populateTransaction.initialize();
-  const proxy = await createContractWithAbi(
-    UpgradeableProxy__factory.abi,
-    UpgradeableProxy__factory.bytecode,
-    [liquidatorProxyImplementation.address, core.dolomiteMargin.address, data.data!],
-  );
-  return LiquidatorProxyV6__factory.connect(
-    proxy.address,
-    core.hhUser1,
-  );
+  const proxy = await createContractWithAbi(UpgradeableProxy__factory.abi, UpgradeableProxy__factory.bytecode, [
+    liquidatorProxyImplementation.address,
+    core.dolomiteMargin.address,
+    data.data!,
+  ]);
+  return LiquidatorProxyV6__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestBorrowPositionRouter(
-  core: CoreProtocolType<any>,
-): Promise<TestBorrowPositionRouter> {
+export async function createTestBorrowPositionRouter(core: CoreProtocolType<any>): Promise<TestBorrowPositionRouter> {
   const implementation = await createContractWithAbi<TestBorrowPositionRouter>(
     TestBorrowPositionRouter__factory.abi,
     TestBorrowPositionRouter__factory.bytecode,
@@ -335,11 +308,11 @@ export async function createTestBorrowPositionRouter(
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
-  const proxy = await createContractWithAbi(
-    RouterProxy__factory.abi,
-    RouterProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
-  );
+  const proxy = await createContractWithAbi(RouterProxy__factory.abi, RouterProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    initCalldata.data!,
+  ]);
   return TestBorrowPositionRouter__factory.connect(proxy.address, core.hhUser1) as TestBorrowPositionRouter;
 }
 
@@ -354,14 +327,15 @@ export async function createTestDepositWithdrawalRouter(
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
-  const proxy = await createContractWithAbi(
-    RouterProxy__factory.abi,
-    RouterProxy__factory.bytecode,
-    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
-  );
+  const proxy = await createContractWithAbi(RouterProxy__factory.abi, RouterProxy__factory.bytecode, [
+    implementation.address,
+    core.dolomiteMargin.address,
+    initCalldata.data!,
+  ]);
 
-  await TestDepositWithdrawalRouter__factory.connect(proxy.address, core.governance)
-    .ownerLazyInitialize(payableToken.address);
+  await TestDepositWithdrawalRouter__factory.connect(proxy.address, core.governance).ownerLazyInitialize(
+    payableToken.address,
+  );
 
   return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }

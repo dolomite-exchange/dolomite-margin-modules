@@ -60,7 +60,7 @@ contract JonesUSDCIsolationModeTokenVaultV2 is JonesUSDCIsolationModeTokenVaultV
             IJonesUSDCFarm.PoolInfo memory pool = farm.poolInfo(_JUSDC_POOL_ID);
             uint256 incentive = _amount * pool.depositIncentives / _DEPOSIT_INCENTIVE_PRECISION;
             _setShouldWithdrawToVault(/* _shouldWithdrawToVault = */ true);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, incentive);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, incentive, /* _isViaRouter */ false);
         }
         IERC20(UNDERLYING_TOKEN()).safeApprove(address(farm), _amount);
         farm.deposit(

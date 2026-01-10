@@ -26,7 +26,6 @@ import { IOdosRouter } from "../interfaces/traders/IOdosRouter.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   OdosAggregatorTrader
