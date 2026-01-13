@@ -252,7 +252,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
 
             uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
             uint256 healthFactor = collateralRatio.div(marginRatioOverride);
-            if (partialLiquidationThreshold > 0 && healthFactor > partialLiquidationThreshold) {
+            if (partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold) {
                 _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
             }
         }
