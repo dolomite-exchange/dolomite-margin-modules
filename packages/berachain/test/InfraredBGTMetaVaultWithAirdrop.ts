@@ -1,4 +1,4 @@
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -14,6 +14,7 @@ import axios from 'axios';
 import { readFileSync } from 'fs';
 import { writeFile } from 'fs-extra';
 import { formatEther } from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
 
 const OWNER = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const METAVAULT = '0x76F103037601a2a8f042Caa259C55abbb34e30EB';
@@ -47,7 +48,7 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
     user = await impersonate(OWNER, true);
     metavault = InfraredBGTMetaVault__factory.connect(METAVAULT, user);
 
-    response = await axios.get('https://infrared.finance/api/airdrop/0x76F103037601a2a8f042Caa259C55abbb34e30EB?chainId=80094');
+    // response = await axios.get('https://infrared.finance/api/airdrop/0x76F103037601a2a8f042Caa259C55abbb34e30EB?chainId=80094');
 
     snapshotId = await snapshot();
   });
@@ -100,6 +101,21 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
       }
 
       await writeFile(VAULTS_PATH, JSON.stringify(allUsers, null, 2));
+    });
+
+    it.only('should sum airdrop amounts', async () => {
+      const allUsers = JSON.parse(readFileSync(VAULTS_PATH).toString()) as any[];
+      let sum = ZERO_BI;
+      let count = ZERO_BI;
+      for (const user of allUsers) {
+        if (user['airdrop_amount'] === '') {
+          continue;
+        }
+        sum = sum.add(BigNumber.from(user['airdrop_amount']));
+        count = count.add(ONE_BI);
+      }
+      console.log(formatEther(sum));
+      console.log(count);
     });
 
     it('should airdrop', async () => {
