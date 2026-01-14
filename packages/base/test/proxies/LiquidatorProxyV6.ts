@@ -598,7 +598,64 @@ describe('LiquidatorProxyV6', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('400'));
     });
 
-    it('should work normally with isolation mode', async () => {
+    it.only('should work normally with isolation mode and partial liquidation', async () => {
+      const arbAmount = parseEther('200');
+      await core.arbEcosystem.live.dArb.createVault(core.hhUser1.address);
+      const vault = ARBIsolationModeTokenVaultV1__factory.connect(
+        await core.arbEcosystem.live.dArb.getVaultByAccount(core.hhUser1.address),
+        core.hhUser1,
+      );
+      await setupARBBalance(core, core.hhUser1, arbAmount, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, arbAmount);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, arbAmount);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        BalanceCheckFlag.None,
+      );
+
+      await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('850'));
+      const zapParams = await getLiquidateIsolationModeZapPath(
+        [core.marketIds.dArb, core.marketIds.arb, core.marketIds.weth],
+        [MAX_UINT_256_BI, arbAmount, parseEther('.6')],
+        { address: '0x77e91d3f06c2c4b643f29d3fe74ca5af5e55ee68' } as any,
+        core,
+      );
+      await liquidatorProxy.connect(core.hhUser2).liquidate({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+
+      /*
+       * .07 liquidation spread for the pair
+       * 850 + 850 (.07) = 909.5 owedPriceAdjusted
+       * 
+       * partialOwedAdj = .5 * 909.5 = $454.75 / 5 = 90.95 ARB
+       * partialOwed = .5 WETH * 850 = $425 / 5 = 85 ARB
+       *
+       * leftover ARB = 200 - 90.95 = 109.05 ARB
+       * dolomite rake = (5.95 * .1) = 0.595 ARB
+       * solid ARB = 90.95 - 0.595 = 90.355 ARB
+       */
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.dArb, parseEther('109.05'));
+      await expectWalletBalance(vault, core.tokens.arb, parseEther('109.05')); // BROKEN
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dArb, parseEther('0.595'));
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.arb, parseEther('90.355'));
+    });
+
+    it('should work normally with isolation mode and full liquidation', async () => {
       const arbAmount = parseEther('200');
       await core.arbEcosystem.live.dArb.createVault(core.hhUser1.address);
       const vault = ARBIsolationModeTokenVaultV1__factory.connect(

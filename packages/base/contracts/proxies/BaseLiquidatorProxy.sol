@@ -30,6 +30,7 @@ import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   BaseLiquidatorProxy
@@ -252,6 +253,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
 
             uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
             uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+            console.log("healthFactor: ", healthFactor);
             if (partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold) {
                 _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
             }
