@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { BitsLib } from "../protocol/lib/BitsLib.sol";
-import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
 
 
 /**

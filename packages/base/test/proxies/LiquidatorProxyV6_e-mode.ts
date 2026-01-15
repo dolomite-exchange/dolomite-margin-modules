@@ -50,10 +50,11 @@ describe('LiquidatorProxyV6_e-mode', () => {
 
     await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
 
+    const liquidatorProxyLib = await createContractWithName('LiquidatorProxyLib', []);
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
     const liquidatorProxyImplementation = await createContractWithLibrary(
       'TestLiquidatorProxyV6',
-      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      { GenericTraderProxyV2Lib: genericTraderLib.address, LiquidatorProxyLib: liquidatorProxyLib.address },
       [
         Network.Berachain,
         core.expiry.address,
@@ -163,7 +164,7 @@ describe('LiquidatorProxyV6_e-mode', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.usdc, BigNumber.from('489510000'));
     });
 
-    it('should work normally to fully liquidate if user is in e-mode and below partial liquidation threshold', async () => {
+    it('should work normally to fully liquidate if user is in e-mode and below partial threshold', async () => {
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.usdc, usdcAmount);
       await core.borrowPositionProxyV2

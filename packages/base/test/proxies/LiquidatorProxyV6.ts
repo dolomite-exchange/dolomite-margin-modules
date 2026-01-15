@@ -267,7 +267,7 @@ describe('LiquidatorProxyV6', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('957.22'));
     });
 
-    xit('should work normally to partially liquidate if input amount is greater than max liquidation amount but not uint256 max', async () => {
+    it('should work normally to partially liquidate if input amount is greater than max liquidation amount but not uint256 max', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -598,7 +598,7 @@ describe('LiquidatorProxyV6', () => {
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('400'));
     });
 
-    it.only('should work normally with isolation mode and partial liquidation', async () => {
+    it('should work normally with isolation mode and partial liquidation', async () => {
       const arbAmount = parseEther('200');
       await core.arbEcosystem.live.dArb.createVault(core.hhUser1.address);
       const vault = ARBIsolationModeTokenVaultV1__factory.connect(
@@ -638,21 +638,23 @@ describe('LiquidatorProxyV6', () => {
       /*
        * .07 liquidation spread for the pair
        * 850 + 850 (.07) = 909.5 owedPriceAdjusted
-       * 
+       *
        * partialOwedAdj = .5 * 909.5 = $454.75 / 5 = 90.95 ARB
        * partialOwed = .5 WETH * 850 = $425 / 5 = 85 ARB
        *
+       * no rake for isolation mode
+       *
        * leftover ARB = 200 - 90.95 = 109.05 ARB
-       * dolomite rake = (5.95 * .1) = 0.595 ARB
-       * solid ARB = 90.95 - 0.595 = 90.355 ARB
+       * dolomite rake = 0
+       * solid ARB = 90.95 = 90.95 ARB
        */
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.dArb, parseEther('109.05'));
       await expectWalletBalance(vault, core.tokens.arb, parseEther('109.05')); // BROKEN
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dArb, parseEther('0.595'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.arb, parseEther('90.355'));
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.arb, parseEther('90.95'));
     });
 
     it('should work normally with isolation mode and full liquidation', async () => {
@@ -696,11 +698,17 @@ describe('LiquidatorProxyV6', () => {
        * .07 liquidation spread for the pair
        * 900 + 900 (.7) = 963 owedPriceAdjusted
        * (1000 - 963) / 5 = 7.4 dArb leftover
+       *
+       * no rake for isolation mode
+       *
+       * testExchangeWrapper = 200 - 7.4 = 192.6 ARB
        */
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.dArb, parseEther('7.4'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
+      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.arb, parseEther('192.6'));
     });
 
     it('should work normally if min output amount is less than owed amount', async () => {

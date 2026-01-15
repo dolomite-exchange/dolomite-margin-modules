@@ -25,12 +25,11 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   BaseLiquidatorProxy
@@ -59,6 +58,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         MarketInfo[] markets;
         uint256[] liquidMarkets;
         uint256 expirationTimestamp;
+        bool dolomiteRake;
     }
 
     struct LiquidatorProxyCache {
@@ -235,7 +235,9 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         view
     {
         if (_constants.expirationTimestamp == 0) {
-            (IDolomiteMargin.Decimal memory marginRatioOverride,) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
+            (
+                IDolomiteMargin.Decimal memory marginRatioOverride,
+            ) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
             (
                 IDolomiteMargin.MonetaryValue memory supplyValue,
                 IDolomiteMargin.MonetaryValue memory borrowValue
@@ -253,7 +255,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
 
             uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
             uint256 healthFactor = collateralRatio.div(marginRatioOverride);
-            console.log("healthFactor: ", healthFactor);
             if (partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold) {
                 _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
             }

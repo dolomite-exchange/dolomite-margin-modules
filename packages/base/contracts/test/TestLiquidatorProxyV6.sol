@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { LiquidatorProxyV6 } from "../proxies/LiquidatorProxyV6.sol";
 import { LiquidatorProxyLib } from "../proxies/LiquidatorProxyLib.sol";
+import { LiquidatorProxyV6 } from "../proxies/LiquidatorProxyV6.sol";
 
 
 /**
@@ -100,6 +100,11 @@ contract TestLiquidatorProxyV6 is LiquidatorProxyV6 {
         uint256 _endExclusive,
         uint256 _marketId
     ) external view returns (MarketInfo memory) {
-        return _binarySearch(LiquidatorProxyLib.getMarketInfos(DOLOMITE_MARGIN(), _markets, _markets), _beginInclusive, _endExclusive, _marketId);
+        return _binarySearch(
+            LiquidatorProxyLib.getMarketInfos(DOLOMITE_MARGIN(), _markets, _markets),
+            _beginInclusive,
+            _endExclusive,
+            _marketId
+        );
     }
 }
