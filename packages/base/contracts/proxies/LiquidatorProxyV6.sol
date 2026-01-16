@@ -358,6 +358,7 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
+        // @todo fix this
         uint256 dolomiteRakeAmount;
         if (_constants.expirationTimestamp > 0) {
             dolomiteRakeAmount = 0;
@@ -383,7 +384,7 @@ contract LiquidatorProxyV6 is
 
     function _getLiquidationActionsLength(bool _dolomiteRake, bool _withdrawAllReward) internal pure returns (uint256) {
         // 1 for liquidate action, 1 for dolomite rake transfer, 1 for withdrawal reward
-        uint256 len = 1;
+        uint256 len = 1; // @follow-up @Corey what do you think of this code? Doing too many if elses seemed weird
         if (_dolomiteRake) len++;
         if (_withdrawAllReward) len++;
         return len;
