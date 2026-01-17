@@ -32,6 +32,8 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 interface ILiquidatorProxyV6 {
     event DolomiteRakeSet(IDolomiteStructs.Decimal dolomiteRake);
     event PartialLiquidationThresholdSet(uint256 partialLiquidationThreshold);
+    event PartialLiquidatorSet(address partialLiquidator, bool isPartialLiquidator);
+    event MarketToPartialLiquidationSupportedSet(uint256[] marketIds, bool[] isSupported);
 
     // ============ Enums ============
 

@@ -75,6 +75,11 @@ describe('LiquidatorProxyV6_e-mode', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
     await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
     await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('.95'));
+    await liquidatorProxy.connect(core.governance).ownerSetMarketToPartialLiquidationSupported(
+      [core.marketIds.usdc],
+      [true],
+    );
+    await liquidatorProxy.connect(core.governance).ownerSetIsPartialLiquidator(core.hhUser2.address, true);
 
     await setupHONEYBalance(core, core.hhUser2, parseEther('1000'), core.dolomiteMargin);
     await core.tokens.honey

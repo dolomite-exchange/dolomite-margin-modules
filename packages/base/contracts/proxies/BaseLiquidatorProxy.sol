@@ -29,6 +29,7 @@ import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolo
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -93,6 +94,8 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     IDolomiteAccountRiskOverrideSetter public immutable DOLOMITE_ACCOUNT_RISK_OVERRIDE; // solhint-disable-line var-name-mixedcase
 
     uint256 public partialLiquidationThreshold;
+    mapping(uint256 => bool) public marketToPartialLiquidationSupported;
+    mapping(address => bool) public whitelistedPartialLiquidators;
 
     // ================ Constructor ===============
 
@@ -234,30 +237,13 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         internal
         view
     {
-        if (_constants.expirationTimestamp == 0) {
-            (
-                IDolomiteMargin.Decimal memory marginRatioOverride,
-            ) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
-            (
-                IDolomiteMargin.MonetaryValue memory supplyValue,
-                IDolomiteMargin.MonetaryValue memory borrowValue
-            ) = _getAdjustedAccountValues(
-                _constants.markets,
-                _constants.liquidAccount,
-                _constants.liquidMarkets,
-                marginRatioOverride
+        if (_eligibleForPartialLiquidation(_constants)) {
+            Require.that(
+                whitelistedPartialLiquidators[msg.sender],
+                _FILE,
+                "Invalid partial liquidator"
             );
-
-            if (marginRatioOverride.value == 0) {
-                marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
-            }
-            marginRatioOverride = marginRatioOverride.onePlus();
-
-            uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
-            uint256 healthFactor = collateralRatio.div(marginRatioOverride);
-            if (partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold) {
-                _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
-            }
+            _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
         }
 
         uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
@@ -280,6 +266,37 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
             );
             _cache.owedWeiToLiquidate = _cache.liquidOwedWei.value;
         }
+    }
+
+    function _eligibleForPartialLiquidation(
+        LiquidatorProxyConstants memory _constants
+    ) internal view returns (bool) {
+        if (_constants.expirationTimestamp != 0 || !marketToPartialLiquidationSupported[_constants.heldMarket]) {
+            return false;
+        }
+
+        (
+            IDolomiteMargin.Decimal memory marginRatioOverride,
+        ) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
+        (
+            IDolomiteMargin.MonetaryValue memory supplyValue,
+            IDolomiteMargin.MonetaryValue memory borrowValue
+        ) = _getAdjustedAccountValues(
+            _constants.markets,
+            _constants.liquidAccount,
+            _constants.liquidMarkets,
+            marginRatioOverride
+        );
+
+        if (marginRatioOverride.value == 0) {
+            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
+        }
+        marginRatioOverride = marginRatioOverride.onePlus();
+
+        uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
+        uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+
+        return partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold;
     }
 
     function _calculateAndSetActualLiquidationAmount(

@@ -132,6 +132,29 @@ contract LiquidatorProxyV6 is
         emit DolomiteRakeSet(_dolomiteRake);
     }
 
+    function ownerSetIsPartialLiquidator(
+        address _partialLiquidator,
+        bool _isPartialLiquidator
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        whitelistedPartialLiquidators[_partialLiquidator] = _isPartialLiquidator;
+        emit PartialLiquidatorSet(_partialLiquidator, _isPartialLiquidator);
+    }
+
+    function ownerSetMarketToPartialLiquidationSupported(
+        uint256[] memory _marketIds,
+        bool[] memory _isSupported
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _marketIds.length == _isSupported.length,
+            _FILE,
+            "Invalid market IDs length"
+        );
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
+        }
+        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
+    }
+
     function ownerSetPartialLiquidationThreshold(
         uint256 _partialLiquidationThreshold
     ) external onlyDolomiteMarginOwner(msg.sender) {
@@ -358,15 +381,8 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        // @todo fix this
-        uint256 dolomiteRakeAmount;
-        if (_constants.expirationTimestamp > 0) {
-            dolomiteRakeAmount = 0;
-        } else {
-            uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
-            dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
-        }
-
+        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,
@@ -384,9 +400,12 @@ contract LiquidatorProxyV6 is
 
     function _getLiquidationActionsLength(bool _dolomiteRake, bool _withdrawAllReward) internal pure returns (uint256) {
         // 1 for liquidate action, 1 for dolomite rake transfer, 1 for withdrawal reward
-        uint256 len = 1; // @follow-up @Corey what do you think of this code? Doing too many if elses seemed weird
-        if (_dolomiteRake) len++;
-        if (_withdrawAllReward) len++;
-        return len;
+        if (_dolomiteRake && _withdrawAllReward) {
+            return 3;
+        } else if (_dolomiteRake || _withdrawAllReward) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
 }
