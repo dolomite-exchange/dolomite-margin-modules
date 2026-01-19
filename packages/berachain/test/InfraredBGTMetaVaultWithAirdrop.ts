@@ -103,7 +103,7 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
       await writeFile(VAULTS_PATH, JSON.stringify(allUsers, null, 2));
     });
 
-    it.only('should sum airdrop amounts', async () => {
+    it('should sum airdrop amounts', async () => {
       const allUsers = JSON.parse(readFileSync(VAULTS_PATH).toString()) as any[];
       let sum = ZERO_BI;
       let count = ZERO_BI;
@@ -116,6 +116,15 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
       }
       console.log(formatEther(sum));
       console.log(count);
+    });
+
+    it.only('should convert to csv', async () => {
+      const allUsers = JSON.parse(readFileSync(VAULTS_PATH).toString()) as any[];
+      const csv = allUsers
+        .filter(user => user['metavault'])
+        .map(user => `${user['metavault']},${user['airdrop_amount'] ? user['airdrop_amount'] : '0'}`)
+        .join('\n');
+      await writeFile(`${__dirname}/../infrared-vaults-airdrop.csv`, csv);
     });
 
     it('should airdrop', async () => {
