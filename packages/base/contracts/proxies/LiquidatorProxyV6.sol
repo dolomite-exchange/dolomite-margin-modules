@@ -59,11 +59,6 @@ contract LiquidatorProxyV6 is
     bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
     uint256 private constant DOLOMITE_RAKE_ACCOUNT_ID = 3;
-    uint256 private constant _ONE = 1 ether;
-
-    // ============ State Variables ============
-
-    IDolomiteStructs.Decimal public dolomiteRake;
 
     // ============ Constructor ============
 
@@ -118,53 +113,6 @@ contract LiquidatorProxyV6 is
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[0]);
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1]);
         _liquidate(_liquidateParams);
-    }
-
-    function ownerSetDolomiteRake(
-        IDolomiteStructs.Decimal memory _dolomiteRake
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _dolomiteRake.value < _ONE,
-            _FILE,
-            "Invalid dolomite rake"
-        );
-        dolomiteRake = _dolomiteRake;
-        emit DolomiteRakeSet(_dolomiteRake);
-    }
-
-    function ownerSetIsPartialLiquidator(
-        address _partialLiquidator,
-        bool _isPartialLiquidator
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        whitelistedPartialLiquidators[_partialLiquidator] = _isPartialLiquidator;
-        emit PartialLiquidatorSet(_partialLiquidator, _isPartialLiquidator);
-    }
-
-    function ownerSetMarketToPartialLiquidationSupported(
-        uint256[] memory _marketIds,
-        bool[] memory _isSupported
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _marketIds.length == _isSupported.length,
-            _FILE,
-            "Invalid market IDs length"
-        );
-        for (uint256 i = 0; i < _marketIds.length; i++) {
-            marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
-        }
-        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
-    }
-
-    function ownerSetPartialLiquidationThreshold(
-        uint256 _partialLiquidationThreshold
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _partialLiquidationThreshold < _ONE,
-            _FILE,
-            "Invalid partial threshold"
-        );
-        partialLiquidationThreshold = _partialLiquidationThreshold;
-        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
     }
 
     // ============ Internal Functions ============
