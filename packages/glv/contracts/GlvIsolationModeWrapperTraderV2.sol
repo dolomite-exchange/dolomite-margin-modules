@@ -26,7 +26,7 @@ import { UpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/m
 import { AsyncIsolationModeWrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
 import { IIsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GmxV2TraderLibrary } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2TraderLibrary.sol";
 import { IGmxV2IsolationModeVaultFactory } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GlvLibrary } from "./GlvLibrary.sol";
@@ -47,6 +47,7 @@ contract GlvIsolationModeWrapperTraderV2 is
     IGlvIsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
+    using GmxEventUtils for GmxEventUtils.UintItems;
 
     // =====================================================
     // ===================== Constants =====================
@@ -79,7 +80,7 @@ contract GlvIsolationModeWrapperTraderV2 is
 
     function afterGlvDepositExecution(
         bytes32 _key,
-        GlvDeposit.Props memory _deposit,
+        GmxEventUtils.EventLogData memory _depositData,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -92,17 +93,12 @@ contract GlvIsolationModeWrapperTraderV2 is
             "Unexpected receivedGlvTokens"
         );
 
-        _executeDepositExecution(_key, receivedGlvTokens.value, _deposit.numbers.minGlvTokens);
+        _executeDepositExecution(_key, receivedGlvTokens.value, _depositData.uintItems.get("minGlvTokens"));
     }
 
-    /**
-     *
-     * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
-     *       any excess tokens other than the inputToken will be stuck in the contract
-     */
     function afterGlvDepositCancellation(
         bytes32 _key,
-        GlvDeposit.Props memory /* _deposit */,
+        GmxEventUtils.EventLogData memory /* _deposit */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -126,7 +122,7 @@ contract GlvIsolationModeWrapperTraderV2 is
     virtual
     override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTraderV2)
     returns (bool) {
-        return GmxV2Library.isValidInputOrOutputToken(
+        return GmxV2TraderLibrary.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _inputToken,
             skipLongToken()

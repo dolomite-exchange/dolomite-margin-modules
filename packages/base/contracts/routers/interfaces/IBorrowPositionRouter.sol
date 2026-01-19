@@ -33,12 +33,13 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 interface IBorrowPositionRouter is IRouterBase {
 
     function openBorrowPosition(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amount,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external;
+    ) external payable;
 
     function closeBorrowPosition(
         uint256 _isolationModeMarketId,

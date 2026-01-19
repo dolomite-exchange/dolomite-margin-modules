@@ -38,6 +38,7 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
+import { GLPActionsLib } from "./GLPActionsLib.sol";
 // solhint-enable max-line-length
 
 
@@ -138,7 +139,7 @@ contract GLPIsolationModeTokenVaultV2 is
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        _stakeGmx(_gmx, _amount);
+        GLPActionsLib.stakeGmx(/* _vault = */ this, _gmx, address(sGmx()), _amount);
     }
 
     function unstakeGmx(uint256 _amount) external override requireNotFrozen onlyGmxVault(msg.sender) {
@@ -162,7 +163,7 @@ contract GLPIsolationModeTokenVaultV2 is
         if (_glpBalance > 0) {
             _setShouldSkipTransfer(true);
             _setUint256(_TEMP_BALANCE_SLOT, _glpBalance);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance, /* _isViaRouter */ false);
             assert(!shouldSkipTransfer());
         } else {
             _setUint256(_TEMP_BALANCE_SLOT, 0);
@@ -187,7 +188,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
                 _setShouldSkipTransfer(true);
                 _setUint256(_TEMP_BALANCE_SLOT, 0);
-                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
+                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal, /* _isViaRouter */ false);
                 assert(!shouldSkipTransfer());
             }
         }
@@ -477,77 +478,17 @@ contract GLPIsolationModeTokenVaultV2 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        address gmxVault = getGmxVaultOrCreate();
-        Require.that(
-            (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
-            _FILE,
-            "Can only deposit ETH if claiming"
-        );
-        Require.that(
-            !(!_shouldClaimGmx && _shouldStakeGmx),
-            _FILE,
-            "Can only stake GMX if claiming"
-        );
-
-        IERC20 _gmx = gmx();
-        if (_shouldStakeGmx) {
-            // we don't know how much GMX will be staked, so we have to approve all
-            _approveGmxForStaking(_gmx, type(uint256).max);
-        }
-
-        uint256 stakedGmxBalanceBefore = gmxBalanceOf();
-        gmxRewardsRouter().handleRewards(
+        GLPActionsLib.handleRewards(
+            /* _vault = */ this,
             _shouldClaimGmx,
             _shouldStakeGmx,
             _shouldClaimEsGmx,
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-            /* _shouldConvertWethToEth = */ false
+            _shouldDepositWethIntoDolomite,
+            _depositAccountNumberForWeth
         );
-        uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
-
-        if (_shouldStakeGmx) {
-            // we can reset the allowance back to 0 here
-            _approveGmxForStaking(_gmx, /* _amount = */ 0);
-        }
-
-        if (_shouldClaimGmx) {
-            uint256 unstakedGmxBalance = _gmx.balanceOf(address(this));
-            _gmx.safeApprove(address(DOLOMITE_MARGIN()), unstakedGmxBalance);
-            IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                _DEFAULT_ACCOUNT_NUMBER,
-                DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
-                unstakedGmxBalance
-            );
-            _depositIntoGMXVault(
-                gmxVault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                stakedGmxBalanceDelta,
-                /* shouldSkipTransfer = */ true
-            );
-        }
-
-        if (_shouldClaimWeth) {
-            address factory = VAULT_FACTORY();
-            address weth = IGLPIsolationModeVaultFactory(factory).WETH();
-            uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
-            if (_shouldDepositWethIntoDolomite) {
-                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
-                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    _depositAccountNumberForWeth,
-                    IGLPIsolationModeVaultFactory(factory).WETH_MARKET_ID(),
-                    wethAmountWei
-                );
-            } else {
-                IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
-            }
-        }
-    }
-
-    function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
-        _approveGmxForStaking(_gmx, _amount);
-        gmxRewardsRouter().stakeGmx(_amount);
     }
 
     function _vestEsGmx(IGmxVester _vester, uint256 _esGmxAmount) internal {
@@ -564,7 +505,7 @@ contract GLPIsolationModeTokenVaultV2 is
         if (_addDepositIntoDolomite && balance > 0) {
             if (_shouldStakeGmx) {
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
-                _stakeGmx(_gmx, balance);
+                GLPActionsLib.stakeGmx(/* _vault = */ this, _gmx, address(sGmx()), balance);
             } else {
                 _gmx.safeApprove(address(DOLOMITE_MARGIN()), balance);
                 IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
@@ -630,9 +571,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _isViaRouter
     ) internal override {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei, _isViaRouter);
 
         // Sweep any GMX tokens that are sent to this vault from unvesting GLP
         _depositIntoGMXVault(

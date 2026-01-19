@@ -29,12 +29,7 @@ import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBala
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -128,7 +123,11 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize(
-      [tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]
+      [
+        tokenUnwrapper.address,
+        tokenWrapper.address,
+        core.depositWithdrawalRouter.address,
+      ],
     );
 
     solidUser = core.hhUser5;
@@ -180,61 +179,11 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
-    it('should work normally through router', async () => {
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        underlyingMarketId,
-        defaultAccountNumber,
-        underlyingMarketId,
-        amountWei,
-        0, // eventFlag
-      );
-
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
-
-      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
-      await expectWalletBalance(userVault, underlyingToken, amountWei);
-
-      await expectTotalSupply(factory, amountWei);
-    });
-
-    it('should work normally with other token through router', async () => {
-      await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        underlyingMarketId,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        0, // eventFlag
-      );
-
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, amountWei);
-    });
-
     it('should fail when paused', async () => {
       await userVault.setIsExternalRedemptionPaused(true);
       expect(await userVault.isExternalRedemptionPaused()).to.be.true;
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Pausable: Cannot execute when paused',
-      );
-    });
-
-    it('should fail when paused through router', async () => {
-      await userVault.setIsExternalRedemptionPaused(true);
-      expect(await userVault.isExternalRedemptionPaused()).to.be.true;
-
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-          underlyingMarketId,
-          defaultAccountNumber,
-          underlyingMarketId,
-          amountWei,
-          0, // eventFlag
-        ),
         'IsolationModeVaultV1Pausable: Cannot execute when paused',
       );
     });
@@ -250,38 +199,6 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
     });
 
-    it('should work normally through router when not paused', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-        underlyingMarketId,
-        defaultAccountNumber,
-        underlyingMarketId,
-        amountWei,
-        0, // eventFlag
-      );
-
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
-    });
-
-    it('should work normally through router when paused and no debt', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-
-      await userVault.setIsExternalRedemptionPaused(true);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-        underlyingMarketId,
-        defaultAccountNumber,
-        underlyingMarketId,
-        amountWei,
-        0, // eventFlag
-      );
-
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
-    });
-
     it('should work normally if paused and no debt', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -290,36 +207,6 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
-    });
-
-    it('should fail when paused and debt with router', async () => {
-      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
-      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
-        underlyingMarketId,
-        borrowAccountNumber,
-        underlyingMarketId,
-        amountWei,
-        0, // eventFlag
-      );
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId1,
-        ONE_BI,
-        BalanceCheckFlag.None,
-      );
-
-      await userVault.setIsExternalRedemptionPaused(true);
-      await expectThrow(
-        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
-          underlyingMarketId,
-          borrowAccountNumber,
-          underlyingMarketId,
-          ONE_BI,
-          0, // eventFlag
-        ),
-        'IsolationModeVaultV1Pausable: Cannot lever up when paused',
-      );
     });
   });
 
@@ -496,6 +383,45 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, defaultAccountNumber, amountWei),
         `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+      );
+    });
+  });
+
+  describe('#transferFromPositionWithUnderlyingToken', () => {
+    it('should work when paused and position has no debt', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      expect(await userVault.isExternalRedemptionPaused()).to.be.false;
+      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+
+      await userVault.setIsExternalRedemptionPaused(true);
+      await userVault.transferFromPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
+    it('should fail when paused and position has debt', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(otherAmountWei));
+
+      await userVault.setIsExternalRedemptionPaused(true);
+      await expectThrow(
+        userVault.transferFromPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, ONE_BI),
+        'IsolationModeVaultV1Pausable: Cannot lever up when paused',
       );
     });
   });

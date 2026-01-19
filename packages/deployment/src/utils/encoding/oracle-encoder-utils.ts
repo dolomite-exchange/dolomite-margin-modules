@@ -561,6 +561,43 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
   return encodeInsertOracle(core, token, twapOracle, tokenPair);
 }
 
+export async function encodeInsertTwapOracles<T extends DolomiteNetwork>(
+  core: CoreProtocolWithRedstone<T>,
+  token: IERC20,
+  twapOracles: TWAPPriceOracleV2[],
+  tokenPairs: (IERC20 | undefined)[],
+): Promise<EncodedTransaction[]> {
+  if (twapOracles.length !== tokenPairs.length) {
+    return Promise.reject(new Error('Invalid array length!'));
+  }
+  const weight = 100 / twapOracles.length;
+  if (!Number.isInteger(weight)) {
+    return Promise.reject(new Error('Invalid weight!'));
+  }
+
+  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: twapOracles.map((o, i) => ({
+            weight,
+            oracle: o.address,
+            tokenPair: tokenPairs[i]?.address ?? ADDRESS_ZERO,
+          })),
+        },
+      ],
+    ),
+  ];
+
+}
+
 export async function encodeInsertOracle<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,

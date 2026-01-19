@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
+import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IOnlyDolomiteMargin } from "../../interfaces/IOnlyDolomiteMargin.sol";
 
 
@@ -192,6 +193,13 @@ interface IIsolationModeVaultFactory is IOnlyDolomiteMargin {
      * @return  The address of the BorrowPositionProxyV2 contract
      */
     function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
+
+    /**
+     * DO NOT REMOVE THIS COMMENT. NOT ALL FACTORIES HAVE THE REGISTRY AVAILABLE TO IT AND IT CAN RESULT IN RUNTIME
+     * ISSUES
+     *
+     * function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
+     */
 
     // =================================================
     // ================= View Functions ================

@@ -29,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV6',
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, AsyncIsolationModeUnwrapperTraderImpl: unwrapperLibAddress },
+    { ...core.gmxV2Ecosystem.live.gmxV2VaultLibraryMap, AsyncIsolationModeUnwrapperTraderImpl: unwrapperLibAddress },
   );
 
   const unwrapperProxies = [

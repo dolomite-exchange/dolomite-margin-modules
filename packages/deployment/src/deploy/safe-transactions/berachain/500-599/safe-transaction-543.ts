@@ -1,28 +1,15 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
 import { getTWAPPriceOracleV2ConstructorParams } from 'packages/oracles/src/oracles-constructors';
-import {
-  IAlgebraV3Pool__factory,
-  PancakeV3PriceOracleWithModifiers__factory,
-  TWAPPriceOracleV2__factory,
-} from 'packages/oracles/src/types';
-import { CHRONICLE_PRICE_SCRIBES_MAP } from '../../../../../../base/src/utils/constants';
+import { IAlgebraV3Pool__factory, PancakeV3PriceOracleWithModifiers__factory } from 'packages/oracles/src/types';
 import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import {
-  encodeSetInterestSetter,
-  encodeSetIsCollateralOnly,
-  encodeSetSingleCollateralWithStrictDebtByMarketId,
-  encodeSetSupplyCap,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeInsertChronicleOracleV3, encodeInsertTwapOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertTwapOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
@@ -60,21 +47,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ...(await encodeInsertTwapOracle(core, core.tokens.iBgt, iBgtOracle, core.tokens.wbera)),
     ...(await encodeInsertTwapOracle(core, core.tokens.diBgt, iBgtOracle, core.tokens.wbera)),
 
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { iBeraOracle },
-      'iBeraOracle',
-      'ownerSetFloorPrice',
-      [parseEther(`${0.95}`)]
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { iBeraOracle }, 'iBeraOracle', 'ownerSetFloorPrice', [
+      parseEther(`${0.95}`),
+    ]),
 
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { iBgtOracle },
-      'iBgtOracle',
-      'ownerSetFloorPrice',
-      [parseEther(`${0.94}`)]
-    )
+    await prettyPrintEncodedDataWithTypeSafety(core, { iBgtOracle }, 'iBgtOracle', 'ownerSetFloorPrice', [
+      parseEther(`${0.94}`),
+    ]),
   ];
 
   return {

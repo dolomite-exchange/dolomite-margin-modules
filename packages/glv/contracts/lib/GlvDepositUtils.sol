@@ -12,6 +12,16 @@ import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/inter
  */
 library GlvDepositUtils {
     struct CreateGlvDepositParams {
+        CreateGlvDepositParamsAddresses addresses;
+        uint256 minGlvTokens;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+        bool shouldUnwrapNativeToken;
+        bool isMarketTokenDeposit;
+        bytes32[] dataList;
+    }
+
+    struct CreateGlvDepositParamsAddresses {
         address glv;
         address market;
         address receiver;
@@ -21,11 +31,6 @@ library GlvDepositUtils {
         address initialShortToken;
         address[] longTokenSwapPath;
         address[] shortTokenSwapPath;
-        uint256 minGlvTokens;
-        uint256 executionFee;
-        uint256 callbackGasLimit;
-        bool shouldUnwrapNativeToken;
-        bool isMarketTokenDeposit;
     }
 
     struct CreateGlvDepositCache {
