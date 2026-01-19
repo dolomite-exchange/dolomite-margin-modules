@@ -117,65 +117,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     // ============ Internal Functions ============
 
     /**
-     * Pre-populates cache values for some pair of markets.
-     */
-    function _initializeCache(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    returns (LiquidatorProxyCache memory)
-    {
-        MarketInfo memory heldMarketInfo = _binarySearch(_constants.markets, _constants.heldMarket);
-        MarketInfo memory owedMarketInfo = _binarySearch(_constants.markets, _constants.owedMarket);
-
-        uint256 owedPriceAdj;
-        if (_constants.expirationTimestamp > 0) {
-            (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getVersionedSpreadAdjustedPrices(
-                _CHAIN_ID,
-                _constants.liquidAccount,
-                _constants.heldMarket,
-                _constants.owedMarket,
-                uint32(_constants.expirationTimestamp)
-            );
-            owedPriceAdj = owedPricePrice.value;
-        } else {
-            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
-                _CHAIN_ID,
-                _constants.liquidAccount,
-                _constants.heldMarket,
-                _constants.owedMarket
-            );
-            owedPriceAdj = owedMarketInfo.price.value + DecimalLib.mul(owedMarketInfo.price.value, spread);
-        }
-
-        return LiquidatorProxyCache({
-            owedWeiToLiquidate: 0,
-            solidHeldUpdateWithReward: 0,
-            solidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.heldMarket),
-                heldMarketInfo.index
-            ),
-            solidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.owedMarket),
-                owedMarketInfo.index
-            ),
-            liquidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket),
-                heldMarketInfo.index
-            ),
-            liquidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket),
-                owedMarketInfo.index
-            ),
-            flipMarketsForExpiration: false,
-            heldPrice: heldMarketInfo.price.value,
-            owedPrice: owedMarketInfo.price.value,
-            owedPriceAdj: owedPriceAdj
-        });
-    }
-
-    /**
      * Gets the current total supplyValue and borrowValue for some account. Takes into account what
      * the current index will be once updated.
      */

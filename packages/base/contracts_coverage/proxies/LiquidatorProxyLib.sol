@@ -26,6 +26,9 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { BitsLib } from "../protocol/lib/BitsLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 
 
 /**
@@ -36,6 +39,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 library LiquidatorProxyLib {
     using TypesLib for IDolomiteMargin.Par;
+    using DolomiteMarginVersionWrapperLib for *;
 
     bytes32 private constant _FILE = "LiquidatorProxyLib";
 
@@ -150,6 +154,68 @@ library LiquidatorProxyLib {
         return marketInfos;
     }
 
+    /**
+     * Pre-populates cache values for some pair of markets.
+     */
+    function initializeCache(
+        IDolomiteMargin _dolomiteMargin,
+        IExpiry _expiry,
+        uint256 _chainId,
+        BaseLiquidatorProxy.LiquidatorProxyConstants memory _constants
+    )
+    external
+    view
+    returns (BaseLiquidatorProxy.LiquidatorProxyCache memory)
+    {
+        BaseLiquidatorProxy.MarketInfo memory heldMarketInfo = _binarySearch(_constants.markets, _constants.heldMarket);
+        BaseLiquidatorProxy.MarketInfo memory owedMarketInfo = _binarySearch(_constants.markets, _constants.owedMarket);
+
+        uint256 owedPriceAdj;
+        if (_constants.expirationTimestamp > 0) {
+            (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = _expiry.getVersionedSpreadAdjustedPrices(
+                _chainId,
+                _constants.liquidAccount,
+                _constants.heldMarket,
+                _constants.owedMarket,
+                uint32(_constants.expirationTimestamp)
+            );
+            owedPriceAdj = owedPricePrice.value;
+        } else {
+            IDolomiteMargin.Decimal memory spread = _dolomiteMargin.getVersionedLiquidationSpreadForPair(
+                _chainId,
+                _constants.liquidAccount,
+                _constants.heldMarket,
+                _constants.owedMarket
+            );
+            owedPriceAdj = owedMarketInfo.price.value + DecimalLib.mul(owedMarketInfo.price.value, spread);
+        }
+
+        return BaseLiquidatorProxy.LiquidatorProxyCache({
+            owedWeiToLiquidate: 0,
+            solidHeldUpdateWithReward: 0,
+            solidHeldWei: InterestIndexLib.parToWei(
+                _dolomiteMargin.getAccountPar(_constants.solidAccount, _constants.heldMarket),
+                heldMarketInfo.index
+            ),
+            solidOwedWei: InterestIndexLib.parToWei(
+                _dolomiteMargin.getAccountPar(_constants.solidAccount, _constants.owedMarket),
+                owedMarketInfo.index
+            ),
+            liquidHeldWei: InterestIndexLib.parToWei(
+                _dolomiteMargin.getAccountPar(_constants.liquidAccount, _constants.heldMarket),
+                heldMarketInfo.index
+            ),
+            liquidOwedWei: InterestIndexLib.parToWei(
+                _dolomiteMargin.getAccountPar(_constants.liquidAccount, _constants.owedMarket),
+                owedMarketInfo.index
+            ),
+            flipMarketsForExpiration: false,
+            heldPrice: heldMarketInfo.price.value,
+            owedPrice: owedMarketInfo.price.value,
+            owedPriceAdj: owedPriceAdj
+        });
+    }
+
     function _addMarketsToBitmap(
         uint256[] memory _markets,
         uint256[] memory _bitmaps,
@@ -164,4 +230,48 @@ library LiquidatorProxyLib {
         return _marketsLength;
     }
 
+    function _binarySearch(
+        BaseLiquidatorProxy.MarketInfo[] memory _markets,
+        uint256 _marketId
+    ) internal pure returns (BaseLiquidatorProxy.MarketInfo memory) {
+        return _binarySearch(
+            _markets,
+            /* _beginInclusive = */ 0,
+            _markets.length,
+            _marketId
+        );
+    }
+
+
+    function _binarySearch(
+        BaseLiquidatorProxy.MarketInfo[] memory _markets,
+        uint256 _beginInclusive,
+        uint256 _endExclusive,
+        uint256 _marketId
+    ) internal pure returns (BaseLiquidatorProxy.MarketInfo memory) {
+        uint256 len = _endExclusive - _beginInclusive;
+        if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
+            revert("BaseLiquidatorProxy: Market not found"); // solhint-disable-line reason-string
+        }
+
+        uint256 mid = _beginInclusive + len / 2;
+        uint256 midMarketId = _markets[mid].marketId;
+        if (_marketId < midMarketId) {
+            return _binarySearch(
+                _markets,
+                _beginInclusive,
+                mid,
+                _marketId
+            );
+        } else if (_marketId > midMarketId) {
+            return _binarySearch(
+                _markets,
+                mid + 1,
+                _endExclusive,
+                _marketId
+            );
+        } else {
+            return _markets[mid];
+        }
+    }
 }

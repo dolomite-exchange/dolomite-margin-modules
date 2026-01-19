@@ -58,7 +58,7 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         view
         returns (LiquidatorProxyCache memory)
     {
-        return _initializeCache(_constants);
+        return LiquidatorProxyLib.initializeCache(DOLOMITE_MARGIN(), EXPIRY, _CHAIN_ID, _constants);
     }
 
     function checkConstants(
@@ -134,16 +134,17 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         );
     }
 
-    // function calculateAndSetMaxLiquidationAmount(
-    //     LiquidatorProxyCache memory _cache
-    // )
-    //     public
-    //     pure
-    //     returns (LiquidatorProxyCache memory)
-    // {
-    //     _calculateAndSetMaxLiquidationAmount(_cache);
-    //     return _cache;
-    // }
+    function calculateAndSetMaxLiquidationAmount(
+        LiquidatorProxyCache memory _cache,
+        LiquidatorProxyConstants memory _constants
+    )
+        public
+        view
+        returns (LiquidatorProxyCache memory)
+    {
+        _calculateAndSetMaxLiquidationAmount(_cache, _constants);
+        return _cache;
+    }
 
     function calculateAndSetActualLiquidationAmount(
         uint256 _inputAmountWei,

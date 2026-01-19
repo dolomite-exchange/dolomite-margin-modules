@@ -219,7 +219,7 @@ contract LiquidatorProxyV6 is
             DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.solidAccount),
             constants.liquidMarkets
         );
-        LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
+        LiquidatorProxyCache memory liquidatorCache = LiquidatorProxyLib.initializeCache(DOLOMITE_MARGIN(), EXPIRY, _CHAIN_ID, constants);
 
         // validate the msg.sender and that the expiration matches (if being used)
         LiquidatorProxyLib.checkBasicRequirements(DOLOMITE_MARGIN(), EXPIRY, constants);
