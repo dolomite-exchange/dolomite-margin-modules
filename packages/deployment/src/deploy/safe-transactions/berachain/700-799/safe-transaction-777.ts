@@ -9,7 +9,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/ut
 import { BigNumber } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
-const AIRDROP_PATH = `${__dirname}/../../../../berachain/infrared-vaults-airdrop.json`;
+const AIRDROP_PATH = `${__dirname}/../../../../../../berachain/infrared-vaults-airdrop.json`;
 const AIRDROP_TOTAL = BigNumber.from('91871889479504686914997');
 
 /**
@@ -38,6 +38,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
         'ir',
         'transfer',
         [user['owner'], user['airdrop_amount']],
+        { skipWrappingCalldataInSubmitTransaction: true },
     ));
   }
 

@@ -32,7 +32,7 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 14_495_000,
+      blockNumber: 16_004_800,
       network: Network.Berachain,
     });
 
@@ -118,7 +118,20 @@ describe('InfraredBGTMetaVaultWithAirdrop', () => {
       console.log(count);
     });
 
-    it.only('should convert to csv', async () => {
+    it.only('should airdrop to users', async () => {
+      const allUsers = JSON.parse(readFileSync(VAULTS_PATH).toString()) as any[];
+      let sum = ZERO_BI;
+      for (const user of allUsers) {
+        if (user['airdrop_amount'] === '') {
+          continue;
+        }
+        sum = sum.add(BigNumber.from(user['airdrop_amount']));
+        console.log(formatEther(sum));
+        await core.tokens.ir.connect(core.gnosisSafe).transfer(user['owner'], user['airdrop_amount']);
+      }
+    });
+
+    it('should convert to csv', async () => {
       const allUsers = JSON.parse(readFileSync(VAULTS_PATH).toString()) as any[];
       const csv = allUsers
         .filter(user => user['metavault'])
