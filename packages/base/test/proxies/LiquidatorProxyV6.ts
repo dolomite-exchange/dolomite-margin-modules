@@ -1729,7 +1729,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        'GenericTraderProxyBase: Invalid market path length',
+        'GenericTraderProxyBaseLiquidator: Invalid market path length',
       );
     });
 
@@ -1830,7 +1830,7 @@ describe('LiquidatorProxyV6', () => {
     it('should fail if dolomite rake is invalid', async () => {
       await expectThrow(
         liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('1') }),
-        'LiquidatorProxyV6: Invalid dolomite rake',
+        'BaseLiquidatorProxy: Invalid dolomite rake',
       );
     });
 
@@ -1884,7 +1884,7 @@ describe('LiquidatorProxyV6', () => {
         liquidatorProxy
           .connect(core.governance)
           .ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [true, false]),
-        'LiquidatorProxyV6: Invalid market IDs length',
+        'BaseLiquidatorProxy: Invalid market IDs length',
       );
     });
 
@@ -1913,7 +1913,7 @@ describe('LiquidatorProxyV6', () => {
     it('should fail if partial liquidation threshold is invalid', async () => {
       await expectThrow(
         liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('1')),
-        'LiquidatorProxyV6: Invalid partial threshold',
+        'BaseLiquidatorProxy: Invalid partial threshold',
       );
     });
 

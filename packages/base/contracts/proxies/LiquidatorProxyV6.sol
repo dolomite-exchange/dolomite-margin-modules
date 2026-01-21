@@ -21,7 +21,7 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
-import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
+import { GenericTraderProxyBaseForLiquidator } from "./GenericTraderProxyBaseForLiquidator.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
 import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
@@ -47,7 +47,7 @@ import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 contract LiquidatorProxyV6 is
     HasLiquidatorRegistry,
     BaseLiquidatorProxy,
-    GenericTraderProxyBase,
+    GenericTraderProxyBaseForLiquidator,
     ReentrancyGuardUpgradeable,
     Initializable,
     ILiquidatorProxyV6
@@ -77,7 +77,7 @@ contract LiquidatorProxyV6 is
         _expiry,
         _chainId
     )
-    GenericTraderProxyBase(_dolomiteRegistry)
+    GenericTraderProxyBaseForLiquidator(_dolomiteRegistry)
     {}
 
     // ============ External Functions ============
