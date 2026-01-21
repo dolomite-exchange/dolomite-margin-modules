@@ -24,6 +24,7 @@ import {
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
+  LiquidatorProxyV6,
   RegistryProxy,
 } from '../../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/utils/constants';
@@ -155,7 +156,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  liquidatorProxyV6: ILiquidatorProxyV6;
+  liquidatorProxyV6: LiquidatorProxyV6;
   marketIdToDeployedVaultMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
@@ -228,7 +229,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  public readonly liquidatorProxyV6: ILiquidatorProxyV6;
+  public readonly liquidatorProxyV6: LiquidatorProxyV6;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
