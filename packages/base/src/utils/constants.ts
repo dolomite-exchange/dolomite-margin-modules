@@ -955,8 +955,12 @@ export const ST_BTC_MAP: Record<Network.Botanix, TokenWithMarketId> = {
   },
 };
 
-export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const ST_ETH_MAP: Record<Network.ArbitrumOne | Network.Ethereum, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
+    address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+  [Network.Ethereum]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
     marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
   },
@@ -1294,7 +1298,7 @@ export const WST_ETH_MAP: Record<Network.ArbitrumOne | Network.Ethereum, TokenWi
   },
   [Network.Ethereum]: {
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
-    marketId: -1,
+    marketId: 19,
   },
 };
 
