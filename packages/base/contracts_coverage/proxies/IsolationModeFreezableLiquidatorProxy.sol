@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
+import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
@@ -57,12 +58,14 @@ contract IsolationModeFreezableLiquidatorProxy is
 
     constructor(
         address _dolomiteRegistry,
+        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
         uint256 _chainId
     )
     BaseLiquidatorProxy(
+        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
@@ -87,7 +90,8 @@ contract IsolationModeFreezableLiquidatorProxy is
             "Invalid liquid account",
             _params.liquidAccount.owner
         );
-        MarketInfo[] memory marketInfos = _getMarketInfos(
+        MarketInfo[] memory marketInfos = LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
             /* _solidMarketIds = */ new uint256[](0),
             DOLOMITE_MARGIN().getAccountMarketsWithBalances(_params.liquidAccount)
         );

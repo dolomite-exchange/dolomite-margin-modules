@@ -21,13 +21,15 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
-import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
+import { GenericTraderProxyBaseForLiquidator } from "./GenericTraderProxyBaseForLiquidator.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
+import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
@@ -45,16 +47,18 @@ import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 contract LiquidatorProxyV6 is
     HasLiquidatorRegistry,
     BaseLiquidatorProxy,
-    GenericTraderProxyBase,
+    GenericTraderProxyBaseForLiquidator,
     ReentrancyGuardUpgradeable,
     Initializable,
     ILiquidatorProxyV6
 {
+    using DecimalLib for uint256;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
+    uint256 private constant DOLOMITE_RAKE_ACCOUNT_ID = 3;
 
     // ============ Constructor ============
 
@@ -63,15 +67,17 @@ contract LiquidatorProxyV6 is
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry
+        address _liquidatorAssetRegistry,
+        address _dolomiteAccountRiskOverride
     )
     BaseLiquidatorProxy(
+        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
         _chainId
     )
-    GenericTraderProxyBase(_dolomiteRegistry)
+    GenericTraderProxyBaseForLiquidator(_dolomiteRegistry)
     {}
 
     // ============ External Functions ============
@@ -123,7 +129,7 @@ contract LiquidatorProxyV6 is
             otherAccountNumber: 0,
             feeTransferAccountIndex: 0,
             // traders go right after the liquid account ("other account")
-            traderAccountStartIndex: LIQUID_ACCOUNT_ID + 1,
+            traderAccountStartIndex: DOLOMITE_RAKE_ACCOUNT_ID + 1,
             actionsCursor: 0,
             // unused for this function
             inputBalanceWeiBeforeOperate: TypesLib.zeroWei(),
@@ -139,7 +145,7 @@ contract LiquidatorProxyV6 is
             _liquidateParams.makerAccounts,
             _liquidateParams.tradersPath
         );
-        _validateInputAmountAndInputMarketForIsolationMode(
+        bool isIsolationMode = _validateInputAmountAndInputMarketForIsolationMode(
             _liquidateParams.tradersPath[0],
             _liquidateParams.inputAmountWei
         );
@@ -151,22 +157,23 @@ contract LiquidatorProxyV6 is
         constants.expirationTimestamp = _liquidateParams.expirationTimestamp;
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
+        constants.dolomiteRake = !isIsolationMode && _liquidateParams.expirationTimestamp == 0;
 
-        _checkConstants(constants);
+        LiquidatorProxyLib.checkConstants(DOLOMITE_MARGIN(), constants);
 
         constants.liquidMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.liquidAccount);
-        constants.markets = _getMarketInfos(
-            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidateParams.solidAccount),
+        constants.markets = LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.solidAccount),
             constants.liquidMarkets
         );
-
-        LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
+        LiquidatorProxyCache memory liquidatorCache = LiquidatorProxyLib.initializeCache(DOLOMITE_MARGIN(), EXPIRY, _CHAIN_ID, constants);
 
         // validate the msg.sender and that the expiration matches (if being used)
-        _checkBasicRequirements(constants);
+        LiquidatorProxyLib.checkBasicRequirements(DOLOMITE_MARGIN(), EXPIRY, constants);
 
         // get the max liquidation amount
-        _calculateAndSetMaxLiquidationAmount(liquidatorCache);
+        _calculateAndSetMaxLiquidationAmount(liquidatorCache, constants);
 
         (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
         _calculateAndSetActualLiquidationAmount(
@@ -185,10 +192,14 @@ contract LiquidatorProxyV6 is
         // the call to _getAccounts leaves accounts[LIQUID_ACCOUNT_ID] null because it fills in the traders starting at
         // the `traderAccountCursor` index
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
+        accounts[DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: DOLOMITE_REGISTRY.feeAgent(),
+            number: DEFAULT_ACCOUNT_NUMBER
+        });
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getLiquidationActionsLength(_liquidateParams.withdrawAllReward) +
+            _getLiquidationActionsLength(constants.dolomiteRake, _liquidateParams.withdrawAllReward) +
             _getActionsLengthForTraderParams(
                 genericCache,
                 _liquidateParams.tradersPath,
@@ -202,13 +213,24 @@ contract LiquidatorProxyV6 is
             liquidatorCache,
             genericCache
         );
+        uint256 dolomiteRakeAmount;
+        if (constants.dolomiteRake) {
+            dolomiteRakeAmount = _appendDolomiteRakeTransferAction(
+                actions,
+                constants,
+                liquidatorCache,
+                genericCache
+            );
+        }
         _appendTraderActions(
             accounts,
             actions,
             genericCache,
             true,
             _liquidateParams.marketIdsPath,
-            _liquidateParams.inputAmountWei,
+            _liquidateParams.inputAmountWei > liquidatorCache.solidHeldUpdateWithReward - dolomiteRakeAmount
+                ? liquidatorCache.solidHeldUpdateWithReward - dolomiteRakeAmount
+                : _liquidateParams.inputAmountWei,
             _liquidateParams.minOutputAmountWei,
             _liquidateParams.tradersPath
         );
@@ -251,7 +273,7 @@ contract LiquidatorProxyV6 is
     function _validateInputAmountAndInputMarketForIsolationMode(
         TraderParam memory _param,
         uint256 _inputAmountWei
-    ) internal pure {
+    ) internal pure returns (bool) {
         if (_isUnwrapperTraderType(_param.traderType) || _isWrapperTraderType(_param.traderType)) {
             // For liquidations, the asset amount must match the amount of collateral transferred from liquid account
             // to solid account. This is done via always selling the max amount of held collateral.
@@ -260,7 +282,9 @@ contract LiquidatorProxyV6 is
                 _FILE,
                 "Invalid amount for IsolationMode"
             );
+            return true;
         }
+        return false;
     }
 
     function _appendLiquidationAction(
@@ -294,11 +318,42 @@ contract LiquidatorProxyV6 is
         }
     }
 
+    function _appendDolomiteRakeTransferAction(
+
+        IDolomiteStructs.ActionArgs[] memory _actions,
+        LiquidatorProxyConstants memory _constants,
+        LiquidatorProxyCache memory _liquidatorCache,
+        GenericTraderProxyCache memory _genericCache
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
+            TRADE_ACCOUNT_ID,
+            DOLOMITE_RAKE_ACCOUNT_ID,
+            _constants.heldMarket,
+            IDolomiteStructs.AssetDenomination.Wei,
+            dolomiteRakeAmount
+        );
+
+        return dolomiteRakeAmount;
+    }
+
     function _otherAccountId() internal pure override returns (uint256) {
         return LIQUID_ACCOUNT_ID;
     }
 
-    function _getLiquidationActionsLength(bool _withdrawAllReward) internal pure returns (uint256) {
-        return _withdrawAllReward ? 2 : 1;
+    function _getLiquidationActionsLength(bool _dolomiteRake, bool _withdrawAllReward) internal pure returns (uint256) {
+        // 1 for liquidate action, 1 for dolomite rake transfer, 1 for withdrawal reward
+        if (_dolomiteRake && _withdrawAllReward) {
+            return 3;
+        } else if (_dolomiteRake || _withdrawAllReward) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
 }
