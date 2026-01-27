@@ -9,6 +9,7 @@ import {
   HONEY_WBERA_BEX_LP_TOKEN_MAP,
   HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP,
   IBGT_STAKING_POOL_MAP,
+  INFRARED_CLAIMER_MAP,
   INFRARED_MAP,
 } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
@@ -22,6 +23,8 @@ import {
   IBGTM__factory,
   IInfrared,
   IInfrared__factory,
+  IInfraredMerkleDistributor,
+  IInfraredMerkleDistributor__factory,
   IInfraredVault,
   IInfraredVault__factory,
   INativeRewardVault,
@@ -41,6 +44,7 @@ import { getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 export interface BerachainRewardsEcosystem {
   berachainRewardsFactory: IBerachainRewardsFactory;
   infrared: IInfrared;
+  infraredMerkleDistributor: IInfraredMerkleDistributor;
   bgtm: IBGTM;
   iBgtStakingPool: IInfraredVault;
   listedRewardAssets: {
@@ -92,6 +96,7 @@ export async function createBerachainRewardsEcosystem(
     ),
     bgtm: IBGTM__factory.connect(BGTM_MAP[network]!, signer),
     infrared: IInfrared__factory.connect(INFRARED_MAP[network]!, signer),
+    infraredMerkleDistributor: IInfraredMerkleDistributor__factory.connect(INFRARED_CLAIMER_MAP[network]!, signer),
     iBgtStakingPool: IInfraredVault__factory.connect(IBGT_STAKING_POOL_MAP[network]!, signer),
     listedRewardAssets: {
       bexHoneyUsdc: {
