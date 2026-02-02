@@ -862,6 +862,17 @@ export const S_WBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const SAV_USD_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xA322e23a357cB7C596A7a834102B9d6d5b15da3e',
+    marketId: 75,
+  },
+  [Network.Berachain]: {
+    address: '0xa744Fe3688291aC3A4a7eC917678783aD9946a1E',
+    marketId: 47,
+  },
+};
+
 export const SIZE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',

@@ -51,6 +51,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   sUsda: IERC20;
   sUsde: IERC20;
   sWbera: IERC20;
+  savUsd: IERC20;
   sdeUsd: IERC20;
   srUsd: IERC20;
   stBtc: IERC20;
@@ -135,6 +136,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   sUsda: BigNumberish;
   sUsde: BigNumberish;
   sWbera: BigNumberish;
+  savUsd: BigNumberish;
   sdeUsd: BigNumberish;
   srUsd: BigNumberish;
   stBtc: BigNumberish;

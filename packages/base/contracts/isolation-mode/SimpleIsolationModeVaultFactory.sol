@@ -31,7 +31,7 @@ import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.
  *
  * @notice  Contract for wrapping tokens via a per-user vault that credits a user's balance within DolomiteMargin
  */
-abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
+contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
 
     // ===================================================
     // ==================== Constants ====================
