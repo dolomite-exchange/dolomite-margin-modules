@@ -905,10 +905,14 @@ export const STONE_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const S_USDA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const S_USDA_MAP: Record<Network.Berachain | Network.Botanix, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x2840F9d9f96321435Ab0f977E7FDBf32EA8b304f',
     marketId: 22,
+  },
+  [Network.Botanix]: {
+    address: '0x4B9d58314AA14ada0B96714cc87486A7a17231D0',
+    marketId: 5,
   },
 };
 
@@ -1015,10 +1019,14 @@ export const USD1_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   },
 };
 
-export const USDA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const USDA_MAP: Record<Network.Berachain | Network.Botanix, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xff12470a969Dd362EB6595FFB44C82c959Fe9ACc',
     marketId: 25,
+  },
+  [Network.Botanix]: {
+    address: '0xdB8CAb508ADEeE23443312dC02917fd826d1ca6E',
+    marketId: -1,
   },
 };
 
@@ -1150,6 +1158,17 @@ export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     marketId: 48,
+  },
+};
+
+export const WSR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x316cd39632Cac4F4CdfC21757c4500FE12f64514',
+    marketId: 48,
+  },
+  [Network.Ethereum]: {
+    address: '0xd3fd63209fa2d55b07a0f6db36c2f43900be3094',
+    marketId: 19,
   },
 };
 
@@ -2675,6 +2694,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [PBTC_MAP[Network.Botanix].address]: {
       aggregatorAddress: '0x632d2713F48ac2DF441b3cE46Bd7fa4467D419d1',
     },
+    [S_USDA_MAP[Network.Botanix].address]: {
+      aggregatorAddress: '0x8216FE7A95858BC5113BC0523973bc61A3ac246c',
+      tokenPairAddress: USDA_MAP[Network.Botanix].address,
+    },
     [ST_BTC_MAP[Network.Botanix].address]: {
       aggregatorAddress: '0x0127B0C7f15d63a9d7a2a9Bf879581B29Ff65618',
       tokenPairAddress: PBTC_MAP[Network.Botanix].address,
@@ -2949,6 +2972,9 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0xE7A6E74d1654B98E9d3DDb003B645E0d7c82C935',
     },
     [SR_USD_MAP[Network.Ethereum].address]: {
+      scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
+    },
+    [WSR_USD_MAP[Network.Ethereum].address]: {
       scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
     },
   },
