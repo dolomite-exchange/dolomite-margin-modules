@@ -52,7 +52,7 @@ contract TestDolomiteMarginExchangeWrapper is IDolomiteMarginExchangeWrapper, On
         address _receiver,
         address _outputToken,
         address,
-        uint256,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external

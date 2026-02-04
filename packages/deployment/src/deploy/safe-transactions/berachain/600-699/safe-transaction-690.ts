@@ -1,5 +1,5 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
@@ -53,6 +53,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     )),
     ...(await encodeAddMarket(
       core,
+      core.marketIds.ir,
       core.tokens.ir,
       core.oracleAggregatorV2,
       core.interestSetters.alwaysZeroInterestSetter,
@@ -61,9 +62,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       parseEther(`${690_000}`),
       0,
       true,
+      ZERO_BI,
+      {
+        enablePartialLiquidation: false,
+      },
     )),
     ...(await encodeAddMarket(
       core,
+      core.marketIds.kdk,
       core.tokens.kdk,
       core.oracleAggregatorV2,
       core.interestSetters.alwaysZeroInterestSetter,
@@ -72,6 +78,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       parseEther(`${420_000}`),
       0,
       true,
+      ZERO_BI,
+      {
+        enablePartialLiquidation: false,
+      },
     )),
   ];
 

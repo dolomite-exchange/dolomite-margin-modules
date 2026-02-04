@@ -1,9 +1,10 @@
 import { INTEGERS } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { TestBaseLiquidatorProxy, TestBaseLiquidatorProxy__factory } from '../../src/types';
+import { TestBaseLiquidatorProxy } from '../../src/types';
 import {
-  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
   depositIntoDolomiteMargin,
   getPartialRoundUp,
   withdrawFromDolomiteMargin,
@@ -38,14 +39,17 @@ describe('BaseLiquidatorProxy', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    proxy = await createContractWithAbi<TestBaseLiquidatorProxy>(
-      TestBaseLiquidatorProxy__factory.abi,
-      TestBaseLiquidatorProxy__factory.bytecode,
+
+    const liquidatorProxyLib = await createContractWithName('LiquidatorProxyLib', []);
+    proxy = await createContractWithLibrary(
+      'TestBaseLiquidatorProxy',
+      { LiquidatorProxyLib: liquidatorProxyLib.address },
       [
+        core.dolomiteAccountRiskOverrideSetterProxy.address,
         core.liquidatorAssetRegistry.address,
         core.dolomiteMargin.address,
         core.expiry.address,
-        core.config.networkNumber,
+        Network.ArbitrumOne,
       ],
     );
 
@@ -71,6 +75,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       });
       expect(cache.owedWeiToLiquidate).to.eq(0);
       expect(cache.solidHeldUpdateWithReward).to.eq(0);
@@ -106,6 +111,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: await getBlockTimestamp(core.config.blockNumber) - 300, // 5 minutes ramp time
+        dolomiteRake: false,
       };
       const cache = await proxy.initializeCache(constants);
       expect(cache.owedWeiToLiquidate).to.eq(0);
@@ -143,6 +149,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       await proxy.checkConstants(constants);
     });
@@ -160,10 +167,11 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       await expectThrow(
         proxy.checkConstants(constants),
-        `BaseLiquidatorProxy: Owed market equals held market <${heldMarket.toString()}>`,
+        `LiquidatorProxyLib: Owed market equals held market <${heldMarket.toString()}>`,
       );
     });
 
@@ -180,10 +188,11 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       await expectThrow(
         proxy.checkConstants(constants),
-        `BaseLiquidatorProxy: Owed market cannot be positive <${owedMarket.toString()}>`,
+        `LiquidatorProxyLib: Owed market cannot be positive <${owedMarket.toString()}>`,
       );
     });
 
@@ -200,10 +209,11 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       await expectThrow(
         proxy.checkConstants(constants),
-        `BaseLiquidatorProxy: Held market cannot be negative <${heldMarket.toString()}>`,
+        `LiquidatorProxyLib: Held market cannot be negative <${heldMarket.toString()}>`,
       );
     });
 
@@ -220,10 +230,11 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: INTEGERS.MAX_UINT.toFixed(),
+        dolomiteRake: false,
       };
       await expectThrow(
         proxy.checkConstants(constants),
-        `BaseLiquidatorProxy: Expiration timestamp overflows <${constants.expirationTimestamp}>`,
+        `LiquidatorProxyLib: Expiration timestamp overflows <${constants.expirationTimestamp}>`,
       );
     });
 
@@ -240,10 +251,11 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: await getBlockTimestamp(core.config.blockNumber) + 100,
+        dolomiteRake: false,
       };
       await expectThrow(
         proxy.checkConstants(constants),
-        `BaseLiquidatorProxy: Borrow not yet expired <${constants.expirationTimestamp}>`,
+        `LiquidatorProxyLib: Borrow not yet expired <${constants.expirationTimestamp}>`,
       );
     });
   });
@@ -262,6 +274,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       const sender = await impersonate(solidAccount.owner, true);
       await proxy.connect(sender).checkBasicRequirements(constants);
@@ -280,6 +293,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       const signer = await impersonate(solidAccount.owner, true);
       const sender = core.hhUser1;
@@ -300,6 +314,7 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       await setExpiry(core, liquidAccount, owedMarket, 123);
       constants.expirationTimestamp = await core.expiry.getExpiry(liquidAccount, owedMarket);
@@ -323,12 +338,13 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: 0,
+        dolomiteRake: false,
       };
       const sender = core.hhUser1;
       await core.dolomiteMargin.setOperators([{ operator: sender.address, trusted: false }]);
       await expectThrow(
         proxy.connect(sender).checkBasicRequirements(constants),
-        `BaseLiquidatorProxy: Sender not operator <${core.hhUser1.address.toLowerCase()}>`,
+        `LiquidatorProxyLib: Sender not operator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -345,11 +361,12 @@ describe('BaseLiquidatorProxy', () => {
         owedMarket,
         markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
         expirationTimestamp: await getBlockTimestamp(core.config.blockNumber) - 100,
+        dolomiteRake: false,
       };
       const sender = await impersonate(solidAccount.owner);
       await expectThrow(
         proxy.connect(sender).checkBasicRequirements(constants),
-        `BaseLiquidatorProxy: Expiration timestamp mismatch <0, ${constants.expirationTimestamp}>`,
+        `LiquidatorProxyLib: Expiration timestamp mismatch <0, ${constants.expirationTimestamp}>`,
       );
     });
   });
@@ -447,7 +464,22 @@ describe('BaseLiquidatorProxy', () => {
       expect(cache.owedWeiToLiquidate).to.eq(0);
       expect(cache.flipMarketsForExpiration).to.eq(false);
 
-      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache);
+      const solidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(solidAccount);
+      const liquidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
+      const heldMarket = core.marketIds.dfsGlp!;
+      const owedMarket = core.marketIds.wbtc;
+      const constants = {
+        solidAccount,
+        liquidAccount,
+        liquidMarkets,
+        heldMarket,
+        owedMarket,
+        markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
+        expirationTimestamp: 0,
+        dolomiteRake: true,
+      };
+
+      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache, constants);
       expect(newCache.solidHeldUpdateWithReward).eq(liquidOwedWei.mul(owedPriceAdj).div(heldPrice));
       expect(newCache.owedWeiToLiquidate).eq(liquidOwedWei);
       expect(newCache.flipMarketsForExpiration).eq(false);
@@ -477,7 +509,22 @@ describe('BaseLiquidatorProxy', () => {
       expect(cache.owedWeiToLiquidate).to.eq(0);
       expect(cache.flipMarketsForExpiration).to.eq(false);
 
-      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache);
+      const solidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(solidAccount);
+      const liquidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
+      const heldMarket = core.marketIds.dfsGlp!;
+      const owedMarket = core.marketIds.wbtc;
+      const constants = {
+        solidAccount,
+        liquidAccount,
+        liquidMarkets,
+        heldMarket,
+        owedMarket,
+        markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
+        expirationTimestamp: 0,
+        dolomiteRake: true,
+      };
+
+      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache, constants);
       expect(newCache.solidHeldUpdateWithReward).eq(liquidHeldWei);
       expect(newCache.owedWeiToLiquidate).eq(getPartialRoundUp(liquidHeldWei, heldPrice, owedPriceAdj));
       expect(newCache.flipMarketsForExpiration).eq(true);
@@ -505,7 +552,22 @@ describe('BaseLiquidatorProxy', () => {
         liquidOwedWei: { sign: false, value: liquidOwedWei },
         flipMarketsForExpiration: false,
       };
-      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache);
+
+      const solidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(solidAccount);
+      const liquidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
+      const heldMarket = core.marketIds.dfsGlp!;
+      const owedMarket = core.marketIds.wbtc;
+      const constants = {
+        solidAccount,
+        liquidAccount,
+        liquidMarkets,
+        heldMarket,
+        owedMarket,
+        markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
+        expirationTimestamp: 0,
+        dolomiteRake: true,
+      };
+      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache, constants);
       const result = await proxy.calculateAndSetActualLiquidationAmount(
         MAX_UINT_256_BI,
         MAX_UINT_256_BI,
@@ -537,7 +599,22 @@ describe('BaseLiquidatorProxy', () => {
         liquidOwedWei: { sign: false, value: liquidOwedWei },
         flipMarketsForExpiration: false,
       };
-      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache);
+
+      const solidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(solidAccount);
+      const liquidMarkets = await core.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
+      const heldMarket = core.marketIds.dfsGlp!;
+      const owedMarket = core.marketIds.wbtc;
+      const constants = {
+        solidAccount,
+        liquidAccount,
+        liquidMarkets,
+        heldMarket,
+        owedMarket,
+        markets: await proxy.getMarketInfos(solidMarkets, liquidMarkets),
+        expirationTimestamp: 0,
+        dolomiteRake: true,
+      };
+      const newCache = await proxy.calculateAndSetMaxLiquidationAmount(cache, constants);
       const owedWeiToLiquidate = newCache.owedWeiToLiquidate.mul(9).div(10);
       const result = await proxy.calculateAndSetActualLiquidationAmount(
         newCache.solidHeldUpdateWithReward,

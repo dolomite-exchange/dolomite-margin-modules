@@ -11,6 +11,8 @@ import { IDolomitePriceOracle } from "../../contracts/protocol/interfaces/IDolom
 import { IDolomiteRegistry } from "../../contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "../../contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../contracts/protocol/interfaces/IWETH.sol";
+import { IDepositWithdrawalRouter } from "../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
+import { IBorrowPositionProxyV2 } from "../../contracts/interfaces/IBorrowPositionProxyV2.sol";
 
 import { CustomTestToken } from "../../contracts/test/CustomTestToken.sol";
 import { DolomiteRegistryImplementation } from "../../contracts/general/DolomiteRegistryImplementation.sol";
@@ -29,20 +31,28 @@ abstract contract DolomiteForkTest is DolomiteAssertions, DolomiteHelpers {
     address public dolomiteOwner;
 
     IDolomiteInterestSetter public alwaysZeroInterestSetter = IDolomiteInterestSetter(0x37b6fF70654EDfBdAA3c9a723fdAdF5844De2168);
-    address public borrowPositionProxy = 0x38E49A617305101216eC6306e3a18065D14Bf3a7;
-    TestPriceOracle public testPriceOracle;
+    IBorrowPositionProxyV2 public borrowPositionProxy = IBorrowPositionProxyV2(0x38E49A617305101216eC6306e3a18065D14Bf3a7);
+    IDepositWithdrawalRouter public depositWithdrawalRouter = IDepositWithdrawalRouter(0xf8b2c637A68cF6A17b1DF9F8992EeBeFf63d2dFf);
+
+    address public expiry = 0xDEc1ae3b570ac3c57871BBD7bFeacC807f973Bea;
+    address public liquidatorAssetRegistry = 0x10d98759762EFaC656BD4bE7F2f5599208F44FAc;
+    TestPriceOracle public constantPriceOracle = new TestPriceOracle();
+
 
     IWETH public weth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
     IERC20 public usdc = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
+    IERC20 public dai = IERC20(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
+    address public charlie = makeAddr("charlie");
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("ARBITRUM_ONE_WEB3_PROVIDER_URL"), 344263500);
+        // one wei lossy for dai liquidation 399544000
+        vm.createSelectFork(vm.envString("ARBITRUM_ONE_WEB3_PROVIDER_URL"), 399544000);
         dolomiteOwner = dolomiteMargin.owner();
 
-        testPriceOracle = new TestPriceOracle();
+        constantPriceOracle = new TestPriceOracle();
     }
 
     function createTestIsolationModeMarket() public returns (IsolationModeMarket memory) {
@@ -50,19 +60,19 @@ abstract contract DolomiteForkTest is DolomiteAssertions, DolomiteHelpers {
         TestIsolationModeTokenVaultV1 userVaultImplementation = new TestIsolationModeTokenVaultV1();
         TestIsolationModeVaultFactory factory = new TestIsolationModeVaultFactory(
             address(underlyingToken),
-            borrowPositionProxy,
+            address(borrowPositionProxy),
             address(userVaultImplementation),
             address(dolomiteRegistry),
             address(dolomiteMargin)
         );
 
-        testPriceOracle.setPrice(address(factory), 1e18);
+        constantPriceOracle.setPrice(address(factory), 1e18);
 
         uint256 marketId = dolomiteMargin.getNumMarkets();
         vm.startPrank(dolomiteOwner);
         dolomiteMargin.ownerAddMarket(
             address(factory),
-            IDolomitePriceOracle(address(testPriceOracle)),
+            IDolomitePriceOracle(address(constantPriceOracle)),
             alwaysZeroInterestSetter,
             /* marginPremium */ IDolomiteStructs.Decimal({ value: 0 }),
             /* spreadPremium */ IDolomiteStructs.Decimal({ value: 0 }),
@@ -79,7 +89,7 @@ abstract contract DolomiteForkTest is DolomiteAssertions, DolomiteHelpers {
             underlyingToken: underlyingToken,
             userVaultImplementation: userVaultImplementation,
             factory: factory,
-            priceOracle: testPriceOracle
+            priceOracle: constantPriceOracle
         });
     }
 
