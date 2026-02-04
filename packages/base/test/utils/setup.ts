@@ -80,7 +80,8 @@ import {
   BGT_MAP,
   BTC_PLACEHOLDER_MAP,
   BYUSD_MAP,
-  C_USD_MAP, CB_BTC_MAP,
+  C_USD_MAP,
+  CB_BTC_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
@@ -215,6 +216,7 @@ import {
   WMNT_MAP,
   WO_ETH_MAP,
   WOKB_MAP,
+  WSR_USD_MAP,
   WST_ETH_MAP,
   X_SOLV_BTC_MAP,
   XAI_MAP,
@@ -1742,6 +1744,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
         wlfi: WLFI_MAP[typedConfig.network].marketId,
+        wsrUsd: WSR_USD_MAP[typedConfig.network].marketId,
         wstEth: WST_ETH_MAP[typedConfig.network].marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
@@ -1775,6 +1778,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         weth: coreProtocolParams.tokens.weth as any,
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
         wlfi: IERC20__factory.connect(WLFI_MAP[typedConfig.network].address, hhUser1),
+        wsrUsd: IERC20__factory.connect(WSR_USD_MAP[typedConfig.network].address, hhUser1),
         wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,

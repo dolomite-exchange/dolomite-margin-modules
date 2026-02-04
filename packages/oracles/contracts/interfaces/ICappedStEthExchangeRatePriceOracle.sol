@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2025 Dolomite.
+    Copyright 2026 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,29 +23,19 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 
 
 /**
- * @title   IConstantPriceOracle
+ * @title   ICappedStEthExchangeRatePriceOracle
  * @author  Dolomite
  *
- * An interface of IDolomitePriceOracle that returns a constant price for a given token.
+ * An interface for the CappedStEthExchangeRatePriceOracle
  */
-interface IConstantPriceOracle is IDolomitePriceOracle {
+interface ICappedStEthExchangeRatePriceOracle is IDolomitePriceOracle {
+    event CapParametersSet(uint256 snapshotRatio, uint256 snapshotTimestamp, uint256 maxGrowthPerSecond);
 
-    // ============ Events ============
+    struct SetCapParameters {
+        uint256 snapshotRatio;
+        uint256 snapshotTimestamp;
+        uint256 maxGrowthPerYear;
+    }
 
-    event TokenPriceSet(
-        address indexed token,
-        uint256 price
-    );
-
-    // ============ Admin Functions ============
-
-    /**
-     * Sets the price for a token.
-     *
-     * @dev The price NEEDS to be in 36 - token decimals format.
-     *
-     * @param  _token   The token to set the price for.
-     * @param  _price   The price to set for the token.
-     */
-    function ownerSetTokenPrice(address _token, uint256 _price) external;
+    function ownerSetCapParameters(SetCapParameters memory _setCapParameters) external;
 }

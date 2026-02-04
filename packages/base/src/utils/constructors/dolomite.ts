@@ -18,7 +18,7 @@ import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts
 import { BYTES_EMPTY, Network, DolomiteNetwork, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
-import { AdminRegistry } from 'packages/admin/src/types/contracts_coverage/AdminRegistry';
+import { AdminRegistry } from 'packages/admin/src/types/contracts/AdminRegistry';
 
 export enum LowerPercentage {
   _1 = '0.01',
@@ -124,6 +124,11 @@ export enum TargetCollateralization {
    * 120% collateralization || 83.33% LTV
    */
   _120 = '1.20',
+
+  /**
+   * 121.95% collateralization || 82% LTV
+   */
+  _121 = '1.219512195121951219',
 
   /**
    * 125% collateralization || 80.00% LTV
