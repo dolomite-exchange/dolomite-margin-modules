@@ -1171,7 +1171,7 @@ export const WSR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWith
     marketId: 48,
   },
   [Network.Ethereum]: {
-    address: '0xd3fd63209fa2d55b07a0f6db36c2f43900be3094',
+    address: '0xd3fD63209FA2D55B07A0f6db36C2f43900be3094',
     marketId: 19,
   },
 };
@@ -1317,7 +1317,7 @@ export const WST_ETH_MAP: Record<Network.ArbitrumOne | Network.Ethereum, TokenWi
   },
   [Network.Ethereum]: {
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
-    marketId: 19,
+    marketId: 20,
   },
 };
 

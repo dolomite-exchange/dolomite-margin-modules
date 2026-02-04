@@ -11313,6 +11313,13 @@
       "isVerified": true
     }
   },
+  "StEthExchangeRatePriceOracle": {
+    "1": {
+      "address": "0x46a3Af6bAeC455C8a67F7cFe98BF59787461BfC8",
+      "transaction": "0x18928637be0ccb519c0530f1ae29b47a5d43f302d44677ff8ce3364c92923a2e",
+      "isVerified": true
+    }
+  },
   "StrategicVestingImplementationV1": {
     "80094": {
       "address": "0x8813f6108F8CddC523f5Ac6B4444Dd9c803546DF",
