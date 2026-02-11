@@ -496,6 +496,8 @@ export async function deployContractAndSave(
       opts.gasPrice = undefined;
       opts.maxPriorityFeePerGas = block?.baseFeePerGas?.div(10) ?? parseUnits('0.1', 'gwei');
       opts.type = 2;
+    } else {
+      delete opts.maxPriorityFeePerGas;
     }
 
     if (contractName === 'CREATE3Factory') {
