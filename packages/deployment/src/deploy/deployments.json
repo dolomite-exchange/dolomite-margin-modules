@@ -3391,6 +3391,11 @@
       "address": "0x40E816361e9ECEb4DeD402dEF58Cc77e9f097914",
       "transaction": "0x6122e8a25b14c545973ac8db5ceccdcc841e916691f809b724fd47d83b3fb581",
       "isVerified": true
+    },
+    "80094": {
+      "address": "0x40E816361e9ECEb4DeD402dEF58Cc77e9f097914",
+      "transaction": "0x032ba9553257b1168d006a6a79f39154ab8484c3503ee1f7debc5b26b6c13369",
+      "isVerified": true
     }
   },
   "ERC4626PriceOracleV1": {

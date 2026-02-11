@@ -1499,6 +1499,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       getMaxDeploymentVersionAddressByDeploymentKey('ChainsightPriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const ensoEcosystem = await createEnsoEcosystem(config.network, hhUser1);
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
     const pendleEcosystem = await createPendleEcosystemBerachain(config.network, hhUser1);
     const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
@@ -1509,6 +1510,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       berachainRewardsEcosystem,
+      ensoEcosystem,
       oogaBoogaEcosystem,
       tokenomics,
       tokenomicsAirdrop,
