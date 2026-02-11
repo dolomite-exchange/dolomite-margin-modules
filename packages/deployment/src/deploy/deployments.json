@@ -1292,6 +1292,11 @@
       "transaction": "0x13cd802fceea7169141ed3757bc3a2a9faa961427f59c7fd771e143d4a68d316",
       "isVerified": true
     },
+    "56": {
+      "address": "0xa8F7e7A361De6A2172fcb2accE68bd21597599F7",
+      "transaction": "0xf3557b3bd79ae0b6d0146533b919dddfb174954796bd9211cb130c426eb04d1c",
+      "isVerified": true
+    },
     "196": {
       "address": "0xa8F7e7A361De6A2172fcb2accE68bd21597599F7",
       "transaction": "0xc96dc52e3340360a0fd1915e732c93e0b13874bbf6f7dc8a8679b143956fe9ce",

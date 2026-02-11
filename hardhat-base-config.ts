@@ -31,6 +31,10 @@ const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
+const bnbchainWeb3Url = process.env.BNBCHAIN_WEB3_PROVIDER_URL;
+if (!bnbchainWeb3Url) {
+  throw new Error('No BNBCHAIN_WEB3_PROVIDER_URL provided!');
+}
 const botanixWeb3Url = process.env.BOTANIX_WEB3_PROVIDER_URL;
 if (!botanixWeb3Url) {
   throw new Error('No BOTANIX_WEB3_PROVIDER_URL provided!');
@@ -146,6 +150,13 @@ export const base_config: HardhatUserConfig = {
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
+    [NetworkName.Bnb]: {
+      chainId: parseInt(Network.Bnb, 10),
+      url: bnbchainWeb3Url,
+      gas: 20_000_000, // 20M gas
+      gasPrice: 50_000_000, // 0.05 gwei
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
     [NetworkName.Botanix]: {
       chainId: parseInt(Network.Botanix, 10),
       url: botanixWeb3Url,
@@ -235,6 +246,7 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.ArbitrumOne]: etherscanApiKey,
       [NetworkName.Base]: etherscanApiKey,
       [NetworkName.Berachain]: etherscanApiKey,
+      [NetworkName.Bnb]: etherscanApiKey,
       [NetworkName.Botanix]: botanixApiKey,
       [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
@@ -257,7 +269,7 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.Base, 10),
         urls: {
           apiURL: 'https://api.etherscan.io/v2/api',
-          browserURL: 'https://basescan.org/',
+          browserURL: 'https://basescan.org',
         },
       },
       {
@@ -266,6 +278,14 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://berascan.com',
+        },
+      },
+      {
+        network: NetworkName.Bnb,
+        chainId: parseInt(Network.Bnb, 10),
+        urls: {
+          apiURL: 'https://api.etherscan.io/v2/api',
+          browserURL: 'https://bscscan.com',
         },
       },
       {

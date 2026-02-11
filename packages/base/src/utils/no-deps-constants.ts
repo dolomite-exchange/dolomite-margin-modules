@@ -7,6 +7,7 @@ export enum Network {
   ArbitrumOne = '42161',
   Base = '8453',
   Berachain = '80094',
+  Bnb = '56',
   Botanix = '3637',
   Ethereum = '1',
   Ink = '57073',
@@ -19,6 +20,7 @@ export enum Network {
 export type DolomiteV2Network =
   | Network.Base
   | Network.Berachain
+  | Network.Bnb
   | Network.Botanix
   | Network.Ethereum
   | Network.Ink
@@ -35,6 +37,7 @@ export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
   Berachain = 'berachain',
+  Bnb = 'bnb',
   Botanix = 'botanix',
   Ethereum = 'ethereum',
   Ink = 'ink',
@@ -48,6 +51,7 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,
+  [Network.Bnb]: NetworkName.Bnb,
   [Network.Botanix]: NetworkName.Botanix,
   [Network.Ethereum]: NetworkName.Ethereum,
   [Network.Ink]: NetworkName.Ink,
@@ -64,6 +68,7 @@ export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> 
   [Network.ArbitrumOne]: 'arbitrum',
   [Network.Base]: 'base',
   [Network.Berachain]: 'berachain',
+  [Network.Bnb]: 'bnb',
   [Network.Botanix]: undefined,
   [Network.Ethereum]: 'ethereum',
   [Network.Ink]: undefined,
@@ -77,6 +82,7 @@ export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Bnb]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Botanix]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ethereum]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
   [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
@@ -95,6 +101,7 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 160822,
+  [Network.Bnb]: 0, // TODO:
   [Network.Botanix]: 0, // TODO:
   [Network.Ethereum]: 22_308_000, // TODO:
   [Network.Ink]: 0, // TODO:
