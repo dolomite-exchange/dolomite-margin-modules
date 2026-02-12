@@ -24,6 +24,8 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IARB } from "./interfaces/IARB.sol";
 import { IARBIsolationModeTokenVaultV1 } from "./interfaces/IARBIsolationModeTokenVaultV1.sol";
 import { IARBIsolationModeVaultFactory } from "./interfaces/IARBIsolationModeVaultFactory.sol";
@@ -43,6 +45,8 @@ contract ARBIsolationModeTokenVaultV1 is
     IARBIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1
 {
+    using SafeERC20 for IERC20;
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -55,6 +59,16 @@ contract ARBIsolationModeTokenVaultV1 is
 
     function delegate(address _delegatee) external onlyVaultOwner(msg.sender) {
         _delegate(_delegatee);
+    }
+
+    function ownerRecoverToken(address _token, uint256 _amount) external {
+        Require.that(
+            msg.sender == DOLOMITE_MARGIN().owner(),
+            _FILE,
+            "Only dolomite owner can call"
+        );
+
+        IERC20(_token).safeTransfer(OWNER(), _amount);
     }
 
     function delegates() external view returns (address) {
