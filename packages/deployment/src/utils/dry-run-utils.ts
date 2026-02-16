@@ -6,7 +6,6 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { TxResult } from '@dolomite-margin/dist/src';
 import { FunctionFragment } from '@ethersproject/abi';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
@@ -251,7 +250,6 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
 
     let encodedTransactionForExecution: EncodedTransaction | null = null;
     if (result.upload.transactions.length > 0) {
-
       if (transactionIds.length === 0) {
         console.warn('\tTransaction IDs length is equal to 0');
       } else {
@@ -330,14 +328,14 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
 
     if (result.upload.transactions.length > 1) {
       execSync(
-        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nonce} --address ${gnosisSafeAddress} --to ${multiSendContract} --data ${multiSendCalldata} --operation 1`,
+        `safe-hash tx --offline --chain ${networkNameForSafeHash} --nonce ${nonce} --safe-address ${gnosisSafeAddress} --to ${multiSendContract} --safe-version 1.4.1 --data ${multiSendCalldata} --operation 1`,
         { stdio: 'inherit' },
       );
     } else {
       const to = result.upload.transactions[0].to;
       const data = result.upload.transactions[0].data;
       execSync(
-        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nonce} --address ${gnosisSafeAddress} --to ${to} --data ${data}`,
+        `safe-hash tx --offline --chain ${networkNameForSafeHash} --nonce ${nonce} --safe-address ${gnosisSafeAddress} --to ${to} --safe-version 1.4.1 --data ${data}`,
         { stdio: 'inherit' },
       );
     }
@@ -351,7 +349,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       const nextNonce = nonce + 1;
 
       execSync(
-        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nextNonce} --address ${gnosisSafeAddress} --to ${encodedTo} --data ${encodedCalldata}`,
+        `safe-hash tx --offline --chain ${networkNameForSafeHash} --nonce ${nextNonce} --safe-address ${gnosisSafeAddress} --to ${encodedTo} --safe-version 1.4.1 --data ${encodedCalldata}`,
         { stdio: 'inherit' },
       );
     }

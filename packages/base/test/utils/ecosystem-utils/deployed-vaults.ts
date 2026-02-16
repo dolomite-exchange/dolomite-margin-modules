@@ -32,6 +32,7 @@ import {
 import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
+import { marketToIsolationModeVaultInfoBnb } from 'packages/deployment/src/deploy/isolation-mode/bnb-isolation-mode';
 
 export class DeployedVault {
   public contractName: string;
@@ -188,6 +189,8 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       marketToIsolationModeVaultInfoBerachain,
       deployedVaults,
     );
+  } else if (config.network === Network.Bnb) {
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBnb, deployedVaults);
   } else if (config.network === Network.Botanix) {
     skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBotanix, deployedVaults);
   } else if (config.network === Network.Ethereum) {

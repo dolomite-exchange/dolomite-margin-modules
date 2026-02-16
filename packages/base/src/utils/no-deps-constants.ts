@@ -62,13 +62,13 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
 };
 
 /**
- * Generated via `safe_hashes --list-networks`
+ * Generated via `safe-hash --list-networks`
  */
 export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: 'arbitrum',
   [Network.Base]: 'base',
-  [Network.Berachain]: 'berachain',
-  [Network.Bnb]: 'bnb',
+  [Network.Berachain]: undefined,
+  [Network.Bnb]: 'bsc',
   [Network.Botanix]: undefined,
   [Network.Ethereum]: 'ethereum',
   [Network.Ink]: undefined,

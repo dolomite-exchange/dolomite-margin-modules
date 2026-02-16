@@ -33,6 +33,7 @@
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:bnb": "NETWORK=bnb ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:botanix": "NETWORK=botanix ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:ethereum": "NETWORK=ethereum ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:get-transaction-ids": "ts-node src/deploy/other/execute-get-transaction-ids.ts",
