@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -13,7 +13,7 @@
     "deploy:boyco-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts boyco",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
-    "deploy:chainsight-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainsight",
+    "deploy:chainsicght-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainsight",
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:enso-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts enso",
@@ -33,6 +33,7 @@
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:bnb": "NETWORK=bnb ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:botanix": "NETWORK=botanix ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:ethereum": "NETWORK=ethereum ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:get-transaction-ids": "ts-node src/deploy/other/execute-get-transaction-ids.ts",

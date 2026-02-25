@@ -92,6 +92,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   radiant: IERC20;
   sGlp: IERC20;
   sUsds: IERC20;
+  savUsd: IERC20;
   size: IERC20;
   sol: IERC20;
   stEth: IERC20;
@@ -189,6 +190,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   radiant: BigNumberish;
   sGlp: BigNumberish;
   sUsds: BigNumberish;
+  savUsd: BigNumberish;
   tbtc: BigNumberish;
   uni: BigNumberish;
   uniBtc: BigNumberish;

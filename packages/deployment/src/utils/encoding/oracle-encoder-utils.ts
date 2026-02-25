@@ -117,7 +117,8 @@ export async function encodeInsertChainlinkOracleV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
   invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
-  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  tokenPairAddress: string | null | undefined =
+  CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
   options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction[]> {
@@ -299,7 +300,7 @@ export async function encodeInsertChronicleOracleV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithChronicle<T>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
-  tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
+  tokenPairAddress: string | null | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
     .tokenPairAddress,
   scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
 ): Promise<EncodedTransaction[]> {

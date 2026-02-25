@@ -80,7 +80,8 @@ import {
   BGT_MAP,
   BTC_PLACEHOLDER_MAP,
   BYUSD_MAP,
-  C_USD_MAP, CB_BTC_MAP,
+  C_USD_MAP,
+  CB_BTC_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
@@ -178,7 +179,7 @@ import {
   S_USDA_MAP,
   S_USDE_MAP,
   S_USDS_MAP,
-  S_WBERA_MAP,
+  S_WBERA_MAP, SAV_USD_MAP,
   SDE_USD_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
@@ -215,6 +216,7 @@ import {
   WMNT_MAP,
   WO_ETH_MAP,
   WOKB_MAP,
+  WSR_USD_MAP,
   WST_ETH_MAP,
   X_SOLV_BTC_MAP,
   XAI_MAP,
@@ -1355,6 +1357,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         radiant: RDNT_MAP[typedConfig.network].marketId,
         sGlp: S_GLP_MAP[typedConfig.network].marketId,
         sUsds: S_USDS_MAP[typedConfig.network].marketId,
+        savUsd: SAV_USD_MAP[typedConfig.network].marketId,
         tbtc: TBTC_MAP[typedConfig.network].marketId,
         uni: UNI_MAP[typedConfig.network].marketId,
         uniBtc: UNI_BTC_MAP[typedConfig.network].marketId,
@@ -1445,6 +1448,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
         sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
         sUsds: IERC20__factory.connect(S_USDS_MAP[typedConfig.network].address, hhUser1),
+        savUsd: IERC20__factory.connect(SAV_USD_MAP[typedConfig.network].address, hhUser1),
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
         sol: IERC20__factory.connect(SOL_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
@@ -1495,6 +1499,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       getMaxDeploymentVersionAddressByDeploymentKey('ChainsightPriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const ensoEcosystem = await createEnsoEcosystem(config.network, hhUser1);
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
     const pendleEcosystem = await createPendleEcosystemBerachain(config.network, hhUser1);
     const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
@@ -1505,6 +1510,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       berachainRewardsEcosystem,
+      ensoEcosystem,
       oogaBoogaEcosystem,
       tokenomics,
       tokenomicsAirdrop,
@@ -1577,6 +1583,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         sUsda: S_USDA_MAP[typedConfig.network].marketId,
         sUsde: S_USDE_MAP[typedConfig.network].marketId,
         sWbera: S_WBERA_MAP[typedConfig.network].marketId,
+        savUsd: SAV_USD_MAP[typedConfig.network].marketId,
         sdeUsd: SDE_USD_MAP[typedConfig.network].marketId,
         stBtc: LORENZO_ST_BTC_MAP[typedConfig.network].marketId,
         srUsd: SR_USD_MAP[typedConfig.network].marketId,
@@ -1648,6 +1655,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         sUsda: IERC20__factory.connect(S_USDA_MAP[typedConfig.network].address, hhUser1),
         sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
         sWbera: IERC20__factory.connect(S_WBERA_MAP[typedConfig.network].address, hhUser1),
+        savUsd: IERC20__factory.connect(SAV_USD_MAP[typedConfig.network].address, hhUser1),
         sdeUsd: IERC20__factory.connect(SDE_USD_MAP[typedConfig.network].address, hhUser1),
         srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
         stBtc: IERC20__factory.connect(LORENZO_ST_BTC_MAP[typedConfig.network].address, hhUser1),
@@ -1738,6 +1746,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
         wlfi: WLFI_MAP[typedConfig.network].marketId,
+        wsrUsd: WSR_USD_MAP[typedConfig.network].marketId,
         wstEth: WST_ETH_MAP[typedConfig.network].marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
@@ -1771,6 +1780,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         weth: coreProtocolParams.tokens.weth as any,
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
         wlfi: IERC20__factory.connect(WLFI_MAP[typedConfig.network].address, hhUser1),
+        wsrUsd: IERC20__factory.connect(WSR_USD_MAP[typedConfig.network].address, hhUser1),
         wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,

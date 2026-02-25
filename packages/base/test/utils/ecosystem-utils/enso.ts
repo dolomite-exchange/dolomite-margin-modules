@@ -8,7 +8,7 @@ export interface EnsoEcosystem {
 }
 
 export async function createEnsoEcosystem(
-  network: Network.Ethereum,
+  network: Network.Ethereum | Network.Berachain,
   signer: SignerWithAddressWithSafety,
 ): Promise<EnsoEcosystem> {
   return {

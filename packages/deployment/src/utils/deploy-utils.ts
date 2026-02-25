@@ -10,6 +10,11 @@ import {
   IIsolationModeUnwrapperTraderV2__factory,
   IIsolationModeWrapperTraderV2,
   IIsolationModeWrapperTraderV2__factory,
+  SimpleIsolationModeTokenVaultV1__factory,
+  SimpleIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeVaultFactory,
+  SimpleIsolationModeVaultFactory__factory,
+  SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -491,6 +496,8 @@ export async function deployContractAndSave(
       opts.gasPrice = undefined;
       opts.maxPriorityFeePerGas = block?.baseFeePerGas?.div(10) ?? parseUnits('0.1', 'gwei');
       opts.type = 2;
+    } else {
+      delete opts.maxPriorityFeePerGas;
     }
 
     if (contractName === 'CREATE3Factory') {
@@ -790,6 +797,12 @@ export interface PendlePtSystem {
   wrapper: PendlePtIsolationModeWrapperTraderV2;
 }
 
+export interface SimpleIsolationModeSystem {
+  factory: SimpleIsolationModeVaultFactory;
+  unwrapper: SimpleIsolationModeUnwrapperTraderV2;
+  wrapper: SimpleIsolationModeWrapperTraderV2;
+}
+
 export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   ptName: string,
@@ -879,6 +892,67 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   return {
     factory,
     oracle,
+    unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
+    wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
+  };
+}
+
+export async function deploySimpleIsolationModeSystem<T extends DolomiteNetwork>(
+  core: CoreProtocolWithPendle<T>,
+  tokenName: string,
+  underlyingToken: IERC20,
+  allowableCollateralMarketIds: BigNumberish[],
+  allowableDebtMarketIds: BigNumberish[],
+): Promise<SimpleIsolationModeSystem> {
+  const officialName = await IERC20Metadata__factory.connect(underlyingToken.address, underlyingToken.signer).name();
+  if (!officialName.toUpperCase().includes(tokenName.toUpperCase())) {
+    return Promise.reject(
+      new Error(
+        `tokenName does not match official name onchain. onchain: [${officialName}], found: [${tokenName}]`,
+      ),
+    );
+  }
+
+  const userVaultImplementationAddress = await deployContractAndSave(
+    'SimpleIsolationModeTokenVaultV1',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('SimpleIsolationModeTokenVault', 1),
+    core.libraries.tokenVaultActionsImpl,
+  );
+  const userVaultImplementation = SimpleIsolationModeTokenVaultV1__factory.connect(
+    userVaultImplementationAddress,
+    core.governance,
+  );
+
+  const factoryAddress = await deployContractAndSave(
+    'SimpleIsolationModeVaultFactory',
+    [
+      allowableDebtMarketIds,
+      allowableCollateralMarketIds,
+      underlyingToken.address,
+      core.borrowPositionProxyV2.address,
+      userVaultImplementation.address,
+      core.dolomiteRegistry.address,
+      core.dolomiteMargin.address,
+    ],
+    `Simple${tokenName}IsolationModeVaultFactory`,
+  );
+  const factory = SimpleIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
+
+  const unwrapperAddress = await deployContractAndSave(
+    'SimpleIsolationModeUnwrapperTraderV2',
+    [factoryAddress, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    `Simple${tokenName}IsolationModeUnwrapperTraderV2`,
+  );
+
+  const wrapperAddress = await deployContractAndSave(
+    'SimpleIsolationModeUnwrapperTraderV2',
+    [factoryAddress, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    `Simple${tokenName}IsolationModeWrapperTraderV2`,
+  );
+
+  return {
+    factory,
     unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
     wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
   };

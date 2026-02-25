@@ -33,6 +33,7 @@ interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum
   wbtc: IERC20;
   weEth: IERC20;
   wlfi: IERC20;
+  wsrUsd: IERC20;
   wstEth: IERC20;
 }
 
@@ -54,6 +55,7 @@ interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   wbtc: BigNumberish;
   weEth: BigNumberish;
   wlfi: BigNumberish;
+  wsrUsd: BigNumberish;
   wstEth: BigNumberish;
 }
 

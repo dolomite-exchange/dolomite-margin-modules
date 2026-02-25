@@ -31,7 +31,7 @@
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
     "@chainlink/local": "^0.2.3",
-    "@dolomite-exchange/dolomite-margin": "^0.14.4",
+    "@dolomite-exchange/dolomite-margin": "^0.15.1",
     "@dolomite-exchange/zap-sdk": "^0.3.45",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
     "@nomicfoundation/hardhat-verify": "2.0.14",
@@ -79,5 +79,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {}
+  "dependencies": {},
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
