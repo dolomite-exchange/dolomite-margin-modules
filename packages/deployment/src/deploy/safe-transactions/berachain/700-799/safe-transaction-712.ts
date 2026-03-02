@@ -1,14 +1,15 @@
 import { parseEther } from 'ethers/lib/utils';
 import { IERC20Metadata__factory } from '../../../../../../base/src/types';
-import { OptimalUtilizationRate, UpperPercentage } from '../../../../../../base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI, ZERO_BI } from '../../../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { encodeSetEarningsRateOverride, encodeSetIsCollateralOnly, encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
+import {
+  encodeSetIsCollateralOnly,
+  encodeSetSupplyCap,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
