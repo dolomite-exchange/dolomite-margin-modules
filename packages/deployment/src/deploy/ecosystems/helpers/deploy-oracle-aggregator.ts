@@ -54,6 +54,8 @@ export async function deployOracleAggregator<T extends DolomiteNetwork>(
 
   await deployContractAndSave('RedstonePriceOracleV3', [[], [], [], dolomiteRegistry.address, dolomiteMargin.address]);
 
+  await deployContractAndSave('ConstantPriceOracle', [[], [], dolomiteMargin.address], 'ConstantPriceOracleV1');
+
   const tokenInfos = tokens.map<TokenInfo>((token, i) => {
     return {
       token: token.address,

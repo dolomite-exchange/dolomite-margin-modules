@@ -2,7 +2,12 @@ import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
 import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
-import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
+import {
+  ConstantPriceOracle,
+  IChainlinkPriceOracleV1,
+  IChainlinkPriceOracleV3,
+  OracleAggregatorV2,
+} from 'packages/oracles/src/types';
 import {
   DolomiteERC4626,
   DolomiteERC4626WithPayable,
@@ -129,6 +134,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
+  constantPriceOracle: ConstantPriceOracle;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   delayedMultiSig: IPartiallyDelayedMultiSig;
@@ -203,6 +209,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   public readonly constants: CoreProtocolConstants<T>;
+  public readonly constantPriceOracle: ConstantPriceOracle;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
   public readonly depositWithdrawalRouter: IDepositWithdrawalRouter;
@@ -271,6 +278,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;
     this.chainlinkPriceOracleV3 = params.chainlinkPriceOracleV3;
     this.constants = params.constants;
+    this.constantPriceOracle = params.constantPriceOracle;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
     this.depositWithdrawalRouter = params.depositWithdrawalRouter;
