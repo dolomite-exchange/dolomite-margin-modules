@@ -67,11 +67,9 @@ contract LiquidatorProxyV6 is
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry,
-        address _dolomiteAccountRiskOverride
+        address _liquidatorAssetRegistry
     )
     BaseLiquidatorProxy(
-        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
@@ -84,6 +82,25 @@ contract LiquidatorProxyV6 is
 
     function initialize() external initializer {
         __ReentrancyGuardUpgradeable__init();
+    }
+
+    function ownerInitializeV2(
+        IDolomiteStructs.Decimal calldata _dolomiteRake,
+        address _initialPartialLiquidator,
+        uint256[] calldata _initialPartialLiquidationMarketIds
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender)
+    reinitializer(2)
+    {
+        _ownerSetDolomiteRake(_dolomiteRake);
+        _ownerSetIsPartialLiquidator(_initialPartialLiquidator, /* _isPartialLiquidator = */ true);
+
+        bool[] memory isSupportedList = new bool[](_initialPartialLiquidationMarketIds.length);
+        for (uint256 i; i < isSupportedList.length; i++) {
+            isSupportedList[i] = true;
+        }
+        _ownerSetMarketToPartialLiquidationSupported(_initialPartialLiquidationMarketIds, isSupportedList);
     }
 
     function liquidateViaProxyWithStrictInputMarket(
@@ -157,7 +174,7 @@ contract LiquidatorProxyV6 is
         constants.expirationTimestamp = _liquidateParams.expirationTimestamp;
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
-        constants.dolomiteRake = !isIsolationMode && _liquidateParams.expirationTimestamp == 0;
+        constants.includeDolomiteRake = !isIsolationMode && _liquidateParams.expirationTimestamp == 0;
 
         LiquidatorProxyLib.checkConstants(DOLOMITE_MARGIN(), constants);
 
@@ -190,7 +207,7 @@ contract LiquidatorProxyV6 is
             _liquidateParams.tradersPath
         );
         // the call to _getAccounts leaves accounts[LIQUID_ACCOUNT_ID] null because it fills in the traders starting at
-        // the `traderAccountCursor` index
+        // the `traderAccountCursor` index. So, we must populate it manually below
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
         accounts[DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: DOLOMITE_REGISTRY.feeAgent(),
@@ -199,7 +216,7 @@ contract LiquidatorProxyV6 is
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getLiquidationActionsLength(constants.dolomiteRake, _liquidateParams.withdrawAllReward) +
+            _getLiquidationActionsLength(constants.includeDolomiteRake, _liquidateParams.withdrawAllReward) +
             _getActionsLengthForTraderParams(
                 genericCache,
                 _liquidateParams.tradersPath,
@@ -214,7 +231,7 @@ contract LiquidatorProxyV6 is
             genericCache
         );
         uint256 dolomiteRakeAmount;
-        if (constants.dolomiteRake) {
+        if (constants.includeDolomiteRake) {
             dolomiteRakeAmount = _appendDolomiteRakeTransferAction(
                 actions,
                 constants,
@@ -329,8 +346,9 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
+        PartialLiquidationStorage storage $ = _partialLiquidationStorage();
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul($.dolomiteRake); // solhint-disable-line max-line-length
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,

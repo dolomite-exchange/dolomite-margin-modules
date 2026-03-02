@@ -58,14 +58,12 @@ contract IsolationModeFreezableLiquidatorProxy is
 
     constructor(
         address _dolomiteRegistry,
-        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
         uint256 _chainId
     )
     BaseLiquidatorProxy(
-        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,

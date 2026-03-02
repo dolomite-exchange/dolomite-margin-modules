@@ -40,15 +40,13 @@ contract TestLiquidatorProxyV6 is LiquidatorProxyV6 {
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry,
-        address _dolomiteAccountRiskOverride
+        address _liquidatorAssetRegistry
     ) LiquidatorProxyV6(
         _chainId,
         _expiry,
         _dolomiteMargin,
         _dolomiteRegistry,
-        _liquidatorAssetRegistry,
-        _dolomiteAccountRiskOverride
+        _liquidatorAssetRegistry
     ) {}
 
     function callFunctionAndTriggerReentrancy(
