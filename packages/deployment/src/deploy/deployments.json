@@ -1335,14 +1335,59 @@
     }
   },
   "ConstantPriceOracleV1": {
+    "1": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x92872f96d23c3c3f06a2e1e7a9bf81f9b73ed8efee212be9d8efad23f92d4cf2",
+      "isVerified": true
+    },
+    "56": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x2a88d2452a3d857f7fa6eb98a2531215bba795df0fbb700e5f98f82f49dc52c6",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x36a8da5c398cdd1b5db7315d4c1b28b5c62ab821cccff271959be44c4212ff4d",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0xa25c2eca50417c2fe99b9b8b1810772a00725346560ef69f1527bc3464843396",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x3b55be904b5ba7845fe22a224f06d740b4396ec3db04475d65a965d101f7754e",
+      "isVerified": true
+    },
     "5000": {
       "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
       "transaction": "0xabbf2a4d8e8716675226a483a38d32ed05df0e068cec1414f5958608cf73dd7b",
       "isVerified": true
     },
+    "5330": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0xc96472376f89cf4e89d32f6145a0e4f173b0072cee7487110dba97270e23275d",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x8f8c14dcf32752f44032009386fd217d44a520817ba6ab8a80e71d2e12c59d4c",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
       "transaction": "0x9e4b0f6e773bfb0a0f02bef9f5ec201e22a76ac6539aaf0c3f71c17b4f69da5d",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x5e3f985f0976ef43cad6cc97ee9d46e0b760dad6e7fec28c508b6321b3fb7fe0",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0xbd51A7Ec5ac75329FCC4E4e74894Ad3a39595614",
+      "transaction": "0x63d3e7cf79de77e09861bc8c3e75dd0a7f52324de0b88882cb7ab3ca259e4514",
       "isVerified": true
     }
   },

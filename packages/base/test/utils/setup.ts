@@ -4,6 +4,7 @@ import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/u
 import {
   ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
+  ConstantPriceOracle__factory,
   ERC4626PriceOracle__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
@@ -179,7 +180,8 @@ import {
   S_USDA_MAP,
   S_USDE_MAP,
   S_USDS_MAP,
-  S_WBERA_MAP, SAV_USD_MAP,
+  S_WBERA_MAP,
+  SAV_USD_MAP,
   SDE_USD_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
@@ -960,12 +962,12 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
   const adminClaimExcessTokens = IAdminClaimExcessTokens__factory.connect(
-    ModuleDeployments.AdminClaimExcessTokensV1[config.network].address,
+    ModuleDeployments.AdminClaimExcessTokensV2[config.network].address,
     governance,
   );
 
   const adminPauseMarket = IAdminPauseMarket__factory.connect(
-    ModuleDeployments.AdminPauseMarketV1[config.network].address,
+    ModuleDeployments.AdminPauseMarketV2[config.network].address,
     governance,
   );
 
@@ -988,6 +990,12 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   const chainlinkPriceOracleV3 = getContract(
     ModuleDeployments.ChainlinkPriceOracleV3[config.network]?.address,
     IChainlinkPriceOracleV3__factory.connect,
+    governance,
+  );
+
+  const constantPriceOracle = getContract(
+    ModuleDeployments.ConstantPriceOracleV1[config.network]?.address,
+    ConstantPriceOracle__factory.connect,
     governance,
   );
 
@@ -1133,6 +1141,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     borrowPositionRouter,
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
+    constantPriceOracle,
     daoAddress,
     delayedMultiSig,
     deployedVaults,
@@ -1617,9 +1626,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           ...coreProtocolParams.marketIds.stablecoins,
           BYUSD_MAP[typedConfig.network].marketId,
           HONEY_MAP[typedConfig.network].marketId,
-          NECT_MAP[typedConfig.network].marketId,
-          R_USD_MAP[typedConfig.network].marketId,
-          USDA_MAP[typedConfig.network].marketId,
           USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
