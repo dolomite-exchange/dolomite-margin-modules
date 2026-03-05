@@ -51,6 +51,7 @@ interface ILiquidatorProxyV6 {
 
     function ownerInitializeV2(
         IDolomiteStructs.Decimal calldata _dolomiteRake,
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold,
         address _initialPartialLiquidator,
         uint256[] calldata _initialPartialLiquidationMarketIds
     ) external;

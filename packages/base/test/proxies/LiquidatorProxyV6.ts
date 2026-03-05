@@ -1,4 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { UpgradeableProxy__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { GenericEventEmissionType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
@@ -32,7 +33,6 @@ import {
   getUnwrapZapParams,
   getWrapZapParams,
 } from '../utils/zap-utils';
-import { UpgradeableProxy__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 
 const amountWei = parseEther('1000');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
@@ -40,7 +40,6 @@ const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 
 describe('LiquidatorProxyV6', () => {
-
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let liquidatorProxy: TestLiquidatorProxyV6;
@@ -70,7 +69,6 @@ describe('LiquidatorProxyV6', () => {
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
         core.liquidatorAssetRegistry.address,
-        core.dolomiteAccountRiskOverrideSetterProxy.address
       ],
     );
     const data = await liquidatorProxyImplementation.populateTransaction.initialize();
@@ -83,9 +81,11 @@ describe('LiquidatorProxyV6', () => {
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
     await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
-    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('.95'));
+    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('.95') });
     await liquidatorProxy.connect(core.governance).ownerSetIsPartialLiquidator(core.hhUser2.address, true);
-    await liquidatorProxy.connect(core.governance).ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai, core.marketIds.dArb], [true, true]);
+    await liquidatorProxy
+      .connect(core.governance)
+      .ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai, core.marketIds.dArb], [true, true]);
 
     await setupWETHBalance(core, core.hhUser2, parseEther('5'), core.dolomiteMargin);
     await core.tokens.weth
@@ -196,11 +196,29 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('2.25').add(1),
+      );
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
     });
 
@@ -258,14 +276,27 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .1
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.6')));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.6')),
+      );
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('622'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        parseEther('.1').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('1.8'));
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('376.2'));
     });
 
+    // tslint:disable-next-line:max-line-length
     it('should work normally with partial liquidation and 10% rake if user passes through > partial liquidation amount', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -320,11 +351,29 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('2.25').add(1),
+      );
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
     });
 
@@ -394,7 +443,9 @@ describe('LiquidatorProxyV6', () => {
     });
 
     it('should work normally to fully liquidate if partials are not enabled for the collateral', async () => {
-      await liquidatorProxy.connect(core.governance).ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [false]);
+      await liquidatorProxy
+        .connect(core.governance)
+        .ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [false]);
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -507,11 +558,29 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('2.25').add(1),
+      );
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('470.25'));
     });
 
@@ -570,8 +639,20 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
@@ -633,8 +714,20 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.5'));
@@ -776,11 +869,29 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 70.25
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('70.25'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('2.25').add(1),
+      );
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('400'));
     });
 
@@ -834,9 +945,15 @@ describe('LiquidatorProxyV6', () => {
        * dolomite rake = 0
        * solid ARB = 90.95 = 90.95 ARB
        */
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.dArb, parseEther('109.05'));
-      await expectWalletBalance(vault, core.tokens.arb, parseEther('109.05')); // BROKEN
+      await expectWalletBalance(vault, core.tokens.arb, parseEther('109.05'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dArb, ZERO_BI);
@@ -937,7 +1054,13 @@ describe('LiquidatorProxyV6', () => {
         core.marketIds.weth,
         ZERO_BI.sub(parseEther('0.5')),
       );
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.6'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, 0);
     });
@@ -1011,11 +1134,29 @@ describe('LiquidatorProxyV6', () => {
        *     solid account dai = 0
        *     solid account weth = .6
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('.5')));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(parseEther('.5')),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        parseEther('527.5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('2.25').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('2.25').add(1),
+      );
       await expectWalletBalance(core.hhUser2, core.tokens.weth, parseEther('.1'));
     });
 
@@ -1075,10 +1216,22 @@ describe('LiquidatorProxyV6', () => {
        */
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, parseEther('0'));
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('34'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('5').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        parseEther('5').add(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, parseEther('0'));
       await expectWalletBalance(core.hhUser2, core.tokens.weth, parseEther('.1'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.dai, parseEther('4.6').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        parseEther('4.6').add(1),
+      );
       await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('961.4'));
     });
 
@@ -1242,7 +1395,11 @@ describe('LiquidatorProxyV6', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, daiAmount.sub(1));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.1'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, ZERO_BI.sub(1));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.dai, parseEther('500').sub(1));
+      await expectWalletBalance(
+        core.testEcosystem!.testExchangeWrapper.address,
+        core.tokens.dai,
+        parseEther('500').sub(1),
+      );
     });
 
     it('should fail if attempting to partially liquidate when not whitelisted', async () => {
@@ -1267,8 +1424,8 @@ describe('LiquidatorProxyV6', () => {
         core,
       );
       await liquidatorProxy.connect(core.governance).ownerSetIsPartialLiquidator(core.hhUser2.address, false);
-      await expectThrow(liquidatorProxy.connect(core.hhUser2).liquidate(
-        {
+      await expectThrow(
+        liquidatorProxy.connect(core.hhUser2).liquidate({
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
           liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
           marketIdsPath: zapParams.marketIdsPath,
@@ -1279,7 +1436,7 @@ describe('LiquidatorProxyV6', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        'BaseLiquidatorProxy: Invalid partial liquidator'
+        'BaseLiquidatorProxy: Invalid partial liquidator',
       );
     });
 
@@ -1292,10 +1449,9 @@ describe('LiquidatorProxyV6', () => {
         core.gmxV2Ecosystem.live.gmEth.unwrapper,
         core,
       );
-      await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
-        core.marketIds.dGmEth,
-        liquidatorProxy.address
-      );
+      await core.liquidatorAssetRegistry
+        .connect(core.governance)
+        .ownerAddLiquidatorToAssetWhitelist(core.marketIds.dGmEth, liquidatorProxy.address);
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).liquidate({
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
@@ -1681,8 +1837,7 @@ describe('LiquidatorProxyV6', () => {
   });
 
   describe('#liquidateViaProxyWithStrictInputMarket', () => {
-    it('should work if the sender is a global operator and whitelisted for the asset', async () => {
-    });
+    it('should work if the sender is a global operator and whitelisted for the asset', async () => {});
 
     it('should fail if the sender is not a global operator', async () => {
       const zapParams = await getSimpleZapParams(
@@ -1819,7 +1974,7 @@ describe('LiquidatorProxyV6', () => {
 
   describe('#ownerSetDolomiteRake', () => {
     it('should work normally', async () => {
-      expect(await liquidatorProxy.dolomiteRake()).to.equal(parseEther('.1'));
+      expect(await liquidatorProxy.dolomiteRake()).to.equal({ value: parseEther('.1') });
       const res = await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
       await expectEvent(liquidatorProxy, res, 'DolomiteRakeSet', {
         dolomiteRake: { value: parseEther('.2') },
@@ -1844,7 +1999,7 @@ describe('LiquidatorProxyV6', () => {
 
   describe('#ownerSetIsPartialLiquidator', () => {
     it('should work normally', async () => {
-      expect(await liquidatorProxy.whitelistedPartialLiquidators(core.hhUser2.address)).to.equal(true);
+      expect(await liquidatorProxy.isWhitelistedPartialLiquidator(core.hhUser2.address)).to.equal(true);
       const res = await liquidatorProxy
         .connect(core.governance)
         .ownerSetIsPartialLiquidator(core.hhUser2.address, false);
@@ -1852,7 +2007,7 @@ describe('LiquidatorProxyV6', () => {
         partialLiquidator: core.hhUser2.address,
         isPartialLiquidator: false,
       });
-      expect(await liquidatorProxy.whitelistedPartialLiquidators(core.hhUser2.address)).to.equal(false);
+      expect(await liquidatorProxy.isWhitelistedPartialLiquidator(core.hhUser2.address)).to.equal(false);
     });
 
     it('should fail if not called by owner', async () => {
@@ -1865,7 +2020,7 @@ describe('LiquidatorProxyV6', () => {
 
   describe('#ownerSetMarketToPartialLiquidationSupported', () => {
     it('should work normally', async () => {
-      expect(await liquidatorProxy.marketToPartialLiquidationSupported(core.marketIds.dai)).to.equal(true);
+      expect(await liquidatorProxy.isPartialLiquidationSupportedByMarketId(core.marketIds.dai)).to.equal(true);
       const marketIds = [core.marketIds.dai, core.marketIds.usdc];
       const isSupported = [false, true];
       const res = await liquidatorProxy
@@ -1875,8 +2030,8 @@ describe('LiquidatorProxyV6', () => {
         marketIds,
         isSupported,
       });
-      expect(await liquidatorProxy.marketToPartialLiquidationSupported(core.marketIds.dai)).to.equal(false);
-      expect(await liquidatorProxy.marketToPartialLiquidationSupported(core.marketIds.usdc)).to.equal(true);
+      expect(await liquidatorProxy.isPartialLiquidationSupportedByMarketId(core.marketIds.dai)).to.equal(false);
+      expect(await liquidatorProxy.isPartialLiquidationSupportedByMarketId(core.marketIds.usdc)).to.equal(true);
     });
 
     it('should fail if market IDs length does not match', async () => {
@@ -1890,9 +2045,7 @@ describe('LiquidatorProxyV6', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        liquidatorProxy
-          .connect(core.hhUser2)
-          .ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [true]),
+        liquidatorProxy.connect(core.hhUser2).ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [true]),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
       );
     });
@@ -1900,9 +2053,9 @@ describe('LiquidatorProxyV6', () => {
 
   describe('#ownerSetPartialLiquidationThreshold', () => {
     it('should work normally', async () => {
-      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal(parseEther('.95'));
+      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal({ value: parseEther('.95') });
 
-      const threshold = parseEther('.96');
+      const threshold = { value: parseEther('.96') };
       const res = await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(threshold);
       await expectEvent(liquidatorProxy, res, 'PartialLiquidationThresholdSet', {
         partialLiquidationThreshold: threshold,
@@ -1912,14 +2065,14 @@ describe('LiquidatorProxyV6', () => {
 
     it('should fail if partial liquidation threshold is invalid', async () => {
       await expectThrow(
-        liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('1')),
+        liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('1') }),
         'BaseLiquidatorProxy: Invalid partial threshold',
       );
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        liquidatorProxy.connect(core.hhUser2).ownerSetPartialLiquidationThreshold(parseEther('.96')),
+        liquidatorProxy.connect(core.hhUser2).ownerSetPartialLiquidationThreshold({ value: parseEther('.96') }),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
       );
     });

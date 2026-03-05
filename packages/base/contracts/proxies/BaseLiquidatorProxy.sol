@@ -46,7 +46,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     // ============ Events ============
 
     event DolomiteRakeSet(IDolomiteStructs.Decimal dolomiteRake);
-    event PartialLiquidationThresholdSet(uint256 partialLiquidationThreshold);
+    event PartialLiquidationThresholdSet(IDolomiteStructs.Decimal partialLiquidationThreshold);
     event PartialLiquidatorSet(address partialLiquidator, bool isPartialLiquidator);
     event MarketToPartialLiquidationSupportedSet(uint256[] marketIds, bool[] isSupported);
 
@@ -92,8 +92,9 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     }
 
     struct PartialLiquidationStorage {
-        /// @notice Can be 0 to be disabled and less than 1e18. 95% equals 0.95 ether.
-        uint256 partialLiquidationThreshold;
+        /// @notice The health factor at which partial liquidations are enforced. Can be 0 to be disabled and less than
+        /// 1e18. 95% equals 0.95 ether.
+        IDolomiteStructs.Decimal partialLiquidationThreshold;
         mapping(uint256 => bool) marketToPartialLiquidationSupported;
         mapping(address => bool) whitelistedPartialLiquidators;
         IDolomiteStructs.Decimal dolomiteRake;
@@ -145,11 +146,10 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     }
 
     function ownerSetPartialLiquidationThreshold(
-        uint256 _partialLiquidationThreshold
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
     }
-
 
     // ============ Internal Functions ============
 
@@ -190,10 +190,10 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     }
 
     function _ownerSetPartialLiquidationThreshold(
-        uint256 _partialLiquidationThreshold
+        IDolomiteStructs.Decimal memory _partialLiquidationThreshold
     ) internal {
         Require.that(
-            _partialLiquidationThreshold < _ONE,
+            _partialLiquidationThreshold.value < DecimalLib.one().value,
             _FILE,
             "Invalid partial threshold"
         );
@@ -328,7 +328,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
 
-        uint256 _partialLiquidationThreshold = _partialLiquidationStorage().partialLiquidationThreshold;
+        uint256 _partialLiquidationThreshold = _partialLiquidationStorage().partialLiquidationThreshold.value;
         return _partialLiquidationThreshold != 0 && healthFactor >= _partialLiquidationThreshold;
     }
 

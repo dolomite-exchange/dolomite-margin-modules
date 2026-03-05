@@ -1,4 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { UpgradeableProxy__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { TestLiquidatorProxyV6, TestLiquidatorProxyV6__factory } from 'packages/base/src/types';
@@ -11,18 +12,10 @@ import {
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectWalletBalance } from '../utils/assertions';
-import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
-import {
-  disableInterestAccrual,
-  setupCoreProtocol,
-  setupHONEYBalance,
-  setupUSDCBalance,
-} from '../utils/setup';
-import {
-  getSimpleZapParams,
-} from '../utils/zap-utils';
-import { UpgradeableProxy__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
+import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
+import { disableInterestAccrual, setupCoreProtocol, setupHONEYBalance, setupUSDCBalance } from '../utils/setup';
+import { getSimpleZapParams } from '../utils/zap-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
@@ -33,7 +26,6 @@ const usdcAmount = BigNumber.from('1000000000'); // $1000
 const honeyAmount = parseEther('900');
 
 describe('LiquidatorProxyV6_e-mode', () => {
-
   let snapshotId: string;
   let core: CoreProtocolBerachain;
   let liquidatorProxy: TestLiquidatorProxyV6;
@@ -61,7 +53,6 @@ describe('LiquidatorProxyV6_e-mode', () => {
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
         core.liquidatorAssetRegistry.address,
-        core.dolomiteAccountRiskOverrideSetterProxy.address
       ],
     );
     const data = await liquidatorProxyImplementation.populateTransaction.initialize();
@@ -74,11 +65,10 @@ describe('LiquidatorProxyV6_e-mode', () => {
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
     await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
-    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(parseEther('.95'));
-    await liquidatorProxy.connect(core.governance).ownerSetMarketToPartialLiquidationSupported(
-      [core.marketIds.usdc],
-      [true],
-    );
+    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('.95') });
+    await liquidatorProxy
+      .connect(core.governance)
+      .ownerSetMarketToPartialLiquidationSupported([core.marketIds.usdc], [true]);
     await liquidatorProxy.connect(core.governance).ownerSetIsPartialLiquidator(core.hhUser2.address, true);
 
     await setupHONEYBalance(core, core.hhUser2, parseEther('1000'), core.dolomiteMargin);
@@ -124,17 +114,20 @@ describe('LiquidatorProxyV6_e-mode', () => {
         parseEther('460'),
         core,
       );
-      await liquidatorProxy.connect(core.hhUser2).liquidate({
-        solidAccount: { owner: core.hhUser2.address, number: borrowAccountNumber },
-        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
-        marketIdsPath: zapParams.marketIdsPath,
-        inputAmountWei: zapParams.inputAmountWei,
-        minOutputAmountWei: MAX_UINT_256_BI,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
-        expirationTimestamp: ZERO_BI,
-        withdrawAllReward: false,
-      }, { gasLimit: 50000000 });
+      await liquidatorProxy.connect(core.hhUser2).liquidate(
+        {
+          solidAccount: { owner: core.hhUser2.address, number: borrowAccountNumber },
+          liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: MAX_UINT_256_BI,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          expirationTimestamp: ZERO_BI,
+          withdrawAllReward: false,
+        },
+        { gasLimit: 50000000 },
+      );
 
       /*
        * collateral ratio = 111.11%
@@ -161,12 +154,34 @@ describe('LiquidatorProxyV6_e-mode', () => {
        *     solid account usdc = 0
        *     solid account honey = 10
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.usdc, BigNumber.from('508600000'));
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.honey, ZERO_BI.sub(parseEther('450')).sub(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        BigNumber.from('508600000'),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.honey,
+        ZERO_BI.sub(parseEther('450')).sub(1),
+      );
       await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.usdc, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.honey, parseEther('10'));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, BigNumber.from('1890000'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.usdc, BigNumber.from('489510000'));
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        BigNumber.from('1890000'),
+      );
+      await expectWalletBalance(
+        core.testEcosystem!.testExchangeWrapper.address,
+        core.tokens.usdc,
+        BigNumber.from('489510000'),
+      );
     });
 
     it('should work normally to fully liquidate if user is in e-mode and below partial threshold', async () => {
@@ -190,17 +205,20 @@ describe('LiquidatorProxyV6_e-mode', () => {
         parseEther('920'),
         core,
       );
-      await liquidatorProxy.connect(core.hhUser2).liquidate({
-        solidAccount: { owner: core.hhUser2.address, number: borrowAccountNumber },
-        liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
-        marketIdsPath: zapParams.marketIdsPath,
-        inputAmountWei: zapParams.inputAmountWei,
-        minOutputAmountWei: MAX_UINT_256_BI,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
-        expirationTimestamp: ZERO_BI,
-        withdrawAllReward: false,
-      }, { gasLimit: 50000000 });
+      await liquidatorProxy.connect(core.hhUser2).liquidate(
+        {
+          solidAccount: { owner: core.hhUser2.address, number: borrowAccountNumber },
+          liquidAccount: { owner: core.hhUser1.address, number: borrowAccountNumber },
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: MAX_UINT_256_BI,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          expirationTimestamp: ZERO_BI,
+          withdrawAllReward: false,
+        },
+        { gasLimit: 50000000 },
+      );
 
       /*
        * collateral ratio = 111.11%
@@ -227,12 +245,34 @@ describe('LiquidatorProxyV6_e-mode', () => {
        *     solid account usdc = 0
        *     solid account honey = 20
        */
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.usdc, BigNumber.from('7840000'));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        BigNumber.from('7840000'),
+      );
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.honey, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.usdc, ONE_BI);
-      await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.honey, parseEther('20').sub(1));
-      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, BigNumber.from('3816000'));
-      await expectWalletBalance(core.testEcosystem!.testExchangeWrapper.address, core.tokens.usdc, BigNumber.from('988344000').add(1));
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        borrowAccountNumber,
+        core.marketIds.honey,
+        parseEther('20').sub(1),
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser5,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        BigNumber.from('3816000'),
+      );
+      await expectWalletBalance(
+        core.testEcosystem!.testExchangeWrapper.address,
+        core.tokens.usdc,
+        BigNumber.from('988344000').add(1),
+      );
     });
   });
 });

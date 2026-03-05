@@ -86,6 +86,7 @@ contract LiquidatorProxyV6 is
 
     function ownerInitializeV2(
         IDolomiteStructs.Decimal calldata _dolomiteRake,
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold,
         address _initialPartialLiquidator,
         uint256[] calldata _initialPartialLiquidationMarketIds
     )
@@ -94,6 +95,7 @@ contract LiquidatorProxyV6 is
     reinitializer(2)
     {
         _ownerSetDolomiteRake(_dolomiteRake);
+        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
         _ownerSetIsPartialLiquidator(_initialPartialLiquidator, /* _isPartialLiquidator = */ true);
 
         bool[] memory isSupportedList = new bool[](_initialPartialLiquidationMarketIds.length);
@@ -130,6 +132,22 @@ contract LiquidatorProxyV6 is
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[0]);
         _validateAssetForLiquidation(_liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1]);
         _liquidate(_liquidateParams);
+    }
+
+    function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
+        return _partialLiquidationStorage().partialLiquidationThreshold;
+    }
+
+    function isPartialLiquidationSupportedByMarketId(uint256 _marketId) public view returns (bool) {
+        return _partialLiquidationStorage().marketToPartialLiquidationSupported[_marketId];
+    }
+
+    function isWhitelistedPartialLiquidator(address _account) public view returns (bool) {
+        return _partialLiquidationStorage().whitelistedPartialLiquidators[_account];
+    }
+
+    function dolomiteRake() public view returns (IDolomiteStructs.Decimal memory) {
+        return _partialLiquidationStorage().dolomiteRake;
     }
 
     // ============ Internal Functions ============
