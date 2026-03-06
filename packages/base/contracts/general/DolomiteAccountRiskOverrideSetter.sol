@@ -181,14 +181,6 @@ contract DolomiteAccountRiskOverrideSetter is
             return _getDefaultValuesForOverride();
         }
 
-        Require.that(
-            _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,
-            _FILE,
-            "Invalid account for debt",
-            _account.owner,
-            _account.number
-        );
-
         (
             IDolomiteStructs.Decimal memory marginRatioOverride,
             IDolomiteStructs.Decimal memory liquidationRewardOverride

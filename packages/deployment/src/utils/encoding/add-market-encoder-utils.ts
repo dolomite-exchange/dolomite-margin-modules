@@ -40,6 +40,7 @@ export interface AddMarketOptions {
   skipAmountValidation?: boolean;
   decimals?: number;
   skipEncodeLiquidatorWhitelist?: boolean;
+  enablePartialLiquidation?: boolean;
 }
 
 export interface AddIsolationModeMarketOptions extends AddMarketOptions {
@@ -68,6 +69,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
+    marketId,
     IERC20__factory.connect(factory.address, factory.signer),
     oracle,
     core.interestSetters.alwaysZeroInterestSetter,
@@ -77,7 +79,10 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
     ZERO_BI,
     true,
     ZERO_BI,
-    options,
+    {
+      ...options,
+      enablePartialLiquidation: false,
+    },
   );
 
   const converters = (
@@ -345,6 +350,7 @@ export async function encodeAddGmxV2Market(
 
 export async function encodeAddMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
+  marketId: BigNumberish,
   token: IERC20,
   oracle: IDolomitePriceOracle,
   interestSetter: IDolomiteInterestSetter,
@@ -354,7 +360,9 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
   maxBorrowWei: BigNumberish,
   isCollateralOnly: boolean,
   earningsRateOverride: BigNumberish = ZERO_BI,
-  options: AddMarketOptions = {},
+  options: AddMarketOptions = {
+    enablePartialLiquidation: true,
+  },
 ): Promise<EncodedTransaction[]> {
   if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
@@ -389,5 +397,16 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
       ),
     ),
   );
+  if (options.enablePartialLiquidation) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        core,
+        'liquidatorProxyV6',
+        'ownerSetMarketToPartialLiquidationSupported',
+        [[marketId], [true]] as any,
+      ),
+    );
+  }
   return transactions;
 }

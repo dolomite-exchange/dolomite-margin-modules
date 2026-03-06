@@ -26,11 +26,10 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { BitsLib } from "../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -41,8 +40,15 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
-    using TypesLib for IDolomiteMargin.Par;
+    using DecimalLib for uint256;
     using DolomiteMarginVersionWrapperLib for *;
+
+    // ============ Events ============
+
+    event DolomiteRakeSet(IDolomiteStructs.Decimal dolomiteRake);
+    event PartialLiquidationThresholdSet(uint256 partialLiquidationThreshold);
+    event PartialLiquidatorSet(address partialLiquidator, bool isPartialLiquidator);
+    event MarketToPartialLiquidationSupportedSet(uint256[] marketIds, bool[] isSupported);
 
     // ============ Structs ============
 
@@ -60,6 +66,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         MarketInfo[] markets;
         uint256[] liquidMarkets;
         uint256 expirationTimestamp;
+        bool includeDolomiteRake;
     }
 
     struct LiquidatorProxyCache {
@@ -84,9 +91,19 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         uint256 owedPriceAdj;
     }
 
+    struct PartialLiquidationStorage {
+        /// @notice Can be 0 to be disabled and less than 1e18. 95% equals 0.95 ether.
+        uint256 partialLiquidationThreshold;
+        mapping(uint256 => bool) marketToPartialLiquidationSupported;
+        mapping(address => bool) whitelistedPartialLiquidators;
+        IDolomiteStructs.Decimal dolomiteRake;
+    }
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "BaseLiquidatorProxy";
+    uint256 private constant _ONE = 1 ether;
+    bytes32 private constant _PARTIAL_LIQUIDATION_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.partialLiquidationStorage")) - 1); // solhint-disable-line max-line-length
 
     // ============ Immutable Fields ============
 
@@ -107,149 +124,81 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         EXPIRY = IExpiry(_expiry);
     }
 
+    function ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal calldata _dolomiteRake
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRake(_dolomiteRake);
+    }
+
+    function ownerSetIsPartialLiquidator(
+        address _partialLiquidator,
+        bool _isPartialLiquidator
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsPartialLiquidator(_partialLiquidator, _isPartialLiquidator);
+    }
+
+    function ownerSetMarketToPartialLiquidationSupported(
+        uint256[] calldata _marketIds,
+        bool[] calldata _isSupported
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToPartialLiquidationSupported(_marketIds, _isSupported);
+    }
+
+    function ownerSetPartialLiquidationThreshold(
+        uint256 _partialLiquidationThreshold
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
+    }
+
+
     // ============ Internal Functions ============
 
-    /**
-     * Pre-populates cache values for some pair of markets.
-     */
-    function _initializeCache(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    returns (LiquidatorProxyCache memory)
-    {
-        MarketInfo memory heldMarketInfo = _binarySearch(_constants.markets, _constants.heldMarket);
-        MarketInfo memory owedMarketInfo = _binarySearch(_constants.markets, _constants.owedMarket);
-
-        uint256 owedPriceAdj;
-        if (_constants.expirationTimestamp > 0) {
-            (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getVersionedSpreadAdjustedPrices(
-                _CHAIN_ID,
-                _constants.liquidAccount,
-                _constants.heldMarket,
-                _constants.owedMarket,
-                uint32(_constants.expirationTimestamp)
-            );
-            owedPriceAdj = owedPricePrice.value;
-        } else {
-            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
-                _CHAIN_ID,
-                _constants.liquidAccount,
-                _constants.heldMarket,
-                _constants.owedMarket
-            );
-            owedPriceAdj = owedMarketInfo.price.value + DecimalLib.mul(owedMarketInfo.price.value, spread);
-        }
-
-        return LiquidatorProxyCache({
-            owedWeiToLiquidate: 0,
-            solidHeldUpdateWithReward: 0,
-            solidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.heldMarket),
-                heldMarketInfo.index
-            ),
-            solidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.owedMarket),
-                owedMarketInfo.index
-            ),
-            liquidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket),
-                heldMarketInfo.index
-            ),
-            liquidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket),
-                owedMarketInfo.index
-            ),
-            flipMarketsForExpiration: false,
-            heldPrice: heldMarketInfo.price.value,
-            owedPrice: owedMarketInfo.price.value,
-            owedPriceAdj: owedPriceAdj
-        });
+    function _ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) internal {
+        Require.that(
+            _dolomiteRake.value < _ONE,
+            _FILE,
+            "Invalid dolomite rake"
+        );
+        _partialLiquidationStorage().dolomiteRake = _dolomiteRake;
+        emit DolomiteRakeSet(_dolomiteRake);
     }
 
-    /**
-     * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
-     *    not just what's being liquidated)
-     */
-    function _checkConstants(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    {
-        // panic if the developer didn't set these variables already
-        assert(_constants.solidAccount.owner != address(0));
-        assert(_constants.liquidAccount.owner != address(0));
-
-        Require.that(
-            _constants.owedMarket != _constants.heldMarket,
-            _FILE,
-            "Owed market equals held market",
-            _constants.owedMarket
-        );
-
-        Require.that(
-            !DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
-            _FILE,
-            "Owed market cannot be positive",
-            _constants.owedMarket
-        );
-
-        Require.that(
-            DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
-            _FILE,
-            "Held market cannot be negative",
-            _constants.heldMarket
-        );
-
-        Require.that(
-            uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
-            _FILE,
-            "Expiration timestamp overflows",
-            _constants.expirationTimestamp
-        );
-
-        Require.that(
-            _constants.expirationTimestamp <= block.timestamp,
-            _FILE,
-            "Borrow not yet expired",
-            _constants.expirationTimestamp
-        );
+    function _ownerSetIsPartialLiquidator(
+        address _partialLiquidator,
+        bool _isPartialLiquidator
+    ) internal {
+        _partialLiquidationStorage().whitelistedPartialLiquidators[_partialLiquidator] = _isPartialLiquidator;
+        emit PartialLiquidatorSet(_partialLiquidator, _isPartialLiquidator);
     }
 
-    /**
-     * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender has the permission to use the solid account
-     *  - Require that the liquid account is liquidatable if using an expiration timestamp
-     */
-    function _checkBasicRequirements(
-        LiquidatorProxyConstants memory _constants
-    )
-    internal
-    view
-    {
+    function _ownerSetMarketToPartialLiquidationSupported(
+        uint256[] memory _marketIds,
+        bool[] memory _isSupported
+    ) internal {
         Require.that(
-            _constants.solidAccount.owner == msg.sender
-                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)
-                || DOLOMITE_MARGIN().getIsGlobalOperator(msg.sender),
+            _marketIds.length == _isSupported.length,
             _FILE,
-            "Sender not operator",
-            msg.sender
+            "Invalid market IDs length"
         );
-
-        if (_constants.expirationTimestamp != 0) {
-            // check the expiration is valid
-            uint32 expirationTimestamp = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
-            Require.that(
-                expirationTimestamp == _constants.expirationTimestamp,
-                _FILE,
-                "Expiration timestamp mismatch",
-                expirationTimestamp,
-                _constants.expirationTimestamp
-            );
+        PartialLiquidationStorage storage $ = _partialLiquidationStorage();
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            $.marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
         }
+        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
+    }
+
+    function _ownerSetPartialLiquidationThreshold(
+        uint256 _partialLiquidationThreshold
+    ) internal {
+        Require.that(
+            _partialLiquidationThreshold < _ONE,
+            _FILE,
+            "Invalid partial threshold"
+        );
+        _partialLiquidationStorage().partialLiquidationThreshold = _partialLiquidationThreshold;
+        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
     }
 
     /**
@@ -304,48 +253,28 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         );
     }
 
-    function _getMarketInfos(
-        uint256[] memory _solidMarketIds,
-        uint256[] memory _liquidMarketIds
-    ) internal view returns (MarketInfo[] memory) {
-        uint[] memory marketBitmaps = BitsLib.createBitmaps(DOLOMITE_MARGIN().getNumMarkets());
-        uint256 marketsLength = 0;
-        marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
-        marketsLength = _addMarketsToBitmap(_liquidMarketIds, marketBitmaps, marketsLength);
-
-        uint256 counter = 0;
-        MarketInfo[] memory marketInfos = new MarketInfo[](marketsLength);
-        for (uint256 i; i < marketBitmaps.length && counter != marketsLength; ++i) {
-            uint256 bitmap = marketBitmaps[i];
-            while (bitmap != 0) {
-                uint256 nextSetBit = BitsLib.getLeastSignificantBit(bitmap);
-                uint256 marketId = BitsLib.getMarketIdFromBit(i, nextSetBit);
-
-                marketInfos[counter++] = MarketInfo({
-                    marketId: marketId,
-                    price: DOLOMITE_MARGIN().getMarketPrice(marketId),
-                    index: DOLOMITE_MARGIN().getMarketCurrentIndex(marketId)
-                });
-
-                // unset the set bit
-                bitmap = BitsLib.unsetBit(bitmap, nextSetBit);
-            }
-        }
-
-        return marketInfos;
-    }
-
     /**
      * Calculate the maximum amount that can be liquidated on `liquidAccount`
      */
     function _calculateAndSetMaxLiquidationAmount(
-        LiquidatorProxyCache memory _cache
+        LiquidatorProxyCache memory _cache,
+        LiquidatorProxyConstants memory _constants
     )
         internal
-        pure
+        view
     {
+        if (_eligibleForPartialLiquidation(_constants)) {
+            Require.that(
+                _partialLiquidationStorage().whitelistedPartialLiquidators[msg.sender],
+                _FILE,
+                "Invalid partial liquidator"
+            );
+            _cache.liquidOwedWei.value = _cache.liquidOwedWei.value / 2;
+        }
+
         uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
         uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
+
         if (liquidHeldValue < liquidOwedValue) {
             // The held collateral is worth less than the adjusted debt
             _cache.solidHeldUpdateWithReward = _cache.liquidHeldWei.value;
@@ -363,6 +292,44 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
             );
             _cache.owedWeiToLiquidate = _cache.liquidOwedWei.value;
         }
+    }
+
+    function _eligibleForPartialLiquidation(
+        LiquidatorProxyConstants memory _constants
+    ) internal view returns (bool) {
+        if (
+            _constants.expirationTimestamp != 0 ||
+            !_partialLiquidationStorage().marketToPartialLiquidationSupported[_constants.heldMarket]
+        ) {
+            return false;
+        }
+
+        IDolomiteMargin.Decimal memory marginRatioOverride
+            = DolomiteMarginVersionWrapperLib.getVersionedMarginRatioOverrideForChain(
+            DOLOMITE_MARGIN(),
+            _CHAIN_ID,
+            _constants.liquidAccount
+        );
+        (
+            IDolomiteMargin.MonetaryValue memory supplyValue,
+            IDolomiteMargin.MonetaryValue memory borrowValue
+        ) = _getAdjustedAccountValues(
+            _constants.markets,
+            _constants.liquidAccount,
+            _constants.liquidMarkets,
+            marginRatioOverride
+        );
+
+        if (marginRatioOverride.value == 0) {
+            marginRatioOverride = DOLOMITE_MARGIN().getMarginRatio();
+        }
+        marginRatioOverride = marginRatioOverride.onePlus();
+
+        uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
+        uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+
+        uint256 _partialLiquidationThreshold = _partialLiquidationStorage().partialLiquidationThreshold;
+        return _partialLiquidationThreshold != 0 && healthFactor >= _partialLiquidationThreshold;
     }
 
     function _calculateAndSetActualLiquidationAmount(
@@ -435,6 +402,13 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         );
     }
 
+    function _partialLiquidationStorage() internal pure returns (PartialLiquidationStorage storage $) {
+        bytes32 slot = _PARTIAL_LIQUIDATION_STORAGE_SLOT;
+        assembly {
+            $.slot := slot
+        }
+    }
+
     // ============ Private Functions ============
 
     function _getAccountValues(
@@ -472,20 +446,6 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         }
 
         return (supplyValue, borrowValue);
-    }
-
-    function _addMarketsToBitmap(
-        uint256[] memory _markets,
-        uint256[] memory _bitmaps,
-        uint256 _marketsLength
-    ) private pure returns (uint) {
-        for (uint256 i; i < _markets.length; ++i) {
-            if (!BitsLib.hasBit(_bitmaps, _markets[i])) {
-                BitsLib.setBit(_bitmaps, _markets[i]);
-                _marketsLength += 1;
-            }
-        }
-        return _marketsLength;
     }
 
     function _binarySearch(
