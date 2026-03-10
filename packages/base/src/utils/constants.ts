@@ -3037,7 +3037,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
     },
     [WSR_USD_MAP[Network.Ethereum].address]: {
-      scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
+      scribeAddress: '0x0b4Cb11faC24707F3F0F89E441A4Cdf6EF01d215',
     },
   },
   [Network.Mantle]: {
