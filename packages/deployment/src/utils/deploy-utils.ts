@@ -343,6 +343,7 @@ export function getMaxDeploymentVersionNumberByDeploymentKey(
 /**
  * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
  * @param defaultVersion The version that should be declared if no other version exists
+ * @return The name of the contract with `V` and the `version` appended
  */
 export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
   const maxVersion = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, defaultVersion);

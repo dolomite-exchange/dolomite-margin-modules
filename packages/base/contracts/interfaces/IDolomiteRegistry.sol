@@ -70,8 +70,6 @@ interface IDolomiteRegistry {
     // =================== Write Functions ====================
     // ========================================================
 
-    function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
-
     /**
      *
      * @param  _adminRegistry    The new address of the admin registry

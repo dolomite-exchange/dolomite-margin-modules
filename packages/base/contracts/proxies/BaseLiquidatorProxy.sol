@@ -25,6 +25,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
@@ -184,6 +185,11 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         );
         PartialLiquidationStorage storage $ = _partialLiquidationStorage();
         for (uint256 i = 0; i < _marketIds.length; i++) {
+            address factory = DOLOMITE_MARGIN().getMarketTokenAddress(_marketIds[i]);
+            try IAsyncFreezableIsolationModeVaultFactory(factory).isVaultFrozen(/* _vault = */ address(0)) returns (bool) {
+                revert("Async vaults do not support partial liquidations");
+            } catch {
+            }
             $.marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
         }
         emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);

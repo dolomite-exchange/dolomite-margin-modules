@@ -1,4 +1,3 @@
-import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
   GenericTraderProxyV2,
@@ -45,8 +44,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
       foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
-  } catch (e) {
-  }
+  } catch (e) {}
   if (needsRegistryDolomiteAccountRegistryEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -63,8 +61,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
   try {
     const foundBorrowPositionProxyAddress = await dolomiteRegistry.borrowPositionProxy();
     needsRegistryBorrowPositionProxyEncoding = foundBorrowPositionProxyAddress !== borrowPositionProxyAddress;
-  } catch (e) {
-  }
+  } catch (e) {}
   if (needsRegistryBorrowPositionProxyEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -81,8 +78,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
   try {
     const foundDepositWithdrawalRouter = await dolomiteRegistry.depositWithdrawalRouter();
     needsRegistryDepositWithdrawalRouterEncoding = foundDepositWithdrawalRouter !== depositWithdrawalRouterProxyAddress;
-  } catch (e) {
-  }
+  } catch (e) {}
   if (needsRegistryDepositWithdrawalRouterEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -99,8 +95,7 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
   try {
     const foundGenericTraderProxyV2Address = await dolomiteRegistry.genericTraderProxy();
     needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2.address;
-  } catch (e) {
-  }
+  } catch (e) {}
   if (needsRegistryGenericTraderProxyV2Encoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -117,79 +112,61 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
   try {
     const foundTreasury = await dolomiteRegistry.treasury();
     needsTreasuryEncoding = foundTreasury !== core.gnosisSafeAddress;
-  } catch (e) {
-  }
+  } catch (e) {}
   if (needsTreasuryEncoding) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteRegistry },
-        'dolomiteRegistry',
-        'ownerSetTreasury',
-        [core.gnosisSafeAddress],
-      ),
+      await prettyPrintEncodedDataWithTypeSafety(core, { dolomiteRegistry }, 'dolomiteRegistry', 'ownerSetTreasury', [
+        core.gnosisSafeAddress,
+      ]),
     );
   }
 
   let needsDaoEncoding = true;
   try {
     const foundDao = await dolomiteRegistry.dao();
-    needsDaoEncoding = foundDao !== (core.daoAddress ?? core.gnosisSafeAddress);
-  } catch (e) {
-  }
+    needsDaoEncoding = foundDao !== core.daoAddress;
+  } catch (e) {}
   if (needsDaoEncoding) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteRegistry },
-        'dolomiteRegistry',
-        'ownerSetDao',
-        [core.daoAddress ?? core.gnosisSafeAddress],
-      ),
+      await prettyPrintEncodedDataWithTypeSafety(core, { dolomiteRegistry }, 'dolomiteRegistry', 'ownerSetDao', [
+        core.daoAddress,
+      ]),
     );
   }
 
-  const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
+  let needsFeeAgentEncoding = true;
+  try {
+    const foundDao = await dolomiteRegistry.feeAgent();
+    needsFeeAgentEncoding = foundDao !== core.feeAgentAddress;
+  } catch (e) {}
+  if (needsFeeAgentEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(core, { dolomiteRegistry }, 'dolomiteRegistry', 'ownerSetFeeAgent', [
+        core.feeAgentAddress,
+      ]),
+    );
+  }
+
   transactions.push(
-    ...await encodeSetGlobalOperatorIfNecessary(
+    ...(await encodeSetGlobalOperatorIfNecessary(
       core,
-      genericTraderProxyV1Address,
+      CoreDeployments.GenericTraderProxyV1[core.network].address,
       false,
-    ),
-    ...await encodeSetGlobalOperatorIfNecessary(
+    )),
+    ...(await encodeSetGlobalOperatorIfNecessary(
       core,
-      genericTraderProxyV2,
-      true,
-    ),
-    ...await encodeSetGlobalOperatorIfNecessary(
-      core,
-      liquidatorProxyV6,
-      true,
-    ),
+      CoreDeployments.LiquidatorProxyV4WithGenericTrader[core.network].address,
+      false,
+    )),
+    ...(await encodeSetGlobalOperatorIfNecessary(core, genericTraderProxyV2, true)),
+    ...(await encodeSetGlobalOperatorIfNecessary(core, liquidatorProxyV6, true)),
   );
 
   let needsRegistryMigratorEncoding = true;
-  let needsRegistryOracleAggregatorEncoding = true;
   try {
     const foundDolomiteMigratorAddress = await dolomiteRegistry.dolomiteMigrator();
-    const foundOracleAggregatorAddress = await dolomiteRegistry.oracleAggregator();
-    if (foundDolomiteMigratorAddress === ADDRESS_ZERO && foundOracleAggregatorAddress === ADDRESS_ZERO) {
-      needsRegistryMigratorEncoding = false;
-      needsRegistryOracleAggregatorEncoding = false;
-      await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregatorAddress);
-    } else if (
-      foundDolomiteMigratorAddress === dolomiteMigratorAddress &&
-      foundOracleAggregatorAddress === oracleAggregatorAddress
-    ) {
-      needsRegistryMigratorEncoding = false;
-      needsRegistryOracleAggregatorEncoding = false;
-    } else if (foundDolomiteMigratorAddress === dolomiteMigratorAddress) {
-      needsRegistryMigratorEncoding = false;
-    } else if (foundOracleAggregatorAddress === oracleAggregatorAddress) {
-      needsRegistryOracleAggregatorEncoding = false;
-    }
-  } catch (e) {
-  }
+    needsRegistryMigratorEncoding = foundDolomiteMigratorAddress !== dolomiteMigratorAddress;
+  } catch (e) {}
   if (needsRegistryMigratorEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -201,6 +178,13 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
       ),
     );
   }
+
+  let needsRegistryOracleAggregatorEncoding = true;
+  try {
+    const foundOracleAggregatorAddress = await dolomiteRegistry.oracleAggregator();
+    needsRegistryOracleAggregatorEncoding = foundOracleAggregatorAddress !== oracleAggregatorAddress;
+  } catch (e) {}
+
   if (needsRegistryOracleAggregatorEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(

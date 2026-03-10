@@ -64,4 +64,6 @@ interface ILiquidatorProxyV6 {
     function liquidateViaProxyWithStrictInputMarket(LiquidateParams memory _liquidateParams) external;
 
     function liquidate(LiquidateParams memory _liquidateParams) external;
+
+    function version() external view returns (uint8);
 }

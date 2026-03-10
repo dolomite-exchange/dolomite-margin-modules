@@ -134,6 +134,10 @@ contract LiquidatorProxyV6 is
         _liquidate(_liquidateParams);
     }
 
+    function version() public view returns (uint8) {
+        return _getInitializedVersion();
+    }
+
     function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
         return _partialLiquidationStorage().partialLiquidationThreshold;
     }

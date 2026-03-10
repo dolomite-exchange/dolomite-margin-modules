@@ -27,7 +27,7 @@ export async function deployDolomiteRegistry<T extends DolomiteNetwork>(
   const dolomiteRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 15),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 16),
   );
   const registryImplementation = DolomiteRegistryImplementation__factory.connect(
     dolomiteRegistryImplementationAddress,

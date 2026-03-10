@@ -96,20 +96,6 @@ contract DolomiteRegistryImplementation is
         _ownerSetDao(_dao);
     }
 
-    function lazyInitialize(
-        address _dolomiteMigrator,
-        address _oracleAggregator
-    ) external {
-        Require.that(
-            address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0),
-            _FILE,
-            "Already initialized"
-        );
-
-        _ownerSetDolomiteMigrator(_dolomiteMigrator);
-        _ownerSetOracleAggregator(_oracleAggregator);
-    }
-
     // ===================== Functions =====================
 
     function ownerSetAdminRegistry(
@@ -292,7 +278,9 @@ contract DolomiteRegistryImplementation is
     }
 
     function feeAgent() public view returns (address) {
-        return _getAddress(_FEE_AGENT_SLOT);
+        address account = _getAddress(_FEE_AGENT_SLOT);
+        assert(account != address(0));
+        return account;
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {

@@ -680,6 +680,20 @@ export const LINK_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = 
   [Network.XLayer]: undefined,
 };
 
+export const LIQUIDATOR_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Base]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Berachain]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Bnb]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Botanix]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Ethereum]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Ink]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Mantle]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.PolygonZkEvm]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.SuperSeed]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.XLayer]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+};
+
 export const LORENZO_ST_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xf6718b2701D4a6498eF77D7c152b2137Ab28b8A3',
@@ -1767,18 +1781,32 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.XLayer]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
 };
 
-export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: undefined,
-  [Network.Base]: undefined,
+export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Base]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Bnb]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Botanix]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Ethereum]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Ink]: undefined,
-  [Network.Mantle]: undefined,
-  [Network.PolygonZkEvm]: undefined,
-  [Network.SuperSeed]: undefined,
-  [Network.XLayer]: undefined,
+  [Network.Ink]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Mantle]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.PolygonZkEvm]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.SuperSeed]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.XLayer]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+};
+
+export const DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Base]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Berachain]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Bnb]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Botanix]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Ethereum]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Ink]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Mantle]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.PolygonZkEvm]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.SuperSeed]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.XLayer]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
 };
 
 export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {

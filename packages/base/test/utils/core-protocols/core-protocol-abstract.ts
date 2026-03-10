@@ -120,7 +120,8 @@ export interface CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
-  daoAddress: string | undefined;
+  daoAddress: string;
+  feeAgentAddress: string;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
@@ -190,7 +191,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
-  public readonly daoAddress: string | undefined;
+  public readonly daoAddress: string;
+  public readonly feeAgentAddress: string;
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
@@ -263,6 +265,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
       defaultBlockTag: params.config.blockNumber,
     });
     this.daoAddress = params.daoAddress;
+    this.feeAgentAddress = params.feeAgentAddress;
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
