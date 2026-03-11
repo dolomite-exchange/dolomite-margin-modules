@@ -3044,6 +3044,9 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     [WG_BERA_MAP[Network.Berachain].address]: {
       scribeAddress: '0x34F13852066A5F9D386db0899E814E1EA9B282f9',
     },
+    [WSR_USD_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x71207dF9c1CF5261451C62539BB364D7ddA7c79b',
+    },
     [YL_FBTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xcfee055bf4dec42563f023ca097edf0c48cc357f',
       tokenPairAddress: FBTC_MAP[Network.Berachain].address,
@@ -3065,7 +3068,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
     },
     [WSR_USD_MAP[Network.Ethereum].address]: {
-      scribeAddress: '0x277F78F39b9Dc73dF3723BAcD40f8658f8a1A633',
+      scribeAddress: '0x0b4Cb11faC24707F3F0F89E441A4Cdf6EF01d215',
     },
   },
   [Network.Mantle]: {
