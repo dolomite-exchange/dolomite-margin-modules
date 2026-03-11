@@ -5,7 +5,6 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -33,8 +32,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-    },
+    invariants: async () => {},
   };
 }
 
