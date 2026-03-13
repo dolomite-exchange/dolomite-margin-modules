@@ -9,6 +9,7 @@ import {
 import { isArraysEqual } from 'packages/base/src/utils';
 import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../../base/test/utils/setup';
+import { ModuleDeployments } from '../../../utils';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
@@ -153,14 +154,23 @@ export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork
       CoreDeployments.GenericTraderProxyV1[core.network].address,
       false,
     )),
-    ...(await encodeSetGlobalOperatorIfNecessary(
-      core,
-      CoreDeployments.LiquidatorProxyV4WithGenericTrader[core.network].address,
-      false,
-    )),
     ...(await encodeSetGlobalOperatorIfNecessary(core, genericTraderProxyV2, true)),
     ...(await encodeSetGlobalOperatorIfNecessary(core, liquidatorProxyV6, true)),
   );
+
+  const liquidatorsToDisable: (string | undefined)[] = [
+    CoreDeployments.LiquidatorProxyV1[core.network].address,
+    CoreDeployments.LiquidatorProxyV4WithGenericTrader[core.network].address,
+    (ModuleDeployments.LiquidatorProxyV4WithGenericTraderOld as any)[core.network]?.address,
+    (ModuleDeployments.LiquidatorProxyV5 as any)[core.network]?.address,
+    (ModuleDeployments.IsolationModeFreezableLiquidatorProxyV1 as any)[core.network]?.address,
+    (ModuleDeployments.IsolationModeFreezableLiquidatorProxyV2 as any)[core.network]?.address,
+  ];
+  for (const liquidator of liquidatorsToDisable) {
+    if (liquidator) {
+      transactions.push(...(await encodeSetGlobalOperatorIfNecessary(core, liquidator, false)));
+    }
+  }
 
   let needsRegistryMigratorEncoding = true;
   try {

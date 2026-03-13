@@ -8,6 +8,7 @@ import {
 } from '../../../../../base/src/types';
 import {
   DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP,
   GNOSIS_SAFE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '../../../../../base/src/utils/constants';
@@ -42,7 +43,8 @@ export async function deployDolomiteRegistry<T extends DolomiteNetwork>(
     eventEmitterProxyAddress,
     dolomiteAccountRegistryProxy.address,
     GNOSIS_SAFE_MAP[network],
-    DOLOMITE_DAO_GNOSIS_SAFE_MAP[network] ?? GNOSIS_SAFE_MAP[network],
+    DOLOMITE_DAO_GNOSIS_SAFE_MAP[network],
+    DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP[network],
   );
   const dolomiteRegistryAddress = await deployContractAndSave(
     'RegistryProxy',

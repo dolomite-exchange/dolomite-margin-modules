@@ -83,7 +83,8 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry,
         address _treasury,
-        address _dao
+        address _dao,
+        address _feeAgent
     ) external initializer {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
@@ -94,6 +95,7 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
         _ownerSetTreasury(_treasury);
         _ownerSetDao(_dao);
+        _ownerSetFeeAgent(_feeAgent);
     }
 
     // ===================== Functions =====================
