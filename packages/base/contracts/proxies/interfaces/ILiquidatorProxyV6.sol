@@ -49,6 +49,13 @@ interface ILiquidatorProxyV6 {
 
     function initialize() external;
 
+    function ownerInitializeV2(
+        IDolomiteStructs.Decimal calldata _dolomiteRake,
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold,
+        address _initialPartialLiquidator,
+        uint256[] calldata _initialPartialLiquidationMarketIds
+    ) external;
+
     /**
      * Same as `liquidate` but only callable by a global operator. The `_validateAssetForLiquidation` checks are
      * performed on the `msg.sender` since it's presumed to be the valid liquidator. Only the input market has a strict
@@ -57,4 +64,6 @@ interface ILiquidatorProxyV6 {
     function liquidateViaProxyWithStrictInputMarket(LiquidateParams memory _liquidateParams) external;
 
     function liquidate(LiquidateParams memory _liquidateParams) external;
+
+    function version() external view returns (uint8);
 }

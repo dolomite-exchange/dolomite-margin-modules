@@ -888,21 +888,6 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         'AccountRiskOverrideSetter: Could not find risk param',
       );
     });
-
-    it('should fail if invalid account number', async () => {
-      await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, ONE_BI, core.marketIds.wbera, wberaAmount);
-      await expectThrow(
-        core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
-          ONE_BI,
-          defaultAccountNumber,
-          core.marketIds.usdc,
-          usdcAmount,
-          BalanceCheckFlag.None,
-        ),
-        `AccountRiskOverrideSetter: Invalid account for debt <${core.hhUser1.address.toLowerCase()}, ${ONE_BI.toString()}>`,
-      );
-    });
   });
 
   describe('#getCategoryParamByMarketId', () => {

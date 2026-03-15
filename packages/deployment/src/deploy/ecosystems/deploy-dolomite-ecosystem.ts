@@ -9,12 +9,15 @@ import {
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
   ILiquidatorAssetRegistry__factory,
-  ILiquidatorProxyV6__factory,
   IPartiallyDelayedMultiSig__factory,
   LiquidatorProxyV6__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { DOLOMITE_DAO_GNOSIS_SAFE_MAP, GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP,
+  GNOSIS_SAFE_MAP,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteErc4626ImplementationConstructorParams,
   getDolomiteMigratorConstructorParams,
@@ -60,6 +63,7 @@ import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-regi
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { encodeGenericTraderProxyMigrations } from './helpers/encode-generic-trader-proxy-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import { encodeLiquidatorMigrations } from './helpers/encode-liquidator-migrations';
 
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -79,6 +83,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
   const daoAddress = DOLOMITE_DAO_GNOSIS_SAFE_MAP[network];
+  const feeAgentAddress = DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP[network];
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[network];
   const gnosisSafeSigner = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
   const transactions: EncodedTransaction[] = [];
@@ -179,11 +184,17 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   );
   const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1);
 
+  const liquidatorProxyLibAddress = await deployContractAndSave(
+    'LiquidatorProxyLib',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('LiquidatorProxyLib', 1),
+  );
+
   const liquidatorProxyV6ImplementationAddress = await deployContractAndSave(
     'LiquidatorProxyV6',
     [network, expiry.address, dolomiteMargin.address, dolomiteRegistry.address, liquidatorAssetRegistry.address],
-    'LiquidatorProxyV6ImplementationV1',
-    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+    getMaxDeploymentVersionNameByDeploymentKey('LiquidatorProxyV6Implementation', 2),
+    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress, LiquidatorProxyLib: liquidatorProxyLibAddress },
   );
   const liquidatorProxyV6Implementation = LiquidatorProxyV6__factory.connect(
     liquidatorProxyV6ImplementationAddress,
@@ -200,7 +211,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     ),
     'LiquidatorProxyV6',
   );
-  const liquidatorProxyV6 = ILiquidatorProxyV6__factory.connect(liquidatorProxyV6Address, hhUser1);
+  const liquidatorProxyV6 = LiquidatorProxyV6__factory.connect(liquidatorProxyV6Address, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -323,6 +334,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     liquidatorAssetRegistry,
     liquidatorProxyV6,
     daoAddress: daoAddress,
+    feeAgentAddress: feeAgentAddress,
     genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
@@ -339,6 +351,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     transactions,
     core,
   );
+
+  await encodeLiquidatorMigrations(liquidatorProxyV6, liquidatorProxyV6Implementation, transactions, core);
 
   await encodeDolomiteRegistryMigrations(
     dolomiteRegistry,

@@ -17,7 +17,7 @@ export async function deployDolomiteAccountRiskOverrideSetter<T extends Dolomite
   const dolomiteAccountRiskOverrideSetterImplementationAddress = await deployContractAndSave(
     'DolomiteAccountRiskOverrideSetter',
     [dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteAccountRiskOverrideSetterImplementation', 6),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteAccountRiskOverrideSetterImplementation', 7),
     undefined,
   );
   const implementation = DolomiteAccountRiskOverrideSetter__factory.connect(

@@ -19,15 +19,38 @@ abstract contract DolomiteAssertions is Test {
         uint256 _expectedAmount,
         bool _expectedSign
     ) public view returns (uint256) {
-        return assertProtocolBalanceWei(
-            _dolomiteMargin,
-            _account,
-            _accountNumber,
-            _marketId,
-            _expectedAmount,
-            _expectedSign,
-            /* _marginOfErrorWei */ 0
+        IDolomiteStructs.AccountInfo memory accountStruct = IDolomiteStructs.AccountInfo({
+            owner: _account,
+            number: _accountNumber
+        });
+        IDolomiteStructs.Wei memory balance = _dolomiteMargin.getAccountWei(
+            accountStruct,
+            _marketId
         );
+
+        assertTrue(
+            balance.value == _expectedAmount,
+            string.concat(
+                "balance value incorrect -- expected: { value: ",
+                vm.toString(_expectedAmount),
+                ", sign: ",
+                vm.toString(_expectedSign),
+                " }, actual: { value: ",
+                vm.toString(balance.value),
+                ", sign: ",
+                vm.toString(balance.sign),
+                " }"
+            )
+        );
+        if (_expectedAmount != 0) {
+            assertEq(_expectedSign, balance.sign, string.concat(
+                "balance sign incorrect: expected ",
+                vm.toString(_expectedSign),
+                ", actual ",
+                vm.toString(balance.sign)
+            ));
+        }
+        return balance.value;
     }
 
     function assertProtocolBalancePar(

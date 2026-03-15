@@ -29,6 +29,7 @@ import {
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
+  LiquidatorProxyV6,
   RegistryProxy,
 } from '../../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/utils/constants';
@@ -119,7 +120,8 @@ export interface CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
-  daoAddress: string | undefined;
+  daoAddress: string;
+  feeAgentAddress: string;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
@@ -161,7 +163,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  liquidatorProxyV6: ILiquidatorProxyV6;
+  liquidatorProxyV6: LiquidatorProxyV6;
   marketIdToDeployedVaultMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
@@ -189,7 +191,8 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
-  public readonly daoAddress: string | undefined;
+  public readonly daoAddress: string;
+  public readonly feeAgentAddress: string;
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
@@ -235,7 +238,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
-  public readonly liquidatorProxyV6: ILiquidatorProxyV6;
+  public readonly liquidatorProxyV6: LiquidatorProxyV6;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
@@ -262,6 +265,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
       defaultBlockTag: params.config.blockNumber,
     });
     this.daoAddress = params.daoAddress;
+    this.feeAgentAddress = params.feeAgentAddress;
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;

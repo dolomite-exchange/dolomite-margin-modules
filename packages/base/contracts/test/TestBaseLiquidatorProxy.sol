@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { BaseLiquidatorProxy } from "../proxies/BaseLiquidatorProxy.sol";
+import { LiquidatorProxyLib } from "../proxies/LiquidatorProxyLib.sol";
 
 /**
  * @title   TestBaseLiquidatorProxy
@@ -55,7 +56,7 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         view
         returns (LiquidatorProxyCache memory)
     {
-        return _initializeCache(_constants);
+        return LiquidatorProxyLib.initializeCache(DOLOMITE_MARGIN(), EXPIRY, _CHAIN_ID, _constants);
     }
 
     function checkConstants(
@@ -64,7 +65,7 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         public
         view
     {
-        _checkConstants(_constants);
+        LiquidatorProxyLib.checkConstants(DOLOMITE_MARGIN(), _constants);
     }
 
     function checkBasicRequirements(
@@ -73,7 +74,7 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         public
         view
     {
-        _checkBasicRequirements(_constants);
+        LiquidatorProxyLib.checkBasicRequirements(DOLOMITE_MARGIN(), EXPIRY, _constants);
     }
 
     function getAccountValues(
@@ -124,17 +125,22 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         view
         returns (MarketInfo[] memory)
     {
-        return _getMarketInfos(_solidMarketIds, _liquidMarketIds);
+        return LiquidatorProxyLib.getMarketInfos(
+            DOLOMITE_MARGIN(),
+            _solidMarketIds,
+            _liquidMarketIds
+        );
     }
 
     function calculateAndSetMaxLiquidationAmount(
-        LiquidatorProxyCache memory _cache
+        LiquidatorProxyCache memory _cache,
+        LiquidatorProxyConstants memory _constants
     )
         public
-        pure
+        view
         returns (LiquidatorProxyCache memory)
     {
-        _calculateAndSetMaxLiquidationAmount(_cache);
+        _calculateAndSetMaxLiquidationAmount(_cache, _constants);
         return _cache;
     }
 

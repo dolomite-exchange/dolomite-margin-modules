@@ -2,6 +2,7 @@ import { BaseContract, BigNumberish } from 'ethers';
 import { IGlvIsolationModeVaultFactory, IGmxV2IsolationModeVaultFactory } from 'packages/glv/src/types';
 import {
   HandlerRegistry,
+  IAsyncFreezableIsolationModeVaultFactory__factory,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
   IERC20,
@@ -68,6 +69,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
+    marketId,
     IERC20__factory.connect(factory.address, factory.signer),
     oracle,
     core.interestSetters.alwaysZeroInterestSetter,
@@ -345,6 +347,7 @@ export async function encodeAddGmxV2Market(
 
 export async function encodeAddMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
+  marketId: BigNumberish,
   token: IERC20,
   oracle: IDolomitePriceOracle,
   interestSetter: IDolomiteInterestSetter,
@@ -389,5 +392,44 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
       ),
     ),
   );
+
+  const isPartialLiquidationSupported = await getIsPartialLiquidationSupported(core, token.address);
+  if (isPartialLiquidationSupported) {
+    console.log('');
+    console.log('Enabling partial liquidations...');
+    console.log('');
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { liquidatorProxyV6: core.liquidatorProxyV6 },
+        'liquidatorProxyV6',
+        'ownerSetMarketToPartialLiquidationSupported',
+        [[marketId], [true]],
+      ),
+    );
+  } else {
+    console.log('');
+    console.warn('Disabling partial liquidations...');
+    console.log('');
+  }
   return transactions;
+}
+
+export async function getIsPartialLiquidationSupported<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  tokenAddress: string,
+): Promise<boolean> {
+  try {
+    const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+    if (core.network === Network.Berachain && (await token.symbol()).includes('pol-')) {
+      // Ignore POL tokens
+      return false;
+    }
+
+    const factory = IAsyncFreezableIsolationModeVaultFactory__factory.connect(token.address, core.hhUser1);
+    await factory.isVaultFrozen('0x000000000000000000000000000000000000dead');
+    return false;
+  } catch (e: any) {
+    return true;
+  }
 }

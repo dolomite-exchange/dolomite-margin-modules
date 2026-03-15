@@ -116,6 +116,7 @@ import {
   DJ_USDC_V2,
   DOLO_MAP,
   DOLOMITE_DAO_GNOSIS_SAFE_MAP,
+  DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP,
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
@@ -953,6 +954,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   }
 
   const daoAddress = DOLOMITE_DAO_GNOSIS_SAFE_MAP[config.network];
+  const feeAgentAddress = DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP[config.network];
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[config.network];
   const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
 
@@ -1143,6 +1145,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     chainlinkPriceOracleV3,
     constantPriceOracle,
     daoAddress,
+    feeAgentAddress,
     delayedMultiSig,
     deployedVaults,
     depositWithdrawalProxy,
