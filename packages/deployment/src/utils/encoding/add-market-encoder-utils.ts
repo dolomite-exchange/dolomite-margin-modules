@@ -2,6 +2,7 @@ import { BaseContract, BigNumberish } from 'ethers';
 import { IGlvIsolationModeVaultFactory, IGmxV2IsolationModeVaultFactory } from 'packages/glv/src/types';
 import {
   HandlerRegistry,
+  IAsyncFreezableIsolationModeVaultFactory__factory,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
   IERC20,
@@ -40,7 +41,6 @@ export interface AddMarketOptions {
   skipAmountValidation?: boolean;
   decimals?: number;
   skipEncodeLiquidatorWhitelist?: boolean;
-  enablePartialLiquidation?: boolean;
 }
 
 export interface AddIsolationModeMarketOptions extends AddMarketOptions {
@@ -79,10 +79,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
     ZERO_BI,
     true,
     ZERO_BI,
-    {
-      ...options,
-      enablePartialLiquidation: false,
-    },
+    options,
   );
 
   const converters = (
@@ -360,9 +357,7 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
   maxBorrowWei: BigNumberish,
   isCollateralOnly: boolean,
   earningsRateOverride: BigNumberish = ZERO_BI,
-  options: AddMarketOptions = {
-    enablePartialLiquidation: true,
-  },
+  options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
@@ -397,16 +392,44 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
       ),
     ),
   );
-  if (options.enablePartialLiquidation) {
+
+  const isPartialLiquidationSupported = await getIsPartialLiquidationSupported(core, token.address);
+  if (isPartialLiquidationSupported) {
+    console.log('');
+    console.log('Enabling partial liquidations...');
+    console.log('');
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        core,
+        { liquidatorProxyV6: core.liquidatorProxyV6 },
         'liquidatorProxyV6',
         'ownerSetMarketToPartialLiquidationSupported',
-        [[marketId], [true]] as any,
+        [[marketId], [true]],
       ),
     );
+  } else {
+    console.log('');
+    console.warn('Disabling partial liquidations...');
+    console.log('');
   }
   return transactions;
+}
+
+export async function getIsPartialLiquidationSupported<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  tokenAddress: string,
+): Promise<boolean> {
+  try {
+    const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+    if (core.network === Network.Berachain && (await token.symbol()).includes('pol-')) {
+      // Ignore POL tokens
+      return false;
+    }
+
+    const factory = IAsyncFreezableIsolationModeVaultFactory__factory.connect(token.address, core.hhUser1);
+    await factory.isVaultFrozen('0x000000000000000000000000000000000000dead');
+    return false;
+  } catch (e: any) {
+    return true;
+  }
 }

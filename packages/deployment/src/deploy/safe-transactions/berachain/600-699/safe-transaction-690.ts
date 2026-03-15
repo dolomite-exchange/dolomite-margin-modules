@@ -63,9 +63,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       0,
       true,
       ZERO_BI,
-      {
-        enablePartialLiquidation: false,
-      },
     )),
     ...(await encodeAddMarket(
       core,
@@ -79,9 +76,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       0,
       true,
       ZERO_BI,
-      {
-        enablePartialLiquidation: false,
-      },
     )),
   ];
 

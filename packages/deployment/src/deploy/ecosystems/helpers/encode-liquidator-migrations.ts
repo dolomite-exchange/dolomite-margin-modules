@@ -1,16 +1,11 @@
 import { BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import {
-  IAsyncFreezableIsolationModeVaultFactory__factory,
-  ILiquidatorProxyV6,
-  LiquidatorProxyV6,
-  RegistryProxy__factory,
-} from '../../../../../base/src/types';
+import { ILiquidatorProxyV6, LiquidatorProxyV6, RegistryProxy__factory } from '../../../../../base/src/types';
 import { LIQUIDATOR_ADDRESS_MAP } from '../../../../../base/src/utils/constants';
-import { DolomiteNetwork, Network } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../../base/test/utils/setup';
-import { IERC20Metadata__factory } from '../../../../../gamma/src/types';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { getIsPartialLiquidationSupported } from '../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
 export async function encodeLiquidatorMigrations<T extends DolomiteNetwork>(
@@ -78,16 +73,7 @@ async function getAllSupportedPartialLiquidationMarketIds<T extends DolomiteNetw
   const length = await core.dolomiteMargin.getNumMarkets();
   for (let marketId = 0; marketId < length.toNumber(); marketId++) {
     const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
-    try {
-      const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
-      if (core.network === Network.Berachain && (await token.symbol()).includes('pol-')) {
-        // Ignore POL tokens
-        continue;
-      }
-
-      const factory = IAsyncFreezableIsolationModeVaultFactory__factory.connect(token.address, core.hhUser1);
-      await factory.isVaultFrozen('0x000000000000000000000000000000000000dead');
-    } catch (e: any) {
+    if (await getIsPartialLiquidationSupported(core, tokenAddress)) {
       marketIdMap[marketId] = true;
     }
   }
