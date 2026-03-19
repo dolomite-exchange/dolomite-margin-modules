@@ -58,4 +58,6 @@ interface IVeToken {
     function increase_amount(uint256 _id, uint256 _amount) external;
 
     function locked(uint256 _veNftId) external view returns (LockedBalance memory);
+
+    function ownerOf(uint256 _veNftId) external view returns (address);
 }

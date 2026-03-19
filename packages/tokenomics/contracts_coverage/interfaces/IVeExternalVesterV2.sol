@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2025 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,13 +27,13 @@ import { IVesterDiscountCalculator } from "./IVesterDiscountCalculator.sol";
 
 
 /**
- * @title   IVeExternalVesterV1
+ * @title   IVeExternalVesterV2
  * @author  Dolomite
  *
  * Interface for a vesting contract that offers users a discount on REWARD_TOKEN if they vest PAIR_TOKEN and oToken for
  * a length of time
  */
-interface IVeExternalVesterV1 {
+interface IVeExternalVesterV2 {
 
     // =================================================
     // ==================== Structs ====================
@@ -82,36 +82,6 @@ interface IVeExternalVesterV1 {
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
-
-    /**
-     * @notice Allows the owner to withdraw tokens from the contract, potentially bypassing any reserved amounts
-     *
-     * @param  _amount  The amount of REWARD_TOKEN to deposit into this contract
-     */
-    function ownerDepositRewardToken(
-        uint256 _amount
-    ) external;
-
-    /**
-     * @notice Allows the owner to withdraw tokens from the contract, potentially bypassing any reserved amounts
-     *
-     * @param  _to                              The address to send the REWARD_TOKEN to
-     * @param  _amount                          The amount of REWARD_TOKEN to send
-     * @param  _shouldBypassAvailableAmounts    True if the available balance should be checked first, false otherwise.
-     *                                          Bypassing should only be used under emergency scenarios in which the
-     *                                          owner needs to pull all of the funds
-     */
-    function ownerWithdrawRewardToken(
-        address _to,
-        uint256 _amount,
-        bool _shouldBypassAvailableAmounts
-    ) external;
-
-    /**
-     * @notice Allows the owner to sync `pushedTokens` with the current token balance. This means it can ingest donated
-     *         tokens. Throws is `REWARD_MARKET_ID` is set to `_NO_MARKET_ID`
-     */
-    function ownerSyncRewardToken() external;
 
     /**
      * @notice  Sets isVestingActive. Callable by the owner

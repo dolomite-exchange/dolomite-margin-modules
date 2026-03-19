@@ -32,18 +32,22 @@ import { IBaseClaim } from "./IBaseClaim.sol";
 interface IRollingClaims is IBaseClaim {
 
     struct RollingClaimsStorage {
+        uint256 currentEpoch;
         mapping(address => uint256) userToClaimAmount;
+        mapping(address => uint256) userToClaimEpoch;
     }
-
-    // ======================================================
-    // ======================== Events ======================
-    // ======================================================
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
+    function handlerSetMerkleRoot(bytes32 _merkleRoot, uint256 _expectedEpoch) external;
+
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 
+    function currentEpoch() external view returns (uint256);
+
     function userToClaimAmount(address _user) external view returns (uint256);
+
+    function userToClaimEpoch(address _user) external view returns (uint256);
 }
