@@ -34,11 +34,9 @@ contract TestFeeRebateRollingClaims is FeeRebateRollingClaims {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        address _feeRebateAddress,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) FeeRebateRollingClaims(
-        _feeRebateAddress,
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line
