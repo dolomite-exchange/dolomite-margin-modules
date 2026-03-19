@@ -3,7 +3,7 @@ import { IAdminRegistry__factory } from 'packages/admin/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { getRealLatestBlockNumber, impersonate } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { FeeRebateClaimer__factory, FeeRebateRollingClaims__factory } from 'packages/tokenomics/src/types';
 import { deployContractAndSave, TRANSACTION_BUILDER_VERSION } from '../../utils/deploy-utils';
@@ -11,6 +11,7 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { expect } from 'chai';
 
 const HANDLER_ADDRESS = '0xdf86dfdf493bcd2b838a44726a1e58f66869ccbe';
 
@@ -27,7 +28,6 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  // TODO: replace handler address
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
@@ -58,6 +58,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     feeRebateRollingClaimsImplementationAddress,
     core.hhUser1,
   );
+  // tslint:disable-next-line:max-line-length
   const feeRebateRollingClaimsInitCalldata = await feeRebateRollingClaimsImplementation.populateTransaction.initialize();
   const feeRebateRollingClaimsProxyAddress = await deployContractAndSave(
     'RegistryProxy',
@@ -169,6 +170,19 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
         ),
         'FeeRebateClaimerProxy is not approved to claim admin excess tokens',
       );
+
+      if ((await core.dolomiteMargin.getNumMarkets()).gt(0)) {
+        const handler = await impersonate(HANDLER_ADDRESS);
+
+        expect(await feeRebateClaimerProxy.epoch()).to.eq(0);
+
+        await feeRebateClaimerProxy
+          .connect(handler)
+          .handlerClaimRewardsByEpochAndMarketId(1, [core.marketIds.usdc], true);
+
+        expect(await feeRebateClaimerProxy.epoch()).to.eq(1);
+        expect(await feeRebateClaimerProxy.getClaimAmountByEpochAndMarketId(1, core.marketIds.usdc)).to.not.eq(0);
+      }
     },
   };
 }
