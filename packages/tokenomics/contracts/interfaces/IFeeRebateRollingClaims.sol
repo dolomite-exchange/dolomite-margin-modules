@@ -53,13 +53,13 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     }
 
     event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot, uint256 totalAmount);
-    event FeeRebateAddressSet(address feeRebateAddress);
+    event FeeRebateClaimerSet(address feeRebateClaimer);
 
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
 
-    function ownerSetFeeRebateAddress(address _feeRebateAddress) external;
+    function ownerSetFeeRebateClaimer(address _feeRebateClaimer) external;
 
     /* solhint-disable max-line-length */
 

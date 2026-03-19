@@ -38,7 +38,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  AdminClaimExcessTokens contract that enables an admin to claim excess tokens from the protocol
  */
-contract AdminClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IAdminClaimExcessTokens {
+contract AdminClaimExcessTokens is IAdminClaimExcessTokens, OnlyDolomiteMargin, AdminRegistryHelper {
     using SafeERC20 for IERC20;
 
     // ===================================================================

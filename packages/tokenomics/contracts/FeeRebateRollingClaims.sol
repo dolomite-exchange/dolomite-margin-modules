@@ -55,14 +55,15 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+        _disableInitializers();
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerSetFeeRebateAddress(address _feeRebateClaimer) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetFeeRebateAddress(_feeRebateClaimer);
+    function ownerSetFeeRebateClaimer(address _feeRebateClaimer) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeRebateClaimer(_feeRebateClaimer);
     }
 
     function handlerSetMarketIdToMerkleRoot(
@@ -150,10 +151,6 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
 
         market.claimAmount += uint128(amountToClaim);
 
-        IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
-        token.safeTransferFrom(s.feeRebateClaimer, address(this), amountToClaim);
-
-        token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
         AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             s.feeRebateClaimer,
@@ -187,7 +184,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         emit MarketIdToMerkleRootSet(_marketId, _merkleRoot, _newTotal);
     }
 
-    function _ownerSetFeeRebateAddress(address _feeRebateClaimer) internal virtual {
+    function _ownerSetFeeRebateClaimer(address _feeRebateClaimer) internal virtual {
         Require.that(
             _feeRebateClaimer != address(0),
             _FILE,
@@ -196,7 +193,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
 
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         s.feeRebateClaimer = _feeRebateClaimer;
-        emit FeeRebateAddressSet(_feeRebateClaimer);
+        emit FeeRebateClaimerSet(_feeRebateClaimer);
     }
 
     function _verifyMerkleProof(
