@@ -66,12 +66,33 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         _ownerSetFeeRebateClaimer(_feeRebateClaimer);
     }
 
-    function handlerSetMarketIdToMerkleRoot(
-        uint256 _marketId,
-        bytes32 _merkleRoot,
-        uint256 _totalAmount
+    function handlerSetMerkleRoots(
+        uint256[] calldata _marketIds,
+        bytes32[] calldata _merkleRoots,
+        uint256[] calldata _totalAmounts,
+        uint256 _expectedEpoch
     ) external onlyHandler(msg.sender) {
-        _ownerSetMarketIdToMerkleRoot(_marketId, _merkleRoot, _totalAmount);
+        Require.that(
+            _marketIds.length == _merkleRoots.length && _merkleRoots.length == _totalAmounts.length,
+            _FILE,
+            "Lengths not aligned"
+        );
+        Require.that(
+            _marketIds.length != 0,
+            _FILE,
+            "Lengths cannot be 0"
+        );
+        Require.that(
+            _getFeeRebateRollingClaimsStorage().currentEpoch + 1 == _expectedEpoch,
+            _FILE,
+            "Invalid epoch"
+        );
+
+        for (uint256 i; i < _marketIds.length; i++) {
+            _ownerSetMarketIdToMerkleRoot(_marketIds[i], _merkleRoots[i], _totalAmounts[i]);
+        }
+
+        _getFeeRebateRollingClaimsStorage().currentEpoch = uint96(_expectedEpoch);
     }
 
     // ======================================================
@@ -117,6 +138,11 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     function feeRebateClaimer() public view returns (address) {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         return s.feeRebateClaimer;
+    }
+
+    function currentEpoch() public view returns (uint256) {
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        return s.currentEpoch;
     }
 
     // ==================================================================

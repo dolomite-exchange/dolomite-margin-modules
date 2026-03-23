@@ -14,6 +14,7 @@ import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-co
 import { expect } from 'chai';
 
 const HANDLER_ADDRESS = '0xdf86dfdf493bcd2b838a44726a1e58f66869ccbe';
+const REVENUE_SWEEPER_ADDRESS = '0x59a8FE1333F7fE907639D94C39538608DE33F6c5';
 
 /**
  * This script encodes the following transactions:
@@ -81,6 +82,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
 
   const transactions: EncodedTransaction[] = [
     await encodeSetGlobalOperator(core, feeRebateRollingClaimsProxy, true),
+    await encodeSetGlobalOperator(core, feeRebateClaimerProxy, true),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { feeRebateClaimerProxy },
@@ -94,6 +96,20 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       'feeRebateClaimerProxy',
       'ownerSetAdminFeeClaimer',
       [core.adminClaimExcessTokens.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { feeRebateClaimerProxy },
+      'feeRebateClaimerProxy',
+      'ownerSetFeeRebateRollingClaims',
+      [feeRebateRollingClaimsProxy.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { feeRebateClaimerProxy },
+      'feeRebateClaimerProxy',
+      'ownerSetRevenueSweeper',
+      [REVENUE_SWEEPER_ADDRESS],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -114,7 +130,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       { feeRebateRollingClaimsProxy },
       'feeRebateRollingClaimsProxy',
       'ownerSetClaimEnabled',
-      [true],
+      [false],
     ),
     await prettyPrintEncodedDataWithTypeSafety(core, { adminRegistry }, 'adminRegistry', 'grantPermission', [
       core.adminClaimExcessTokens.interface.getSighash('claimExcessTokens'),
@@ -144,6 +160,14 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
         (await feeRebateClaimerProxy.adminFeeClaimer()) === core.adminClaimExcessTokens.address,
         'Invalid admin fee claimer on feeRebateClaimerProxy',
       );
+      assertHardhatInvariant(
+        (await feeRebateClaimerProxy.feeRebateRollingClaims()) === feeRebateRollingClaimsProxy.address,
+        'Invalid fee rebate rolling claims on feeRebateClaimerProxy',
+      );
+      assertHardhatInvariant(
+        (await feeRebateClaimerProxy.revenueSweeper()) === REVENUE_SWEEPER_ADDRESS,
+        'Invalid revenue sweeper on feeRebateClaimerProxy',
+      );
 
       assertHardhatInvariant(
         (await feeRebateRollingClaimsProxy.handler()) === HANDLER_ADDRESS,
@@ -154,13 +178,17 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
         'Invalid fee rebate claimer on feeRebateRollingClaimsProxy',
       );
       assertHardhatInvariant(
-        await feeRebateRollingClaimsProxy.claimEnabled(),
-        'Claiming is not enabled on feeRebateRollingClaimsProxy',
+        !(await feeRebateRollingClaimsProxy.claimEnabled()),
+        'Claiming is enabled on feeRebateRollingClaimsProxy',
       );
 
       assertHardhatInvariant(
         await core.dolomiteMargin.getIsGlobalOperator(feeRebateRollingClaimsProxy.address),
         'FeeRebateRollingClaimsProxy is not global operator',
+      );
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getIsGlobalOperator(feeRebateClaimerProxy.address),
+        'FeeRebateClaimerProxy is not global operator',
       );
       assertHardhatInvariant(
         await adminRegistry.hasPermission(

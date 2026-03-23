@@ -42,6 +42,7 @@ interface IFeeRebateRollingClaims is IBaseClaim {
 
     struct FeeRebateRollingClaimsStorage {
         address feeRebateClaimer;
+        uint96 currentEpoch;
         mapping(address => mapping(uint256 => uint256)) userToMarketIdToClaimAmount;
         mapping(uint256 => MarketStorage) marketIdToMarket;
     }
@@ -65,12 +66,18 @@ interface IFeeRebateRollingClaims is IBaseClaim {
 
     /**
      *
-     * @param  _marketId    The market ID whose merkle root and total will be set
-     * @param  _merkleRoot  The new merkle root used for claiming rewards this week
-     * @param  _totalAmount The new total amount of `_marketId` that's been allocated to claims. This should be set via
-     *                      `this.marketIdToTotalAmount(_marketId) + feeRebateClaimer.getClaimAmountByEpochAndMarketId(latest, _marketId)`
+     * @param  _marketIds       The market ID whose merkle root and total will be set
+     * @param  _merkleRoots     The new merkle root used for claiming rewards this week
+     * @param  _totalAmounts    The new total amount of marketId that's been allocated to claims. This should be set via
+     *                          `this.marketIdToTotalAmount(_marketId) + feeRebateClaimer.getClaimAmountByEpochAndMarketId(latest, _marketId)`
+     * @param  _expectedEpoch   The epoch that's expected to be next when incrementing `epoch`
      */
-    function handlerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot, uint256 _totalAmount) external;
+    function handlerSetMerkleRoots(
+        uint256[] calldata _marketIds,
+        bytes32[] calldata _merkleRoots,
+        uint256[] calldata _totalAmounts,
+        uint256 _expectedEpoch
+    ) external;
 
     /* solhint-enable max-line-length */
 
@@ -95,4 +102,6 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
 
     function feeRebateClaimer() external view returns (address);
+
+    function currentEpoch() external view returns (uint256);
 }

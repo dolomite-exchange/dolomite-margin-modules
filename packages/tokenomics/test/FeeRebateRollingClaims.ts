@@ -122,10 +122,10 @@ describe('FeeRebateRollingClaims', () => {
     await rollingClaims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await rollingClaims
       .connect(core.hhUser5)
-      .handlerSetMarketIdToMerkleRoot(core.marketIds.usdc, merkleRootUsdc, totalAmountUsdc);
+      .handlerSetMerkleRoots([core.marketIds.usdc], [merkleRootUsdc], [totalAmountUsdc], 1);
     await rollingClaims
       .connect(core.hhUser5)
-      .handlerSetMarketIdToMerkleRoot(core.marketIds.weth, merkleRootWeth, totalAmountWeth);
+      .handlerSetMerkleRoots([core.marketIds.weth], [merkleRootWeth], [totalAmountWeth], 2);
     await rollingClaims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(rollingClaims.address, true);
 
@@ -359,28 +359,104 @@ describe('FeeRebateRollingClaims', () => {
     });
   });
 
-  describe('#handlerSetMarketIdToMerkleRoot', () => {
+  describe('#handlerSetMerkleRoots', () => {
     it('should work normally', async () => {
-      expect(await rollingClaims.marketIdToMerkleRoot(core.marketIds.honey)).to.eq(BYTES_ZERO);
+      const currentEpoch = await rollingClaims.currentEpoch();
+      const expectedEpoch = currentEpoch.add(1);
 
-      const totalAmountUsdc = parseUnits('1234', 6);
       const res = await rollingClaims
         .connect(core.hhUser5)
-        .handlerSetMarketIdToMerkleRoot(core.marketIds.usdc, merkleRootUsdc, totalAmountUsdc);
+        .handlerSetMerkleRoots(
+          [core.marketIds.usdc],
+          [merkleRootUsdc2],
+          [totalAmountUsdc2],
+          expectedEpoch,
+        );
+
       await expectEvent(rollingClaims, res, 'MarketIdToMerkleRootSet', {
         marketId: core.marketIds.usdc,
-        merkleRoot: merkleRootUsdc,
-        totalAmount: totalAmountUsdc,
+        merkleRoot: merkleRootUsdc2,
+        totalAmount: totalAmountUsdc2,
       });
-      expect(await rollingClaims.marketIdToMerkleRoot(core.marketIds.usdc)).to.eq(merkleRootUsdc);
-      expect(await rollingClaims.marketIdToTotalAmount(core.marketIds.usdc)).to.eq(totalAmountUsdc);
+
+      expect(await rollingClaims.currentEpoch()).to.eq(expectedEpoch);
+      expect(await rollingClaims.marketIdToMerkleRoot(core.marketIds.usdc)).to.eq(merkleRootUsdc2);
+      expect(await rollingClaims.marketIdToTotalAmount(core.marketIds.usdc)).to.eq(totalAmountUsdc2);
+    });
+
+    it('should fail if lengths not aligned', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoots(
+          [core.marketIds.usdc, core.marketIds.weth],
+          [merkleRootUsdc2],
+          [totalAmountUsdc2],
+          3,
+        ),
+        'FeeRebateRollingClaims: Lengths not aligned',
+      );
+    });
+
+    it('should fail if lengths are 0', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoots([], [], [], 3),
+        'FeeRebateRollingClaims: Lengths cannot be 0',
+      );
+    });
+
+    it('should fail if invalid epoch', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoots(
+          [core.marketIds.usdc],
+          [merkleRootUsdc2],
+          [totalAmountUsdc2],
+          4, // current is 2, expected should be 3
+        ),
+        'FeeRebateRollingClaims: Invalid epoch',
+      );
+    });
+
+    it('should fail if invalid merkle root', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoots(
+          [core.marketIds.usdc],
+          [BYTES_ZERO],
+          [totalAmountUsdc2],
+          3,
+        ),
+        'FeeRebateRollingClaims: Invalid merkle root',
+      );
+    });
+
+    it('should fail if invalid new total', async () => {
+      await expectThrow(
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoots(
+          [core.marketIds.usdc],
+          [merkleRootUsdc2],
+          [0],
+          3,
+        ),
+        'FeeRebateRollingClaims: Invalid new total',
+      );
     });
 
     it('should fail if not called by handler', async () => {
       await expectThrow(
-        rollingClaims.connect(core.hhUser1).handlerSetMarketIdToMerkleRoot(core.marketIds.usdc, merkleRootUsdc, 123),
+        rollingClaims.connect(core.hhUser1).handlerSetMerkleRoots(
+          [core.marketIds.usdc],
+          [merkleRootUsdc2],
+          [totalAmountUsdc2],
+          3,
+        ),
         'BaseClaim: Only handler can call',
       );
+    });
+  });
+
+  describe('#marketIdToRemainingAmount', () => {
+    it('should work normally', async () => {
+      const totalAmount = await rollingClaims.marketIdToTotalAmount(core.marketIds.usdc);
+      const claimedAmount = await rollingClaims.marketIdToClaimAmount(core.marketIds.usdc);
+      expect(await rollingClaims.marketIdToRemainingAmount(core.marketIds.usdc)).to.eq(totalAmount.sub(claimedAmount));
     });
   });
 

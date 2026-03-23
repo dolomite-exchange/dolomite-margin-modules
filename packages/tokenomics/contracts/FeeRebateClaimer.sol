@@ -21,11 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { IAdminClaimExcessTokens } from "@dolomite-exchange/modules-admin/contracts/interfaces/IAdminClaimExcessTokens.sol"; // solhint-disable-line max-line-length
+import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { BaseClaim } from "./BaseClaim.sol";
 import { IFeeRebateClaimer } from "./interfaces/IFeeRebateClaimer.sol";
+import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.sol";
 
 
 /**
@@ -59,6 +62,52 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         _ownerSetAdminFeeClaimer(_adminFeeClaimer);
     }
 
+    function ownerSetFeeRebateRollingClaims(
+        address
+        _feeRebateRollingClaims
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeRebateRollingClaims(_feeRebateRollingClaims);
+    }
+
+    function ownerSetRevenueSweeper(address _revenueSweeper) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetRevenueSweeper(_revenueSweeper);
+    }
+
+    function handlerSweepRevenue(uint256[] calldata _marketIds) external onlyHandler(msg.sender) {
+        Require.that(
+            _marketIds.length != 0,
+            _FILE,
+            "Invalid marketIds"
+        );
+
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        IFeeRebateRollingClaims _feeRebateRollingClaims = $.feeRebateRollingClaims;
+
+        Require.that(
+            epoch() == _feeRebateRollingClaims.currentEpoch(),
+            _FILE,
+            "Epoch mismatch"
+        );
+
+        uint256[] memory sweepableAmounts = getSweepableAmountsByMarketIds(_marketIds);
+
+        for (uint256 i; i < _marketIds.length; i++) {
+            if (sweepableAmounts[i] != 0) {
+                AccountActionLib.transfer(
+                    DOLOMITE_MARGIN(),
+                    address(this),
+                    0,
+                    revenueSweeper(),
+                    0,
+                    _marketIds[i],
+                    IDolomiteStructs.AssetDenomination.Wei,
+                    sweepableAmounts[i],
+                    AccountBalanceLib.BalanceCheckFlag.Both
+                );
+            }
+        }
+    }
+
     function handlerClaimRewardsByEpochAndMarketId(
         uint256 _epoch,
         uint256[] calldata _marketIds,
@@ -81,9 +130,42 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         return address(s.adminFeeClaimer);
     }
 
+    function feeRebateRollingClaims() public view returns (IFeeRebateRollingClaims) {
+        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        return s.feeRebateRollingClaims;
+    }
+
+    function revenueSweeper() public view returns (address) {
+        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        return s.revenueSweeper;
+    }
+
     function epoch() public view returns (uint256) {
         FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
         return s.epoch;
+    }
+
+    function getSweepableAmountsByMarketIds(
+        uint256[] calldata _marketIds
+    ) public view returns (uint256[] memory) {
+        IFeeRebateRollingClaims _feeRebateRollingClaims = feeRebateRollingClaims();
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: 0
+        });
+        uint256[] memory sweepableAmounts = new uint256[](_marketIds.length);
+        for (uint256 i; i < _marketIds.length; i++) {
+            IDolomiteStructs.Wei memory balance = DOLOMITE_MARGIN().getAccountWei(account, _marketIds[i]);
+            assert(balance.sign || balance.value == 0);
+
+            uint256 totalAmount = _feeRebateRollingClaims.marketIdToTotalAmount(_marketIds[i]);
+            uint256 claimAmount = _feeRebateRollingClaims.marketIdToClaimAmount(_marketIds[i]);
+
+            // Sweepable amount is equal to: Total amount held in this contract - (total amount - claimed)
+            sweepableAmounts[i] = balance.value - (totalAmount - claimAmount);
+        }
+
+        return sweepableAmounts;
     }
 
     // ==================================================================
@@ -100,6 +182,30 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
         s.adminFeeClaimer = IAdminClaimExcessTokens(_adminFeeClaimer);
         emit AdminFeeClaimerSet(_adminFeeClaimer);
+    }
+
+    function _ownerSetFeeRebateRollingClaims(address _feeRebateRollingClaims) internal virtual {
+        Require.that(
+            _feeRebateRollingClaims != address(0),
+            _FILE,
+            "Invalid fee rebate claims"
+        );
+
+        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        s.feeRebateRollingClaims = IFeeRebateRollingClaims(_feeRebateRollingClaims);
+        emit FeeRebateRollingClaimsSet(_feeRebateRollingClaims);
+    }
+
+    function _ownerSetRevenueSweeper(address _revenueSweeper) internal virtual {
+        Require.that(
+            _revenueSweeper != address(0),
+            _FILE,
+            "Invalid revenue sweeper"
+        );
+
+        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        s.revenueSweeper = _revenueSweeper;
+        emit RevenueSweeperSet(_revenueSweeper);
     }
 
     function _handlerClaimRewardsByEpochAndMarketId(

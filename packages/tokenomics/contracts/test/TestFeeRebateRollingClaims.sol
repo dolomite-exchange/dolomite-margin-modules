@@ -41,6 +41,14 @@ contract TestFeeRebateRollingClaims is FeeRebateRollingClaims {
         _dolomiteMargin
     ) {} // solhint-disable-line
 
+    function handlerSetMarketIdToMerkleRoot(
+        uint256 _marketId,
+        bytes32 _merkleRoot,
+        uint256 _newTotal
+    ) external onlyHandler(msg.sender) {
+        _ownerSetMarketIdToMerkleRoot(_marketId, _merkleRoot, _newTotal);
+    }
+
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector
     ) external payable nonReentrant {

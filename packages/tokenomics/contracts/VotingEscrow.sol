@@ -1158,22 +1158,22 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     /// @notice Get the current voting power for `_tokenId`
     /// @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
     /// @param  _tokenId NFT for lock
-    /// @param  _t Epoch time to return voting power at
+    /// @param  _time Epoch time to return voting power at
     /// @return  User voting power
     function _balanceOfNFT(
         uint256 _tokenId,
-        uint256 _t
+        uint256 _time
     ) internal view returns (uint256) {
         uint256 _epoch = user_point_epoch[_tokenId];
         if (_epoch == 0) {
             return 0;
         } else {
-            _epoch = _find_time_user_epoch(_tokenId, _t, _epoch);
+            _epoch = _find_time_user_epoch(_tokenId, _time, _epoch);
 
             Point memory last_point = user_point_history[_tokenId][_epoch];
             last_point.bias -=
                 last_point.slope *
-                int128(int256(_t) - int256(last_point.ts));
+                int128(int256(_time) - int256(last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
@@ -1188,9 +1188,9 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
 
     function balanceOfNFTAt(
         uint256 _tokenId,
-        uint256 _t
+        uint256 _time
     ) external view returns (uint256) {
-        return _balanceOfNFT(_tokenId, _t);
+        return _balanceOfNFT(_tokenId, _time);
     }
 
     /// @notice Measure voting power of `_tokenId` at block height `_block`
