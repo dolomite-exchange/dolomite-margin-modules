@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IDolomiteMarginV2Admin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginV2Admin.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
@@ -37,16 +38,30 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSetRiskParams {
 
     bytes32 private constant _FILE = "AdminSetRiskParams";
-    bytes32 public constant ADMIN_SET_RISK_PARAMS_ROLE = keccak256("ADMIN_SET_RISK_PARAMS_ROLE");
+
+    address public dolomiteAccountRiskOverride;
 
     // ===================================================================
     // ========================== Constructor ============================
     // ===================================================================
 
     constructor(
+        address _dolomiteAccountRiskOverride,
         address _adminRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {}
+    ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
+        _ownerSetDolomiteAccountRiskOverride(_dolomiteAccountRiskOverride);
+    }
+
+    // ===================================================================
+    // ========================= Admin Functions =========================
+    // ===================================================================
+
+    function ownerSetDolomiteAccountRiskOverride(
+        address _dolomiteAccountRiskOverride
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteAccountRiskOverride(_dolomiteAccountRiskOverride);
+    }
 
     // ===================================================================
     // ========================= Public Functions ========================
@@ -114,5 +129,19 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
                 _liquidationSpreadPremium
             )
         );
+    }
+
+    // ===================================================================
+    // ========================= Internal Functions ======================
+    // ===================================================================
+
+    function _ownerSetDolomiteAccountRiskOverride(address _dolomiteAccountRiskOverride) internal {
+        Require.that(
+            _dolomiteAccountRiskOverride != address(0),
+            _FILE,
+            "Invalid risk override setter"
+        );
+        dolomiteAccountRiskOverride = _dolomiteAccountRiskOverride;
+        emit DolomiteAccountRiskOverrideSet(_dolomiteAccountRiskOverride);
     }
 }

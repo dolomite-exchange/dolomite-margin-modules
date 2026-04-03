@@ -2,12 +2,14 @@ import { expect } from 'chai';
 import { BytesLike } from 'ethers';
 import { keccak256, parseEther, toUtf8Bytes } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectThrow } from 'packages/base/test/utils/assertions';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { AdminRegistry, AdminSetRiskParams, AdminSetRiskParams__factory } from '../src/types';
+import { AdminSetRiskParams, AdminSetRiskParams__factory } from '../src/types';
 import { CoreProtocolEthereum } from 'packages/base/test/utils/core-protocols/core-protocol-ethereum';
+
+const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 
 const SET_MARKET_MAX_SUPPLY_WEI_SELECTOR = keccak256(toUtf8Bytes('setMarketMaxSupplyWei(uint256,uint256)')).slice(0, 10);
 const SET_MARKET_MAX_BORROW_WEI_SELECTOR = keccak256(toUtf8Bytes('setMarketMaxBorrowWei(uint256,uint256)')).slice(0, 10);
@@ -26,7 +28,6 @@ describe('AdminSetRiskParams', () => {
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
 
-  let adminRegistry: AdminRegistry;
   let adminSetRiskParams: AdminSetRiskParams;
 
   before(async () => {
@@ -39,6 +40,7 @@ describe('AdminSetRiskParams', () => {
       AdminSetRiskParams__factory.abi,
       AdminSetRiskParams__factory.bytecode,
       [
+        core.dolomiteAccountRiskOverrideSetter.address,
         core.adminRegistry.address,
         core.dolomiteMargin.address,
       ],
@@ -84,6 +86,36 @@ describe('AdminSetRiskParams', () => {
     it('should work normally', async () => {
       expect(await adminSetRiskParams.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
       expect(await adminSetRiskParams.ADMIN_REGISTRY()).to.equal(core.adminRegistry.address);
+      expect(await adminSetRiskParams.dolomiteAccountRiskOverride()).to.equal(
+        core.dolomiteAccountRiskOverrideSetter.address
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteAccountRiskOverride', () => {
+    it('should work normally', async () => {
+      const res = await adminSetRiskParams.connect(core.governance).ownerSetDolomiteAccountRiskOverride(
+        OTHER_ADDRESS
+      );
+
+      await expectEvent(adminSetRiskParams, res, 'DolomiteAccountRiskOverrideSet', {
+        dolomiteAccountRiskOverride: OTHER_ADDRESS,
+      });
+      expect(await adminSetRiskParams.dolomiteAccountRiskOverride()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if address is zero', async () => {
+      await expectThrow(
+        adminSetRiskParams.connect(core.governance).ownerSetDolomiteAccountRiskOverride(ADDRESS_ZERO),
+        'AdminSetRiskParams: Invalid risk override setter'
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        adminSetRiskParams.connect(core.hhUser1).ownerSetDolomiteAccountRiskOverride(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
     });
   });
 

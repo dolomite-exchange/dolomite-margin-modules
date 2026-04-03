@@ -31,9 +31,13 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
  */
 interface IAdminSetRiskParams {
 
+    event DolomiteAccountRiskOverrideSet(address dolomiteAccountRiskOverride);
+
     // ========================================================
     // ==================== Public Functions ==================
     // ========================================================
+
+    function ownerSetDolomiteAccountRiskOverride(address _dolomiteAccountRiskOverride) external;
 
     function setMarketMaxSupplyWei(uint256 _marketId, uint256 _maxSupplyWei) external;
 
