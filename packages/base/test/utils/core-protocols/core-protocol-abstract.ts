@@ -1,6 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
-import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
+import { AdminRegistry, DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   ConstantPriceOracle,
@@ -133,6 +133,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   hhUser5: SignerWithAddressWithSafety;
   adminClaimExcessTokens: IAdminClaimExcessTokens;
   adminPauseMarket: IAdminPauseMarket;
+  adminRegistry: AdminRegistry;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
@@ -207,6 +208,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// =========================
   public readonly adminClaimExcessTokens: IAdminClaimExcessTokens;
   public readonly adminPauseMarket: IAdminPauseMarket;
+  public readonly adminRegistry: AdminRegistry;
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
   public readonly borrowPositionRouter: IBorrowPositionRouter;
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
@@ -277,6 +279,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.hhUser5 = params.hhUser5;
     this.adminClaimExcessTokens = params.adminClaimExcessTokens;
     this.adminPauseMarket = params.adminPauseMarket;
+    this.adminRegistry = params.adminRegistry;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
     this.borrowPositionRouter = params.borrowPositionRouter;
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;

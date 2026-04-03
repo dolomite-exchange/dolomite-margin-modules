@@ -28,10 +28,12 @@ import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from
 import { parseEther } from 'ethers/lib/utils';
 import { ethers, network as hardhatNetwork } from 'hardhat';
 import {
+  AdminRegistry__factory,
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
   IAdminClaimExcessTokens__factory,
   IAdminPauseMarket__factory,
+  IAdminRegistry__factory,
 } from 'packages/admin/src/types';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
@@ -963,6 +965,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
+  const adminRegistry = AdminRegistry__factory.connect(
+    ModuleDeployments.AdminRegistryProxy[config.network].address,
+    governance
+  );
+
   const adminClaimExcessTokens = IAdminClaimExcessTokens__factory.connect(
     ModuleDeployments.AdminClaimExcessTokensV2[config.network].address,
     governance,
@@ -1139,6 +1146,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   const coreProtocolParams: CoreProtocolParams<T> = {
     adminClaimExcessTokens,
     adminPauseMarket,
+    adminRegistry,
     borrowPositionProxyV2,
     borrowPositionRouter,
     chainlinkPriceOracleV1,
