@@ -37,13 +37,10 @@ interface IAdminPauseMarket is IDolomitePriceOracle {
     // ========================================================
 
     event SetMarketPaused(uint256 marketId, bool isPaused);
-    event TrustedCallerSet(address trustedCaller, bool isTrusted);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
-
-    function ownerSetTrustedCaller(address _caller, bool _trusted) external;
 
     function pauseMarket(uint256 _marketId) external;
 
@@ -53,9 +50,7 @@ interface IAdminPauseMarket is IDolomitePriceOracle {
     // ==================== View Functions ====================
     // ========================================================
 
-    function tokenToPaused(address _token) external view returns (bool);
-
-    function trustedCallers(address _caller) external view returns (bool);
+    function isTokenPaused(address _token) external view returns (bool);
 
     function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
 }

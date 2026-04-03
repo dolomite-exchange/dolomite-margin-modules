@@ -205,6 +205,7 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
     // ===================================================================
 
     function _ownerSetDolomiteAccountRiskOverride(address _dolomiteAccountRiskOverride) internal {
+        if (_dolomiteAccountRiskOverride != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _dolomiteAccountRiskOverride != address(0),
             _FILE,
