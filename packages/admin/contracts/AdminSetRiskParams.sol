@@ -39,6 +39,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSetRiskParams {
 
     bytes32 private constant _FILE = "AdminSetRiskParams";
+    bytes32 public constant ADMIN_SET_RISK_PARAMS_ROLE = keccak256("ADMIN_SET_RISK_PARAMS_ROLE");
 
     address public dolomiteAccountRiskOverride;
 

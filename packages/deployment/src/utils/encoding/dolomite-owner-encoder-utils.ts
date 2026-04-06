@@ -82,6 +82,27 @@ export async function encodeAddressToFunctionSelectorForRole<T extends DolomiteN
   return transactions;
 }
 
+export async function encodeAddressForRole<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  role: string,
+  destination: { address: string }
+) {
+  assertHardhatInvariant(role.length === 66, 'Invalid role!');
+
+  const transactions = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { ownerAdapterV2: core.ownerAdapterV2 },
+      'ownerAdapterV2',
+      'ownerAddRoleAddresses',
+      [role, [destination.address]],
+    ),
+  );
+
+  return transactions;
+}
+
 export const ALL_FUNCTIONS = '0x11111111';
 
 export async function encodeGrantAdminRegistryPermissionIfNecessary<T extends DolomiteNetwork>(

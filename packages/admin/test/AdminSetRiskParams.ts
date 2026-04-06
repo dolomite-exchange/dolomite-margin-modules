@@ -65,7 +65,8 @@ describe('AdminSetRiskParams', () => {
       ],
     );
 
-    const adminSetRiskParamsRole = keccak256(toUtf8Bytes('ADMIN_SET_RISK_PARAMS_ROLE'));
+    const adminSetRiskParamsRole = await adminSetRiskParams.ADMIN_SET_RISK_PARAMS_ROLE();
+
     bypassTimelockRole = await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE();
     executorRole = await core.ownerAdapterV2.EXECUTOR_ROLE();
 
