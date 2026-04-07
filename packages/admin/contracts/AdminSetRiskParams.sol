@@ -85,6 +85,24 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         );
     }
 
+    function setMarketMaxSupplyWeis(
+        uint256[] calldata _marketIds,
+        uint256[] calldata _maxSupplyWeis
+    )
+    external
+    checkPermission(this.setMarketMaxSupplyWeis.selector, msg.sender) {
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                address(DOLOMITE_MARGIN()),
+                abi.encodeWithSelector(
+                    IDolomiteMarginV2Admin.ownerSetMaxSupplyWei.selector,
+                    _marketIds[i],
+                    _maxSupplyWeis[i]
+                )
+            );
+        }
+    }
+
     function setMarketMaxBorrowWei(
         uint256 _marketId,
         uint256 _maxBorrowWei
@@ -99,6 +117,24 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
                 _maxBorrowWei
             )
         );
+    }
+
+    function setMarketMaxBorrowWeis(
+        uint256[] calldata _marketIds,
+        uint256[] calldata _maxBorrowWeis
+    )
+    external
+    checkPermission(this.setMarketMaxBorrowWeis.selector, msg.sender) {
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                address(DOLOMITE_MARGIN()),
+                abi.encodeWithSelector(
+                    IDolomiteMarginV2Admin.ownerSetMaxBorrowWei.selector,
+                    _marketIds[i],
+                    _maxBorrowWeis[i]
+                )
+            );
+        }
     }
 
     function setMarketMarginPremium(
@@ -117,6 +153,24 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         );
     }
 
+    function setMarketMarginPremiums(
+        uint256[] calldata _marketIds,
+        IDolomiteStructs.Decimal[] calldata _marginPremiums
+    )
+    external
+    checkPermission(this.setMarketMarginPremiums.selector, msg.sender) {
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                address(DOLOMITE_MARGIN()),
+                abi.encodeWithSelector(
+                    IDolomiteMarginV2Admin.ownerSetMarginPremium.selector,
+                    _marketIds[i],
+                    _marginPremiums[i]
+                )
+            );
+        }
+    }
+
     function setMarketLiquidationPremium(
         uint256 _marketId,
         IDolomiteStructs.Decimal calldata _liquidationSpreadPremium
@@ -131,6 +185,24 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
                 _liquidationSpreadPremium
             )
         );
+    }
+
+    function setMarketLiquidationPremiums(
+        uint256[] calldata _marketIds,
+        IDolomiteStructs.Decimal[] calldata _liquidationSpreadPremiums
+    )
+    external
+    checkPermission(this.setMarketLiquidationPremiums.selector, msg.sender) {
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                address(DOLOMITE_MARGIN()),
+                abi.encodeWithSelector(
+                    IDolomiteMarginV2Admin.ownerSetLiquidationSpreadPremium.selector,
+                    _marketIds[i],
+                    _liquidationSpreadPremiums[i]
+                )
+            );
+        }
     }
 
     function setCategoriesByMarketIds(
