@@ -65,6 +65,7 @@ interface IDolomiteRegistry {
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
     event TreasurySet(address indexed _treasury);
     event DaoSet(address indexed _dao);
+    event DTokenHandlerSet(address indexed _dTokenHandler);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -186,6 +187,12 @@ interface IDolomiteRegistry {
      */
     function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
 
+    /**
+     *
+     * @param  _dTokenHandler    The new address of the dToken handler
+     */
+    function ownerSetDTokenHandler(address _dTokenHandler) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -286,4 +293,9 @@ interface IDolomiteRegistry {
      * @return The address of the DAO multisig
      */
     function dao() external view returns (address);
+
+    /**
+     * @return The address of the dToken handler
+     */
+    function dTokenHandler() external view returns (address);
 }
