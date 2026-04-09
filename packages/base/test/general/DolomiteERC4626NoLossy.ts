@@ -4,6 +4,8 @@ import { AccountInfoStruct } from 'packages/base/src/utils';
 import {
   DolomiteERC4626NoLossy,
   DolomiteERC4626NoLossy__factory,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
   IERC20,
   TestDolomiteERC20User,
   TestDolomiteERC20User__factory,
@@ -29,7 +31,7 @@ import {
 } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteErc4626Proxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupWETHBalance } from '../utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 
@@ -62,6 +64,12 @@ describe('DolomiteERC4626NoLossy', () => {
     dToken = DolomiteERC4626NoLossy__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.usdc;
 
+    await createAndUpgradeDolomiteRegistry(core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDTokenHandler(core.hhUser4.address);
+
+    await setupUSDCBalance(core, core.hhUser4, 25, dToken);
+    await dToken.connect(core.hhUser4).handlerDepositLossyTokens(25);
+
     await core.dolomiteMargin.ownerSetGlobalOperator(dToken.address, true);
 
     await disableInterestAccrual(core, core.marketIds.usdc);
@@ -91,6 +99,26 @@ describe('DolomiteERC4626NoLossy', () => {
 
     it('should not be callable again', async () => {
       await expectThrow(dToken.initialize('', '', 18, 0));
+    });
+  });
+
+  describe('#handlerDepositLossyTokens', () => {
+    it('should work normally', async () => {
+      const dTokenAccount = { owner: dToken.address, number: ZERO_BI };
+      const beforeWei = (await core.dolomiteMargin.getAccountWei(dTokenAccount, core.marketIds.usdc)).value;
+
+      await setupUSDCBalance(core, core.hhUser4, 10, dToken);
+      await dToken.connect(core.hhUser4).handlerDepositLossyTokens(10);
+
+      await expectProtocolBalance(core, dToken, ZERO_BI, core.marketIds.usdc, beforeWei.add(10));
+    });
+
+    it('should fail if caller is not the dToken handler', async () => {
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, dToken);
+      await expectThrow(
+        dToken.connect(core.hhUser1).handlerDepositLossyTokens(usdcAmount),
+        'DolomiteERC4626: Invalid handler',
+      );
     });
   });
 

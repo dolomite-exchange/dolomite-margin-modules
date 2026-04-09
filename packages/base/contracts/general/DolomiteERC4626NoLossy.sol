@@ -61,7 +61,6 @@ contract DolomiteERC4626NoLossy is
 
     uint256 private constant _FROM_ACCOUNT_ID = 0;
     uint256 private constant _THIS_ACCOUNT_ID = 1;
-    uint256 private constant _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID = 1;
     uint256 private constant _TO_ACCOUNT_ID = 2;
 
     // ==================================================================
@@ -94,6 +93,34 @@ contract DolomiteERC4626NoLossy is
         _setAddress(_ASSET_SLOT, DOLOMITE_MARGIN().getMarketTokenAddress(_marketId));
 
         __ReentrancyGuardUpgradeable__init();
+    }
+
+    function handlerDepositLossyTokens(uint256 _assets) external {
+        Require.that(
+            msg.sender == DOLOMITE_REGISTRY.dTokenHandler(),
+            _FILE,
+            "Invalid handler"
+        );
+
+        IERC20 underlyingToken = IERC20(asset());
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+
+        underlyingToken.safeTransferFrom(msg.sender, address(this), _assets);
+        underlyingToken.safeApprove(address(dolomiteMargin), _assets);
+
+        IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
+            sign: true,
+            value: _assets,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            denomination: IDolomiteStructs.AssetDenomination.Wei
+        });
+        dolomiteMargin.deposit(
+            address(this),
+            address(this),
+            _DEFAULT_ACCOUNT_NUMBER,
+            marketId(),
+            assetAmount
+        );
     }
 
     // ==================================================================
@@ -551,8 +578,8 @@ contract DolomiteERC4626NoLossy is
         );
         AccountBalanceLib.verifyBalanceIsNonNegative(
             DOLOMITE_MARGIN(),
-            accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].owner,
-            accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].number,
+            accounts[_THIS_ACCOUNT_ID].owner,
+            accounts[_THIS_ACCOUNT_ID].number,
             _marketId
         );
 
@@ -648,8 +675,8 @@ contract DolomiteERC4626NoLossy is
             owner: _from,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: DOLOMITE_MARGIN_OWNER(),
+        accounts[_THIS_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: address(this),
             number: _DEFAULT_ACCOUNT_NUMBER
         });
         accounts[_TO_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
@@ -679,7 +706,7 @@ contract DolomiteERC4626NoLossy is
             primaryMarketId: _marketId,
             secondaryMarketId: 0,
             otherAddress: address(0),
-            otherAccountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
+            otherAccountId: _THIS_ACCOUNT_ID,
             data: bytes("")
         });
 
@@ -696,7 +723,7 @@ contract DolomiteERC4626NoLossy is
             primaryMarketId: _marketId,
             secondaryMarketId: 0,
             otherAddress: address(0),
-            otherAccountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
+            otherAccountId: _THIS_ACCOUNT_ID,
             data: bytes("")
         });
 

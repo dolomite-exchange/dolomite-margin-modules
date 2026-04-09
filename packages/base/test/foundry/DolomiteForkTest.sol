@@ -14,6 +14,7 @@ import { IWETH } from "../../contracts/protocol/interfaces/IWETH.sol";
 import { IDepositWithdrawalRouter } from "../../contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
 import { IBorrowPositionProxyV2 } from "../../contracts/interfaces/IBorrowPositionProxyV2.sol";
 
+import { AccountActionLib } from "../../contracts/lib/AccountActionLib.sol";
 import { CustomTestToken } from "../../contracts/test/CustomTestToken.sol";
 import { DolomiteRegistryImplementation } from "../../contracts/general/DolomiteRegistryImplementation.sol";
 import { RegistryProxy } from "../../contracts/general/RegistryProxy.sol";
@@ -47,12 +48,51 @@ abstract contract DolomiteForkTest is DolomiteAssertions, DolomiteHelpers {
     address public bob = makeAddr("bob");
     address public charlie = makeAddr("charlie");
 
+    IDolomiteStructs.AccountInfo aliceDefaultInfo;
+    IDolomiteStructs.AccountInfo bobDefaultInfo;
+
+    function _giveAsset(IERC20 _token, address _to, uint256 _amount, address _spender) internal {
+        deal(address(_token), _to, _amount);
+        if (_spender != address(0)) {
+            vm.prank(_to);
+            _token.approve(_spender, _amount);
+        }
+    }
+
+    function _deposit(address _owner, uint256 _number, uint256 _marketId, uint256 _amount) internal {
+        AccountActionLib.deposit(
+            dolomiteMargin,
+            _owner,
+            _owner,
+            _number,
+            _marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amount
+            })
+        );
+    }
+
     function setUp() public virtual {
         // one wei lossy for dai liquidation 399544000
         vm.createSelectFork(vm.envString("ARBITRUM_ONE_WEB3_PROVIDER_URL"), 399544000);
         dolomiteOwner = dolomiteMargin.owner();
 
         constantPriceOracle = new TestPriceOracle();
+
+        aliceDefaultInfo = IDolomiteStructs.AccountInfo({
+            owner: alice,
+            number: 0
+        });
+        bobDefaultInfo = IDolomiteStructs.AccountInfo({
+            owner: bob,
+            number: 0
+        });
+
+        vm.prank(dolomiteOwner);
+        dolomiteMargin.ownerSetGlobalOperator(address(this), true);
     }
 
     function createTestIsolationModeMarket() public returns (IsolationModeMarket memory) {
