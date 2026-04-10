@@ -6,6 +6,7 @@ import { getTWAPPriceOracleV2ConstructorParams } from 'packages/oracles/src/orac
 import { IAlgebraV3Pool__factory, PancakeV3PriceOracleWithModifiers__factory } from 'packages/oracles/src/types';
 import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { encodeInsertTwapOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
@@ -21,7 +22,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const wgBeraIBgtTokenPair = IAlgebraV3Pool__factory.connect('0xb186949793248abf961ee8cff59c6a0dd314fbbc', core.hhUser1);
+  const wgBeraIBgtTokenPair = IAlgebraV3Pool__factory.connect(
+    '0xb186949793248abf961ee8cff59c6a0dd314fbbc',
+    core.hhUser1,
+  );
   const wgBeraOracleAddress = await deployContractAndSave(
     'PancakeV3PriceOracleWithModifiers',
     getTWAPPriceOracleV2ConstructorParams(core, core.tokens.wgBera, wgBeraIBgtTokenPair),
@@ -29,9 +33,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   );
   const wgBeraOracle = PancakeV3PriceOracleWithModifiers__factory.connect(wgBeraOracleAddress, core.hhUser1);
 
-
   const transactions: EncodedTransaction[] = [
     ...(await encodeInsertTwapOracle(core, core.tokens.wgBera, wgBeraOracle, core.tokens.iBgt)),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.wgBera, 10_000),
   ];
 
   return {

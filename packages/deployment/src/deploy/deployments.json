@@ -12081,6 +12081,13 @@
       "extraName": "veDOLO"
     }
   },
+  "wgBERATWAPPriceOracleV3": {
+    "80094": {
+      "address": "0xcef45c05896cA4a3686FaE92261792B15d82f203",
+      "transaction": "0x56b24d5ef3702e7b41f65828a135983b7ccff03e7a5ade9e8fddc79b16d02c44",
+      "isVerified": true
+    }
+  },
   "WMNTIsolationModeTokenVaultV2": {
     "5000": {
       "address": "0x2a003d09fE30E569770D40806D73fcEDAC47deB2",
