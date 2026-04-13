@@ -71,4 +71,178 @@ describe('DolomiteOwnerV4', () => {
       expect(await dolomiteOwner.hasRole(BYTES_ZERO, core.gnosisSafe.address)).to.be.true;
     });
   });
+
+  describe('#ownerSetSecondsTimeLocked', () => {
+    it('should work normally', async () => {
+      const newSecondsTimeLocked = 123;
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(
+        newSecondsTimeLocked
+      );
+      expect(await dolomiteOwner.secondsTimeLocked()).to.equal(SECONDS_TIME_LOCKED);
+
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      const result = await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+      await expectEvent(dolomiteOwner, result, 'SecondsTimeLockedChanged', {
+        _secondsTimeLocked: newSecondsTimeLocked,
+      });
+      expect(await dolomiteOwner.secondsTimeLocked()).to.equal(newSecondsTimeLocked);
+    });
+
+    it('should fail if not called by self', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsTimeLocked(123),
+        `DolomiteOwnerV4: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetSecondsValid', () => {
+    it('should work normally', async () => {
+      const newSecondsValid = ONE_DAY_SECONDS * 5;
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsValid(
+        newSecondsValid
+      );
+      expect(await dolomiteOwner.secondsValid()).to.equal(SECONDS_VALID);
+
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      const result = await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+      await expectEvent(dolomiteOwner, result, 'SecondsValidChanged', {
+        _secondsValid: newSecondsValid,
+      });
+      expect(await dolomiteOwner.secondsValid()).to.equal(newSecondsValid);
+    });
+
+    it('should fail if not called by self', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsValid(ONE_DAY_SECONDS * 5),
+        `DolomiteOwnerV4: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerRegisterCaller', () => {
+    it('should work normally', async () => {
+      const transaction = await dolomiteOwner.populateTransaction.ownerRegisterCaller(
+        OTHER_ADDRESS,
+        [core.dolomiteMargin.address],
+        ['0x12345678']
+      );
+
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+      expect(
+        await dolomiteOwner.isUserApprovedToSubmitTransaction(OTHER_ADDRESS, core.dolomiteMargin.address, '0x12345678')
+      ).to.be.true;
+    });
+
+    it('should fail if not called by self', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).ownerRegisterCaller(
+          OTHER_ADDRESS,
+          [core.dolomiteMargin.address],
+          ['0x12345678']
+        ),
+        `DolomiteOwnerV4: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerUnregisterCaller', () => {
+    it('should work normally', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
+        OTHER_ADDRESS,
+        [core.dolomiteMargin.address],
+        [BYTES4_OTHER_SELECTOR],
+      );
+      expect(
+        await dolomiteOwner.isUserApprovedToSubmitTransaction(OTHER_ADDRESS, core.dolomiteMargin.address, BYTES4_OTHER_SELECTOR)
+      ).to.be.true;
+
+      const transaction = await dolomiteOwner.populateTransaction.ownerUnregisterCaller(
+        OTHER_ADDRESS,
+        [core.dolomiteMargin.address],
+        [BYTES4_OTHER_SELECTOR],
+      );
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+
+      await expectThrow(
+        dolomiteOwner.isUserApprovedToSubmitTransaction(OTHER_ADDRESS, core.dolomiteMargin.address, BYTES4_OTHER_SELECTOR),
+        'DolomiteOwnerV4: Invalid caller'
+      )
+    });
+
+    it('should fail if not called by self', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).ownerUnregisterCaller(
+          OTHER_ADDRESS,
+          [core.dolomiteMargin.address],
+          [BYTES4_OTHER_SELECTOR],
+        ),
+        `DolomiteOwnerV4: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#submitTransaction', () => {
+    it('should work normally for DEFAULT_ADMIN', async () => {
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
+      const result = await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(
+        dolomiteOwner.address,
+        transaction.data!,
+      );
+      await expectEvent(dolomiteOwner, result, 'TransactionSubmitted', { transactionId: 0 });
+      expect(await dolomiteOwner.transactionCount()).to.equal(1);
+      const txn = await dolomiteOwner.transactions(0);
+      expect(txn.destination).to.equal(dolomiteOwner.address);
+      expect(txn.executed).to.be.false;
+      expect(txn.verified).to.be.false;
+      expect(txn.cancelled).to.be.false;
+    });
+
+    it('should work normally for a registered caller', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
+        core.hhUser1.address,
+        [core.dolomiteMargin.address],
+        [BYTES4_OTHER_SELECTOR],
+      );
+      const result = await dolomiteOwner.connect(core.hhUser1).submitTransaction(
+        core.dolomiteMargin.address,
+        BYTES4_OTHER_SELECTOR,
+      );
+      await expectEvent(dolomiteOwner, result, 'TransactionSubmitted', { transactionId: 0 });
+    });
+
+    it('should fail if calldata length is less than 4 bytes', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteMargin.address, '0x123456'),
+        'DolomiteOwnerV4: Invalid calldata length',
+      );
+    });
+
+    it('should fail if caller is not approved', async () => {
+      const transaction = await core.dolomiteMargin.populateTransaction.ownerSetIsClosing(0, true);
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteMargin.address, transaction.data!),
+        'DolomiteOwnerV4: Invalid caller',
+      );
+    });
+
+    it('should fail if registered caller submits to self', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
+        core.hhUser1.address,
+        [core.dolomiteMargin.address],
+        [BYTES4_OTHER_SELECTOR],
+      );
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).submitTransaction(dolomiteOwner.address, transaction.data!),
+        'DolomiteOwnerV4: Invalid destination',
+      );
+    });
+  });
 });

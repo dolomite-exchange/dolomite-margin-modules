@@ -336,6 +336,22 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     // =============== View Functions =================
     // ================================================
 
+    function getUserRoles(address _user) external view returns (bytes32[] memory) {
+        return _addressToRoles[_user].values();
+    }
+
+    function getRoleAddresses(address _contract, bytes4 _selector) external view returns (address[] memory) {
+        return _roleToAddresses[calculateRole(_selector, _contract)].values();
+    }
+
+    function getRoleAddresses(bytes32 _role) external view returns (address[] memory) {
+        return _roleToAddresses[_role].values();
+    }
+
+    function getValidCallers() external view returns (address[] memory) {
+        return _validCallers.values();
+    }
+
     function getTransactionCount(
         bool _pending,
         bool _executed
