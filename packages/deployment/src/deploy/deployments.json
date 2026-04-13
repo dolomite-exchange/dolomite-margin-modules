@@ -1123,6 +1123,63 @@
       "isVerified": true
     }
   },
+  "BorrowPositionRouterImplementationV4": {
+    "1": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x17f947bb9c487a9a4e789a7a1e67c75f808d9ddb7d5153b7499bda4c83fb89a9",
+      "isVerified": true
+    },
+    "56": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x61fa6cae37f26e4579fa149898900f93b4ac5bce59dd6a78ffe590484bfa2b0b",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x354843a8224dc4270fdd772bbbde6cf036cd20e5b6bc9c329998d82986e921f6",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x928926ea7c1d36f2ad0e8a298b1e468ea29e8e4d972f7737be13492e96f43355",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0xa0a5cf2e382ada9af89bae8d0184674165b4754a950ec887515d787d9092ff02",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0xbdf14ed9cd8e5326d1ce5764cc4bc92ab3c2f6ec2dd49469fa4895500491d5c5",
+      "isVerified": true
+    },
+    "5330": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0xd8d13f5cb1f60e19444c3db6f3ed5e6b09da58ae3c7a3f4d12aa054b412d95f5",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x64a15ff40b48b820262ce7077e776ace7285ac72c57b5c73a90059423b145428",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x8220887cce36961d8423ed572c4e9d2248936eff0d8a65a6216ce83042359cd3",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x27f13c6734d511b0806c0687b3e4923d5f04480c75bfc55f29cd8572a9eec2bf",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0xC3e038F87DBe4f74a8a1f3B3d21F6b3be0708B7F",
+      "transaction": "0x8646abf0c152cc2dd31e7090eb4132776cd3dbc175294de64823dca33702680a",
+      "isVerified": true
+    }
+  },
   "BorrowPositionRouterProxy": {
     "1": {
       "address": "0xF579b345cdA0860668b857De10ABD62442133D0F",
