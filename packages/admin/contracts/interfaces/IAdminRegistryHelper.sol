@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IAdminRegistry } from  "./IAdminRegistry.sol";
+import { IAdminRegistry } from "./IAdminRegistry.sol";
 
 
 /**

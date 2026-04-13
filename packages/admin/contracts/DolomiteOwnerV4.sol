@@ -56,7 +56,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
 
     mapping(bytes32 => EnumerableSet.AddressSet) private _roleToAddresses;
     mapping(address => EnumerableSet.Bytes32Set) private _addressToRoles;
-    EnumerableSet.AddressSet private _validCallers;
+    EnumerableSet.AddressSet private _allAddresses;
 
     uint32 public secondsTimeLocked;
     uint32 public secondsValid;
@@ -95,9 +95,9 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         _;
     }
 
-    modifier onlyRoleOrDefaultAdmin(bytes32 _role) {
+    modifier onlyRoleOrDefaultAdmin(address _sender, bytes32 _role) {
         Require.that(
-            hasRole(_role, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            hasRole(_role, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
             _FILE,
             "Missing role"
         );
@@ -160,86 +160,55 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
 
     function ownerRegisterCaller(
         address _caller,
-        address[] memory _contracts,
-        bytes4[] memory _functionSelectors
+        ComputedRole[] calldata _roles
     ) external onlySelf(msg.sender) {
-        _validCallers.add(_caller);
-
-        uint256 len = _contracts.length;
+        uint256 len = _roles.length;
         Require.that(
-            len == _functionSelectors.length,
+            len != 0,
             _FILE,
-            "Invalid arrays"
+            "Invalid roles"
         );
 
         for (uint256 i; i < len; ++i) {
-            bytes32 role = calculateRole(_functionSelectors[i], _contracts[i]);
+            bytes32 role = calculateRole(_roles[i].selector, _roles[i].destination);
             _grantRole(role, _caller);
         }
     }
 
     function ownerUnregisterCaller(
-        address _caller,
-        address[] memory _contracts,
-        bytes4[] memory _functionSelectors
+        address _caller
     ) external onlySelf(msg.sender) {
-        _validCallers.remove(_caller);
-
-        uint256 len = _contracts.length;
         Require.that(
-            len == _functionSelectors.length,
+            !hasRole(DEFAULT_ADMIN_ROLE, _caller),
             _FILE,
-            "Invalid arrays"
+            "Cannot renounce ownership"
         );
 
-        for (uint256 i; i < len; ++i) {
-            bytes32 role = calculateRole(_functionSelectors[i], _contracts[i]);
-            _revokeRole(role, _caller);
+        bytes32[] memory roles = _addressToRoles[_caller].values();
+        for (uint256 i; i < roles.length; ++i) {
+            _revokeRole(roles[i], _caller);
         }
     }
 
-    function grantRoles(
-        address _caller,
-        address[] memory _contracts,
-        bytes4[] memory _functionSelectors
-    ) external onlySelf(msg.sender) {
-        uint256 len = _contracts.length;
-        Require.that(
-            len == _functionSelectors.length,
-            _FILE,
-            "Invalid arrays"
-        );
-
-        for (uint256 i; i < len; ++i) {
-            bytes32 role = calculateRole(_functionSelectors[i], _contracts[i]);
-            _grantRole(role, _caller);
-        }
-    }
-
-    function grantRole(bytes32 _role, address _account) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
+    function grantRole(
+        bytes32 _role,
+        address _account
+    ) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
         _grantRole(_role, _account);
     }
 
-    function revokeRoles(
-        address _caller,
-        address[] memory _contracts,
-        bytes4[] memory _functionSelectors
-    ) external onlySelf(msg.sender) {
-        uint256 len = _contracts.length;
-        Require.that(
-            len == _functionSelectors.length,
-            _FILE,
-            "Invalid arrays"
-        );
-
-        for (uint256 i; i < len; ++i) {
-            bytes32 role = calculateRole(_functionSelectors[i], _contracts[i]);
-            _revokeRole(role, _caller);
-        }
+    function revokeRole(
+        bytes32 _role,
+        address _account
+    ) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
+        _revokeRole(_role, _account);
     }
 
-    function revokeRole(bytes32 _role, address _account) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
-        _revokeRole(_role, _account);
+    function renounceRole(
+        bytes32 /* _role */,
+        address /* _account */
+    ) public override(AccessControl, IAccessControl) {
+        revert("Not implemented");
     }
 
     // ================================================
@@ -297,11 +266,15 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         return transactionIds;
     }
 
-    function verifyTransaction(uint256 _transactionId) external onlyRoleOrDefaultAdmin(VERIFIER_ROLE) {
+    function verifyTransaction(
+        uint256 _transactionId
+    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
         _verifyTransaction(_transactionId);
     }
 
-    function verifyTransactions(uint256[] calldata _transactionIds) external onlyRoleOrDefaultAdmin(VERIFIER_ROLE) {
+    function verifyTransactions(
+        uint256[] calldata _transactionIds
+    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
         for (uint256 i; i < _transactionIds.length; i++) {
             _verifyTransaction(_transactionIds[i]);
         }
@@ -309,13 +282,13 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
 
     function executeTransaction(
         uint256 _transactionId
-    ) public onlyRoleOrDefaultAdmin(EXECUTOR_ROLE) returns (bytes memory){
+    ) public onlyRoleOrDefaultAdmin(msg.sender, EXECUTOR_ROLE) returns (bytes memory) {
         return _executeTransaction(_transactionId);
     }
 
     function executeTransactions(
         uint256[] memory transactionIds
-    ) external onlyRoleOrDefaultAdmin(EXECUTOR_ROLE) returns (bytes[] memory) {
+    ) external onlyRoleOrDefaultAdmin(msg.sender, EXECUTOR_ROLE) returns (bytes[] memory) {
         bytes[] memory returnDatas = new bytes[](transactionIds.length);
         for (uint256 i; i < transactionIds.length; i++) {
             returnDatas[i] = _executeTransaction(transactionIds[i]);
@@ -340,26 +313,34 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         return _addressToRoles[_user].values();
     }
 
-    function getRoleAddresses(address _contract, bytes4 _selector) external view returns (address[] memory) {
-        return _roleToAddresses[calculateRole(_selector, _contract)].values();
+    function getComputedUserRoles(address _user) external view returns (ComputedRole[] memory) {
+        bytes32[] memory roles = _addressToRoles[_user].values();
+        ComputedRole[] memory result = new ComputedRole[](roles.length);
+        for (uint256 i; i < roles.length; ++i) {
+            result[i] = calculateSelectorAndAddress(roles[i]);
+        }
+
+        return result;
     }
 
     function getRoleAddresses(bytes32 _role) external view returns (address[] memory) {
         return _roleToAddresses[_role].values();
     }
 
-    function getValidCallers() external view returns (address[] memory) {
-        return _validCallers.values();
+    function getAllAddressesWithRoles() external view returns (address[] memory) {
+        return _allAddresses.values();
     }
 
     function getTransactionCount(
         bool _pending,
+        bool _verified,
         bool _executed
     ) external view returns (uint256) {
         uint256 count = 0;
         for (uint256 i; i < transactionCount; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
+                || (_verified && transactions[i].verified)
                 || (_executed && transactions[i].executed)
             ) {
                 count += 1;
@@ -372,6 +353,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         uint256 _from,
         uint256 _to,
         bool _pending,
+        bool _verified,
         bool _executed
     ) external view returns (uint256[] memory) {
         if (_to > transactionCount) {
@@ -383,6 +365,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         for (i = _from; i < _to; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
+                || (_verified && transactions[i].verified)
                 || (_executed && transactions[i].executed)
             ) {
                 transactionIdsTemp[count] = i;
@@ -405,13 +388,16 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
             return true;
         }
 
+        // Only the default admin can submit a transaction that resolves to this contract
         Require.that(
             _destination != address(this),
             _FILE,
             "Invalid destination"
         );
+
+        // TODO: I don't think this is needed now
         Require.that(
-            _validCallers.contains(_user),
+            _allAddresses.contains(_user),
             _FILE,
             "Invalid caller"
         );
@@ -431,8 +417,11 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         return bytes32(_selector) | bytes32(uint256(uint160(_contract)));
     }
 
-    function calculateSelectorAndAddress(bytes32 role) public pure returns (bytes4, address) {
-        return (bytes4(role), address(uint160(uint256(role))));
+    function calculateSelectorAndAddress(bytes32 role) public pure returns (ComputedRole memory) {
+        return ComputedRole({
+            destination: address(uint160(uint256(role))),
+            selector: bytes4(role)
+        });
     }
 
     // ================================================
@@ -467,7 +456,8 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
 
     function _verifyTransaction(
         uint256 _transactionId
-    ) internal transactionExists(_transactionId) pastTimeLock(msg.sender, _transactionId) {
+    ) internal transactionExists(_transactionId) notExpired(_transactionId) {
+        // TODO: we want to allow transaction verification BEFORE "pastTimeLock", so I removed pastTimeLock. Double check
         Transaction storage txn = transactions[_transactionId];
         Require.that(
             !txn.executed && !txn.verified && !txn.cancelled,
@@ -481,12 +471,27 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
 
     function _executeTransaction(
         uint256 _transactionId
-    ) internal transactionExists(_transactionId) pastTimeLock(msg.sender, _transactionId) returns (bytes memory) {
+    )
+        internal
+        transactionExists(_transactionId)
+        pastTimeLock(msg.sender, _transactionId)
+        notExpired(_transactionId)
+        returns (bytes memory)
+    {
         Transaction storage txn = transactions[_transactionId];
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
-            "Transaction not executable"
+            "Transaction not executable",
+            _transactionId
+        );
+
+        // TODO: check this over
+        Require.that(
+            txn.verified || _roleToAddresses[VERIFIER_ROLE].length() == 0,
+            _FILE,
+            "Transaction not verified",
+            _transactionId
         );
 
         txn.executed = true;
@@ -532,11 +537,25 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         super._grantRole(role, account);
         _addressToRoles[account].add(role);
         _roleToAddresses[role].add(account);
+
+        if (!_allAddresses.contains(account)) {
+            _allAddresses.add(account);
+        }
     }
 
     function _revokeRole(bytes32 role, address account) internal override {
         super._revokeRole(role, account);
         _addressToRoles[account].remove(role);
         _roleToAddresses[role].remove(account);
+
+        if (_roleToAddresses[role].length() == 0) {
+            _allAddresses.remove(account);
+        }
+
+        Require.that(
+            _roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0,
+            _FILE,
+            "Cannot renounce ownership"
+        );
     }
 }

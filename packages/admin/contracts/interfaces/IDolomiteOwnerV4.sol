@@ -49,6 +49,11 @@ interface IDolomiteOwnerV4 is IAccessControl {
         bytes data;
     }
 
+    struct ComputedRole {
+        address destination;
+        bytes4 selector;
+    }
+
     // ========================================================
     // ======================== Events ========================
     // ========================================================

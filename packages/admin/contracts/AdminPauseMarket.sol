@@ -27,9 +27,9 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminPauseMarket } from "./interfaces/IAdminPauseMarket.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
-import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 
 
 /**
