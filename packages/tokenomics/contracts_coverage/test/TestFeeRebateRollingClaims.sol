@@ -34,14 +34,20 @@ contract TestFeeRebateRollingClaims is FeeRebateRollingClaims {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        address _feeRebateAddress,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) FeeRebateRollingClaims(
-        _feeRebateAddress,
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line
+
+    function handlerSetMarketIdToMerkleRoot(
+        uint256 _marketId,
+        bytes32 _merkleRoot,
+        uint256 _newTotal
+    ) external onlyHandler(msg.sender) {
+        _ownerSetMarketIdToMerkleRoot(_marketId, _merkleRoot, _newTotal);
+    }
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

@@ -8,6 +8,7 @@ import {
   GenericTraderProxyV2__factory,
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
+  IDolomiteMarginV2,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   LiquidatorProxyV6__factory,
@@ -25,7 +26,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -253,7 +254,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const borrowPositionRouterImplementationAddress = await deployContractAndSave(
     'BorrowPositionRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 4),
   );
   const borrowPositionRouterCalldata = await BorrowPositionRouter__factory.connect(
     borrowPositionRouterImplementationAddress,
@@ -415,6 +416,22 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     transactions,
     core,
   );
+
+  if (network !== Network.ArbitrumOne) {
+    const v2 = dolomiteMargin as IDolomiteMarginV2;
+    const callbackGasLimit = await v2.getCallbackGasLimit();
+    if (!callbackGasLimit.eq(ZERO_BI)) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { dolomiteMargin: v2 },
+          'dolomiteMargin',
+          'ownerSetCallbackGasLimit',
+          [0],
+        ),
+      );
+    }
+  }
 
   return {
     core: {

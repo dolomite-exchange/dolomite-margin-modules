@@ -31,10 +31,20 @@ import { IBaseClaim } from "./IBaseClaim.sol";
  */
 interface IFeeRebateRollingClaims is IBaseClaim {
 
+    struct MarketStorage {
+        /// @notice Total amount of Market that's been claimed by users. `remainingAmount = totalAmount - claimAmount`
+        uint128 claimAmount;
+        /// @notice Total amount of Market that's been rewarded to users. `remainingAmount = totalAmount - claimAmount`
+        uint128 totalAmount;
+        /// @notice Merkle root of the current claim
+        bytes32 merkleRoot;
+    }
+
     struct FeeRebateRollingClaimsStorage {
-        address feeRebateAddress;
+        address feeRebateClaimer;
+        uint96 currentEpoch;
         mapping(address => mapping(uint256 => uint256)) userToMarketIdToClaimAmount;
-        mapping(uint256 => bytes32) marketIdToMerkleRoot;
+        mapping(uint256 => MarketStorage) marketIdToMarket;
     }
 
     struct ClaimParams {
@@ -43,16 +53,33 @@ interface IFeeRebateRollingClaims is IBaseClaim {
         uint256 amount;
     }
 
-    event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot);
-    event FeeRebateAddressSet(address feeRebateAddress);
+    event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot, uint256 totalAmount);
+    event FeeRebateClaimerSet(address feeRebateClaimer);
 
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
 
-    function ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) external;
+    function ownerSetFeeRebateClaimer(address _feeRebateClaimer) external;
 
-    function ownerSetFeeRebateAddress(address _feeRebateAddress) external;
+    /* solhint-disable max-line-length */
+
+    /**
+     *
+     * @param  _marketIds       The market ID whose merkle root and total will be set
+     * @param  _merkleRoots     The new merkle root used for claiming rewards this week
+     * @param  _totalAmounts    The new total amount of marketId that's been allocated to claims. This should be set via
+     *                          `this.marketIdToTotalAmount(_marketId) + feeRebateClaimer.getClaimAmountByEpochAndMarketId(latest, _marketId)`
+     * @param  _expectedEpoch   The epoch that's expected to be next when incrementing `epoch`
+     */
+    function handlerSetMerkleRoots(
+        uint256[] calldata _marketIds,
+        bytes32[] calldata _merkleRoots,
+        uint256[] calldata _totalAmounts,
+        uint256 _expectedEpoch
+    ) external;
+
+    /* solhint-enable max-line-length */
 
     // ======================================================
     // ================== External Functions ================
@@ -64,9 +91,17 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     // ==================== View Functions ==================
     // ======================================================
 
+    function marketIdToClaimAmount(uint256 _marketId) external view returns (uint256);
+
+    function marketIdToTotalAmount(uint256 _marketId) external view returns (uint256);
+
+    function marketIdToRemainingAmount(uint256 _marketId) external view returns (uint256);
+
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
 
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
 
-    function feeRebateAddress() external view returns (address);
+    function feeRebateClaimer() external view returns (address);
+
+    function currentEpoch() external view returns (uint256);
 }

@@ -74,6 +74,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function handlerSweepRevenue(uint256[] calldata _marketIds) external onlyHandler(msg.sender) {
+        if (_marketIds.length != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIds.length != 0,
             _FILE,
@@ -83,6 +84,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
         IFeeRebateRollingClaims _feeRebateRollingClaims = $.feeRebateRollingClaims;
 
+        if (epoch() == _feeRebateRollingClaims.currentEpoch()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             epoch() == _feeRebateRollingClaims.currentEpoch(),
             _FILE,
@@ -156,7 +158,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         uint256[] memory sweepableAmounts = new uint256[](_marketIds.length);
         for (uint256 i; i < _marketIds.length; i++) {
             IDolomiteStructs.Wei memory balance = DOLOMITE_MARGIN().getAccountWei(account, _marketIds[i]);
-            assert(balance.sign || balance.value == 0);
+            /*assert(balance.sign || balance.value == 0);*/
 
             uint256 totalAmount = _feeRebateRollingClaims.marketIdToTotalAmount(_marketIds[i]);
             uint256 claimAmount = _feeRebateRollingClaims.marketIdToClaimAmount(_marketIds[i]);
@@ -173,6 +175,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     // ==================================================================
 
     function _ownerSetAdminFeeClaimer(address _adminFeeClaimer) internal virtual {
+        if (_adminFeeClaimer != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _adminFeeClaimer != address(0),
             _FILE,
@@ -185,6 +188,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function _ownerSetFeeRebateRollingClaims(address _feeRebateRollingClaims) internal virtual {
+        if (_feeRebateRollingClaims != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _feeRebateRollingClaims != address(0),
             _FILE,
@@ -197,6 +201,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function _ownerSetRevenueSweeper(address _revenueSweeper) internal virtual {
+        if (_revenueSweeper != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _revenueSweeper != address(0),
             _FILE,
@@ -213,6 +218,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         uint256[] memory _marketIds,
         bool _incrementEpoch
     ) internal {
+        if (_epoch != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _epoch != 0,
             _FILE,
@@ -220,6 +226,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         );
 
         FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        if (s.epoch + 1 == _epoch) { /* FOR COVERAGE TESTING */ }
         Require.that(
             s.epoch + 1 == _epoch,
             _FILE,
@@ -231,6 +238,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         IAdminClaimExcessTokens _adminFeeClaimer = s.adminFeeClaimer;
         for (uint256 i; i < _marketIds.length; i++) {
             uint256 marketId = _marketIds[i];
+            if (s.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 s.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0,
                 _FILE,
