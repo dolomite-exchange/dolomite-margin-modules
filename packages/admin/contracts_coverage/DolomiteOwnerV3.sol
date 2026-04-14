@@ -25,16 +25,17 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteOwnerV4 } from "./interfaces/IDolomiteOwnerV4.sol";
+import { IDolomiteOwnerV3 } from "./interfaces/IDolomiteOwnerV3.sol";
 
+import "hardhat/console.sol";
 
 /**
- * @title   DolomiteOwnerV4
+ * @title   DolomiteOwnerV3
  * @author  Dolomite
  *
- * @notice  DolomiteOwnerV4 contract that enables an admin to set roles and permissions for other addresses
+ * @notice  DolomiteOwnerV3 contract that enables an admin to set roles and permissions for other addresses
  */
-contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
+contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Address for address;
@@ -43,7 +44,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     // =================== Constants ==================
     // ================================================
 
-    bytes32 private constant _FILE = "DolomiteOwnerV4";
+    bytes32 private constant _FILE = "DolomiteOwnerV3";
     address private constant _ADDRESS_ZERO = address(0x0);
 
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
@@ -68,6 +69,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     // ================================================
 
     modifier onlySelf(address _sender) {
+        if (_sender == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _sender == address(this),
             _FILE,
@@ -78,6 +80,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     }
 
     modifier notNull(address _address) {
+        if (_address != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _address != _ADDRESS_ZERO,
             _FILE,
@@ -87,6 +90,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     }
 
     modifier transactionExists(uint256 _transactionId) {
+        if (transactions[_transactionId].destination != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             transactions[_transactionId].destination != _ADDRESS_ZERO,
             _FILE,
@@ -96,8 +100,9 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     }
 
     modifier onlyRoleOrDefaultAdmin(address _sender, bytes32 _role) {
+        if (hasRole(_role, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            hasRole(_role, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
+            hasRole(_role, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
             _FILE,
             "Missing role"
         );
@@ -108,6 +113,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         address _sender,
         uint256 _transactionId
     ) {
+        if (isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
             _FILE,
@@ -119,6 +125,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     modifier notExpired(
         uint256 _transactionId
     ) {
+        if (!isTimelockExpired(_transactionId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !isTimelockExpired(_transactionId),
             _FILE,
@@ -163,6 +170,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         ComputedRole[] calldata _roles
     ) external onlySelf(msg.sender) {
         uint256 len = _roles.length;
+        if (len != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             len != 0,
             _FILE,
@@ -178,6 +186,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     function ownerUnregisterCaller(
         address _caller
     ) external onlySelf(msg.sender) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _caller)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !hasRole(DEFAULT_ADMIN_ROLE, _caller),
             _FILE,
@@ -233,6 +242,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         address _destination,
         bytes memory _data
     ) public returns (uint256) {
+        if (_data.length >= 4) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _data.length >= 4,
             _FILE,
@@ -246,6 +256,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         }
         bytes4 selector = bytes4(rawData);
 
+        if (isUserApprovedToSubmitTransaction(msg.sender, _destination, selector)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isUserApprovedToSubmitTransaction(msg.sender, _destination, selector),
             _FILE,
@@ -340,7 +351,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         for (uint256 i; i < transactionCount; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (_verified && transactions[i].verified)
+                || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
                 || (_executed && transactions[i].executed)
             ) {
                 count += 1;
@@ -365,7 +376,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         for (i = _from; i < _to; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (_verified && transactions[i].verified)
+                || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
                 || (_executed && transactions[i].executed)
             ) {
                 transactionIdsTemp[count] = i;
@@ -389,17 +400,11 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         }
 
         // Only the default admin can submit a transaction that resolves to this contract
+        if (_destination != address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _destination != address(this),
             _FILE,
             "Invalid destination"
-        );
-
-        // TODO: I don't think this is needed now
-        Require.that(
-            _allAddresses.contains(_user),
-            _FILE,
-            "Invalid caller"
         );
 
         return hasRole(calculateRole(_selector, _destination), _user);
@@ -431,6 +436,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     function _ownerSetSecondsTimeLocked(
         uint32 _secondsTimeLocked
     ) internal {
+        if (_secondsTimeLocked != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _secondsTimeLocked != 0,
             _FILE,
@@ -444,6 +450,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     function _ownerSetSecondsValid(
         uint32 _secondsValid
     ) internal {
+        if (_secondsValid >= 5 minutes && _secondsValid <= 1 weeks) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _secondsValid >= 5 minutes && _secondsValid <= 1 weeks,
             _FILE,
@@ -459,6 +466,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
     ) internal transactionExists(_transactionId) notExpired(_transactionId) {
         // TODO: we want to allow transaction verification BEFORE "pastTimeLock", so I removed pastTimeLock. Double check
         Transaction storage txn = transactions[_transactionId];
+        if (!txn.executed && !txn.verified && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.verified && !txn.cancelled,
             _FILE,
@@ -479,6 +487,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         returns (bytes memory)
     {
         Transaction storage txn = transactions[_transactionId];
+        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -486,9 +495,11 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
             _transactionId
         );
 
-        // TODO: check this over
+        if (txn.verified || _roleToAddresses[VERIFIER_ROLE].length() == 0 || hasRole(BYPASS_TIMELOCK_ROLE, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            txn.verified || _roleToAddresses[VERIFIER_ROLE].length() == 0,
+            txn.verified
+                || _roleToAddresses[VERIFIER_ROLE].length() == 0
+                || hasRole(BYPASS_TIMELOCK_ROLE, msg.sender),
             _FILE,
             "Transaction not verified",
             _transactionId
@@ -523,6 +534,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
         uint256 _transactionId
     ) internal transactionExists(_transactionId) {
         Transaction storage txn = transactions[_transactionId];
+        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -552,6 +564,7 @@ contract DolomiteOwnerV4 is AccessControl, IDolomiteOwnerV4 {
             _allAddresses.remove(account);
         }
 
+        if (_roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0,
             _FILE,

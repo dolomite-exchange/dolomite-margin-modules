@@ -20,20 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
+import { IAdminRegistry } from "./IAdminRegistry.sol";
 
 
 /**
- * @title   IAdminClaimExcessTokens
+ * @title   IAdminRegistryHelper
  * @author  Dolomite
  *
- * @notice  Interface for the AdminClaimExcessTokens contract
+ * @notice  Interface for the AdminRegistryHelper contract
  */
-interface IAdminClaimExcessTokens is IAdminRegistryHelper {
+interface IAdminRegistryHelper {
 
-    // ========================================================
-    // ==================== Admin Functions ===================
-    // ========================================================
-
-    function claimExcessTokens(address _token, address _receiver, bool _depositIntoDolomite) external;
+    function ADMIN_REGISTRY() external view returns (IAdminRegistry);
 }

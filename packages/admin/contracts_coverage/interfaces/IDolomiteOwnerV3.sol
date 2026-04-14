@@ -24,12 +24,12 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
 
 
 /**
- * @title   IDolomiteOwnerV4
+ * @title   IDolomiteOwnerV3
  * @author  Dolomite
  *
- * @notice  Interface for the DolomiteOwnerV4 contract
+ * @notice  Interface for the DolomiteOwnerV3 contract
  */
-interface IDolomiteOwnerV4 is IAccessControl {
+interface IDolomiteOwnerV3 is IAccessControl {
 
     // ========================================================
     // ======================== Structs =======================
