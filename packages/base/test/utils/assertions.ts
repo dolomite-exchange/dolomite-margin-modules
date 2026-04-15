@@ -26,6 +26,29 @@ export async function expectThrow(call: Promise<any>, reason?: string) {
   }
 }
 
+export async function expectThrowWithCustomError(
+  call: Promise<any>,
+  contract: { interface: any },
+  errorName: string,
+  args: any[] = [],
+) {
+  try {
+    await call;
+    expect.fail(`Expected transaction to revert with custom error ${errorName}`);
+  } catch (error: any) {
+    const data = error?.data ?? error?.error?.data ?? error?.receipt?.revertReason;
+
+    if (!data) {
+      throw error;
+    }
+
+    const parsed = contract.interface.parseError(data);
+
+    expect(parsed.name).to.eq(errorName);
+    expect(parsed.args).to.deep.eq(args);
+  }
+}
+
 export async function expectThrowBalanceFlagError(
   call: Promise<any>,
   accountOwner: { address: address },
@@ -160,11 +183,9 @@ export async function expectProtocolWeiBalanceChange<T extends DolomiteNetwork>(
     owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
     number: accountNumber,
   };
-  const rawBalanceWeiPre = await core.dolomiteMargin.getAccountWei(
-    account,
-    marketId,
-    { blockTag: tx.blockNumber! - 1 }
-  );
+  const rawBalanceWeiPre = await core.dolomiteMargin.getAccountWei(account, marketId, {
+    blockTag: tx.blockNumber! - 1,
+  });
   const rawBalanceWeiPost = await core.dolomiteMargin.getAccountWei(account, marketId, { blockTag: tx.blockNumber! });
 
   const balanceWeiPre = rawBalanceWeiPre.sign ? rawBalanceWeiPre.value : rawBalanceWeiPre.value.mul(-1);
@@ -185,19 +206,18 @@ export async function expectProtocolWeiBalanceChangeWithRoundingError<T extends 
     owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
     number: accountNumber,
   };
-  const rawBalanceWeiPre = await core.dolomiteMargin.getAccountWei(
-    account,
-    marketId,
-    { blockTag: tx.blockNumber! - 1 }
-  );
+  const rawBalanceWeiPre = await core.dolomiteMargin.getAccountWei(account, marketId, {
+    blockTag: tx.blockNumber! - 1,
+  });
   const rawBalanceWeiPost = await core.dolomiteMargin.getAccountWei(account, marketId, { blockTag: tx.blockNumber! });
 
   const balanceWeiPre = rawBalanceWeiPre.sign ? rawBalanceWeiPre.value : rawBalanceWeiPre.value.mul(-1);
   const balanceWeiPost = rawBalanceWeiPost.sign ? rawBalanceWeiPost.value : rawBalanceWeiPost.value.mul(-1);
 
-  const equal = balanceWeiPost.sub(balanceWeiPre).eq(amountWei)
-                || balanceWeiPost.sub(balanceWeiPre.add(1)).eq(amountWei)
-                || balanceWeiPost.sub(balanceWeiPre.sub(1)).eq(amountWei);
+  const equal =
+    balanceWeiPost.sub(balanceWeiPre).eq(amountWei) ||
+    balanceWeiPost.sub(balanceWeiPre.add(1)).eq(amountWei) ||
+    balanceWeiPost.sub(balanceWeiPre.sub(1)).eq(amountWei);
   expect(equal).to.be.true;
 }
 
@@ -214,11 +234,10 @@ export async function expectProtocolParBalance<T extends DolomiteNetwork>(
   };
   const rawBalancePar = await core.dolomiteMargin.getAccountPar(account, marketId);
   const balancePar = rawBalancePar.sign ? rawBalancePar.value : rawBalancePar.value.mul(-1);
-  expect(balancePar)
-    .eq(
-      amountPar,
-      `Expected ${balancePar.toString()} to equal ${amountPar.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
-    );
+  expect(balancePar).eq(
+    amountPar,
+    `Expected ${balancePar.toString()} to equal ${amountPar.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
+  );
 }
 
 export async function expectProtocolBalanceDustyOrZero<T extends DolomiteNetwork>(

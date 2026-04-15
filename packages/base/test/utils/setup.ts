@@ -402,6 +402,11 @@ export async function setupWETHBalance<T extends DolomiteNetwork>(
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Mantle) {
+    const whaleAddress = '0x4c1d3Fc3fC3c177c3b633427c2F769276c547463';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else {
     return Promise.reject(new Error(`Cannot setup WETH balance on ${core.network}`));
   }
@@ -511,9 +516,16 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
-  } else {
+  } else if (core.network === Network.Ethereum) {
+    whaleAddress = '0xe1940f578743367F38D3f25c2D2d32D6636929B6';
+  } else if (core.network === Network.Mantle) {
+    whaleAddress = '0xAc290Ad4e0c891FDc295ca4F0a6214cf6dC6acDC'; // Stargate USDC pool
+  } else if (core.network === Network.ArbitrumOne) {
     whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
+  } else {
+    throw new Error(`Cannot set up USDC on network: ${core.network}`);
   }
+
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
