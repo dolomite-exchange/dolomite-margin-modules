@@ -27,7 +27,6 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwnerV3 } from "./interfaces/IDolomiteOwnerV3.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteOwnerV3
@@ -320,12 +319,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // =============== View Functions =================
     // ================================================
 
-    function getUserRoles(address _user) external view returns (bytes32[] memory) {
-        return _addressToRoles[_user].values();
+    function getAddressRoles(address _address) external view returns (bytes32[] memory) {
+        return _addressToRoles[_address].values();
     }
 
-    function getComputedUserRoles(address _user) external view returns (ComputedRole[] memory) {
-        bytes32[] memory roles = _addressToRoles[_user].values();
+    function getComputedAddressRoles(address _address) external view returns (ComputedRole[] memory) {
+        bytes32[] memory roles = _addressToRoles[_address].values();
         ComputedRole[] memory result = new ComputedRole[](roles.length);
         for (uint256 i; i < roles.length; ++i) {
             result[i] = calculateSelectorAndAddress(roles[i]);
@@ -347,7 +346,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         bool _verified,
         bool _executed
     ) external view returns (uint256) {
-        uint256 count = 0;
+        uint256 count;
         for (uint256 i; i < transactionCount; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
@@ -371,7 +370,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             _to = transactionCount;
         }
         uint256[] memory transactionIdsTemp = new uint256[](_to - _from);
-        uint256 count = 0;
+        uint256 count;
         uint256 i;
         for (i = _from; i < _to; ++i) {
             if (
@@ -464,7 +463,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     function _verifyTransaction(
         uint256 _transactionId
     ) internal transactionExists(_transactionId) notExpired(_transactionId) {
-        // TODO: we want to allow transaction verification BEFORE "pastTimeLock", so I removed pastTimeLock. Double check
         Transaction storage txn = transactions[_transactionId];
         if (!txn.executed && !txn.verified && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(

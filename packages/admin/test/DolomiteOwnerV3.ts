@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { BytesLike } from 'ethers';
 import {
   ADDRESS_ZERO,
-  BYTES_EMPTY,
   BYTES_ZERO,
   Network,
   ONE_DAY_SECONDS,
@@ -14,7 +13,6 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteOwnerV3, DolomiteOwnerV3__factory } from '../src/types';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteOwnerV2 } from './admin-ecosystem-utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { revertToSnapshotAndCapture, snapshot, impersonate } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
@@ -49,6 +47,7 @@ describe('DolomiteOwnerV3', () => {
       DolomiteOwnerV3__factory.bytecode,
       [core.gnosisSafe.address, SECONDS_TIME_LOCKED, SECONDS_VALID]
     );
+    dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
 
     bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
     executorRole = await dolomiteOwner.EXECUTOR_ROLE();
@@ -59,8 +58,6 @@ describe('DolomiteOwnerV3', () => {
 
     const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
     await ownable.transferOwnership(dolomiteOwner.address);
-
-    dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
 
     snapshotId = await snapshot();
   });
@@ -111,7 +108,7 @@ describe('DolomiteOwnerV3', () => {
 
   describe('#ownerSetSecondsValid', () => {
     it('should work normally', async () => {
-      const newSecondsValid = ONE_DAY_SECONDS * 5;
+      const newSecondsValid = ONE_DAY_SECONDS;
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsValid(
         newSecondsValid
       );
@@ -139,7 +136,7 @@ describe('DolomiteOwnerV3', () => {
 
     it('should fail if not called by self', async () => {
       await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsValid(ONE_DAY_SECONDS * 5),
+        dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsValid(ONE_DAY_SECONDS),
         `DolomiteOwnerV3: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
     });
@@ -157,9 +154,9 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
       const allAddreses = await dolomiteOwner.getAllAddressesWithRoles();
-      const userRoles = await dolomiteOwner.getUserRoles(core.hhUser1.address);
-      const roleAddresses = await dolomiteOwner.getRoleAddresses(OTHER_ROLE)
-      const computedRoles = await dolomiteOwner.getComputedUserRoles(core.hhUser1.address);
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
+      const roleAddresses = await dolomiteOwner.getRoleAddresses(OTHER_ROLE);
+      const computedRoles = await dolomiteOwner.getComputedAddressRoles(core.hhUser1.address);
 
       expect(await dolomiteOwner.isUserApprovedToSubmitTransaction(
         core.hhUser1.address,
@@ -212,9 +209,9 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
       const allAddreses = await dolomiteOwner.getAllAddressesWithRoles();
-      const userRoles = await dolomiteOwner.getUserRoles(core.hhUser1.address);
-      const roleAddresses = await dolomiteOwner.getRoleAddresses(OTHER_ROLE)
-      const computedRoles = await dolomiteOwner.getComputedUserRoles(core.hhUser1.address);
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
+      const roleAddresses = await dolomiteOwner.getRoleAddresses(OTHER_ROLE);
+      const computedRoles = await dolomiteOwner.getComputedAddressRoles(core.hhUser1.address);
 
       expect(await dolomiteOwner.isUserApprovedToSubmitTransaction(
         core.hhUser1.address,
@@ -257,7 +254,7 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
       const allAddresses = await dolomiteOwner.getAllAddressesWithRoles();
-      const userRoles = await dolomiteOwner.getUserRoles(core.hhUser1.address);
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
       const roleAddresses = await dolomiteOwner.getRoleAddresses(bypassTimelockRole);
 
       expect(await dolomiteOwner.hasRole(bypassTimelockRole, core.hhUser1.address)).to.be.true;
@@ -292,7 +289,7 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
       const allAddresses = await dolomiteOwner.getAllAddressesWithRoles();
-      const userRoles = await dolomiteOwner.getUserRoles(core.hhUser1.address);
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
       const roleAddresses = await dolomiteOwner.getRoleAddresses(bypassTimelockRole);
 
       expect(await dolomiteOwner.hasRole(bypassTimelockRole, core.hhUser1.address)).to.be.false;
@@ -311,7 +308,7 @@ describe('DolomiteOwnerV3', () => {
       await increase(SECONDS_TIME_LOCKED);
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
-      const userRoles = await dolomiteOwner.getUserRoles(core.hhUser1.address);
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
       const roleAddresses = await dolomiteOwner.getRoleAddresses(BYTES_ZERO);
 
       expect(await dolomiteOwner.hasRole(BYTES_ZERO, core.hhUser1.address)).to.be.false;
@@ -835,7 +832,7 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
 
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0,1]);
+      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0, 1]);
 
       await increase(SECONDS_TIME_LOCKED);
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
@@ -870,7 +867,7 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
 
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0,1]);
+      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0, 1]);
 
       await increase(SECONDS_TIME_LOCKED);
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
