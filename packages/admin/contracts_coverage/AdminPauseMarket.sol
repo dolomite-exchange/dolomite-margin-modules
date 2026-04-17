@@ -30,7 +30,6 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminPauseMarket } from "./interfaces/IAdminPauseMarket.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
-import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 
 
 /**

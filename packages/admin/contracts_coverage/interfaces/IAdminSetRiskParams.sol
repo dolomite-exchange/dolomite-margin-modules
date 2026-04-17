@@ -42,16 +42,30 @@ interface IAdminSetRiskParams {
 
     function setMarketMaxSupplyWei(uint256 _marketId, uint256 _maxSupplyWei) external;
 
+    function setMarketMaxSupplyWeis(uint256[] calldata _marketIds, uint256[] calldata _maxSupplyWeis) external;
+
     function setMarketMaxBorrowWei(uint256 _marketId, uint256 _maxBorrowWei) external;
+
+    function setMarketMaxBorrowWeis(uint256[] calldata _marketIds, uint256[] calldata _maxBorrowWeis) external;
 
     function setMarketMarginPremium(
         uint256 _marketId,
         IDolomiteStructs.Decimal calldata _marginPremium
     ) external;
 
+    function setMarketMarginPremiums(
+        uint256[] calldata _marketIds,
+        IDolomiteStructs.Decimal[] calldata _marginPremiums
+    ) external;
+
     function setMarketLiquidationPremium(
         uint256 _marketId,
         IDolomiteStructs.Decimal calldata _liquidationSpreadPremium
+    ) external;
+
+    function setMarketLiquidationPremiums(
+        uint256[] calldata _marketIds,
+        IDolomiteStructs.Decimal[] calldata _liquidationSpreadPremiums
     ) external;
 
     function setCategoriesByMarketIds(

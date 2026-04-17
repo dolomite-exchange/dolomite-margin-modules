@@ -27,6 +27,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwnerV3 } from "./interfaces/IDolomiteOwnerV3.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   DolomiteOwnerV3
@@ -49,6 +50,8 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
+
+    bytes32 constant COMPUTED_ROLE_MASK = 0x00000000FFFFFFFFFFFFFFFF0000000000000000000000000000000000000000;
 
     // ================================================
     // =================== State Variables ============
@@ -98,12 +101,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         _;
     }
 
-    modifier onlyRoleOrDefaultAdmin(address _sender, bytes32 _role) {
-        if (hasRole(_role, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
+    modifier onlyExecutor(address _sender) {
+        if (hasRole(BYPASS_TIMELOCK_ROLE, _sender) || hasRole(EXECUTOR_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            hasRole(_role, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
+            hasRole(BYPASS_TIMELOCK_ROLE, _sender) || hasRole(EXECUTOR_ROLE, _sender),
             _FILE,
-            "Missing role"
+            "Invalid executor"
         );
         _;
     }
@@ -139,10 +142,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     constructor(
         address _admin,
+        address _executor,
         uint32 _secondsTimeLocked,
         uint32 _secondsValid
     ) AccessControl() {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(EXECUTOR_ROLE, _executor);
 
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
         _ownerSetSecondsValid(_secondsValid);
@@ -166,8 +171,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function ownerRegisterCaller(
         address _caller,
-        ComputedRole[] calldata _roles
+        ComputedRole[] calldata _roles,
+        bool _bypassTimelockRole,
+        bool _executorRole
     ) external onlySelf(msg.sender) {
+        if (_bypassTimelockRole) _grantRole(BYPASS_TIMELOCK_ROLE, _caller);
+        if (_executorRole) _grantRole(EXECUTOR_ROLE, _caller);
+
         uint256 len = _roles.length;
         if (len != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -278,13 +288,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function verifyTransaction(
         uint256 _transactionId
-    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
+    ) external onlyRole(VERIFIER_ROLE) {
         _verifyTransaction(_transactionId);
     }
 
     function verifyTransactions(
         uint256[] calldata _transactionIds
-    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
+    ) external onlyRole(VERIFIER_ROLE) {
         for (uint256 i; i < _transactionIds.length; i++) {
             _verifyTransaction(_transactionIds[i]);
         }
@@ -292,13 +302,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function executeTransaction(
         uint256 _transactionId
-    ) public onlyRoleOrDefaultAdmin(msg.sender, EXECUTOR_ROLE) returns (bytes memory) {
+    ) public onlyExecutor(msg.sender) returns (bytes memory) {
         return _executeTransaction(_transactionId);
     }
 
     function executeTransactions(
         uint256[] memory transactionIds
-    ) external onlyRoleOrDefaultAdmin(msg.sender, EXECUTOR_ROLE) returns (bytes[] memory) {
+    ) external onlyExecutor(msg.sender) returns (bytes[] memory) {
         bytes[] memory returnDatas = new bytes[](transactionIds.length);
         for (uint256 i; i < transactionIds.length; i++) {
             returnDatas[i] = _executeTransaction(transactionIds[i]);
@@ -325,9 +335,20 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function getComputedAddressRoles(address _address) external view returns (ComputedRole[] memory) {
         bytes32[] memory roles = _addressToRoles[_address].values();
-        ComputedRole[] memory result = new ComputedRole[](roles.length);
+
+        uint256 len;
         for (uint256 i; i < roles.length; ++i) {
-            result[i] = calculateSelectorAndAddress(roles[i]);
+            if (isComputedRole(roles[i])) {
+                len++;
+            }
+        }
+
+        ComputedRole[] memory result = new ComputedRole[](len);
+        uint256 j;
+        for (uint256 i; i < roles.length; ++i) {
+            if (isComputedRole(roles[i])) {
+                result[j++] = calculateSelectorAndAddress(roles[i]);
+            }
         }
 
         return result;
@@ -348,6 +369,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     ) external view returns (uint256) {
         uint256 count;
         for (uint256 i; i < transactionCount; ++i) {
+            console.log(_pending && !transactions[i].executed && !transactions[i].cancelled);
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
                 || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
@@ -415,6 +437,10 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function isTimelockExpired(uint256 _transactionId) public view returns (bool) {
         return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked + secondsValid;
+    }
+
+    function isComputedRole(bytes32 _role) public pure returns (bool) {
+        return _role & COMPUTED_ROLE_MASK == 0;
     }
 
     function calculateRole(bytes4 _selector, address _contract) public pure returns (bytes32) {
@@ -558,15 +584,16 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         _addressToRoles[account].remove(role);
         _roleToAddresses[role].remove(account);
 
-        if (_roleToAddresses[role].length() == 0) {
+        if (_addressToRoles[account].length() == 0) {
             _allAddresses.remove(account);
         }
 
-        if (_roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0) { /* FOR COVERAGE TESTING */ }
+        if (_roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0 && _roleToAddresses[EXECUTOR_ROLE].length() != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0,
+            _roleToAddresses[DEFAULT_ADMIN_ROLE].length() != 0
+                && _roleToAddresses[EXECUTOR_ROLE].length() != 0,
             _FILE,
-            "Cannot renounce ownership"
+            "Mandatory roles not filled"
         );
     }
 }
