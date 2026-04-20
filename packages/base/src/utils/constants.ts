@@ -1782,7 +1782,7 @@ export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.Base]: '0xa75c21c5be284122a87a37a76cc6c4dd3e55a1d4',
+  [Network.Base]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Berachain]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Bnb]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Botanix]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',

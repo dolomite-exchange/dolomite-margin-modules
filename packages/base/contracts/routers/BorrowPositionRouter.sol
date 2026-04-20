@@ -175,6 +175,12 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       "Unauthorized transfer"
     );
 
+    Require.that(
+      _isolationModeMarketId == 0,
+      _FILE,
+      "Cannot transfer isolation mode"
+    );
+
     IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
     accounts[0] = IDolomiteStructs.AccountInfo({
       owner: msg.sender,
