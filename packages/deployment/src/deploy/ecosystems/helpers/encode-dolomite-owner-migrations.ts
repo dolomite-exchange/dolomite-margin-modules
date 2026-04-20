@@ -22,7 +22,10 @@ import {
   encodeAddressToFunctionSelectorForRole,
   encodeGrantAdminRegistryPermissionIfNecessary,
   encodeGrantRoleIfNecessary,
+  encodeRevokeRoleIfNecessary,
 } from '../../../utils/encoding/dolomite-owner-encoder-utils';
+import { getMaxDeploymentVersionNumberByDeploymentKey } from '../../../utils/deploy-utils';
+import { ModuleDeployments } from '../../../utils';
 
 export async function encodeDolomiteOwnerMigrations(
   dolomiteOwner: DolomiteOwnerV2,
@@ -63,7 +66,7 @@ export async function encodeDolomiteOwnerMigrations(
           'adminRegistryProxy',
           'upgradeTo',
           [adminRegistryImplementationAddress],
-        )
+        ),
       );
     }
 
@@ -127,4 +130,31 @@ export async function encodeDolomiteOwnerMigrations(
       ),
     );
   }
+}
+
+export async function encodeDolomiteOwnerRegressions(
+  transactions: EncodedTransaction[],
+  core: any,
+) {
+  async function revokeContractOwnership(nameWithoutVersionPostfix: string, role: string) {
+    const version = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, 1);
+    for (let i = 1; i < version; i++) {
+      // Dolomite Owner Roles - AdminClaimExcessTokens
+      const deploymentName = `${nameWithoutVersionPostfix}V${i}`;
+      const contractAddress = (ModuleDeployments as any)[deploymentName][core.network]?.address;
+      if (!contractAddress) {
+        continue;
+      }
+      const contract = { address: contractAddress };
+      transactions.push(
+        ...(await encodeRevokeRoleIfNecessary(core, BYPASS_TIMELOCK_ROLE, contract)),
+        ...(await encodeRevokeRoleIfNecessary(core, EXECUTOR_ROLE, contract)),
+        ...(await encodeRevokeRoleIfNecessary(core, role, contract)),
+        ...(await encodeSetGlobalOperatorIfNecessary(core, contract, false)),
+      );
+    }
+  }
+
+  await revokeContractOwnership('AdminClaimExcessTokens', ADMIN_CLAIM_EXCESS_TOKENS_ROLE);
+  await revokeContractOwnership('AdminPauseMarket', ADMIN_PAUSE_MARKET_ROLE);
 }

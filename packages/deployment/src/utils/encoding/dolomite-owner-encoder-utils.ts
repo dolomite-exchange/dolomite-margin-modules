@@ -55,6 +55,30 @@ export async function encodeGrantRoleIfNecessary<T extends DolomiteNetwork>(
   return transactions;
 }
 
+export async function encodeRevokeRoleIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  role: string,
+  destination: { address: string },
+) {
+  assertHardhatInvariant(role.length === 66, 'Invalid role!');
+
+  const transactions: EncodedTransaction[] = [];
+
+  if (await core.ownerAdapterV2.hasRole(role, destination.address)) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { ownerAdapterV2: core.ownerAdapterV2 },
+        'ownerAdapterV2',
+        'revokeRole',
+        [role, destination.address],
+      ),
+    );
+  }
+
+  return transactions;
+}
+
 export async function encodeAddressToFunctionSelectorForRole<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   role: string,
