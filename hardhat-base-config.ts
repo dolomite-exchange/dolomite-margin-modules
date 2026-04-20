@@ -55,6 +55,10 @@ const polygonZkEvmWeb3Url = process.env.POLYGON_ZKEVM_WEB3_PROVIDER_URL;
 if (!polygonZkEvmWeb3Url) {
   throw new Error('No POLYGON_ZKEVM_WEB3_PROVIDER_URL provided!');
 }
+const sepoliaWeb3Url = process.env.SEPOLIA_WEB3_PROVIDER_URL;
+if (!sepoliaWeb3Url) {
+  throw new Error('No SEPOLIA_WEB3_PROVIDER_URL provided!');
+}
 const superSeedWeb3Url = process.env.SUPER_SEED_WEB3_PROVIDER_URL;
 if (!superSeedWeb3Url) {
   throw new Error('No SUPER_SEED_WEB3_PROVIDER_URL provided!');
@@ -191,6 +195,13 @@ export const base_config: HardhatUserConfig = {
       gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
+    [NetworkName.Sepolia]: {
+      chainId: parseInt(Network.Sepolia, 10),
+      url: superSeedWeb3Url,
+      gas: 10_000_000, // 30M gas
+      gasPrice: 50_000_000, // 0.05 gwei
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
     [NetworkName.SuperSeed]: {
       chainId: parseInt(Network.SuperSeed, 10),
       url: superSeedWeb3Url,
@@ -252,6 +263,7 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: etherscanApiKey,
       [NetworkName.PolygonZkEvm]: etherscanApiKey,
+      [NetworkName.Sepolia]: etherscanApiKey,
       [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
@@ -326,6 +338,14 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://zkevm.polygonscan.com',
+        },
+      },
+      {
+        network: NetworkName.Sepolia,
+        chainId: parseInt(Network.Sepolia, 10),
+        urls: {
+          apiURL: 'https://api.etherscan.io/v2/api',
+          browserURL: 'https://sepolia.etherscan.io',
         },
       },
       {
