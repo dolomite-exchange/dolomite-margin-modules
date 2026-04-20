@@ -1,6 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
-import { AdminRegistry, DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
+import { AdminRegistry, DolomiteOwnerV1, DolomiteOwnerV2, DolomiteOwnerV3, IAdminClaimExcessTokens, IAdminPauseMarket } from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   ConstantPriceOracle,
@@ -170,6 +170,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   oracleAggregatorV2: OracleAggregatorV2;
   ownerAdapterV1: DolomiteOwnerV1;
   ownerAdapterV2: DolomiteOwnerV2;
+  ownerAdapterV3: DolomiteOwnerV3 | undefined;
   testEcosystem: TestEcosystem | undefined;
   apiTokens: {
     usdc: ApiToken;
@@ -244,6 +245,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
+  public readonly ownerAdapterV3: DolomiteOwnerV3 | undefined;
   public readonly testEcosystem: TestEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -315,6 +317,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapterV1 = params.ownerAdapterV1;
     this.ownerAdapterV2 = params.ownerAdapterV2;
+    this.ownerAdapterV3 = params.ownerAdapterV3;
     this.testEcosystem = params.testEcosystem;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;

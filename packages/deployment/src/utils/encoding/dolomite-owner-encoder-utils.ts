@@ -10,6 +10,33 @@ function toBytes32(hex: string): string {
   return `${hex}${'0'.repeat(66 - hex.length)}`;
 }
 
+export async function encodeGrantSpecialRolesIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  destination: { address: string },
+  bypassTimelockRole: boolean,
+  executorRole: boolean,
+  verifierRole: boolean,
+) {
+  const transactions: EncodedTransaction[] = [];
+
+  if (bypassTimelockRole) {
+    transactions.push(...(await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE(), destination)));
+  }
+
+  if (executorRole) {
+    transactions.push(...(await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.EXECUTOR_ROLE(), destination)));
+  }
+
+  if (verifierRole) {
+    if (!core.ownerAdapterV3) {
+      throw new Error("Cannot add verifier role on ownerAdapterV2");
+    }
+    transactions.push(...(await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV3.VERIFIER_ROLE(), destination)));
+  }
+  
+  return transactions;
+}
+
 export async function encodeGrantBypassTimelockAndExecutorRolesIfNecessary<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   destination: { address: string },
@@ -28,28 +55,43 @@ export async function encodeGrantRoleIfNecessary<T extends DolomiteNetwork>(
   assertHardhatInvariant(role.length === 66, 'Invalid role!');
 
   const transactions: EncodedTransaction[] = [];
-  if (!(await core.ownerAdapterV2.isRole(role))) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { ownerAdapterV2: core.ownerAdapterV2 },
-        'ownerAdapterV2',
-        'ownerAddRole',
-        [role],
-      ),
-    );
-  }
 
-  if (!(await core.ownerAdapterV2.hasRole(role, destination.address))) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { ownerAdapterV2: core.ownerAdapterV2 },
-        'ownerAdapterV2',
-        'grantRole',
-        [role, destination.address],
-      ),
-    );
+  if (core.ownerAdapterV3) {
+    if (!(await core.ownerAdapterV3.hasRole(role, destination.address))) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { ownerAdapterV3: core.ownerAdapterV3 },
+          'ownerAdapterV3',
+          'grantRole',
+          [role, destination.address],
+        ),
+      );
+    }
+  } else {
+    if (!(await core.ownerAdapterV2.isRole(role))) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { ownerAdapterV2: core.ownerAdapterV2 },
+          'ownerAdapterV2',
+          'ownerAddRole',
+          [role],
+        ),
+      );
+    }
+
+    if (!(await core.ownerAdapterV2.hasRole(role, destination.address))) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { ownerAdapterV2: core.ownerAdapterV2 },
+          'ownerAdapterV2',
+          'grantRole',
+          [role, destination.address],
+        ),
+      );
+    }
   }
 
   return transactions;
@@ -62,6 +104,7 @@ export async function encodeAddressToFunctionSelectorForRole<T extends DolomiteN
   fragment: FunctionFragment,
 ) {
   assertHardhatInvariant(role.length === 66, 'Invalid role!');
+  assertHardhatInvariant(!core.ownerAdapterV3, "This function is not valid with ownerAdapterV3");
 
   const selectorsBytes32 = await core.ownerAdapterV2.getRoleToAddressFunctionSelectors(role, destination.address);
 
@@ -88,6 +131,7 @@ export async function encodeAddressForRole<T extends DolomiteNetwork>(
   destination: { address: string }
 ) {
   assertHardhatInvariant(role.length === 66, 'Invalid role!');
+  assertHardhatInvariant(!core.ownerAdapterV3, "This function is not valid with ownerAdapterV3");
 
   const transactions = [];
   transactions.push(

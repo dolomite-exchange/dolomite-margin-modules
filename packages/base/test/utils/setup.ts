@@ -31,6 +31,7 @@ import {
   AdminRegistry__factory,
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
+  DolomiteOwnerV3__factory,
   IAdminClaimExcessTokens__factory,
   IAdminPauseMarket__factory,
   IAdminRegistry__factory,
@@ -1138,6 +1139,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     DolomiteOwnerV2__factory.connect,
     gnosisSafe,
   );
+  const ownerAdapterV3 = getContractOpt(
+    ModuleDeployments.DolomiteOwnerV3?.[config.network]?.address,
+    DolomiteOwnerV3__factory.connect,
+    gnosisSafe,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
@@ -1198,6 +1204,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     oracleAggregatorV2,
     ownerAdapterV1,
     ownerAdapterV2,
+    ownerAdapterV3,
     testEcosystem,
     hhUser1,
     hhUser2,
