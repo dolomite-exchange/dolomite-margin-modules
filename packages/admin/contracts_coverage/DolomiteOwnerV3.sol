@@ -27,7 +27,6 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwnerV3 } from "./interfaces/IDolomiteOwnerV3.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteOwnerV3
@@ -369,7 +368,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     ) external view returns (uint256) {
         uint256 count;
         for (uint256 i; i < transactionCount; ++i) {
-            console.log(_pending && !transactions[i].executed && !transactions[i].cancelled);
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
                 || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
