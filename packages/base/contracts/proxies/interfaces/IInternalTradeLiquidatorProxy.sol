@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteAutoTrader } from "../../protocol/interfaces/IDolomiteAutoTrader.sol";
 
 
 /**
@@ -29,7 +30,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
  *
  * @notice  Interface for the internal trade liquidator proxy
  */
-interface IInternalTradeLiquidatorProxy {
+interface IInternalTradeLiquidatorProxy is IDolomiteAutoTrader {
     event Liquidation(
         address solidAccountOwner,
         uint256 solidAccountNumber,
