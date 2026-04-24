@@ -23,7 +23,7 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 /**
  * @title   TestContractAccount
  * @author  Dolomite
- * 
+ *
  * Test contract
  */
 contract TestContractAccount {

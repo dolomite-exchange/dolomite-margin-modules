@@ -22,8 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { SimpleIsolationModeTokenVaultV1 } from "../isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV1ActionsImpl.sol"; // solhint-disable-line max-line-length
@@ -162,9 +160,5 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         bytes4 _selector
     ) external pure returns (bool) {
         return IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(_selectors, _selector);
-    }
-
-    function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
-        return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 }

@@ -19,13 +19,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
-import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
+import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
+import { IDolomiteStructs } from  "../protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IInternalTradeLiquidatorProxy } from "./interfaces/IInternalTradeLiquidatorProxy.sol";
 
@@ -33,7 +36,9 @@ import { IInternalTradeLiquidatorProxy } from "./interfaces/IInternalTradeLiquid
 /**
  * @title   InternalTradeLiquidatorProxy
  * @author  Dolomite
- * 
+ *
+ * @dev     FOR ARBITRUM ONLY
+ *
  * Contract for performing liquidations via an internal trader
  */
 contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiquidatorProxy {
@@ -76,11 +81,13 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) external {
+        if (msg.sender == handler && _solidAccount.owner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == handler && _solidAccount.owner == msg.sender,
             _FILE,
             "Invalid sender"
         );
+        if (!_isIsolationModeAsset(DOLOMITE_MARGIN().getMarketTokenAddress(_collateralMarketId))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !_isIsolationModeAsset(DOLOMITE_MARGIN().getMarketTokenAddress(_collateralMarketId)),
             _FILE,
@@ -108,7 +115,7 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
             data: abi.encode(_minOutputAmount)
         });
 
-        _isHandler = true;
+        _isHandler = true; // set this to true so the internal trade can occur
         DOLOMITE_MARGIN().operate(accounts, actions);
         _isHandler = false;
     }
@@ -121,8 +128,8 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
      *
      * @param  _inputMarketId   The market for which the trader specified the original amount (debt market)
      * @param  _outputMarketId  The market for which the trader wants the resulting amount specified (collateral market)
-     * @param  _makerAccount    The account for which this contract is making trades (liquidAccount)
-     * @param  _inputDeltaWei   The change in token amount for the makerAccount for the inputMarketId (should be positive, paying back debt)
+     * @param  _makerAccount    The account for which this contract is making trades
+     * @param  _inputDeltaWei   The change in token amount for the makerAccount for the inputMarketId
      * @return                  The AssetAmount for the makerAccount for the outputMarketId
      */
     function getTradeCost(
@@ -135,18 +142,19 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
         IDolomiteStructs.Wei calldata _inputDeltaWei,
         bytes calldata _data
     ) external onlyDolomiteMargin(msg.sender) returns (IDolomiteStructs.AssetAmount memory) {
+        if (_isHandler) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _isHandler,
             _FILE,
             "Invalid caller"
         );
+        if (!_isCollateralized(_makerAccount)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !_isCollateralized(_makerAccount),
             _FILE,
             "Account is healthy"
         );
 
-        // for stack too deep errors
         uint256 collateralMarket = _outputMarketId;
         uint256 debtMarket = _inputMarketId;
         IDolomiteStructs.AccountInfo memory makerAccount = _makerAccount;
@@ -156,6 +164,7 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
         uint256 liquidHeldWei = DOLOMITE_MARGIN().getAccountWei(makerAccount, collateralMarket).value;
         uint256 liquidOwedWei = DOLOMITE_MARGIN().getAccountWei(makerAccount, debtMarket).value;
 
+        if (_inputDeltaWei.isPositive() && _inputDeltaWei.value <= liquidOwedWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputDeltaWei.isPositive() && _inputDeltaWei.value <= liquidOwedWei,
             _FILE,
@@ -168,6 +177,7 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
             heldReward = liquidHeldWei;
         }
 
+        if (heldReward >= abi.decode(_data, (uint256))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             heldReward >= abi.decode(_data, (uint256)),
             _FILE,
@@ -197,6 +207,7 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
     // ===================================================================
 
     function _ownerSetHandler(address _handler) internal {
+        if (_handler != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _handler != address(0),
             _FILE,
@@ -222,10 +233,11 @@ contract InternalTradeLiquidatorProxy is OnlyDolomiteMargin, IInternalTradeLiqui
             _collateralMarket,
             _debtMarket
         );
+
         IDolomiteStructs.MonetaryPrice memory heldPrice = DOLOMITE_MARGIN().getMarketPrice(_collateralMarket);
         IDolomiteStructs.MonetaryPrice memory owedPrice = DOLOMITE_MARGIN().getMarketPrice(_debtMarket);
-
         owedPrice.value = owedPrice.value + owedPrice.value.mul(spread);
+
         return (heldPrice.value, owedPrice.value);
     }
 

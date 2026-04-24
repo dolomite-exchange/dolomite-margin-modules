@@ -70,8 +70,6 @@ interface IDolomiteRegistry {
     // =================== Write Functions ====================
     // ========================================================
 
-    function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
-
     /**
      *
      * @param  _adminRegistry    The new address of the admin registry
@@ -233,7 +231,7 @@ interface IDolomiteRegistry {
     function eventEmitter() external view returns (IEventEmitterRegistry);
 
     /**
-     * @return The address of the fee agent
+     * @return The address of the liquidation fee agent
      */
     function feeAgent() external view returns (address);
 

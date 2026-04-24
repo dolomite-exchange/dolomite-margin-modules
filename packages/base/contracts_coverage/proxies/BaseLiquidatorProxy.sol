@@ -23,10 +23,11 @@ import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
 import { ChainIdHelper } from "../helpers/ChainIdHelper.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
@@ -42,6 +43,13 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     using DecimalLib for IDolomiteMargin.Decimal;
     using DecimalLib for uint256;
     using DolomiteMarginVersionWrapperLib for *;
+
+    // ============ Events ============
+
+    event DolomiteRakeSet(IDolomiteStructs.Decimal dolomiteRake);
+    event PartialLiquidationThresholdSet(IDolomiteStructs.Decimal partialLiquidationThreshold);
+    event PartialLiquidatorSet(address partialLiquidator, bool isPartialLiquidator);
+    event MarketToPartialLiquidationSupportedSet(uint256[] marketIds, bool[] isSupported);
 
     // ============ Structs ============
 
@@ -59,7 +67,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         MarketInfo[] markets;
         uint256[] liquidMarkets;
         uint256 expirationTimestamp;
-        bool dolomiteRake;
+        bool includeDolomiteRake;
     }
 
     struct LiquidatorProxyCache {
@@ -84,23 +92,28 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         uint256 owedPriceAdj;
     }
 
+    struct PartialLiquidationStorage {
+        /// @notice The health factor at which partial liquidations are enforced. Can be 0 to be disabled and less than
+        /// 1e18. 95% equals 0.95 ether.
+        IDolomiteStructs.Decimal partialLiquidationThreshold;
+        mapping(uint256 => bool) marketToPartialLiquidationSupported;
+        mapping(address => bool) whitelistedPartialLiquidators;
+        IDolomiteStructs.Decimal dolomiteRake;
+    }
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "BaseLiquidatorProxy";
+    uint256 private constant _ONE = 1 ether;
+    bytes32 private constant _PARTIAL_LIQUIDATION_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.partialLiquidationStorage")) - 1); // solhint-disable-line max-line-length
 
     // ============ Immutable Fields ============
 
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
-    IDolomiteAccountRiskOverrideSetter public immutable DOLOMITE_ACCOUNT_RISK_OVERRIDE; // solhint-disable-line var-name-mixedcase
-
-    uint256 public partialLiquidationThreshold;
-    mapping(uint256 => bool) public marketToPartialLiquidationSupported;
-    mapping(address => bool) public whitelistedPartialLiquidators;
 
     // ================ Constructor ===============
 
     constructor(
-        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
@@ -111,10 +124,91 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         EXPIRY = IExpiry(_expiry);
-        DOLOMITE_ACCOUNT_RISK_OVERRIDE = IDolomiteAccountRiskOverrideSetter(_dolomiteAccountRiskOverride);
+    }
+
+    function ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal calldata _dolomiteRake
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRake(_dolomiteRake);
+    }
+
+    function ownerSetIsPartialLiquidator(
+        address _partialLiquidator,
+        bool _isPartialLiquidator
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsPartialLiquidator(_partialLiquidator, _isPartialLiquidator);
+    }
+
+    function ownerSetMarketToPartialLiquidationSupported(
+        uint256[] calldata _marketIds,
+        bool[] calldata _isSupported
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToPartialLiquidationSupported(_marketIds, _isSupported);
+    }
+
+    function ownerSetPartialLiquidationThreshold(
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
     }
 
     // ============ Internal Functions ============
+
+    function _ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) internal {
+        if (_dolomiteRake.value < _ONE) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _dolomiteRake.value < _ONE,
+            _FILE,
+            "Invalid dolomite rake"
+        );
+        _partialLiquidationStorage().dolomiteRake = _dolomiteRake;
+        emit DolomiteRakeSet(_dolomiteRake);
+    }
+
+    function _ownerSetIsPartialLiquidator(
+        address _partialLiquidator,
+        bool _isPartialLiquidator
+    ) internal {
+        _partialLiquidationStorage().whitelistedPartialLiquidators[_partialLiquidator] = _isPartialLiquidator;
+        emit PartialLiquidatorSet(_partialLiquidator, _isPartialLiquidator);
+    }
+
+    function _ownerSetMarketToPartialLiquidationSupported(
+        uint256[] memory _marketIds,
+        bool[] memory _isSupported
+    ) internal {
+        if (_marketIds.length == _isSupported.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _marketIds.length == _isSupported.length,
+            _FILE,
+            "Invalid market IDs length"
+        );
+        PartialLiquidationStorage storage $ = _partialLiquidationStorage();
+        for (uint256 i = 0; i < _marketIds.length; i++) {
+            address factory = DOLOMITE_MARGIN().getMarketTokenAddress(_marketIds[i]);
+            try IAsyncFreezableIsolationModeVaultFactory(factory).isVaultFrozen(/* _vault = */ address(0)) returns (bool) {
+                revert("Async vaults do not support partial liquidations");
+            } catch {
+            }
+            $.marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
+        }
+        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
+    }
+
+    function _ownerSetPartialLiquidationThreshold(
+        IDolomiteStructs.Decimal memory _partialLiquidationThreshold
+    ) internal {
+        if (_partialLiquidationThreshold.value < DecimalLib.one().value) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _partialLiquidationThreshold.value < DecimalLib.one().value,
+            _FILE,
+            "Invalid partial threshold"
+        );
+        _partialLiquidationStorage().partialLiquidationThreshold = _partialLiquidationThreshold;
+        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
+    }
 
     /**
      * Gets the current total supplyValue and borrowValue for some account. Takes into account what
@@ -179,9 +273,9 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         view
     {
         if (_eligibleForPartialLiquidation(_constants)) {
-            if (whitelistedPartialLiquidators[msg.sender]) { /* FOR COVERAGE TESTING */ }
+            if (_partialLiquidationStorage().whitelistedPartialLiquidators[msg.sender]) { /* FOR COVERAGE TESTING */ }
             Require.that(
-                whitelistedPartialLiquidators[msg.sender],
+                _partialLiquidationStorage().whitelistedPartialLiquidators[msg.sender],
                 _FILE,
                 "Invalid partial liquidator"
             );
@@ -213,13 +307,19 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     function _eligibleForPartialLiquidation(
         LiquidatorProxyConstants memory _constants
     ) internal view returns (bool) {
-        if (_constants.expirationTimestamp != 0 || !marketToPartialLiquidationSupported[_constants.heldMarket]) {
+        if (
+            _constants.expirationTimestamp != 0 ||
+            !_partialLiquidationStorage().marketToPartialLiquidationSupported[_constants.heldMarket]
+        ) {
             return false;
         }
 
-        (
-            IDolomiteMargin.Decimal memory marginRatioOverride,
-        ) = DOLOMITE_ACCOUNT_RISK_OVERRIDE.getAccountRiskOverride(_constants.liquidAccount);
+        IDolomiteMargin.Decimal memory marginRatioOverride
+            = DolomiteMarginVersionWrapperLib.getVersionedMarginRatioOverrideForChain(
+            DOLOMITE_MARGIN(),
+            _CHAIN_ID,
+            _constants.liquidAccount
+        );
         (
             IDolomiteMargin.MonetaryValue memory supplyValue,
             IDolomiteMargin.MonetaryValue memory borrowValue
@@ -235,10 +335,11 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         }
         marginRatioOverride = marginRatioOverride.onePlus();
 
-        uint256 collateralRatio = supplyValue.value * 1e18 / borrowValue.value;
+        uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
 
-        return partialLiquidationThreshold > 0 && healthFactor >= partialLiquidationThreshold;
+        uint256 _partialLiquidationThreshold = _partialLiquidationStorage().partialLiquidationThreshold.value;
+        return _partialLiquidationThreshold != 0 && healthFactor >= _partialLiquidationThreshold;
     }
 
     function _calculateAndSetActualLiquidationAmount(
@@ -309,6 +410,13 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
             _markets.length,
             _marketId
         );
+    }
+
+    function _partialLiquidationStorage() internal pure returns (PartialLiquidationStorage storage $) {
+        bytes32 slot = _PARTIAL_LIQUIDATION_STORAGE_SLOT;
+        assembly {
+            $.slot := slot
+        }
     }
 
     // ============ Private Functions ============

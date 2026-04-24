@@ -22,14 +22,13 @@ pragma solidity ^0.8.9;
 
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { BitsLib } from "../protocol/lib/BitsLib.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
-import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 
 
 /**
