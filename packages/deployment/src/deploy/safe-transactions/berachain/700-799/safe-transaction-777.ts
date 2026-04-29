@@ -3,10 +3,10 @@ import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-de
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetBorrowCap, encodeSetIsCollateralOnly, encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { checkSupplyCap } from 'packages/deployment/src/utils/invariant-utils';
+import { checkBorrowCap, checkIsCollateralOnly, checkSupplyCap } from 'packages/deployment/src/utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
@@ -22,6 +22,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [
     await encodeSetSupplyCap(core, core.marketIds.ohm, ONE_BI), // @follow-up Corey, I'm not sure if you want to set it to 1 wei or something higher
+    await encodeSetBorrowCap(core, core.marketIds.ohm, ONE_BI),
+    await encodeSetIsCollateralOnly(core, core.marketIds.ohm, true),
+    await encodeSetSupplyCap(core, core.marketIds.weEth, ONE_BI),
+    await encodeSetBorrowCap(core, core.marketIds.weEth, ONE_BI),
+    await encodeSetIsCollateralOnly(core, core.marketIds.weEth, true)
   ];
 
   return {
@@ -39,6 +44,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       await checkSupplyCap(core, core.marketIds.ohm, ONE_BI);
+      await checkBorrowCap(core, core.marketIds.ohm, ONE_BI);
+      await checkIsCollateralOnly(core, core.marketIds.ohm, true);
+      await checkSupplyCap(core, core.marketIds.weEth, ONE_BI);
+      await checkBorrowCap(core, core.marketIds.weEth, ONE_BI);
+      await checkIsCollateralOnly(core, core.marketIds.weEth, true);
     },
   };
 }
