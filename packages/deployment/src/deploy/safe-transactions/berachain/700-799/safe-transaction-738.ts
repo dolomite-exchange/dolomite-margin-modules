@@ -2,6 +2,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { parseOhm } from '../../../../../../base/src/utils/math-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeSetBorrowCap, encodeSetIsCollateralOnly, encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
@@ -19,9 +20,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-
   const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCap(core, core.marketIds.ohm, ONE_BI), // @follow-up Corey, I'm not sure if you want to set it to 1 wei or something higher
+    await encodeSetSupplyCap(core, core.marketIds.ohm, parseOhm(`${1_000}`)),
     await encodeSetBorrowCap(core, core.marketIds.ohm, ONE_BI),
     await encodeSetIsCollateralOnly(core, core.marketIds.ohm, true),
     await encodeSetSupplyCap(core, core.marketIds.weEth, ONE_BI),
@@ -43,7 +43,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkSupplyCap(core, core.marketIds.ohm, ONE_BI);
+      await checkSupplyCap(core, core.marketIds.ohm, parseOhm(`${1_000}`));
       await checkBorrowCap(core, core.marketIds.ohm, ONE_BI);
       await checkIsCollateralOnly(core, core.marketIds.ohm, true);
       await checkSupplyCap(core, core.marketIds.weEth, ONE_BI);
