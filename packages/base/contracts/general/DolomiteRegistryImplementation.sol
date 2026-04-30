@@ -32,6 +32,7 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
@@ -59,6 +60,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DEPOSIT_WITHDRAWAL_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositWithdrawalRouter")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_RAKE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRake")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
@@ -188,6 +190,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteMigrator(_dolomiteMigrator);
     }
 
+    function ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRake(_dolomiteRake);
+    }
+
     function ownerSetRedstonePriceOracle(
         address _redstonePriceOracle
     )
@@ -291,6 +301,10 @@ contract DolomiteRegistryImplementation is
 
     function dolomiteMigrator() public view returns (IDolomiteMigrator) {
         return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
+    }
+
+    function dolomiteRake() public view returns (IDolomiteStructs.Decimal memory) {
+        return IDolomiteStructs.Decimal({ value: _getUint256(_DOLOMITE_RAKE_SLOT) });
     }
 
     function redstonePriceOracle() public view returns (IDolomitePriceOracle) {
@@ -477,6 +491,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_CHAINLINK_PRICE_ORACLE_SLOT, _chainlinkPriceOracle);
         emit ChainlinkPriceOracleSet(_chainlinkPriceOracle);
+    }
+
+    function _ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) internal {
+        Require.that(
+            _dolomiteRake.value < 1e18,
+            _FILE,
+            "Invalid dolomiteRake"
+        );
+
+        _setUint256(_DOLOMITE_RAKE_SLOT, _dolomiteRake.value);
+        emit DolomiteRakeSet(_dolomiteRake);
     }
 
     function _ownerSetDolomiteMigrator(

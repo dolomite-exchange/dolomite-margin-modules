@@ -1,13 +1,14 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '../../src/types';
-import { Network } from '../../src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
 import { setupCoreProtocol } from '../utils/setup';
+import { parseEther } from 'ethers/lib/utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -34,6 +35,7 @@ describe('DolomiteRegistryImplementation', () => {
       core.dolomiteAccountRegistry.address,
       core.gnosisSafeAddress,
       core.governanceAddress,
+      core.hhUser4.address
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -54,6 +56,7 @@ describe('DolomiteRegistryImplementation', () => {
       );
       expect(await registry.liquidatorAssetRegistry()).to.equal(core.liquidatorAssetRegistry.address);
       expect(await registry.eventEmitter()).to.equal(core.eventEmitterRegistryProxy.address);
+      expect(await registry.feeAgent()).to.equal(core.hhUser4.address);
     });
 
     it('should fail to initialize if already initialized', async () => {
@@ -68,6 +71,7 @@ describe('DolomiteRegistryImplementation', () => {
           core.dolomiteAccountRegistry.address,
           core.gnosisSafeAddress,
           core.governanceAddress,
+          core.hhUser4.address
         ),
         'Initializable: contract is already initialized',
       );
@@ -188,7 +192,7 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetFeeAgent', () => {
     it('should work normally', async () => {
-      expect(await registry.feeAgent()).to.equal(ZERO_ADDRESS);
+      expect(await registry.feeAgent()).to.equal(core.hhUser4.address);
       const result = await registry.connect(core.governance).ownerSetFeeAgent(OTHER_ADDRESS);
       await expectEvent(registry, result, 'FeeAgentSet', {
         _feeAgent: OTHER_ADDRESS,
@@ -342,6 +346,31 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetDolomiteMigrator(ZERO_ADDRESS),
         'DolomiteRegistryImplementation: Invalid dolomiteMigrator',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteRake', () => {
+    it('should work normally', async () => {
+      const rake = parseEther('.1');
+      const result = await registry.connect(core.governance).ownerSetDolomiteRake({ value: rake });
+      await expectEvent(registry, result, 'DolomiteRakeSet', {
+        _dolomiteRake: { value: rake },
+      });
+      expect((await registry.dolomiteRake()).value).to.equal(rake);
+    });
+
+    it('should fail if dolomiteRake is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteRake({ value: ONE_ETH_BI }),
+        'DolomiteRegistryImplementation: Invalid dolomiteRake',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteRake({ value: parseEther('.1') }),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

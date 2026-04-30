@@ -27,6 +27,7 @@ import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
 
@@ -63,6 +64,7 @@ interface IDolomiteRegistry {
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
+    event DolomiteRakeSet(IDolomiteStructs.Decimal _dolomiteRake);
     event TreasurySet(address indexed _treasury);
     event DaoSet(address indexed _dao);
 
@@ -167,6 +169,12 @@ interface IDolomiteRegistry {
         address[] memory _trustedInternalTraders,
         bool[] memory _isTrusted
     ) external;
+
+    /**
+     *
+     * @param  _dolomiteRake    The rake (fee) taken by Dolomite for liquidations, expressed as a Decimal
+     */
+    function ownerSetDolomiteRake(IDolomiteStructs.Decimal memory _dolomiteRake) external;
 
     /**
      *
@@ -276,6 +284,11 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * @return The rake (fee) taken by Dolomite on liquidations
+     */
+    function dolomiteRake() external view returns (IDolomiteStructs.Decimal memory);
 
     /**
      * @return The address of the treasury
