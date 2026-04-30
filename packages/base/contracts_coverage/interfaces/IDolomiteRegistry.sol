@@ -27,6 +27,7 @@ import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
 
@@ -63,14 +64,16 @@ interface IDolomiteRegistry {
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
+    event DolomiteRakeSet(IDolomiteStructs.Decimal _dolomiteRake);
+    event IsPartialLiquidatorSet(address[] _liquidators, bool[] _isPartialLiquidator);
+    event MarketToPartialLiquidationSupportedSet(uint256[] _marketIds, bool[] _isSupported);
+    event PartialLiquidationThresholdSet(IDolomiteStructs.Decimal _partialLiquidationThreshold);
     event TreasurySet(address indexed _treasury);
     event DaoSet(address indexed _dao);
 
     // ========================================================
     // =================== Write Functions ====================
     // ========================================================
-
-    function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
 
     /**
      *
@@ -172,6 +175,32 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _dolomiteRake    The rake (fee) taken by Dolomite for liquidations, expressed as a Decimal
+     */
+    function ownerSetDolomiteRake(IDolomiteStructs.Decimal memory _dolomiteRake) external;
+
+    /**
+     *
+     * @param  _partialLiquidationThreshold    The threshold at which partial liquidations are allowed
+     */
+    function ownerSetPartialLiquidationThreshold(IDolomiteStructs.Decimal memory _partialLiquidationThreshold) external;
+
+    /**
+     *
+     * @param  _liquidators          The addresses of the liquidators
+     * @param  _isPartialLiquidator  Whether each liquidator supports partial liquidations
+     */
+    function ownerSetIsPartialLiquidator(address[] memory _liquidators, bool[] memory _isPartialLiquidator) external;
+
+    /**
+     *
+     * @param  _marketIds    The market IDs to configure
+     * @param  _isSupported  Whether each market supports partial liquidations
+     */
+    function ownerSetMarketToPartialLiquidationSupported(uint256[] memory _marketIds, bool[] memory _isSupported) external;
+
+    /**
+     *
      * @param  _treasury    The new address of the treasury
      */
     function ownerSetTreasury(address _treasury) external;
@@ -233,7 +262,7 @@ interface IDolomiteRegistry {
     function eventEmitter() external view returns (IEventEmitterRegistry);
 
     /**
-     * @return The address of the fee agent
+     * @return The address of the liquidation fee agent
      */
     function feeAgent() external view returns (address);
 
@@ -278,6 +307,28 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * @return The rake (fee) taken by Dolomite on liquidations
+     */
+    function dolomiteRake() external view returns (IDolomiteStructs.Decimal memory);
+
+    /**
+     * @return The threshold at which partial liquidations are allowed
+     */
+    function partialLiquidationThreshold() external view returns (IDolomiteStructs.Decimal memory);
+
+    /**
+     * @param  _liquidator  The address of the liquidator
+     * @return Whether the liquidator supports partial liquidations
+     */
+    function isPartialLiquidator(address _liquidator) external view returns (bool);
+
+    /**
+     * @param  _marketId  The market ID to query
+     * @return Whether the market supports partial liquidations
+     */
+    function isMarketForPartialLiquidationSupported(uint256 _marketId) external view returns (bool);
 
     /**
      * @return The address of the treasury

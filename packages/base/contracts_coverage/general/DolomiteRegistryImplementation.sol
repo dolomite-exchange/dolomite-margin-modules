@@ -32,6 +32,7 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IDepositWithdrawalRouter } from "../routers/interfaces/IDepositWithdrawalRouter.sol";
@@ -59,6 +60,10 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DEPOSIT_WITHDRAWAL_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositWithdrawalRouter")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_RAKE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRake")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_PARTIAL_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isPartialLiquidator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToPartialLiquidationSupported")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PARTIAL_LIQUIDATION_THRESHOLD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.partialLiquidationThreshold")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
@@ -83,7 +88,8 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry,
         address _treasury,
-        address _dao
+        address _dao,
+        address _feeAgent
     ) external initializer {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
@@ -94,21 +100,7 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
         _ownerSetTreasury(_treasury);
         _ownerSetDao(_dao);
-    }
-
-    function lazyInitialize(
-        address _dolomiteMigrator,
-        address _oracleAggregator
-    ) external {
-        if (address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0),
-            _FILE,
-            "Already initialized"
-        );
-
-        _ownerSetDolomiteMigrator(_dolomiteMigrator);
-        _ownerSetOracleAggregator(_oracleAggregator);
+        _ownerSetFeeAgent(_feeAgent);
     }
 
     // ===================== Functions =====================
@@ -199,6 +191,40 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetDolomiteMigrator(_dolomiteMigrator);
+    }
+
+    function ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRake(_dolomiteRake);
+    }
+
+    function ownerSetPartialLiquidationThreshold(
+        IDolomiteStructs.Decimal memory _partialLiquidationThreshold
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
+    }
+
+    function ownerSetIsPartialLiquidator(
+        address[] memory _liquidators,
+        bool[] memory _isPartialLiquidator
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsPartialLiquidator(_liquidators, _isPartialLiquidator);
+    }
+
+    function ownerSetMarketToPartialLiquidationSupported(
+        uint256[] memory _marketIds,
+        bool[] memory _isSupported
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToPartialLiquidationSupported(_marketIds, _isSupported);
     }
 
     function ownerSetRedstonePriceOracle(
@@ -293,7 +319,9 @@ contract DolomiteRegistryImplementation is
     }
 
     function feeAgent() public view returns (address) {
-        return _getAddress(_FEE_AGENT_SLOT);
+        address account = _getAddress(_FEE_AGENT_SLOT);
+        /*assert(account != address(0));*/
+        return account;
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
@@ -302,6 +330,22 @@ contract DolomiteRegistryImplementation is
 
     function dolomiteMigrator() public view returns (IDolomiteMigrator) {
         return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
+    }
+
+    function dolomiteRake() public view returns (IDolomiteStructs.Decimal memory) {
+        return IDolomiteStructs.Decimal({ value: _getUint256(_DOLOMITE_RAKE_SLOT) });
+    }
+
+    function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
+        return IDolomiteStructs.Decimal({ value: _getUint256(_PARTIAL_LIQUIDATION_THRESHOLD_SLOT) });
+    }
+
+    function isPartialLiquidator(address _liquidator) public view returns (bool) {
+        return _getUint256FromMap(_IS_PARTIAL_LIQUIDATOR_SLOT, _liquidator) == 1;
+    }
+
+    function isMarketForPartialLiquidationSupported(uint256 _marketId) public view returns (bool) {
+        return _getUint256FromMap(_MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT, _marketId) == 1;
     }
 
     function redstonePriceOracle() public view returns (IDolomitePriceOracle) {
@@ -498,6 +542,72 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_CHAINLINK_PRICE_ORACLE_SLOT, _chainlinkPriceOracle);
         emit ChainlinkPriceOracleSet(_chainlinkPriceOracle);
+    }
+
+    function _ownerSetDolomiteRake(
+        IDolomiteStructs.Decimal memory _dolomiteRake
+    ) internal {
+        if (_dolomiteRake.value < 1e18) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _dolomiteRake.value < 1e18,
+            _FILE,
+            "Invalid dolomiteRake"
+        );
+
+        _setUint256(_DOLOMITE_RAKE_SLOT, _dolomiteRake.value);
+        emit DolomiteRakeSet(_dolomiteRake);
+    }
+
+    function _ownerSetIsPartialLiquidator(
+        address[] memory _liquidators,
+        bool[] memory _isPartialLiquidator
+    ) internal {
+        if (_liquidators.length == _isPartialLiquidator.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _liquidators.length == _isPartialLiquidator.length,
+            _FILE,
+            "Array length mismatch"
+        );
+        for (uint256 i; i < _liquidators.length; ++i) {
+            if (_liquidators[i] != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _liquidators[i] != address(0),
+                _FILE,
+                "Invalid liquidator"
+            );
+            _setUint256InMap(_IS_PARTIAL_LIQUIDATOR_SLOT, _liquidators[i], _isPartialLiquidator[i] ? 1 : 0);
+        }
+        emit IsPartialLiquidatorSet(_liquidators, _isPartialLiquidator);
+    }
+
+    function _ownerSetMarketToPartialLiquidationSupported(
+        uint256[] memory _marketIds,
+        bool[] memory _isSupported
+    ) internal {
+        if (_marketIds.length == _isSupported.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _marketIds.length == _isSupported.length,
+            _FILE,
+            "Array length mismatch"
+        );
+        for (uint256 i; i < _marketIds.length; ++i) {
+            _setUint256InMap(_MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT, _marketIds[i], _isSupported[i] ? 1 : 0);
+        }
+        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
+    }
+
+    function _ownerSetPartialLiquidationThreshold(
+        IDolomiteStructs.Decimal memory _partialLiquidationThreshold
+    ) internal {
+        if (_partialLiquidationThreshold.value < 1e18) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _partialLiquidationThreshold.value < 1e18,
+            _FILE,
+            "Invalid threshold"
+        );
+
+        _setUint256(_PARTIAL_LIQUIDATION_THRESHOLD_SLOT, _partialLiquidationThreshold.value);
+        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
     }
 
     function _ownerSetDolomiteMigrator(
