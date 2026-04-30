@@ -375,6 +375,106 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetPartialLiquidationThreshold', () => {
+    it('should work normally', async () => {
+      const threshold = parseEther('.95')
+      const result = await registry.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: threshold });
+      await expectEvent(registry, result, 'PartialLiquidationThresholdSet', {
+        _partialLiquidationThreshold: { value: threshold },
+      });
+      expect((await registry.partialLiquidationThreshold()).value).to.equal(threshold);
+    });
+
+    it('should fail if partialLiquidationThreshold is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: ONE_ETH_BI}),
+        'DolomiteRegistryImplementation: Invalid threshold',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPartialLiquidationThreshold({ value: parseEther('.95') }),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetIsPartialLiquidator', () => {
+    it('should work normally', async () => {
+      expect(await registry.isPartialLiquidator(core.hhUser1.address)).to.equal(false);
+      const result = await registry.connect(core.governance).ownerSetIsPartialLiquidator(
+        [core.hhUser1.address],
+        [true],
+      );
+      await expectEvent(registry, result, 'IsPartialLiquidatorSet', {
+        _liquidators: [core.hhUser1.address],
+        _isPartialLiquidator: [true],
+      });
+      expect(await registry.isPartialLiquidator(core.hhUser1.address)).to.equal(true);
+      await registry.connect(core.governance).ownerSetIsPartialLiquidator(
+        [core.hhUser1.address],
+        [false],
+      );
+      expect(await registry.isPartialLiquidator(core.hhUser1.address)).to.equal(false);
+    });
+
+    it('should fail if array lengths do not match', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetIsPartialLiquidator([core.hhUser1.address], []),
+        'DolomiteRegistryImplementation: Array length mismatch',
+      );
+    });
+
+    it('should fail if a zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetIsPartialLiquidator([ZERO_ADDRESS], [true]),
+        'DolomiteRegistryImplementation: Invalid liquidator',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetIsPartialLiquidator([core.hhUser1.address], [true]),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetMarketToPartialLiquidationSupported', () => {
+    it('should work normally', async () => {
+      expect(await registry.isMarketForPartialLiquidationSupported(core.marketIds.weth)).to.equal(false);
+      const result = await registry.connect(core.governance).ownerSetMarketToPartialLiquidationSupported(
+        [core.marketIds.weth],
+        [true],
+      );
+      await expectEvent(registry, result, 'MarketToPartialLiquidationSupportedSet', {
+        _marketIds: [core.marketIds.weth],
+        _isSupported: [true],
+      });
+      expect(await registry.isMarketForPartialLiquidationSupported(core.marketIds.weth)).to.equal(true);
+      await registry.connect(core.governance).ownerSetMarketToPartialLiquidationSupported(
+        [core.marketIds.weth],
+        [false],
+      );
+      expect(await registry.isMarketForPartialLiquidationSupported(core.marketIds.weth)).to.equal(false);
+    });
+
+    it('should fail if array lengths do not match', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetMarketToPartialLiquidationSupported([core.marketIds.weth], []),
+        'DolomiteRegistryImplementation: Array length mismatch',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetMarketToPartialLiquidationSupported([core.marketIds.weth], [true]),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetRedstonePriceOracle', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetRedstonePriceOracle(OTHER_ADDRESS);
