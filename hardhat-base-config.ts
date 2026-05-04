@@ -197,9 +197,9 @@ export const base_config: HardhatUserConfig = {
     },
     [NetworkName.Sepolia]: {
       chainId: parseInt(Network.Sepolia, 10),
-      url: superSeedWeb3Url,
-      gas: 10_000_000, // 30M gas
-      gasPrice: 50_000_000, // 0.05 gwei
+      url: sepoliaWeb3Url,
+      gas: 10_000_000, // 10M gas
+      gasPrice: 500_000_000, // 0.50 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.SuperSeed]: {

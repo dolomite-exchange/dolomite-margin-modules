@@ -234,6 +234,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       config,
     ),
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
+    { LiquidatorProxyLib: liquidatorProxyLibAddress },
   );
 
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
