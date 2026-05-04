@@ -83,7 +83,8 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry,
         address _treasury,
-        address _dao
+        address _dao,
+        address _feeAgent
     ) external initializer {
         _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
@@ -94,21 +95,7 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
         _ownerSetTreasury(_treasury);
         _ownerSetDao(_dao);
-    }
-
-    function lazyInitialize(
-        address _dolomiteMigrator,
-        address _oracleAggregator
-    ) external {
-        if (address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0),
-            _FILE,
-            "Already initialized"
-        );
-
-        _ownerSetDolomiteMigrator(_dolomiteMigrator);
-        _ownerSetOracleAggregator(_oracleAggregator);
+        _ownerSetFeeAgent(_feeAgent);
     }
 
     // ===================== Functions =====================
@@ -293,7 +280,9 @@ contract DolomiteRegistryImplementation is
     }
 
     function feeAgent() public view returns (address) {
-        return _getAddress(_FEE_AGENT_SLOT);
+        address account = _getAddress(_FEE_AGENT_SLOT);
+        /*assert(account != address(0));*/
+        return account;
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
