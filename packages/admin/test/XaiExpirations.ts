@@ -8,6 +8,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 import { createAdminRegistry } from 'packages/base/test/utils/dolomite';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { AdminExpirePosition, AdminExpirePosition__factory, AdminRegistry } from '../src/types';
+import { expect } from 'chai';
 
 const BORROW_EXPIRATION_TIMESTAMP = 1779321600;
 const SUPPLY_EXPIRATION_TIMESTAMP = 1779341600;
@@ -104,6 +105,32 @@ describe('XaiExpirations', () => {
 
       // loop through supply accounts
       await adminExpirePosition.connect(core.gnosisSafe).expirePositions(positions);
+
+      for (const borrowAccount of borrowAccounts) {
+        if (borrowAccount.user.id === '0xb39d9d81ce88aa1679f0570af6e452d50358ea3f') {
+          continue; // user is vaporizable with less than 1 cent of debt
+        }
+
+        expect(await core.expiry.getExpiry(
+          { owner: borrowAccount.user.id, number: borrowAccount.accountNumber },
+          core.marketIds.xai
+        )).to.eq(BORROW_EXPIRATION_TIMESTAMP);
+      }
+
+      for (const supplyAccount of supplyAccounts) {
+        if (supplyAccount.user.id === '0x9834a1d62116ad16b4bbdd832f9ecfcc89871d38') {
+          continue; // user is unhealthy with less than 1 cent of collateral and debt
+        }
+
+        for (const token of supplyAccount.tokenValues) {
+          if (token.valuePar.startsWith('-')) {
+            expect(await core.expiry.getExpiry(
+              { owner: supplyAccount.user.id, number: supplyAccount.accountNumber },
+              token.token.marketId
+            )).to.eq(SUPPLY_EXPIRATION_TIMESTAMP);
+          }
+        }
+      }
     });
   });
 });
