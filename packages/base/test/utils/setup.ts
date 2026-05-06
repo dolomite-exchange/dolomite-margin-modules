@@ -32,6 +32,7 @@ import {
   DolomiteOwnerV2__factory,
   IAdminClaimExcessTokens__factory,
   IAdminPauseMarket__factory,
+  IAdminRegistry__factory,
 } from 'packages/admin/src/types';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
@@ -985,6 +986,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     governance,
   );
 
+  const adminRegistry = IAdminRegistry__factory.connect(
+    ModuleDeployments.AdminRegistryProxy[config.network].address,
+    governance
+  );
+
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
@@ -1151,6 +1157,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   const coreProtocolParams: CoreProtocolParams<T> = {
     adminClaimExcessTokens,
     adminPauseMarket,
+    adminRegistry,
     borrowPositionProxyV2,
     borrowPositionRouter,
     chainlinkPriceOracleV1,

@@ -10,7 +10,6 @@ import { AccountInfoStruct } from 'packages/base/src/utils';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { createAdminRegistry } from 'packages/base/test/utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from 'packages/base/test/utils/setup';
 import { AdminExpirePosition, AdminExpirePosition__factory, AdminRegistry } from '../src/types';
 import { parseEther } from 'ethers/lib/utils';
@@ -25,9 +24,7 @@ describe('AdminExpirePosition', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-
   let adminExpirePosition: AdminExpirePosition;
-  let adminRegistry: AdminRegistry;
 
   let account1: AccountInfoStruct;
   let account2: AccountInfoStruct;
@@ -42,15 +39,14 @@ describe('AdminExpirePosition', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.dai);
 
-    adminRegistry = await createAdminRegistry(core);
     adminExpirePosition = await createContractWithAbi<AdminExpirePosition>(
       AdminExpirePosition__factory.abi,
       AdminExpirePosition__factory.bytecode,
-      [core.expiry.address, adminRegistry.address, core.dolomiteMargin.address],
+      [core.expiry.address, core.adminRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(adminExpirePosition.address, true);
 
-    await adminRegistry.connect(core.governance).grantPermission(
+    await core.adminRegistry.connect(core.governance).grantPermission(
       adminExpirePosition.interface.getSighash('expirePositions'),
       adminExpirePosition.address,
       core.gnosisSafe.address,
@@ -113,7 +109,7 @@ describe('AdminExpirePosition', () => {
     it('should work normally', async () => {
       expect(await adminExpirePosition.EXPIRY()).to.equal(core.expiry.address);
       expect(await adminExpirePosition.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
-      expect(await adminExpirePosition.ADMIN_REGISTRY()).to.equal(adminRegistry.address);
+      expect(await adminExpirePosition.ADMIN_REGISTRY()).to.equal(core.adminRegistry.address);
     });
   });
 
