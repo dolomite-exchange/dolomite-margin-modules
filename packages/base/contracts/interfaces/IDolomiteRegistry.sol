@@ -65,8 +65,6 @@ interface IDolomiteRegistry {
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
     event DolomiteRakeSet(IDolomiteStructs.Decimal _dolomiteRake);
-    event IsPartialLiquidatorSet(address[] _liquidators, bool[] _isPartialLiquidator);
-    event MarketToPartialLiquidationSupportedSet(uint256[] _marketIds, bool[] _isSupported);
     event PartialLiquidationThresholdSet(IDolomiteStructs.Decimal _partialLiquidationThreshold);
     event TreasurySet(address indexed _treasury);
     event DaoSet(address indexed _dao);
@@ -187,20 +185,6 @@ interface IDolomiteRegistry {
 
     /**
      *
-     * @param  _liquidators          The addresses of the liquidators
-     * @param  _isPartialLiquidator  Whether each liquidator supports partial liquidations
-     */
-    function ownerSetIsPartialLiquidator(address[] memory _liquidators, bool[] memory _isPartialLiquidator) external;
-
-    /**
-     *
-     * @param  _marketIds    The market IDs to configure
-     * @param  _isSupported  Whether each market supports partial liquidations
-     */
-    function ownerSetMarketToPartialLiquidationSupported(uint256[] memory _marketIds, bool[] memory _isSupported) external;
-
-    /**
-     *
      * @param  _treasury    The new address of the treasury
      */
     function ownerSetTreasury(address _treasury) external;
@@ -317,18 +301,6 @@ interface IDolomiteRegistry {
      * @return The threshold at which partial liquidations are allowed
      */
     function partialLiquidationThreshold() external view returns (IDolomiteStructs.Decimal memory);
-
-    /**
-     * @param  _liquidator  The address of the liquidator
-     * @return Whether the liquidator supports partial liquidations
-     */
-    function isPartialLiquidator(address _liquidator) external view returns (bool);
-
-    /**
-     * @param  _marketId  The market ID to query
-     * @return Whether the market supports partial liquidations
-     */
-    function isMarketForPartialLiquidationSupported(uint256 _marketId) external view returns (bool);
 
     /**
      * @return The address of the treasury

@@ -61,8 +61,6 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_RAKE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRake")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _IS_PARTIAL_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isPartialLiquidator")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToPartialLiquidationSupported")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _PARTIAL_LIQUIDATION_THRESHOLD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.partialLiquidationThreshold")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
@@ -209,24 +207,6 @@ contract DolomiteRegistryImplementation is
         _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
     }
 
-    function ownerSetIsPartialLiquidator(
-        address[] memory _liquidators,
-        bool[] memory _isPartialLiquidator
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetIsPartialLiquidator(_liquidators, _isPartialLiquidator);
-    }
-
-    function ownerSetMarketToPartialLiquidationSupported(
-        uint256[] memory _marketIds,
-        bool[] memory _isSupported
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMarketToPartialLiquidationSupported(_marketIds, _isSupported);
-    }
-
     function ownerSetRedstonePriceOracle(
         address _redstonePriceOracle
     )
@@ -338,14 +318,6 @@ contract DolomiteRegistryImplementation is
 
     function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
         return IDolomiteStructs.Decimal({ value: _getUint256(_PARTIAL_LIQUIDATION_THRESHOLD_SLOT) });
-    }
-
-    function isPartialLiquidator(address _liquidator) public view returns (bool) {
-        return _getUint256FromMap(_IS_PARTIAL_LIQUIDATOR_SLOT, _liquidator) == 1;
-    }
-
-    function isMarketForPartialLiquidationSupported(uint256 _marketId) public view returns (bool) {
-        return _getUint256FromMap(_MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT, _marketId) == 1;
     }
 
     function redstonePriceOracle() public view returns (IDolomitePriceOracle) {
@@ -556,44 +528,6 @@ contract DolomiteRegistryImplementation is
 
         _setUint256(_DOLOMITE_RAKE_SLOT, _dolomiteRake.value);
         emit DolomiteRakeSet(_dolomiteRake);
-    }
-
-    function _ownerSetIsPartialLiquidator(
-        address[] memory _liquidators,
-        bool[] memory _isPartialLiquidator
-    ) internal {
-        if (_liquidators.length == _isPartialLiquidator.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _liquidators.length == _isPartialLiquidator.length,
-            _FILE,
-            "Array length mismatch"
-        );
-        for (uint256 i; i < _liquidators.length; ++i) {
-            if (_liquidators[i] != address(0)) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _liquidators[i] != address(0),
-                _FILE,
-                "Invalid liquidator"
-            );
-            _setUint256InMap(_IS_PARTIAL_LIQUIDATOR_SLOT, _liquidators[i], _isPartialLiquidator[i] ? 1 : 0);
-        }
-        emit IsPartialLiquidatorSet(_liquidators, _isPartialLiquidator);
-    }
-
-    function _ownerSetMarketToPartialLiquidationSupported(
-        uint256[] memory _marketIds,
-        bool[] memory _isSupported
-    ) internal {
-        if (_marketIds.length == _isSupported.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _marketIds.length == _isSupported.length,
-            _FILE,
-            "Array length mismatch"
-        );
-        for (uint256 i; i < _marketIds.length; ++i) {
-            _setUint256InMap(_MARKET_TO_PARTIAL_LIQUIDATION_SUPPORTED_SLOT, _marketIds[i], _isSupported[i] ? 1 : 0);
-        }
-        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
     }
 
     function _ownerSetPartialLiquidationThreshold(
