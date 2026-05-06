@@ -32,6 +32,7 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -41,6 +42,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  * Contract for liquidating accounts in DolomiteMargin.
  */
 contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
+    using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using DecimalLib for IDolomiteStructs.Decimal;
     using DecimalLib for uint256;
     using TypesLib for IDolomiteStructs.Wei;
@@ -50,22 +52,23 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
     uint256 private constant _SOLID_ACCOUNT_ID = 0;
     uint256 private constant _LIQUID_ACCOUNT_ID = 1;
     uint256 private constant _DOLOMITE_RAKE_ACCOUNT_ID = 2;
+
     uint256 private constant _ONE = 1 ether;
+    uint256 public immutable CHAIN_ID;
 
     bytes32 internal constant DOLOMITE_FS_GLP_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
     string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable DOLOMITE_RAKE_VALUE; // solhint-disable-line var-name-mixedcase
 
     constructor(
+        uint256 _chainId,
         address _liquidatorAssetRegistry,
-        address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _dolomiteRakeValue
+        address _dolomiteMargin
     ) HasLiquidatorRegistry(_liquidatorAssetRegistry) OnlyDolomiteMargin(_dolomiteMargin) {
+        CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        DOLOMITE_RAKE_VALUE = _dolomiteRakeValue;
     }
 
     function liquidate(
@@ -115,7 +118,7 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
                 _owedAmountsToLiquidate[i],
                 isPartial ? owedWei.value / 2 : owedWei.value
             );
-            IDolomiteStructs.ActionArgs[] memory actions = _getActions(heldMarket, owedMarket, _owedAmountsToLiquidate[i]);
+            IDolomiteStructs.ActionArgs[] memory actions = _getActions(_liquidAccount, heldMarket, owedMarket, _owedAmountsToLiquidate[i]);
 
             DOLOMITE_MARGIN().operate(accounts, actions);
         }
@@ -143,9 +146,70 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
 
-        // @todo come back to fix this
-        uint256 partialLiquidationThreshold = .95 ether;
-        return partialLiquidationThreshold != 0 && healthFactor >= partialLiquidationThreshold;
+        IDolomiteStructs.Decimal memory partialLiquidationThreshold = DOLOMITE_REGISTRY.partialLiquidationThreshold();
+        return partialLiquidationThreshold.value != 0 && healthFactor >= partialLiquidationThreshold.value;
+    }
+
+    function _getAccounts(
+        IDolomiteStructs.AccountInfo memory _solidAccount,
+        IDolomiteStructs.AccountInfo memory _liquidAccount
+    ) internal view returns (IDolomiteStructs.AccountInfo[] memory) {
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
+
+        accounts[_SOLID_ACCOUNT_ID] = _solidAccount;
+        accounts[_LIQUID_ACCOUNT_ID] = _liquidAccount;
+        accounts[_DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: DOLOMITE_REGISTRY.feeAgent(),
+            number: 0
+        });
+
+        return accounts;
+    }
+
+    function _getActions(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _heldMarketId,
+        uint256 _owedMarketId,
+        uint256 _owedWeiToLiquidate
+    ) internal view returns (IDolomiteStructs.ActionArgs[] memory) {
+        IDolomiteStructs.Decimal memory dolomiteRake = DOLOMITE_REGISTRY.dolomiteRake();
+        bool includeDolomiteRake = dolomiteRake.value > 0;
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](includeDolomiteRake ? 2 : 1);
+        actions[0] = AccountActionLib.encodeLiquidateAction(
+            _SOLID_ACCOUNT_ID,
+            _LIQUID_ACCOUNT_ID,
+            _owedMarketId,
+            _heldMarketId,
+            _owedWeiToLiquidate
+        );
+
+        if (includeDolomiteRake) {
+            uint256 owedPrice = DOLOMITE_MARGIN().getMarketPrice(_owedMarketId).value;
+            uint256 heldPrice = DOLOMITE_MARGIN().getMarketPrice(_heldMarketId).value;
+
+            IDolomiteStructs.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+                CHAIN_ID,
+                _liquidAccount,
+                _heldMarketId,
+                _owedMarketId
+            );
+
+            uint256 owedPriceAdj = owedPrice.mul(spread.onePlus());
+            uint256 heldWeiWithoutReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPrice, heldPrice);
+            uint256 solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPriceAdj, heldPrice);
+
+            uint256 dolomiteRakeAmount = (solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake);
+            actions[1] = AccountActionLib.encodeTransferAction(
+                _SOLID_ACCOUNT_ID,
+                _DOLOMITE_RAKE_ACCOUNT_ID,
+                _heldMarketId,
+                IDolomiteStructs.AssetDenomination.Wei,
+                dolomiteRakeAmount
+            );
+        }
+
+        return actions;
     }
 
     function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
@@ -169,58 +233,6 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
     }
 
-    function _getAccounts(
-        IDolomiteStructs.AccountInfo memory _solidAccount,
-        IDolomiteStructs.AccountInfo memory _liquidAccount
-    ) internal view returns (IDolomiteStructs.AccountInfo[] memory) {
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
-        accounts[_SOLID_ACCOUNT_ID] = _solidAccount;
-        accounts[_LIQUID_ACCOUNT_ID] = _liquidAccount;
-        accounts[_DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: DOLOMITE_REGISTRY.feeAgent(),
-            number: 0
-        });
-
-        return accounts;
-    }
-
-    function _getActions(
-        uint256 _heldMarketId,
-        uint256 _owedMarketId,
-        uint256 _owedWeiToLiquidate
-    ) internal view returns (IDolomiteStructs.ActionArgs[] memory) {
-        bool includeDolomiteRake = DOLOMITE_RAKE_VALUE != 0;
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](includeDolomiteRake ? 2 : 1);
-        actions[0] = AccountActionLib.encodeLiquidateAction(
-            _SOLID_ACCOUNT_ID,
-            _LIQUID_ACCOUNT_ID,
-            _owedMarketId,
-            _heldMarketId,
-            _owedWeiToLiquidate
-        );
-
-        if (includeDolomiteRake) {
-            uint256 owedPrice = DOLOMITE_MARGIN().getMarketPrice(_owedMarketId).value;
-            uint256 heldPrice = DOLOMITE_MARGIN().getMarketPrice(_heldMarketId).value;
-            IDolomiteStructs.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(_heldMarketId, _owedMarketId);
-            uint256 owedPriceAdj = owedPrice.mul(spread.onePlus());
-            uint256 heldWeiWithoutReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPrice, heldPrice);
-            uint256 solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPriceAdj, heldPrice);
-            uint256 dolomiteRakeAmount = (solidHeldUpdateWithReward - heldWeiWithoutReward).mul(
-                IDolomiteStructs.Decimal({ value: DOLOMITE_RAKE_VALUE })
-            );
-            actions[1] = AccountActionLib.encodeTransferAction(
-                _SOLID_ACCOUNT_ID,
-                _DOLOMITE_RAKE_ACCOUNT_ID,
-                _heldMarketId,
-                IDolomiteStructs.AssetDenomination.Wei,
-                dolomiteRakeAmount
-            );
-        }
-
-        return actions;
-    }
-
     function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
         if (bytes(_start).length > bytes(_str).length) {
             return false;
@@ -233,5 +245,4 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         }
         return hash == keccak256(bytes(_start));
     }
-
 }
