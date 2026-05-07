@@ -78,13 +78,15 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         uint256[] memory _owedMarkets,
         uint256[] memory _owedAmountsToLiquidate
     ) external {
+        // check partial liquidation whitelist
         Require.that(
             msg.sender == _solidAccount.owner || DOLOMITE_MARGIN().getIsLocalOperator(_solidAccount.owner, msg.sender),
             _FILE,
             "Invalid solid account"
         );
         Require.that(
-            _owedMarkets.length == _heldMarkets.length,
+            _owedMarkets.length == _heldMarkets.length
+                && _heldMarkets.length == _owedAmountsToLiquidate.length,
             _FILE,
             "Invalid market arrays"
         );
@@ -173,9 +175,8 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         uint256 _owedWeiToLiquidate
     ) internal view returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.Decimal memory dolomiteRake = DOLOMITE_REGISTRY.dolomiteRake();
-        bool includeDolomiteRake = dolomiteRake.value > 0;
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](includeDolomiteRake ? 2 : 1);
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](dolomiteRake.value > 0 ? 2 : 1);
         actions[0] = AccountActionLib.encodeLiquidateAction(
             _SOLID_ACCOUNT_ID,
             _LIQUID_ACCOUNT_ID,
@@ -184,7 +185,7 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
             _owedWeiToLiquidate
         );
 
-        if (includeDolomiteRake) {
+        if (dolomiteRake.value > 0) {
             uint256 owedPrice = DOLOMITE_MARGIN().getMarketPrice(_owedMarketId).value;
             uint256 heldPrice = DOLOMITE_MARGIN().getMarketPrice(_heldMarketId).value;
 

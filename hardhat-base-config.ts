@@ -126,7 +126,7 @@ export const base_config: HardhatUserConfig = {
             },
           ]
         : undefined,
-      chainId: parseInt(Network.Berachain, 10),
+      chainId: parseInt(Network.ArbitrumOne, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
