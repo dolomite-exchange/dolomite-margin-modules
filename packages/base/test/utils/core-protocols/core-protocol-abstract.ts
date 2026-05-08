@@ -25,7 +25,6 @@ import {
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
-  ILiquidatorProxyV6,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
@@ -57,46 +56,50 @@ export interface ImplementationContracts {
 export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-  ? IWETH
-  : T extends Network.Berachain
-  ? IERC20
-  : T extends Network.Botanix
-  ? IERC20
-  : T extends Network.Ethereum
-  ? IWETH
-  : T extends Network.Ink
-  ? IWETH
-  : T extends Network.Mantle
-  ? IERC20
-  : T extends Network.PolygonZkEvm
-  ? IWETH
-  : T extends Network.SuperSeed
-  ? IWETH
-  : T extends Network.XLayer
-  ? IERC20
-  : never;
+    ? IWETH
+    : T extends Network.Berachain
+      ? IERC20
+      : T extends Network.Botanix
+        ? IERC20
+        : T extends Network.Ethereum
+          ? IWETH
+          : T extends Network.Ink
+            ? IWETH
+            : T extends Network.Mantle
+              ? IERC20
+              : T extends Network.PolygonZkEvm
+                ? IWETH
+                : T extends Network.Sepolia
+                  ? IWETH
+                  : T extends Network.SuperSeed
+                    ? IWETH
+                    : T extends Network.XLayer
+                      ? IERC20
+                      : never;
 
 export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Berachain
-  ? DolomiteERC4626
-  : T extends Network.Botanix
-  ? DolomiteERC4626
-  : T extends Network.Ethereum
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Ink
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Mantle
-  ? DolomiteERC4626
-  : T extends Network.PolygonZkEvm
-  ? DolomiteERC4626WithPayable
-  : T extends Network.SuperSeed
-  ? DolomiteERC4626WithPayable
-  : T extends Network.XLayer
-  ? DolomiteERC4626
-  : never;
+    ? DolomiteERC4626WithPayable
+    : T extends Network.Berachain
+      ? DolomiteERC4626
+      : T extends Network.Botanix
+        ? DolomiteERC4626
+        : T extends Network.Ethereum
+          ? DolomiteERC4626WithPayable
+          : T extends Network.Ink
+            ? DolomiteERC4626WithPayable
+            : T extends Network.Mantle
+              ? DolomiteERC4626
+              : T extends Network.PolygonZkEvm
+                ? DolomiteERC4626WithPayable
+                : T extends Network.Sepolia
+                  ? DolomiteERC4626WithPayable
+                  : T extends Network.SuperSeed
+                    ? DolomiteERC4626WithPayable
+                    : T extends Network.XLayer
+                      ? DolomiteERC4626
+                      : never;
 
 export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;

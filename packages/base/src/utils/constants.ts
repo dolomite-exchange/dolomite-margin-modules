@@ -2905,7 +2905,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       aggregatorAddress: '0x97d9F9A00dEE0004BE8ca0A8fa374d486567eE2D',
     },
   },
-  [Network.Sepolia]: {},
+  [Network.Sepolia]: {
+    [WETH_MAP[Network.Sepolia].address]: {
+      aggregatorAddress: '0x694AA1769357215DE4FAC081bf1f309aDC325306',
+    },
+  },
   [Network.SuperSeed]: {},
   [Network.XLayer]: {
     [USDC_MAP[Network.XLayer].address]: {

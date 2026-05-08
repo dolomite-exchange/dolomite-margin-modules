@@ -481,7 +481,7 @@ export async function deployContractAndSave(
       : undefined;
     const signer = options.signer ?? deployer ?? hardhat.ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'latest');
     }
 
     const gasPrice = options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice;
@@ -1150,6 +1150,7 @@ async function prettyPrintAndVerifyContract(
     const slowNetworks: Record<string, number | undefined> = {
       [Network.Ethereum]: 15,
       [Network.Ink]: 10,
+      [Network.Sepolia]: 30,
     };
     const sleepTimeSeconds = slowNetworks[chainId] ?? 5;
     console.log(

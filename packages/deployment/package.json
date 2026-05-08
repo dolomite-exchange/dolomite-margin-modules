@@ -37,14 +37,15 @@
     "execute:botanix": "NETWORK=botanix ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:ethereum": "NETWORK=ethereum ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:get-transaction-ids": "ts-node src/deploy/other/execute-get-transaction-ids.ts",
-    "execute:golem-analyzer": "NETWORK=mainnet hardhat run src/deploy/other/golem-multisig-analyzer.ts",
     "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:sepolia": "NETWORK=sepolia ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:test": "NETWORK=arbitrum_one ts-node test/execute-test-safe-transaction.ts",
     "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
     "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
     "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
+    "verify:sepolia": "hardhat --network sepolia run src/utils/verify-contract.ts",
     "verify:contract": "hardhat --network $NETWORK run src/utils/verify-contract.ts"
   },
   "files": [

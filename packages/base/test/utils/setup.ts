@@ -285,6 +285,7 @@ import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { CoreProtocolSepolia } from './core-protocols/core-protocol-sepolia';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -329,6 +330,10 @@ interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mant
   readonly mantle: boolean;
 }
 
+interface CoreProtocolConfigSepolia extends CoreProtocolConfigParent<Network.Sepolia> {
+  readonly sepolia: boolean;
+}
+
 interface CoreProtocolConfigPolygonZkEvm extends CoreProtocolConfigParent<Network.PolygonZkEvm> {
   readonly polygonZkEvm: boolean;
 }
@@ -340,20 +345,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolConfigBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolConfigEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolConfigBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolConfigEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolConfigMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolConfigPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolConfigXLayer
+                : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -775,6 +780,15 @@ function getCoreProtocolConfig<T extends DolomiteNetwork>(network: T, blockNumbe
     } as CoreProtocolConfigPolygonZkEvm as any;
   }
 
+  if (network === Network.Sepolia) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      sepolia: true,
+    } as CoreProtocolConfigSepolia as any;
+  }
+
   if (network === Network.XLayer) {
     return {
       network,
@@ -808,20 +822,22 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolPolygonZkEvm
+              : T extends Network.Sepolia
+                ? CoreProtocolSepolia
+                : T extends Network.XLayer
+                  ? CoreProtocolXLayer
+                  : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -855,6 +871,7 @@ export function getWethContract<T extends DolomiteNetwork>(
     case Network.Ethereum:
     case Network.Ink:
     case Network.PolygonZkEvm:
+    case Network.Sepolia:
     case Network.SuperSeed:
       return IWETH__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
     case Network.Berachain:
@@ -1911,6 +1928,27 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        ],
+      },
+    }) as any;
+  }
+  if (config.network === Network.Sepolia) {
+    // const typedConfig = config as CoreProtocolSetupConfig<Network.Sepolia>;
+    return new CoreProtocolSepolia(coreProtocolParams as CoreProtocolParams<Network.Sepolia>, {
+      marketIds: {
+        ...coreProtocolParams.marketIds,
+        stablecoins: [
+          ...coreProtocolParams.marketIds.stablecoins,
+        ],
+        stablecoinsWithUnifiedInterestRateModels: [
+          ...coreProtocolParams.marketIds.stablecoins,
+        ],
+      },
+      tokens: {
+        ...coreProtocolParams.tokens,
+        weth: coreProtocolParams.tokens.weth as any,
+        stablecoins: [
+          ...coreProtocolParams.tokens.stablecoins,
         ],
       },
     }) as any;

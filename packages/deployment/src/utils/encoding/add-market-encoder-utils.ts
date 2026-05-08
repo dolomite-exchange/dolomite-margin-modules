@@ -396,7 +396,7 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
   const isPartialLiquidationSupported = await getIsPartialLiquidationSupported(core, token.address);
   if (isPartialLiquidationSupported) {
     console.log('');
-    console.log('Enabling partial liquidations...');
+    console.log(`\tEnabling partial liquidations for token ${token.address}...`);
     console.log('');
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -409,7 +409,7 @@ export async function encodeAddMarket<T extends DolomiteNetwork>(
     );
   } else {
     console.log('');
-    console.warn('Disabling partial liquidations...');
+    console.warn('Skipping partial liquidations...');
     console.log('');
   }
   return transactions;
