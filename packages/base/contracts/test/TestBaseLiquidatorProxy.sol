@@ -36,12 +36,14 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
 
     constructor(
         address _liquidatorAssetRegistry,
+        address _dolomiteRegistry,
         address _dolomiteMargin,
         address _expiry,
         uint256 _chainId
     )
     BaseLiquidatorProxy(
         _liquidatorAssetRegistry,
+        _dolomiteRegistry,
         _dolomiteMargin,
         _expiry,
         _chainId

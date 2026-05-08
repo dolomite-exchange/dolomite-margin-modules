@@ -80,8 +80,8 @@ describe('LiquidatorProxyV6', () => {
     liquidatorProxy = TestLiquidatorProxyV6__factory.connect(proxy.address, core.hhUser1);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
-    await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
-    await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('.95') });
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.1') });
+    await core.dolomiteRegistry.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('.95') });
     await liquidatorProxy.connect(core.governance).ownerSetIsPartialLiquidator(core.hhUser2.address, true);
     await liquidatorProxy
       .connect(core.governance)
@@ -585,7 +585,7 @@ describe('LiquidatorProxyV6', () => {
     });
 
     it('should work normally with partial liquidation and no rake', async () => {
-      await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: ZERO_BI });
+      await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteRake({ value: ZERO_BI });
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -660,7 +660,7 @@ describe('LiquidatorProxyV6', () => {
     });
 
     it('should work normally with 20% rake with partial liquidation', async () => {
-      await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
+      await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
       await core.borrowPositionProxyV2
@@ -1972,31 +1972,6 @@ describe('LiquidatorProxyV6', () => {
     });
   });
 
-  describe('#ownerSetDolomiteRake', () => {
-    it('should work normally', async () => {
-      expect(await liquidatorProxy.dolomiteRake()).to.equal({ value: parseEther('.1') });
-      const res = await liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('.2') });
-      await expectEvent(liquidatorProxy, res, 'DolomiteRakeSet', {
-        dolomiteRake: { value: parseEther('.2') },
-      });
-      expect(await liquidatorProxy.dolomiteRake()).to.equal(parseEther('.2'));
-    });
-
-    it('should fail if dolomite rake is invalid', async () => {
-      await expectThrow(
-        liquidatorProxy.connect(core.governance).ownerSetDolomiteRake({ value: parseEther('1') }),
-        'BaseLiquidatorProxy: Invalid dolomite rake',
-      );
-    });
-
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        liquidatorProxy.connect(core.hhUser2).ownerSetDolomiteRake({ value: parseEther('.2') }),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
-      );
-    });
-  });
-
   describe('#ownerSetIsPartialLiquidator', () => {
     it('should work normally', async () => {
       expect(await liquidatorProxy.isWhitelistedPartialLiquidator(core.hhUser2.address)).to.equal(true);
@@ -2046,33 +2021,6 @@ describe('LiquidatorProxyV6', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         liquidatorProxy.connect(core.hhUser2).ownerSetMarketToPartialLiquidationSupported([core.marketIds.dai], [true]),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetPartialLiquidationThreshold', () => {
-    it('should work normally', async () => {
-      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal({ value: parseEther('.95') });
-
-      const threshold = { value: parseEther('.96') };
-      const res = await liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold(threshold);
-      await expectEvent(liquidatorProxy, res, 'PartialLiquidationThresholdSet', {
-        partialLiquidationThreshold: threshold,
-      });
-      expect(await liquidatorProxy.partialLiquidationThreshold()).to.equal(threshold);
-    });
-
-    it('should fail if partial liquidation threshold is invalid', async () => {
-      await expectThrow(
-        liquidatorProxy.connect(core.governance).ownerSetPartialLiquidationThreshold({ value: parseEther('1') }),
-        'BaseLiquidatorProxy: Invalid partial threshold',
-      );
-    });
-
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        liquidatorProxy.connect(core.hhUser2).ownerSetPartialLiquidationThreshold({ value: parseEther('.96') }),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser2.addressLower}>`,
       );
     });

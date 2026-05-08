@@ -65,6 +65,7 @@ contract IsolationModeFreezableLiquidatorProxy is
     )
     BaseLiquidatorProxy(
         _liquidatorAssetRegistry,
+        _dolomiteRegistry,
         _dolomiteMargin,
         _expiry,
         _chainId

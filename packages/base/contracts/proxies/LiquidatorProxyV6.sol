@@ -71,6 +71,7 @@ contract LiquidatorProxyV6 is
     )
     BaseLiquidatorProxy(
         _liquidatorAssetRegistry,
+        _dolomiteRegistry,
         _dolomiteMargin,
         _expiry,
         _chainId
@@ -94,8 +95,8 @@ contract LiquidatorProxyV6 is
     onlyDolomiteMarginOwner(msg.sender)
     reinitializer(2)
     {
-        _ownerSetDolomiteRake(_dolomiteRake);
-        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
+        // _ownerSetDolomiteRake(_dolomiteRake);
+        // _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
         _ownerSetIsPartialLiquidator(_initialPartialLiquidator, /* _isPartialLiquidator = */ true);
 
         bool[] memory isSupportedList = new bool[](_initialPartialLiquidationMarketIds.length);
@@ -139,7 +140,7 @@ contract LiquidatorProxyV6 is
     }
 
     function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
-        return _partialLiquidationStorage().partialLiquidationThreshold;
+        return DOLOMITE_REGISTRY.partialLiquidationThreshold();
     }
 
     function isPartialLiquidationSupportedByMarketId(uint256 _marketId) public view returns (bool) {
@@ -151,7 +152,7 @@ contract LiquidatorProxyV6 is
     }
 
     function dolomiteRake() public view returns (IDolomiteStructs.Decimal memory) {
-        return _partialLiquidationStorage().dolomiteRake;
+        return DOLOMITE_REGISTRY.dolomiteRake();
     }
 
     // ============ Internal Functions ============
@@ -368,9 +369,8 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
-        PartialLiquidationStorage storage $ = _partialLiquidationStorage();
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul($.dolomiteRake); // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake()); // solhint-disable-line max-line-length
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,
