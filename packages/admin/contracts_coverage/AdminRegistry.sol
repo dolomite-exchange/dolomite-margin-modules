@@ -72,6 +72,18 @@ contract AdminRegistry is AccessControlUpgradeable, OnlyDolomiteMargin, IAdminRe
         _revokeRole(role(_selector, _contract), _account);
     }
 
+    function grantRole(bytes32 /* _role */, address /* _account */) public override {
+        revert("AdminRegistry: Not implemented");
+    }
+
+    function revokeRole(bytes32 /* _role */, address /* _account */) public override {
+        revert("AdminRegistry: Not implemented");
+    }
+
+    function renounceRole(bytes32 /* _role */, address /* _account */) public override {
+        revert("AdminRegistry: Not implemented");
+    }
+
     // ===================================================================
     // ========================= View Functions ==========================
     // ===================================================================

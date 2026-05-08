@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { SimpleIsolationModeVaultFactory } from "./SimpleIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "./abstract/IsolationModeTokenVaultV1.sol";
-import { SimpleIsolationModeVaultFactory } from "./SimpleIsolationModeVaultFactory.sol";
 
 
 /**

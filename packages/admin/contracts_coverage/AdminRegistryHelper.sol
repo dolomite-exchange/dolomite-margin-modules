@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
+import { IAdminRegistryHelper } from "./interfaces/IAdminRegistryHelper.sol";
 
 
 /**
@@ -30,7 +31,7 @@ import { IAdminRegistry } from "./interfaces/IAdminRegistry.sol";
  *
  * @notice  AdminRegistryHelper contract to store AdminRegistry and check permissions
  */
-abstract contract AdminRegistryHelper {
+abstract contract AdminRegistryHelper is IAdminRegistryHelper {
 
     bytes32 private constant _FILE = "AdminRegistryHelper";
 
