@@ -32,7 +32,10 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV1
@@ -40,32 +43,49 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  *
  * Contract for liquidating accounts in DolomiteMargin.
  */
-contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
+contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyDolomiteMargin {
+    using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using DecimalLib for IDolomiteStructs.Decimal;
     using DecimalLib for uint256;
     using TypesLib for IDolomiteStructs.Wei;
 
-    bytes32 private constant _FILE = "LiquidatorProxyV6";
+    event WhitelistedLiquidatorSet(address indexed liquidator, bool isWhitelisted);
+
+    bytes32 private constant _FILE = "LiquidatorProxyV1";
 
     uint256 private constant _SOLID_ACCOUNT_ID = 0;
     uint256 private constant _LIQUID_ACCOUNT_ID = 1;
     uint256 private constant _DOLOMITE_RAKE_ACCOUNT_ID = 2;
+
     uint256 private constant _ONE = 1 ether;
+    uint256 public immutable CHAIN_ID;
 
     bytes32 internal constant DOLOMITE_FS_GLP_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
     string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
+    bytes32 private constant _WHITELISTED_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelistedLiquidator")) - 1); // solhint-disable-line max-line-length
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable DOLOMITE_RAKE_VALUE; // solhint-disable-line var-name-mixedcase
 
     constructor(
+        uint256 _chainId,
         address _liquidatorAssetRegistry,
-        address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _dolomiteRakeValue
+        address _dolomiteMargin
     ) HasLiquidatorRegistry(_liquidatorAssetRegistry) OnlyDolomiteMargin(_dolomiteMargin) {
+        CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        DOLOMITE_RAKE_VALUE = _dolomiteRakeValue;
+    }
+
+    function ownerSetWhitelistedLiquidator(
+        address _liquidator,
+        bool _isWhitelisted
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _setUint256InMap(_WHITELISTED_LIQUIDATOR_SLOT, _liquidator, _isWhitelisted ? 1 : 0);
+        emit WhitelistedLiquidatorSet(_liquidator, _isWhitelisted);
+    }
+
+    function isWhitelistedLiquidator(address _liquidator) public view returns (bool) {
+        return _getUint256FromMap(_WHITELISTED_LIQUIDATOR_SLOT, _liquidator) == 1;
     }
 
     function liquidate(
@@ -75,23 +95,29 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         uint256[] memory _owedMarkets,
         uint256[] memory _owedAmountsToLiquidate
     ) external {
+        if (isWhitelistedLiquidator(msg.sender)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isWhitelistedLiquidator(msg.sender),
+            _FILE,
+            "Msg.sender is not whitelisted"
+        );
         if (msg.sender == _solidAccount.owner || DOLOMITE_MARGIN().getIsLocalOperator(_solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == _solidAccount.owner || DOLOMITE_MARGIN().getIsLocalOperator(_solidAccount.owner, msg.sender),
             _FILE,
             "Invalid solid account"
         );
-        if (_owedMarkets.length == _heldMarkets.length) { /* FOR COVERAGE TESTING */ }
+        if (_owedMarkets.length == _heldMarkets.length && _heldMarkets.length == _owedAmountsToLiquidate.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _owedMarkets.length == _heldMarkets.length,
+            _owedMarkets.length == _heldMarkets.length
+                && _heldMarkets.length == _owedAmountsToLiquidate.length,
             _FILE,
             "Invalid market arrays"
         );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(_solidAccount, _liquidAccount);
-        bool isPartial = _eligibleForPartialLiquidation(_liquidAccount);
-
         for (uint256 i; i < _heldMarkets.length; ++i) {
+
             uint256 heldMarket = _heldMarkets[i];
             uint256 owedMarket = _owedMarkets[i];
             IDolomiteStructs.Wei memory owedWei = DOLOMITE_MARGIN().getAccountWei(_liquidAccount, owedMarket);
@@ -116,12 +142,14 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
                 "Invalid market balances"
             );
 
-            _owedAmountsToLiquidate[i] = Math.min(
-                _owedAmountsToLiquidate[i],
-                isPartial ? owedWei.value / 2 : owedWei.value
+            IDolomiteStructs.ActionArgs[] memory actions = _getActions(
+                _liquidAccount,
+                heldMarket,
+                owedMarket,
+                heldWei.value,
+                owedWei.value,
+                _owedAmountsToLiquidate[i]
             );
-            IDolomiteStructs.ActionArgs[] memory actions = _getActions(heldMarket, owedMarket, _owedAmountsToLiquidate[i]);
-
             DOLOMITE_MARGIN().operate(accounts, actions);
         }
     }
@@ -148,9 +176,95 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
 
-        // @todo come back to fix this
-        uint256 partialLiquidationThreshold = .95 ether;
-        return partialLiquidationThreshold != 0 && healthFactor >= partialLiquidationThreshold;
+        IDolomiteStructs.Decimal memory partialLiquidationThreshold = DOLOMITE_REGISTRY.partialLiquidationThreshold();
+        return partialLiquidationThreshold.value != 0 && healthFactor >= partialLiquidationThreshold.value;
+    }
+
+    function _getAccounts(
+        IDolomiteStructs.AccountInfo memory _solidAccount,
+        IDolomiteStructs.AccountInfo memory _liquidAccount
+    ) internal view returns (IDolomiteStructs.AccountInfo[] memory) {
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
+
+        accounts[_SOLID_ACCOUNT_ID] = _solidAccount;
+        accounts[_LIQUID_ACCOUNT_ID] = _liquidAccount;
+        accounts[_DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: DOLOMITE_REGISTRY.feeAgent(),
+            number: 0
+        });
+
+        return accounts;
+    }
+
+    function _getActions(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _heldMarketId,
+        uint256 _owedMarketId,
+        uint256 _heldWei,
+        uint256 _owedWei,
+        uint256 _owedWeiToLiquidate
+    ) internal view returns (IDolomiteStructs.ActionArgs[] memory) {
+        IDolomiteStructs.Decimal memory dolomiteRake = DOLOMITE_REGISTRY.dolomiteRake();
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](dolomiteRake.value > 0 ? 2 : 1);
+
+        if (_eligibleForPartialLiquidation(_liquidAccount)) {
+            _owedWei /= 2;
+        }
+
+        uint256 solidHeldUpdateWithReward;
+        uint256 heldWeiWithoutReward;
+        {
+            IDolomiteStructs.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+                CHAIN_ID,
+                _liquidAccount,
+                _heldMarketId,
+                _owedMarketId
+            );
+            uint256 owedPrice = DOLOMITE_MARGIN().getMarketPrice(_owedMarketId).value;
+            uint256 heldPrice = DOLOMITE_MARGIN().getMarketPrice(_heldMarketId).value;
+            uint256 owedPriceAdj = owedPrice.mul(spread.onePlus());
+
+            uint256 liquidHeldValue = heldPrice * _heldWei;
+            uint256 liquidOwedValue = owedPriceAdj * _owedWei;
+
+            if (liquidHeldValue < liquidOwedValue) {
+                solidHeldUpdateWithReward = _heldWei;
+                uint256 maxOwedWeiToLiquidate = DolomiteMarginMath.getPartialRoundUp(
+                    _heldWei,
+                    heldPrice,
+                    owedPriceAdj
+                );
+                _owedWeiToLiquidate = Math.min(_owedWeiToLiquidate, maxOwedWeiToLiquidate);
+            } else {
+                _owedWeiToLiquidate = Math.min(_owedWeiToLiquidate, _owedWei);
+                solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(
+                    _owedWeiToLiquidate,
+                    owedPriceAdj,
+                    heldPrice
+                );
+            }
+            heldWeiWithoutReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPrice, heldPrice);
+        }
+
+        actions[0] = AccountActionLib.encodeLiquidateAction(
+            _SOLID_ACCOUNT_ID,
+            _LIQUID_ACCOUNT_ID,
+            _owedMarketId,
+            _heldMarketId,
+            _owedWeiToLiquidate
+        );
+
+        if (dolomiteRake.value > 0) {
+            actions[1] = AccountActionLib.encodeTransferAction(
+                _SOLID_ACCOUNT_ID,
+                _DOLOMITE_RAKE_ACCOUNT_ID,
+                _heldMarketId,
+                IDolomiteStructs.AssetDenomination.Wei,
+                (solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake)
+            );
+        }
+
+        return actions;
     }
 
     function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
@@ -174,58 +288,6 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
     }
 
-    function _getAccounts(
-        IDolomiteStructs.AccountInfo memory _solidAccount,
-        IDolomiteStructs.AccountInfo memory _liquidAccount
-    ) internal view returns (IDolomiteStructs.AccountInfo[] memory) {
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
-        accounts[_SOLID_ACCOUNT_ID] = _solidAccount;
-        accounts[_LIQUID_ACCOUNT_ID] = _liquidAccount;
-        accounts[_DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: DOLOMITE_REGISTRY.feeAgent(),
-            number: 0
-        });
-
-        return accounts;
-    }
-
-    function _getActions(
-        uint256 _heldMarketId,
-        uint256 _owedMarketId,
-        uint256 _owedWeiToLiquidate
-    ) internal view returns (IDolomiteStructs.ActionArgs[] memory) {
-        bool includeDolomiteRake = DOLOMITE_RAKE_VALUE != 0;
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](includeDolomiteRake ? 2 : 1);
-        actions[0] = AccountActionLib.encodeLiquidateAction(
-            _SOLID_ACCOUNT_ID,
-            _LIQUID_ACCOUNT_ID,
-            _owedMarketId,
-            _heldMarketId,
-            _owedWeiToLiquidate
-        );
-
-        if (includeDolomiteRake) {
-            uint256 owedPrice = DOLOMITE_MARGIN().getMarketPrice(_owedMarketId).value;
-            uint256 heldPrice = DOLOMITE_MARGIN().getMarketPrice(_heldMarketId).value;
-            IDolomiteStructs.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(_heldMarketId, _owedMarketId);
-            uint256 owedPriceAdj = owedPrice.mul(spread.onePlus());
-            uint256 heldWeiWithoutReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPrice, heldPrice);
-            uint256 solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(_owedWeiToLiquidate, owedPriceAdj, heldPrice);
-            uint256 dolomiteRakeAmount = (solidHeldUpdateWithReward - heldWeiWithoutReward).mul(
-                IDolomiteStructs.Decimal({ value: DOLOMITE_RAKE_VALUE })
-            );
-            actions[1] = AccountActionLib.encodeTransferAction(
-                _SOLID_ACCOUNT_ID,
-                _DOLOMITE_RAKE_ACCOUNT_ID,
-                _heldMarketId,
-                IDolomiteStructs.AssetDenomination.Wei,
-                dolomiteRakeAmount
-            );
-        }
-
-        return actions;
-    }
-
     function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
         if (bytes(_start).length > bytes(_str).length) {
             return false;
@@ -238,5 +300,4 @@ contract LiquidatorProxyV1 is HasLiquidatorRegistry, OnlyDolomiteMargin {
         }
         return hash == keccak256(bytes(_start));
     }
-
 }
