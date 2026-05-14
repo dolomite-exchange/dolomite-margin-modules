@@ -38,7 +38,7 @@ Acknowledged. We cannot change this on V1 but will fix on V2
 
 ## [M] ChainlinkPriceOracleV1 uses a single global stalenessThreshold for every feed, masking stale prices on faster-heartbeat feeds
 
-TODO
+Acknowledged
 
 ## [M] callInternalBalanceChangeIfNecessary is only invoked from Transfer, Trade, and Liquidate/Vaporize — Deposit, Withdraw, Buy, and Sell skip the callback, letting an operator mutate a contract-owned account’s balance without notifying it
 
@@ -70,7 +70,7 @@ This is intentional so we can set accurate LTVs for e-mode categories.
 
 ## [L] Partial liquidation can leave dust below minBorrowedValue, locking the owner out of all primary operations
 
-TODO
+Acknowledged
 
 ## [L] Borrow-position transfers strip expiry metadata and defeat forced maturities
 
