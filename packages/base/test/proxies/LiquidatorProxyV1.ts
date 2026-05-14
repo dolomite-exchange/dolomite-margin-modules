@@ -563,6 +563,31 @@ describe('LiquidatorProxyV1', () => {
       );
     });
 
+    it('should fail if account is collateralized', async () => {
+      await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
+      await core.borrowPositionProxyV2
+        .connect(core.hhUser1)
+        .transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.weth,
+          parseEther('1'),
+          BalanceCheckFlag.None,
+        );
+
+      await expectThrow(
+        liquidatorProxy.connect(core.hhUser2).liquidate(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          { owner: core.hhUser1.address, number: borrowAccountNumber },
+          [core.marketIds.dai],
+          [core.marketIds.weth],
+          [MAX_UINT_256_BI]
+        ),
+        'LiquidatorProxyV1: Account is collateralized'
+      );
+    });
+
     it('should fail if attempting to partially liquidate when not whitelisted', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);

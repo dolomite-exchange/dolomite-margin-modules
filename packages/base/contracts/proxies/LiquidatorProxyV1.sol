@@ -275,6 +275,11 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
 
         uint256 collateralRatio = supplyValue.value * _ONE / borrowValue.value;
         uint256 healthFactor = collateralRatio.div(marginRatioOverride);
+        Require.that(
+            healthFactor < _ONE,
+            _FILE,
+            "Account is collateralized"
+        );
 
         IDolomiteStructs.Decimal memory partialLiquidationThreshold = DOLOMITE_REGISTRY.partialLiquidationThreshold();
         return partialLiquidationThreshold.value != 0 && healthFactor >= partialLiquidationThreshold.value;
