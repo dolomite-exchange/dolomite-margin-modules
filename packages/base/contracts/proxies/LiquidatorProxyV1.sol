@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
@@ -34,7 +35,7 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { ILiquidatorProxyV1 } from "./interfaces/ILiquidatorProxyV1.sol";
 
 
 /**
@@ -43,13 +44,11 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
  *
  * Contract for liquidating accounts in DolomiteMargin.
  */
-contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyDolomiteMargin, ReentrancyGuardUpgradeable {
+contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyDolomiteMargin, ReentrancyGuardUpgradeable, ILiquidatorProxyV1 {
     using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using DecimalLib for IDolomiteStructs.Decimal;
     using DecimalLib for uint256;
     using TypesLib for IDolomiteStructs.Wei;
-
-    event WhitelistedLiquidatorSet(address indexed liquidator, bool isWhitelisted);
 
     bytes32 private constant _FILE = "LiquidatorProxyV1";
 
@@ -65,6 +64,10 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
     uint256 public immutable CHAIN_ID;
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
 
+    // ================================================
+    // =================== Constructor ================
+    // ================================================
+
     constructor(
         uint256 _chainId,
         address _liquidatorAssetRegistry,
@@ -75,6 +78,10 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
+    // ================================================
+    // =================== Admin Functions ============
+    // ================================================
+
     function ownerSetWhitelistedLiquidator(
         address _liquidator,
         bool _isWhitelisted
@@ -83,9 +90,9 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
         emit WhitelistedLiquidatorSet(_liquidator, _isWhitelisted);
     }
 
-    function isWhitelistedLiquidator(address _liquidator) public view returns (bool) {
-        return _getUint256FromMap(_WHITELISTED_LIQUIDATOR_SLOT, _liquidator) == 1;
-    }
+    // ================================================
+    // =============== Public Functions ===============
+    // ================================================
 
     function liquidate(
         IDolomiteStructs.AccountInfo memory _solidAccount,
@@ -112,8 +119,8 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
         );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(_solidAccount, _liquidAccount);
-        for (uint256 i; i < _heldMarkets.length; ++i) {
 
+        for (uint256 i; i < _heldMarkets.length; ++i) {
             uint256 heldMarket = _heldMarkets[i];
             uint256 owedMarket = _owedMarkets[i];
             IDolomiteStructs.Wei memory owedWei = DOLOMITE_MARGIN().getAccountWei(_liquidAccount, owedMarket);
@@ -146,6 +153,18 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
             DOLOMITE_MARGIN().operate(accounts, actions);
         }
     }
+
+    // ================================================
+    // =============== View Functions =================
+    // ================================================
+
+    function isWhitelistedLiquidator(address _liquidator) public view returns (bool) {
+        return _getUint256FromMap(_WHITELISTED_LIQUIDATOR_SLOT, _liquidator) == 1;
+    }
+
+    // ================================================
+    // ============= Internal Functions ===============
+    // ================================================
 
     function _getAccounts(
         IDolomiteStructs.AccountInfo memory _solidAccount,
@@ -193,9 +212,9 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
             uint256 owedPriceAdj = owedPrice.mul(spread.onePlus());
 
             uint256 liquidHeldValue = heldPrice * _heldWei;
-            uint256 liquidOwedValue = owedPriceAdj * _owedWei;
+            uint256 liquidOwedValueAdj = owedPriceAdj * _owedWei;
 
-            if (liquidHeldValue < liquidOwedValue) {
+            if (liquidHeldValue < liquidOwedValueAdj) {
                 solidHeldUpdateWithReward = _heldWei;
                 uint256 maxOwedWeiToLiquidate = DolomiteMarginMath.getPartialRoundUp(
                     _heldWei,

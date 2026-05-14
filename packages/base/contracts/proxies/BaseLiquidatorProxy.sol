@@ -22,13 +22,13 @@ pragma solidity ^0.8.9;
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
 import { ChainIdHelper } from "../helpers/ChainIdHelper.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
