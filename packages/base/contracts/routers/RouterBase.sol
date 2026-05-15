@@ -96,6 +96,12 @@ abstract contract RouterBase is
         address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
         address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(marketToken);
 
+        Require.that(
+            transferToken == address(0),
+            _FILE,
+            "transferToken is deprecated"
+        );
+
         if (_isIsolationModeAsset(marketToken)) {
             address token = IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN();
             return MarketInfo({

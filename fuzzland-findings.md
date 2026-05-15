@@ -22,7 +22,7 @@ Acknowledged. We cannot change this on V1 as it is immutable, but we will fix on
 
 ## [M] Expiry liquidations bypass the oracle-sentinel liquidation freeze
 
-TODO
+Acknowledged.
 
 ## [M] Vaporize bypasses the oracle-sentinel liquidation freeze
 
@@ -46,11 +46,11 @@ Acknowledged. We are looking to deprecate the callback
 
 ## [L] Sticky Liquid status permits continued liquidation after full price recovery
 
-Acknowledged. We cannot change this on V1 but will fix on V2
+Acknowledged/Disputed. Liquidations can only be performed by global operators. All liquidation global operators check the collateralization of the liquid account. But we will update this for V2 to be in the core code.
 
 ## [L] DepositWithdrawalRouter is incompatible with transfer-token override markets
 
-TODO
+Resolved. This feature was never actually used and we will fully deprecate.
 
 ## [L] Smart contract wallet callbacks add bounded gas griefing vector to liquidation
 
@@ -62,11 +62,11 @@ Acknowledged
 
 ## [L] Isolation-mode other-token withdrawals ignore the documented withdraw-all sentinel
 
-TODO
+Resolved
 
 ## [L] E-mode risk overrides bypass per-market margin premiums, enabling over-leverage on volatile assets
 
-This is intentional so we can set accurate LTVs for e-mode categories.
+Acknowledged. This is intentional so we can set accurate LTVs for e-mode categories.
 
 ## [L] Partial liquidation can leave dust below minBorrowedValue, locking the owner out of all primary operations
 
