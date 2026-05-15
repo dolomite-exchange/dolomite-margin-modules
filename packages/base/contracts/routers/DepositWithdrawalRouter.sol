@@ -436,8 +436,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
+                ref: _amountWei == type(uint256).max ? IDolomiteStructs.AssetReference.Target : IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei == type(uint256).max ? 0 : _amountWei
             }),
             _balanceCheckFlag
         );

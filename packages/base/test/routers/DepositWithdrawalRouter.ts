@@ -636,6 +636,27 @@ describe('DepositWithdrawalRouter', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
+    it('should withdraw all for isolation mode vault and normal asset', async () => {
+      await setupDAIBalance(core, core.hhUser1, amountWei, router);
+      await router.depositWei(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        EventFlag.None,
+      );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, amountWei);
+
+      await expect(() => router.withdrawWei(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        MAX_UINT_256_BI,
+        BalanceCheckFlag.Both,
+      )).to.changeTokenBalance(core.tokens.dai, core.hhUser1, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+    });
+
     it('should work normally for isolation mode vault and payable token', async () => {
       await setupWETHBalance(core, core.hhUser1, amountWei, router);
       await router.depositWei(
@@ -728,8 +749,7 @@ describe('DepositWithdrawalRouter', () => {
           isolationModeMarketId,
           amountWei,
           BalanceCheckFlag.None,
-        ),
-        'Token: transfer failed'
+        )
       );
     });
 

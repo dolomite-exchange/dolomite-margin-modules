@@ -121,18 +121,15 @@ describe('RouterBase', () => {
       expect(marketInfo.factory).to.equal(factory.address);
     });
 
-    it('should work normally for isolation mode asset with transfer token', async () => {
+    it('should fail if transfer token is not address zero', async () => {
       await core.dolomiteAccountRegistry.connect(core.governance).ownerSetTransferTokenOverride(
         factory.address,
         core.tokens.weth.address
       );
-      const marketInfo = await router.getMarketInfo(isolationModeMarketId);
-      expect(marketInfo.marketId).to.equal(isolationModeMarketId);
-      expect(marketInfo.isIsolationModeAsset).to.be.true;
-      expect(marketInfo.marketToken).to.equal(factory.address);
-      expect(marketInfo.token).to.equal(underlyingToken.address);
-      expect(marketInfo.transferToken).to.equal(core.tokens.weth.address);
-      expect(marketInfo.factory).to.equal(factory.address);
+      await expectThrow(
+        router.getMarketInfo(isolationModeMarketId),
+        'RouterBase: transferToken is deprecated'
+      );
     });
 
     it('should revert if invalid marketId', async () => {
