@@ -14,7 +14,7 @@ Resolved. We removed the transfer borrrow position function. Also, the redemptio
 
 ## [M] Arbitrum liquidator wrapper discards available account-level risk overrides
 
-Disputed. I think there is a misunderstanding. Those functions do not exist on the Arbitrum implementation.
+Disputed. I think there is a misunderstanding, those functions do not exist on the Arbitrum implementation.
 
 ## [M] Debt migration bypasses the oracle-sentinel borrow freeze
 
@@ -46,7 +46,7 @@ Acknowledged. We are looking to deprecate the callback
 
 ## [L] Sticky Liquid status permits continued liquidation after full price recovery
 
-Acknowledged/Disputed. Liquidations can only be performed by global operators. All liquidation global operators check the collateralization of the liquid account. But we will update this for V2 to be in the core code.
+Acknowledged/Disputed. Liquidations can only be performed by global operators. All liquidation global operators check the collateralization of the liquid account, but we will update this for V2 to be in the core code.
 
 ## [L] DepositWithdrawalRouter is incompatible with transfer-token override markets
 
