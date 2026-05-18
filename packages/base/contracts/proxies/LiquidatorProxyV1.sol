@@ -20,9 +20,9 @@
 pragma solidity ^0.8.9;
 
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
+import { IsIsolationModeMarket } from "../helpers/IsIsolationModeMarket.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -32,7 +32,6 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV1 } from "./interfaces/ILiquidatorProxyV1.sol";
@@ -44,7 +43,7 @@ import { ILiquidatorProxyV1 } from "./interfaces/ILiquidatorProxyV1.sol";
  *
  * Contract for liquidating accounts in DolomiteMargin.
  */
-contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyDolomiteMargin, ReentrancyGuardUpgradeable, ILiquidatorProxyV1 {
+contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyDolomiteMargin, ReentrancyGuardUpgradeable, IsIsolationModeMarket, ILiquidatorProxyV1 {
     using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using DecimalLib for IDolomiteStructs.Decimal;
     using DecimalLib for uint256;
@@ -57,8 +56,6 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
     uint256 private constant _DOLOMITE_RAKE_ACCOUNT_ID = 2;
     uint256 private constant _ONE = 1 ether;
 
-    bytes32 internal constant DOLOMITE_FS_GLP_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
-    string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
     bytes32 private constant _WHITELISTED_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelistedLiquidator")) - 1); // solhint-disable-line max-line-length
 
     uint256 public immutable CHAIN_ID;
@@ -73,7 +70,7 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
         address _liquidatorAssetRegistry,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) HasLiquidatorRegistry(_liquidatorAssetRegistry) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) HasLiquidatorRegistry(_liquidatorAssetRegistry) OnlyDolomiteMargin(_dolomiteMargin) IsIsolationModeMarket() {
         CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
@@ -283,39 +280,5 @@ contract LiquidatorProxyV1 is ProxyContractHelpers, HasLiquidatorRegistry, OnlyD
 
         IDolomiteStructs.Decimal memory partialLiquidationThreshold = DOLOMITE_REGISTRY.partialLiquidationThreshold();
         return partialLiquidationThreshold.value != 0 && healthFactor >= partialLiquidationThreshold.value;
-    }
-
-    function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
-        return _isIsolationModeAsset(DOLOMITE_MARGIN().getMarketTokenAddress(_marketId));
-    }
-
-    function _isIsolationModeAsset(address _token) internal view returns (bool) {
-        (bool isSuccess, bytes memory returnData) = ExcessivelySafeCall.safeStaticCall(
-            _token,
-            IERC20Metadata(address(0)).name.selector,
-            bytes("")
-        );
-        if (!isSuccess) {
-            return false;
-        }
-
-        string memory name = abi.decode(returnData, (string));
-        if (keccak256(bytes(name)) == DOLOMITE_FS_GLP_HASH) {
-            return true;
-        }
-        return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
-    }
-
-    function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
-        if (bytes(_start).length > bytes(_str).length) {
-            return false;
-        }
-
-        bytes32 hash;
-        assembly {
-            let size := mload(_start)
-            hash := keccak256(add(_str, 32), size)
-        }
-        return hash == keccak256(bytes(_start));
     }
 }
