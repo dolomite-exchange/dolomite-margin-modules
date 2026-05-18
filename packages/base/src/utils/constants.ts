@@ -1056,9 +1056,13 @@ export const USD0PP_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const USD1_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+export const USD1_MAP: Record<Network.Ethereum | Network.Sepolia, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d',
+    marketId: 1,
+  },
+  [Network.Sepolia]: {
+    address: '0x111111d2bf19e43C34263401e0CAd979eD1cdb61',
     marketId: 1,
   },
 };
