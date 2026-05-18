@@ -250,7 +250,10 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
             IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, marketId);
 
-            uint256 claimedAmountWei = balanceAfter.sub(balanceBefore).value;
+            IDolomiteStructs.Wei memory claimedAmount = balanceAfter.sub(balanceBefore);
+            assert(claimedAmount.isZero() || claimedAmount.isPositive());
+
+            uint256 claimedAmountWei = claimedAmount.value;
             s.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
             emit MarketIdToFeesClaimed(_epoch, marketId, claimedAmountWei);
         }
