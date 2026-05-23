@@ -13,7 +13,7 @@ import getScriptName from '../../utils/get-script-name';
 import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { expect } from 'chai';
 
-const HANDLER_ADDRESS = '0xdf86dfdf493bcd2b838a44726a1e58f66869ccbe';
+const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 const REVENUE_SWEEPER_ADDRESS = '0x59a8FE1333F7fE907639D94C39538608DE33F6c5';
 
 /**
