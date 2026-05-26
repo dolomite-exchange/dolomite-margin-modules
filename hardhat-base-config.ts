@@ -185,7 +185,6 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Mantle, 10),
       url: mantleWeb3Url,
       gas: 25_000_000_000, // 25B gas
-      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.PolygonZkEvm]: {
@@ -199,7 +198,6 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Sepolia, 10),
       url: sepoliaWeb3Url,
       gas: 10_000_000, // 10M gas
-      gasPrice: 500_000_000, // 0.50 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.SuperSeed]: {
