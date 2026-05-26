@@ -3204,7 +3204,7 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       // tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
     [SOLV_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x3401DAF2b1f150Ef0c709Cc0283b5F2e55c3DF29',
+      aggregatorAddress: '0x4E202A7E713d00804F9cE397260362bF5E0EaaA8',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
     [X_SOLV_BTC_MAP[Network.Berachain].address]: {

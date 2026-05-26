@@ -484,7 +484,11 @@ export async function encodeInsertRedstoneOracleV3<T extends DolomiteNetwork>(
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
-  console.log(`\tRedstone price for ${symbol}:`, (await aggregator.latestRoundData()).answer.toString());
+  try {
+    console.log(`\tRedstone price for ${symbol}:`, (await aggregator.latestRoundData()).answer.toString());
+  } catch (e) {
+    return Promise.reject(new Error(`Caught error while retrieving Redstone price for ${symbol}: ${e}`));
+  }
 
   setMostRecentTokenDecimals(tokenDecimals);
   return [
