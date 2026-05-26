@@ -4172,6 +4172,34 @@
       "isVerified": true
     }
   },
+  "FeeRebateClaimerImplementationV1": {
+    "80094": {
+      "address": "0x4383235abD969E7d9c5fC371A13c61c8F306995E",
+      "transaction": "0x204dd2f48ca5a6402ef4cfb8b71e8a8125f7d9ffedad59c804e8e513a8854c72",
+      "isVerified": true
+    }
+  },
+  "FeeRebateClaimerProxy": {
+    "80094": {
+      "address": "0x6BE1fed8a38B3555A337f58BB9E10FC0465964C0",
+      "transaction": "0x722f1994b40875d42696750103066dc68fa6c61274d129c3cb6c516fc5b59564",
+      "isVerified": true
+    }
+  },
+  "FeeRebateRollingClaimsImplementationV1": {
+    "80094": {
+      "address": "0x5d16401472dA2F40FF661e718b2406de3C4a6c8D",
+      "transaction": "0xb544dcb73b2686285ce0cef1d1b51cf87ac4b593578e05698cf6bef0a28d1047",
+      "isVerified": true
+    }
+  },
+  "FeeRebateRollingClaimsProxy": {
+    "80094": {
+      "address": "0xea9421044430FA791c3Ab16E0B90f142aa6C11ef",
+      "transaction": "0xc7096f2f4e799ff80a25116552932c3baab028cdaec310948e8270bf760ebc43",
+      "isVerified": true
+    }
+  },
   "FinalSettlementViaInternalSwapProxyV1": {
     "42161": {
       "address": "0xAcd89991e6732325c227Da86674bdcC6987a2373",

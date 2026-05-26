@@ -1056,9 +1056,13 @@ export const USD0PP_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const USD1_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+export const USD1_MAP: Record<Network.Ethereum | Network.Sepolia, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d',
+    marketId: 1,
+  },
+  [Network.Sepolia]: {
+    address: '0x111111d2bf19e43C34263401e0CAd979eD1cdb61',
     marketId: 1,
   },
 };
@@ -3200,7 +3204,7 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       // tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
     [SOLV_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x3401DAF2b1f150Ef0c709Cc0283b5F2e55c3DF29',
+      aggregatorAddress: '0x4E202A7E713d00804F9cE397260362bF5E0EaaA8',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
     [X_SOLV_BTC_MAP[Network.Berachain].address]: {

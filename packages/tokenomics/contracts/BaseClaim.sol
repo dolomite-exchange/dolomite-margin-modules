@@ -57,20 +57,17 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
     // ===========================================================
 
     modifier onlyHandler(address _sender) {
-        Require.that(
-            _sender == handler(),
-            _FILE,
-            "Only handler can call"
-        );
+        _requireOnlyHandler(_sender);
+        _;
+    }
+
+    modifier onlyHandlerOrDolomiteMarginOwner(address _sender) {
+        _requireOnlyHandlerOrDolomiteMarginOwner(_sender);
         _;
     }
 
     modifier onlyClaimEnabled() {
-        Require.that(
-            claimEnabled(),
-            _FILE,
-            "Claim is not enabled"
-        );
+        _requireClaimEnabled();
         _;
     }
 
@@ -93,11 +90,11 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
     function ownerSetAddressRemapping(
         address[] memory _users,
         address[] memory _remappedAddresses
-    ) external onlyHandler(msg.sender) {
+    ) external onlyHandlerOrDolomiteMarginOwner(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
     }
 
-    function ownerSetClaimEnabled(bool _enabled) external onlyHandler(msg.sender) {
+    function ownerSetClaimEnabled(bool _enabled) external onlyHandlerOrDolomiteMarginOwner(msg.sender) {
         _ownerSetClaimEnabled(_enabled);
     }
 
@@ -187,5 +184,29 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         assembly {
             baseClaimStorage.slot := slot
         }
+    }
+
+    function _requireClaimEnabled() private view {
+        Require.that(
+            claimEnabled(),
+            _FILE,
+            "Claim is not enabled"
+        );
+    }
+
+    function _requireOnlyHandler(address _sender) private view {
+        Require.that(
+            _sender == handler(),
+            _FILE,
+            "Only handler can call"
+        );
+    }
+
+    function _requireOnlyHandlerOrDolomiteMarginOwner(address _sender) private view {
+        Require.that(
+            _sender == handler() || _sender == DOLOMITE_MARGIN_OWNER(),
+            _FILE,
+            "Only handler or owner can call"
+        );
     }
 }
