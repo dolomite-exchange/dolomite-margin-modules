@@ -1116,8 +1116,8 @@ export const USDC_MAP: Record<DolomiteNetwork, TokenWithMarketId> = {
     marketId: 7,
   },
   [Network.Sepolia]: {
-    address: 'REPLACE',
-    marketId: 1,
+    address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+    marketId: 2,
   },
   [Network.SuperSeed]: {
     address: 'REPLACE',

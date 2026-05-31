@@ -1,4 +1,4 @@
-import { parseEther } from 'ethers/lib/utils';
+import { parseUnits } from 'ethers/lib/utils';
 import {
   LowerPercentage,
   OptimalUtilizationRate,
@@ -10,17 +10,18 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { parseUsdc } from '../../../../../../base/src/utils/math-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import { encodeSetModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import { encodeInsertOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
+import { checkMarket, printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Lists USD1
+ * - Lists USDC
  */
 async function main(): Promise<DryRunOutput<Network.Sepolia>> {
   const network = await getAndCheckSpecificNetwork(Network.Sepolia);
@@ -32,27 +33,27 @@ async function main(): Promise<DryRunOutput<Network.Sepolia>> {
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'constantPriceOracle', 'ownerSetTokenPrice', [
-      core.tokens.usd1.address,
-      parseEther(`${1.0}`),
+      core.tokens.usdc.address,
+      parseUnits(`${1.0}`, 30),
     ]),
-    ...(await encodeInsertOracle(core, core.tokens.usd1, core.constantPriceOracle, undefined)),
+    ...(await encodeInsertOracle(core, core.tokens.usdc, core.constantPriceOracle, undefined)),
     await encodeSetModularInterestSetterParams(
       core,
-      core.tokens.usd1,
+      core.tokens.usdc,
       LowerPercentage._6,
       UpperPercentage._30,
       OptimalUtilizationRate._90,
     ),
     ...(await encodeAddMarket(
       core,
-      core.marketIds.usd1,
-      core.tokens.usd1,
+      core.marketIds.usdc,
+      core.tokens.usdc,
       core.oracleAggregatorV2,
       core.interestSetters.modularInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
-      parseEther(`${1_000_000}`),
-      parseEther(`${100_000}`),
+      parseUsdc(`${1_000_000}`),
+      parseUsdc(`${100_000}`),
       false,
     )),
   );
@@ -69,7 +70,8 @@ async function main(): Promise<DryRunOutput<Network.Sepolia>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await printPriceForVisualCheck(core, core.tokens.usd1);
+      await checkMarket(core, core.marketIds.usdc, core.tokens.usdc);
+      await printPriceForVisualCheck(core, core.tokens.usdc);
     },
   };
 }

@@ -20,7 +20,7 @@ import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Lists WETH
+ * - Lists USD1
  */
 async function main(): Promise<DryRunOutput<Network.Sepolia>> {
   const network = await getAndCheckSpecificNetwork(Network.Sepolia);
