@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
+
 
 /**
  * @title   IAdminClaimExcessTokens
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for the AdminClaimExcessTokens contract
  */
-interface IAdminClaimExcessTokens {
+interface IAdminClaimExcessTokens is IAdminRegistryHelper {
 
     // ========================================================
     // ==================== Admin Functions ===================

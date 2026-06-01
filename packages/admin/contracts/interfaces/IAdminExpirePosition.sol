@@ -20,16 +20,29 @@
 
 pragma solidity ^0.8.9;
 
-import { IAdminRegistry } from "./IAdminRegistry.sol";
+import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   IAdminRegistryHelper
+ * @title   IAdminExpirePosition
  * @author  Dolomite
  *
- * @notice  Interface for the AdminRegistryHelper contract
+ * @notice  Interface for the AdminExpirePosition contract
  */
-interface IAdminRegistryHelper {
+interface IAdminExpirePosition is IAdminRegistryHelper {
 
-    function ADMIN_REGISTRY() external view returns (IAdminRegistry);
+    struct ExpirePositionParams {
+        IDolomiteStructs.AccountInfo account;
+        uint256[] owedMarkets;
+        uint256 expirationTimestamp;
+    }
+
+    // ========================================================
+    // ==================== Admin Functions ===================
+    // ========================================================
+
+    function expirePositions(
+        ExpirePositionParams[] memory positions
+    ) external;
 }
