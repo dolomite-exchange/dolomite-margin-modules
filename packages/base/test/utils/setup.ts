@@ -31,6 +31,7 @@ import {
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
   IAdminClaimExcessTokens__factory,
+  IAdminExpirePosition__factory,
   IAdminPauseMarket__factory,
   IAdminRegistry__factory,
 } from 'packages/admin/src/types';
@@ -998,6 +999,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     governance,
   );
 
+  const adminExpirePosition = IAdminExpirePosition__factory.connect(
+    ModuleDeployments.AdminExpirePositionV1[config.network].address,
+    governance,
+  );
+
   const adminPauseMarket = IAdminPauseMarket__factory.connect(
     ModuleDeployments.AdminPauseMarketV2[config.network].address,
     governance,
@@ -1173,6 +1179,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     adminClaimExcessTokens,
+    adminExpirePosition,
     adminPauseMarket,
     adminRegistry,
     borrowPositionProxyV2,

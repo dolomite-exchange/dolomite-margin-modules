@@ -1,6 +1,13 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
-import { DolomiteOwnerV1, DolomiteOwnerV2, IAdminClaimExcessTokens, IAdminPauseMarket, IAdminRegistry } from 'packages/admin/src/types';
+import {
+  DolomiteOwnerV1,
+  DolomiteOwnerV2,
+  IAdminClaimExcessTokens,
+  IAdminExpirePosition,
+  IAdminPauseMarket,
+  IAdminRegistry,
+} from 'packages/admin/src/types';
 import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   ConstantPriceOracle,
@@ -56,50 +63,50 @@ export interface ImplementationContracts {
 export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-    ? IWETH
-    : T extends Network.Berachain
-      ? IERC20
-      : T extends Network.Botanix
-        ? IERC20
-        : T extends Network.Ethereum
-          ? IWETH
-          : T extends Network.Ink
-            ? IWETH
-            : T extends Network.Mantle
-              ? IERC20
-              : T extends Network.PolygonZkEvm
-                ? IWETH
-                : T extends Network.Sepolia
-                  ? IWETH
-                  : T extends Network.SuperSeed
-                    ? IWETH
-                    : T extends Network.XLayer
-                      ? IERC20
-                      : never;
+  ? IWETH
+  : T extends Network.Berachain
+  ? IERC20
+  : T extends Network.Botanix
+  ? IERC20
+  : T extends Network.Ethereum
+  ? IWETH
+  : T extends Network.Ink
+  ? IWETH
+  : T extends Network.Mantle
+  ? IERC20
+  : T extends Network.PolygonZkEvm
+  ? IWETH
+  : T extends Network.Sepolia
+  ? IWETH
+  : T extends Network.SuperSeed
+  ? IWETH
+  : T extends Network.XLayer
+  ? IERC20
+  : never;
 
 export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-    ? DolomiteERC4626WithPayable
-    : T extends Network.Berachain
-      ? DolomiteERC4626
-      : T extends Network.Botanix
-        ? DolomiteERC4626
-        : T extends Network.Ethereum
-          ? DolomiteERC4626WithPayable
-          : T extends Network.Ink
-            ? DolomiteERC4626WithPayable
-            : T extends Network.Mantle
-              ? DolomiteERC4626
-              : T extends Network.PolygonZkEvm
-                ? DolomiteERC4626WithPayable
-                : T extends Network.Sepolia
-                  ? DolomiteERC4626WithPayable
-                  : T extends Network.SuperSeed
-                    ? DolomiteERC4626WithPayable
-                    : T extends Network.XLayer
-                      ? DolomiteERC4626
-                      : never;
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.Botanix
+  ? DolomiteERC4626
+  : T extends Network.Ethereum
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Sepolia
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
+  : never;
 
 export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;
@@ -135,6 +142,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   hhUser4: SignerWithAddressWithSafety;
   hhUser5: SignerWithAddressWithSafety;
   adminClaimExcessTokens: IAdminClaimExcessTokens;
+  adminExpirePosition: IAdminExpirePosition;
   adminPauseMarket: IAdminPauseMarket;
   adminRegistry: IAdminRegistry;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
@@ -210,6 +218,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// Contracts and Ecosystems
   /// =========================
   public readonly adminClaimExcessTokens: IAdminClaimExcessTokens;
+  public readonly adminExpirePosition: IAdminExpirePosition;
   public readonly adminPauseMarket: IAdminPauseMarket;
   public readonly adminRegistry: IAdminRegistry;
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
@@ -281,6 +290,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
     this.adminClaimExcessTokens = params.adminClaimExcessTokens;
+    this.adminExpirePosition = params.adminExpirePosition;
     this.adminPauseMarket = params.adminPauseMarket;
     this.adminRegistry = params.adminRegistry;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;

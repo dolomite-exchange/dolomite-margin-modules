@@ -1,18 +1,15 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import {
-  createContractWithAbi,
-  depositIntoDolomiteMargin,
-} from 'packages/base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { parseEther } from 'ethers/lib/utils';
 import { AccountInfoStruct } from 'packages/base/src/utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from 'packages/base/test/utils/setup';
-import { AdminExpirePosition, AdminExpirePosition__factory, AdminRegistry } from '../src/types';
-import { parseEther } from 'ethers/lib/utils';
+import { AdminExpirePosition, AdminExpirePosition__factory } from '../src/types';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
@@ -46,54 +43,76 @@ describe('AdminExpirePosition', () => {
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(adminExpirePosition.address, true);
 
-    await core.adminRegistry.connect(core.governance).grantPermission(
-      adminExpirePosition.interface.getSighash('expirePositions'),
-      adminExpirePosition.address,
-      core.gnosisSafe.address,
-    );
+    await core.adminRegistry
+      .connect(core.governance)
+      .grantPermission(
+        adminExpirePosition.interface.getSighash('expirePositions'),
+        adminExpirePosition.address,
+        core.gnosisSafe.address,
+      );
 
     await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
-    await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
-      borrowAccountNumber,
-      defaultAccountNumber,
-      core.marketIds.usdc,
-      usdcAmount,
-      BalanceCheckFlag.None
-    );
-    await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
-      borrowAccountNumber,
-      defaultAccountNumber,
-      core.marketIds.dai,
-      daiAmount,
-      BalanceCheckFlag.None
-    );
+    await core.borrowPositionProxyV2
+      .connect(core.hhUser1)
+      .transferBetweenAccounts(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+    await core.borrowPositionProxyV2
+      .connect(core.hhUser1)
+      .transferBetweenAccounts(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        daiAmount,
+        BalanceCheckFlag.None,
+      );
 
     await setupWETHBalance(core, core.hhUser2, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser2, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
-    await core.borrowPositionProxyV2.connect(core.hhUser2).transferBetweenAccounts(
-      borrowAccountNumber,
-      defaultAccountNumber,
-      core.marketIds.usdc,
-      usdcAmount,
-      BalanceCheckFlag.None
-    );
-    await core.borrowPositionProxyV2.connect(core.hhUser2).transferBetweenAccounts(
-      borrowAccountNumber,
-      defaultAccountNumber,
-      core.marketIds.dai,
-      daiAmount,
-      BalanceCheckFlag.None
-    );
+    await core.borrowPositionProxyV2
+      .connect(core.hhUser2)
+      .transferBetweenAccounts(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+    await core.borrowPositionProxyV2
+      .connect(core.hhUser2)
+      .transferBetweenAccounts(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        daiAmount,
+        BalanceCheckFlag.None,
+      );
 
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
     await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.usdc, ZERO_BI.sub(usdcAmount));
-    await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(daiAmount).add(ONE_BI));
+    await expectProtocolBalance(
+      core,
+      core.hhUser1,
+      borrowAccountNumber,
+      core.marketIds.dai,
+      ZERO_BI.sub(daiAmount).add(ONE_BI),
+    );
     await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
     await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.usdc, ZERO_BI.sub(usdcAmount));
-    await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(daiAmount).add(ONE_BI));
+    await expectProtocolBalance(
+      core,
+      core.hhUser2,
+      borrowAccountNumber,
+      core.marketIds.dai,
+      ZERO_BI.sub(daiAmount).add(ONE_BI),
+    );
 
     account1 = { owner: core.hhUser1.address, number: borrowAccountNumber };
     account2 = { owner: core.hhUser2.address, number: borrowAccountNumber };
@@ -120,7 +139,7 @@ describe('AdminExpirePosition', () => {
           expirationTimestamp,
           account: account1,
           owedMarkets: [core.marketIds.usdc],
-        }
+        },
       ];
       await adminExpirePosition.connect(core.gnosisSafe).expirePositions(positions);
 
@@ -133,7 +152,7 @@ describe('AdminExpirePosition', () => {
           expirationTimestamp,
           account: account1,
           owedMarkets: [core.marketIds.usdc, core.marketIds.dai],
-        }
+        },
       ];
       await adminExpirePosition.connect(core.gnosisSafe).expirePositions(positions);
 
@@ -152,7 +171,7 @@ describe('AdminExpirePosition', () => {
           expirationTimestamp,
           account: account2,
           owedMarkets: [core.marketIds.usdc],
-        }
+        },
       ];
       await adminExpirePosition.connect(core.gnosisSafe).expirePositions(positions);
 
@@ -171,7 +190,7 @@ describe('AdminExpirePosition', () => {
           expirationTimestamp,
           account: account2,
           owedMarkets: [core.marketIds.usdc, core.marketIds.dai],
-        }
+        },
       ];
       await adminExpirePosition.connect(core.gnosisSafe).expirePositions(positions);
 
@@ -191,7 +210,7 @@ describe('AdminExpirePosition', () => {
       ];
       await expectThrow(
         adminExpirePosition.connect(core.hhUser1).expirePositions(positions),
-        `AdminRegistryHelper: Caller does not have permission <${core.hhUser1.address.toLowerCase()}>`
+        `AdminRegistryHelper: Caller does not have permission <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

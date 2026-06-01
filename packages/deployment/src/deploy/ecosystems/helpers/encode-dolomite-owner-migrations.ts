@@ -1,5 +1,6 @@
 import {
   AdminClaimExcessTokens,
+  AdminExpirePosition,
   AdminPauseMarket,
   AdminRegistry,
   AdminSetInterestSetter,
@@ -13,10 +14,15 @@ import {
   BYPASS_TIMELOCK_ROLE,
   EXECUTOR_ROLE,
 } from '../../../../../base/src/utils/no-deps-constants';
+import { ModuleDeployments } from '../../../utils';
+import { getMaxDeploymentVersionNumberByDeploymentKey } from '../../../utils/deploy-utils';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { setupDolomiteOwnerV2 } from '../../../utils/encoding/dolomite-4626-token-encoder-utils';
-import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import {
+  encodeSetGlobalOperator,
+  encodeSetGlobalOperatorIfNecessary,
+} from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import {
   ALL_FUNCTIONS,
   encodeAddressToFunctionSelectorForRole,
@@ -24,14 +30,13 @@ import {
   encodeGrantRoleIfNecessary,
   encodeRevokeRoleIfNecessary,
 } from '../../../utils/encoding/dolomite-owner-encoder-utils';
-import { getMaxDeploymentVersionNumberByDeploymentKey } from '../../../utils/deploy-utils';
-import { ModuleDeployments } from '../../../utils';
 
 export async function encodeDolomiteOwnerMigrations(
   dolomiteOwner: DolomiteOwnerV2,
   adminRegistry: AdminRegistry,
   adminRegistryImplementationAddress: string,
   adminClaimExcessTokens: AdminClaimExcessTokens,
+  adminExpirePosition: AdminExpirePosition,
   adminPauseMarket: AdminPauseMarket,
   adminSetInterestSetter: AdminSetInterestSetter,
   transactions: EncodedTransaction[],
@@ -58,15 +63,11 @@ export async function encodeDolomiteOwnerMigrations(
     );
   } else {
     const adminRegistryProxy = RegistryProxy__factory.connect(adminRegistry.address, core.hhUser1);
-    if (await adminRegistryProxy.implementation() !== adminRegistryImplementationAddress) {
+    if ((await adminRegistryProxy.implementation()) !== adminRegistryImplementationAddress) {
       transactions.push(
-        await prettyPrintEncodedDataWithTypeSafety(
-          core,
-          { adminRegistryProxy },
-          'adminRegistryProxy',
-          'upgradeTo',
-          [adminRegistryImplementationAddress],
-        ),
+        await prettyPrintEncodedDataWithTypeSafety(core, { adminRegistryProxy }, 'adminRegistryProxy', 'upgradeTo', [
+          adminRegistryImplementationAddress,
+        ]),
       );
     }
 
@@ -86,6 +87,9 @@ export async function encodeDolomiteOwnerMigrations(
       ...(await encodeSetGlobalOperatorIfNecessary(core, adminClaimExcessTokens, true)),
     );
 
+    // Dolomite Owner Roles - AdminExpirePosition
+    transactions.push(await encodeSetGlobalOperator(core, adminExpirePosition, true));
+
     // Dolomite Owner Roles - AdminPauseMarket
     transactions.push(
       ...(await encodeGrantRoleIfNecessary(core, BYPASS_TIMELOCK_ROLE, adminPauseMarket)),
@@ -101,41 +105,39 @@ export async function encodeDolomiteOwnerMigrations(
 
     // Admin Registry functions
     transactions.push(
-      ...(
-        await encodeGrantAdminRegistryPermissionIfNecessary(
-          core,
-          adminRegistry,
-          ALL_FUNCTIONS,
-          adminClaimExcessTokens,
-          core.gnosisSafeAddress,
-        )
-      ),
-      ...(
-        await encodeGrantAdminRegistryPermissionIfNecessary(
-          core,
-          adminRegistry,
-          ALL_FUNCTIONS,
-          adminPauseMarket,
-          core.gnosisSafeAddress,
-        )
-      ),
-      ...(
-        await encodeGrantAdminRegistryPermissionIfNecessary(
-          core,
-          adminRegistry,
-          ALL_FUNCTIONS,
-          adminSetInterestSetter,
-          core.gnosisSafeAddress,
-        )
-      ),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        ALL_FUNCTIONS,
+        adminClaimExcessTokens,
+        core.gnosisSafeAddress,
+      )),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        ALL_FUNCTIONS,
+        adminExpirePosition,
+        core.gnosisSafeAddress,
+      )),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        ALL_FUNCTIONS,
+        adminPauseMarket,
+        core.gnosisSafeAddress,
+      )),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        ALL_FUNCTIONS,
+        adminSetInterestSetter,
+        core.gnosisSafeAddress,
+      )),
     );
   }
 }
 
-export async function encodeDolomiteOwnerRegressions(
-  transactions: EncodedTransaction[],
-  core: any,
-) {
+export async function encodeDolomiteOwnerRegressions(transactions: EncodedTransaction[], core: any) {
   async function revokeContractOwnership(nameWithoutVersionPostfix: string, role: string) {
     const version = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, 1);
     for (let i = 1; i < version; i++) {

@@ -1,17 +1,18 @@
-import axios from 'axios';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import axios from 'axios';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
+import { IExpirePositionProxy } from '../../../../../../base/src/types';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 
-const BORROW_EXPIRATION_TIMESTAMP = 1779321600; // @follow-up @Corey update these to whatever
-const SUPPLY_EXPIRATION_TIMESTAMP = 1779341600;
+const BORROW_EXPIRATION_TIMESTAMP = Math.floor(Date.now() / 1000) + 420;
+const SUPPLY_EXPIRATION_TIMESTAMP = Math.floor(Date.now() / 1000) + 420;
 const SUBGRAPH_URL =
-  'https://api.goldsky.com/api/public/project_clyuw4gvq4d5801tegx0aafpu/subgraphs/dolomite-arbitrum/latest/gn';
+  'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/latest/gn';
 
 /**
  * This script encodes the following transactions:
@@ -26,7 +27,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
 
-  const positions = [];
+  const positions: IExpirePositionProxy.ExpirePositionParamsStruct[] = [];
   const supplyAccounts = await axios
     .post(SUBGRAPH_URL, { query: supplyQuery })
     .then((response) => response.data.data.marginAccounts)
@@ -76,10 +77,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core, // @follow-up Add adminExpirePosition to core protocol abstract
+      { adminExpirePosition: core.adminExpirePosition },
       'adminExpirePosition',
       'expirePositions',
-      positions,
+      [positions],
+      { skipWrappingCalldataInSubmitTransaction: true },
     ),
   );
 
@@ -89,6 +91,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       addExecuteImmediatelyTransactions: true,
       chainId: core.network,
+      logGasUsage: true,
       version: '1.0',
       meta: {
         txBuilderVersion: '1.16.5',
@@ -105,11 +108,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
         for (const token of supplyAccount.tokenValues) {
           if (token.valuePar.startsWith('-')) {
+            const account = { owner: supplyAccount.user.id, number: supplyAccount.accountNumber };
             assertHardhatInvariant(
-              (await core.expiry.getExpiry(
-                { owner: supplyAccount.user.id, number: supplyAccount.accountNumber },
-                token.token.marketId,
-              )) === SUPPLY_EXPIRATION_TIMESTAMP,
+              await core.expiry.getExpiry(account, token.token.marketId) === SUPPLY_EXPIRATION_TIMESTAMP,
               'Invalid supply expiration timestamps',
             );
           }
@@ -117,11 +118,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       }
 
       for (const borrowAccount of borrowAccounts) {
+        const account = { owner: borrowAccount.user.id, number: borrowAccount.accountNumber };
         assertHardhatInvariant(
-          (await core.expiry.getExpiry(
-            { owner: borrowAccount.user.id, number: borrowAccount.accountNumber },
-            core.marketIds.xai,
-          )) === BORROW_EXPIRATION_TIMESTAMP,
+          await core.expiry.getExpiry(account, core.marketIds.xai) === BORROW_EXPIRATION_TIMESTAMP,
           'Invalid borrow expiration timestamps',
         );
       }
