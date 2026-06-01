@@ -51,6 +51,8 @@ interface IFeeRebateClaimer {
     // ==================== Admin Functions =================
     // ======================================================
 
+    function initialize(uint96 _epoch) external;
+
     function ownerSetAdminFeeClaimer(address _adminFeeClaimer) external;
 
     function ownerSetFeeRebateRollingClaims(address _feeRebateRollingClaims) external;

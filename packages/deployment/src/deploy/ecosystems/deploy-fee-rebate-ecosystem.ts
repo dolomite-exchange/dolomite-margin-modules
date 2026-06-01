@@ -13,7 +13,7 @@ import getScriptName from '../../utils/get-script-name';
 import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { expect } from 'chai';
 
-const HANDLER_ADDRESS = '0xdf86dfdf493bcd2b838a44726a1e58f66869ccbe';
+const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 const REVENUE_SWEEPER_ADDRESS = '0x59a8FE1333F7fE907639D94C39538608DE33F6c5';
 
 /**
@@ -29,6 +29,19 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const epoch = Number.parseInt(process.env.EPOCH ?? '', 10);
+  if (Number.isNaN(epoch) || !Number.isInteger(epoch) || epoch >= 0) {
+    throw new Error(`Invalid EPOCH, expected integer >= 0 but found: ${epoch}`);
+  }
+
+  const serverEpoch = await fetch('https://api.dolomite.io/liquidity-mining/ve-dolo-rebate/metadata')
+    .then(response => response.json())
+    .then(json => json['metadata']['currentEpochIndex']);
+
+  if (epoch < serverEpoch) {
+    console.warn('Epoch used is less than current server epoch...');
+  }
+
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
@@ -38,7 +51,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     feeRebateClaimerImplementationAddress,
     core.hhUser1,
   );
-  const feeRebateClaimerInitCalldata = await feeRebateClaimerImplementation.populateTransaction.initialize();
+  const feeRebateClaimerInitCalldata = await feeRebateClaimerImplementation
+    .populateTransaction['initialize(uint96)'](epoch);
   const feeRebateClaimerProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(

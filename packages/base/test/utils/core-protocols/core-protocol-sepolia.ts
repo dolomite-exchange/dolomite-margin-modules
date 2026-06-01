@@ -1,3 +1,5 @@
+import { BigNumberish } from 'ethers';
+import { IERC20 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import {
   CoreProtocolAbstract,
@@ -7,9 +9,11 @@ import {
 } from './core-protocol-abstract';
 
 interface CoreProtocolTokensSepolia extends CoreProtocolTokens<Network.Sepolia> {
+  usd1: IERC20;
 }
 
 interface CoreProtocolMarketIdsSepolia extends CoreProtocolMarketIds {
+  usd1: BigNumberish;
 }
 
 export interface CoreProtocolParamsSepolia {

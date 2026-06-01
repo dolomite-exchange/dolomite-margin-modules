@@ -54,6 +54,13 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     constructor(address _dolomiteRegistry, address _dolomiteMargin) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
     }
 
+    function initialize(uint96 _epoch) public initializer {
+        _getFeeRebateClaimerStorage().epoch = _epoch;
+        emit EpochSet(_epoch);
+
+        super.initialize();
+    }
+
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
@@ -63,8 +70,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function ownerSetFeeRebateRollingClaims(
-        address
-        _feeRebateRollingClaims
+        address _feeRebateRollingClaims
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetFeeRebateRollingClaims(_feeRebateRollingClaims);
     }
@@ -250,7 +256,10 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
             IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, marketId);
 
-            uint256 claimedAmountWei = balanceAfter.sub(balanceBefore).value;
+            IDolomiteStructs.Wei memory claimedAmount = balanceAfter.sub(balanceBefore);
+            assert(claimedAmount.isZero() || claimedAmount.isPositive());
+
+            uint256 claimedAmountWei = claimedAmount.value;
             s.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
             emit MarketIdToFeesClaimed(_epoch, marketId, claimedAmountWei);
         }
