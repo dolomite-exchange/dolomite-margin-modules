@@ -74,6 +74,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     });
   }
 
+  console.log('\tpositions', positions.length);
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -133,7 +134,9 @@ doDryRunAndCheckDeployment(main);
 const supplyQuery = `
   {
     marginAccounts(
-      where: {supplyTokens_: {id: "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66"}}
+      where: {supplyTokens_: {id: "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66"}, hasBorrowValue: true, hasExpiration: false}
+      orderBy: id
+      first: 1000
     ) {
       accountNumber
       id
@@ -154,7 +157,9 @@ const supplyQuery = `
 const borrowQuery = `
   {
     marginAccounts(
-      where: {borrowTokens_: {id: "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66"}}
+      where: {borrowTokens_: {id: "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66"} hasExpiration: false}
+      orderBy: id
+      first: 1000
     ) {
       accountNumber
       id
