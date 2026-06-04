@@ -2,6 +2,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { parseEther } from 'ethers/lib/utils';
 import {
   OptimalUtilizationRate,
   TargetCollateralization,
@@ -9,6 +10,7 @@ import {
   UpperPercentage
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import {
   encodeSetIsCollateralOnly,
   encodeSetLiquidationPenalty,
@@ -31,14 +33,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await encodeSetSupplyCap(core, core.marketIds.radiant, ONE_BI),
-    await encodeSetIsCollateralOnly(core, core.marketIds.radiant, true),
-    await encodeUpdateModularInterestSetterParams(core, core.marketIds.radiant, {
-      upperRate: UpperPercentage._300,
-      optimalUtilizationRate: OptimalUtilizationRate._40,
-    }),
-    await encodeSetMinCollateralization(core, core.marketIds.radiant, TargetCollateralization._133),
-    await encodeSetLiquidationPenalty(core, core.marketIds.radiant, TargetLiquidationPenalty._10),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetEarningsRate',
+      [{ value: parseEther(`${0.8}`) }],
+    ),
   );
 
   return {
