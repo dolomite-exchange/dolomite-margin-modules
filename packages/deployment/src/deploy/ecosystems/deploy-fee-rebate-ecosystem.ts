@@ -14,10 +14,7 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
-import {
-  encodeSetGlobalOperator,
-  encodeSetGlobalOperatorIfNecessary,
-} from '../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetGlobalOperatorIfNecessary } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { expect } from 'chai';
 import { RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 
