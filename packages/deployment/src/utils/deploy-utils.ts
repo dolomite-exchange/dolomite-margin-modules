@@ -141,6 +141,14 @@ export async function getDeployerSigner(): Promise<{ signer: Wallet | SignerWith
   return { wallet, signer: hhUser1 };
 }
 
+async function isVerified(instance: Etherscan, address: string): Promise<boolean> {
+  try {
+    return await instance.isVerified(address);
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function verifyContract(
   address: string,
   constructorArguments: any[],
@@ -157,7 +165,7 @@ export async function verifyContract(
     customChain.urls.browserURL,
     customChain.urls.apiURL === ETHERSCAN_V2_API_URL ? customChain.chainId : undefined,
   );
-  if (customChain.chainId.toString() === Network.PolygonZkEvm || await instance.isVerified(address)) {
+  if (customChain.chainId.toString() === Network.PolygonZkEvm || await isVerified(instance, address)) {
     console.log('\tContract is already verified. Skipping verification...');
     return;
   }

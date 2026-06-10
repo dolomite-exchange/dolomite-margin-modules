@@ -52,6 +52,8 @@ interface IFeeRebateClaimer {
     // ==================== Admin Functions =================
     // ======================================================
 
+    function initialize(uint96 _epoch) external;
+
     function initializeV2(
         uint256[] calldata _epochs,
         uint256[] calldata _timestamps,

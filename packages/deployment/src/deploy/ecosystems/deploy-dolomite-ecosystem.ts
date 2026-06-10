@@ -324,11 +324,12 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
 
   const {
     adminClaimExcessTokens,
+    adminExpirePosition,
     adminSetInterestSetter,
     adminPauseMarket,
     adminRegistry,
     adminRegistryImplementationAddress,
-  } = await deployDolomiteAdminContracts(dolomiteMargin, dolomiteRegistry, modularInterestSetter, hhUser1);
+  } = await deployDolomiteAdminContracts(dolomiteMargin, dolomiteRegistry, expiry, modularInterestSetter, hhUser1);
 
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
@@ -420,6 +421,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     adminRegistry,
     adminRegistryImplementationAddress,
     adminClaimExcessTokens,
+    adminExpirePosition,
     adminPauseMarket,
     adminSetInterestSetter,
     transactions,

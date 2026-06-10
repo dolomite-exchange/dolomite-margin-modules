@@ -54,7 +54,10 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     constructor(address _dolomiteRegistry, address _dolomiteMargin) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
     }
 
-    function initialize() public override {
+    function initialize(uint96 _epoch) public override {
+        _getFeeRebateClaimerStorage().epoch = _epoch;
+        emit EpochSet(_epoch);
+
         super.initialize();
         initializeV2(
             /* _epochs = */ new uint256[](0),
@@ -98,8 +101,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function ownerSetFeeRebateRollingClaims(
-        address
-        _feeRebateRollingClaims
+        address _feeRebateRollingClaims
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetFeeRebateRollingClaims(_feeRebateRollingClaims);
     }

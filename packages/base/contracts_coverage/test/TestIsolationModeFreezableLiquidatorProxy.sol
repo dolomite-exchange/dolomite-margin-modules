@@ -40,7 +40,6 @@ contract TestIsolationModeFreezableLiquidatorProxy is
 
     constructor(
         address _dolomiteRegistry,
-        address _dolomiteAccountRiskOverride,
         address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
@@ -48,7 +47,6 @@ contract TestIsolationModeFreezableLiquidatorProxy is
     )
     IsolationModeFreezableLiquidatorProxy(
         _dolomiteRegistry,
-        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,

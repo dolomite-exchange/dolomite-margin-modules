@@ -37,6 +37,19 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const epoch = Number.parseInt(process.env.EPOCH ?? '', 10);
+  if (Number.isNaN(epoch) || !Number.isInteger(epoch) || epoch >= 0) {
+    throw new Error(`Invalid EPOCH, expected integer >= 0 but found: ${epoch}`);
+  }
+
+  const serverEpoch = await fetch('https://api.dolomite.io/liquidity-mining/ve-dolo-rebate/metadata')
+    .then(response => response.json())
+    .then(json => json['metadata']['currentEpochIndex']);
+
+  if (epoch < serverEpoch) {
+    console.warn('Epoch used is less than current server epoch...');
+  }
+
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
@@ -46,7 +59,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     feeRebateClaimerImplementationAddress,
     core.hhUser1,
   );
-  const feeRebateClaimerInitCalldata = await feeRebateClaimerImplementation.populateTransaction.initialize();
+  const feeRebateClaimerInitCalldata = await feeRebateClaimerImplementation
+    .populateTransaction['initialize(uint96)'](epoch);
   const feeRebateClaimerProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(

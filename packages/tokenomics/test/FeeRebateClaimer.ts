@@ -37,6 +37,7 @@ describe('FeeRebateClaimer', () => {
       FeeRebateClaimer__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
+    await feeRebateClaimer['initialize(uint96)'](0);
 
     const adminRegistry = IAdminRegistry__factory.connect(
       await core.adminClaimExcessTokens.ADMIN_REGISTRY(),

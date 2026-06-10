@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -63,6 +64,7 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
     function _validateMarketIdPath(
         uint256[] memory _marketIdsPath
     ) internal pure {
+        if (_marketIdsPath.length >= 2) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIdsPath.length >= 2,
             _FILE,
@@ -74,11 +76,13 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei
     ) internal pure {
+        if (_inputAmountWei != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmountWei != 0,
             _FILE,
             "Invalid inputAmountWei"
         );
+        if (_minOutputAmountWei != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _minOutputAmountWei != 0,
             _FILE,
@@ -96,7 +100,7 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
             // Panic if we're zapping to an account that has any value in it. Why? Because we don't want execute trades
             // where we sell ALL if there's already value in the account. That would mess up the user's holdings and
             // unintentionally sell assets the user does not want to sell.
-            assert(_cache.dolomiteMargin.getAccountPar(_account, _marketIdsPath[i]).value == 0);
+            /*assert(_cache.dolomiteMargin.getAccountPar(_account, _marketIdsPath[i]).value == 0);*/
         }
     }
 
@@ -138,7 +142,7 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
         uint256 makerAccountsLength = _makerAccounts.length;
         for (uint256 i; i < makerAccountsLength; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[_cache.traderAccountStartIndex + i];
-            assert(account.owner == address(0) && account.number == 0);
+            /*assert(account.owner == address(0) && account.number == 0);*/
 
             _accounts[_cache.traderAccountStartIndex + i] = IDolomiteStructs.AccountInfo({
                 owner: _makerAccounts[i].owner,
@@ -241,7 +245,7 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
                 // the trader is an `IsolationModeWrapper` if the market ID at `i + 1` is in isolation mode. Meaning,
                 // an unwrapper can never appear at the non-zero index because there is an invariant that checks the
                 // `IsolationModeWrapper` is the last index
-                assert(i == 0);
+                /*assert(i == 0);*/
                 IDolomiteStructs.ActionArgs[] memory unwrapActions =
                     IIsolationModeUnwrapperTraderV2(_tradersPath[i].trader).createActionsForUnwrapping(
                         IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams({
@@ -269,7 +273,8 @@ abstract contract GenericTraderProxyBaseForLiquidator is IGenericTraderBase {
                 }
             } else {
                 // Panic if the developer messed up the `else` statement here
-                assert(_isWrapperTraderType(_tradersPath[i].traderType));
+                /*assert(_isWrapperTraderType(_tradersPath[i].traderType));*/
+                if (i == tradersPathLength - 1) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     i == tradersPathLength - 1,
                     _FILE,

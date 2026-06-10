@@ -113,6 +113,58 @@
       "isVerified": true
     }
   },
+  "AdminExpirePositionV1": {
+    "1": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0xe3f0b3715667708a35808e4b9cb75f20212cd863f8df3a5b982782b4ce73621b",
+      "isVerified": true
+    },
+    "56": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0xf55870d9838bfbf88afa604fc03351ab47f8cebd1a74b44a64c0e1bc7030eea5",
+      "isVerified": true
+    },
+    "196": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x5706942938a82f085416fed24510eacf4eb3fdf04ca3aafefa068c19f9df2944",
+      "isVerified": true
+    },
+    "3637": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0xccd357da59eec9cd892b043ce4552edd1870cb2c681024824cda90529076bd8f",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0xd14e9a7301d656b24c7dff8b27c3682f5ba15ea6a0867d4449e9cfc007a296ed",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x2194602809f01ab01c1b98866c2778a5c4975e1b154a757a2c40907bdcdf7d05",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0xcc65b45ceec994720db36b2f55dde07f9426488792d1819374340c38eadf2f25",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x9b70492dfe59f0058a700bd7cf5c77e3212ca033cb2b4d2fff0ae9c98a9b2eb4",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x40d5835f2703e5f3cb3d0b47530608daf5e76ee9e30690ff69a87367845fdd38",
+      "isVerified": true
+    },
+    "11155111": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x084fe2b9463a75e4cc6ff4a3d65f4ac886a4eb89fb7cd97d8b8f9808e1ac28e7",
+      "isVerified": true
+    }
+  },
   "AdminPauseMarketV1": {
     "1": {
       "address": "0x53E18f7483356caC74B1365ebF3F2f71f499A0dD",
