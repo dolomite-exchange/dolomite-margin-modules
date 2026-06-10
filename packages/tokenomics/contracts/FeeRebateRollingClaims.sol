@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -39,6 +40,7 @@ import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.so
  */
 contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     using SafeERC20 for IERC20;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ===================================================
     // ==================== Constants ====================
@@ -88,11 +90,27 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             "Invalid epoch"
         );
 
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: $.feeRebateClaimer,
+            number: 0
+        });
         for (uint256 i; i < _marketIds.length; i++) {
+            IDolomiteStructs.Wei memory balance = DOLOMITE_MARGIN().getAccountWei(account, _marketIds[i]);
+            Require.that(
+                balance.isZero() || balance.isPositive(),
+                _FILE,
+                "Fee claimer invalid balance"
+            );
+            Require.that(
+                _totalAmounts[i] - $.marketIdToMarket[_marketIds[i]].claimAmount < balance.value,
+                _FILE,
+                "Invalid total amount"
+            );
             _ownerSetMarketIdToMerkleRoot(_marketIds[i], _merkleRoots[i], _totalAmounts[i]);
         }
 
-        _getFeeRebateRollingClaimsStorage().currentEpoch = uint96(_expectedEpoch);
+        $.currentEpoch = uint96(_expectedEpoch);
     }
 
     // ======================================================
@@ -110,39 +128,52 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ==============================================================
 
     function marketIdToClaimAmount(uint256 _marketId) external view returns (uint256) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.marketIdToMarket[_marketId].claimAmount;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.marketIdToMarket[_marketId].claimAmount;
     }
 
     function marketIdToTotalAmount(uint256 _marketId) external view returns (uint256) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.marketIdToMarket[_marketId].totalAmount;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.marketIdToMarket[_marketId].totalAmount;
     }
 
     function marketIdToRemainingAmount(uint256 _marketId) external view returns (uint256) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        MarketStorage storage market = s.marketIdToMarket[_marketId];
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        MarketStorage storage market = $.marketIdToMarket[_marketId];
         return market.totalAmount - market.claimAmount;
     }
 
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.marketIdToMarket[_marketId].merkleRoot;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.marketIdToMarket[_marketId].merkleRoot;
     }
 
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.userToMarketIdToClaimAmount[_user][_marketId];
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.userToMarketIdToClaimAmount[_user][_marketId];
+    }
+
+    function userToMarketIdToClaimAmounts(
+        address _user,
+        uint256[] calldata _marketIds
+    ) external view returns (uint256[] memory) {
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        uint256[] memory result = new uint256[](_marketIds.length);
+        for (uint256 i; i < _marketIds.length; ++i) {
+            result[i] = $.userToMarketIdToClaimAmount[_user][_marketIds[i]];
+        }
+
+        return result;
     }
 
     function feeRebateClaimer() public view returns (address) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.feeRebateClaimer;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.feeRebateClaimer;
     }
 
     function currentEpoch() public view returns (uint256) {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        return s.currentEpoch;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        return $.currentEpoch;
     }
 
     // ==================================================================
@@ -150,9 +181,9 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ==================================================================
 
     function _claim(ClaimParams memory _claimParams) internal {
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
         address user = getUserOrRemappedAddress(msg.sender);
-        MarketStorage storage market = s.marketIdToMarket[_claimParams.marketId];
+        MarketStorage storage market = $.marketIdToMarket[_claimParams.marketId];
 
         Require.that(
             _verifyMerkleProof(
@@ -166,23 +197,23 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             _claimParams.marketId
         );
         Require.that(
-            _claimParams.amount > s.userToMarketIdToClaimAmount[user][_claimParams.marketId],
+            _claimParams.amount > $.userToMarketIdToClaimAmount[user][_claimParams.marketId],
             _FILE,
             "No amount to claim"
         );
 
-        // We subtract these two because `_claimParams.amount` is ever-increasing
-        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[user][_claimParams.marketId];
-        s.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
+        // We subtract these two because `_claimParams.amount` is the ever-increasing aggregate of all claims
+        uint256 amountToClaim = _claimParams.amount - $.userToMarketIdToClaimAmount[user][_claimParams.marketId];
+        $.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
 
         market.claimAmount += uint128(amountToClaim);
 
         AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
-            s.feeRebateClaimer,
-            0,
-            msg.sender,
-            0,
+            $.feeRebateClaimer,
+            /* fromAccountNumber = */ 0,
+            /* toAccountOwner = */ msg.sender,
+            /* toAccountNumber = */ 0,
             _claimParams.marketId,
             IDolomiteStructs.AssetDenomination.Wei,
             amountToClaim,
@@ -204,9 +235,9 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             "Invalid new total"
         );
 
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        s.marketIdToMarket[_marketId].totalAmount = uint128(_newTotal);
-        s.marketIdToMarket[_marketId].merkleRoot = _merkleRoot;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        $.marketIdToMarket[_marketId].totalAmount = uint128(_newTotal);
+        $.marketIdToMarket[_marketId].merkleRoot = _merkleRoot;
         emit MarketIdToMerkleRootSet(_marketId, _merkleRoot, _newTotal);
     }
 
@@ -217,8 +248,8 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             "Invalid fee rebate address"
         );
 
-        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
-        s.feeRebateClaimer = _feeRebateClaimer;
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+        $.feeRebateClaimer = _feeRebateClaimer;
         emit FeeRebateClaimerSet(_feeRebateClaimer);
     }
 

@@ -101,6 +101,11 @@ interface IFeeRebateRollingClaims is IBaseClaim {
 
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
 
+    function userToMarketIdToClaimAmounts(
+        address _user,
+        uint256[] calldata _marketId
+    ) external view returns (uint256[] memory);
+
     function feeRebateClaimer() external view returns (address);
 
     function currentEpoch() external view returns (uint256);

@@ -54,6 +54,41 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     constructor(address _dolomiteRegistry, address _dolomiteMargin) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
     }
 
+    function initialize() public override {
+        super.initialize();
+        initializeV2(
+            /* _epochs = */ new uint256[](0),
+            /* _timestamps = */ new uint256[](0),
+            /* _marketIds = */ new uint256[](0)
+        );
+    }
+
+    function initializeV2(
+        uint256[] memory _epochs,
+        uint256[] memory _timestamps,
+        uint256[] memory _marketIds
+    ) public reinitializer(2) {
+        Require.that(
+            _epochs.length == _timestamps.length,
+            _FILE,
+            "Invalid epochs or timestamps"
+        );
+
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        for (uint256 i; i < _epochs.length; ++i) {
+            Require.that(
+                _timestamps[i] < block.timestamp,
+                _FILE,
+                "Invalid timestamp",
+                _timestamps[i]
+            );
+
+            for (uint j; j < _marketIds.length; ++j) {
+                $.epochToMarketIdToClaimTimestampMap[_epochs[i]][_marketIds[j]] = _timestamps[i];
+            }
+        }
+    }
+
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
@@ -121,28 +156,33 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     // ==============================================================
 
     function getClaimAmountByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.epochToMarketIdToClaimAmountMap[_epoch][_marketId];
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.epochToMarketIdToClaimAmountMap[_epoch][_marketId];
+    }
+
+    function getClaimTimestampByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.epochToMarketIdToClaimTimestampMap[_epoch][_marketId];
     }
 
     function adminFeeClaimer() public view returns (address) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return address(s.adminFeeClaimer);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return address($.adminFeeClaimer);
     }
 
     function feeRebateRollingClaims() public view returns (IFeeRebateRollingClaims) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.feeRebateRollingClaims;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.feeRebateRollingClaims;
     }
 
     function revenueSweeper() public view returns (address) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.revenueSweeper;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.revenueSweeper;
     }
 
     function epoch() public view returns (uint256) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.epoch;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.epoch;
     }
 
     function getSweepableAmountsByMarketIds(
@@ -179,8 +219,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid fee claimer address"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.adminFeeClaimer = IAdminClaimExcessTokens(_adminFeeClaimer);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.adminFeeClaimer = IAdminClaimExcessTokens(_adminFeeClaimer);
         emit AdminFeeClaimerSet(_adminFeeClaimer);
     }
 
@@ -191,8 +231,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid fee rebate claims"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.feeRebateRollingClaims = IFeeRebateRollingClaims(_feeRebateRollingClaims);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.feeRebateRollingClaims = IFeeRebateRollingClaims(_feeRebateRollingClaims);
         emit FeeRebateRollingClaimsSet(_feeRebateRollingClaims);
     }
 
@@ -203,8 +243,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid revenue sweeper"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.revenueSweeper = _revenueSweeper;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.revenueSweeper = _revenueSweeper;
         emit RevenueSweeperSet(_revenueSweeper);
     }
 
@@ -219,20 +259,20 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Epoch cannot be 0"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
         Require.that(
-            s.epoch + 1 == _epoch,
+            $.epoch + 1 == _epoch,
             _FILE,
             "Invalid epoch",
-            s.epoch + 1,
+            $.epoch + 1,
             _epoch
         );
 
-        IAdminClaimExcessTokens _adminFeeClaimer = s.adminFeeClaimer;
+        IAdminClaimExcessTokens _adminFeeClaimer = $.adminFeeClaimer;
         for (uint256 i; i < _marketIds.length; i++) {
             uint256 marketId = _marketIds[i];
             Require.that(
-                s.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0,
+                $.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0,
                 _FILE,
                 "Already claimed",
                 _epoch,
@@ -254,12 +294,13 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             assert(claimedAmount.isZero() || claimedAmount.isPositive());
 
             uint256 claimedAmountWei = claimedAmount.value;
-            s.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
+            $.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
+            $.epochToMarketIdToClaimTimestampMap[_epoch][marketId] = block.timestamp;
             emit MarketIdToFeesClaimed(_epoch, marketId, claimedAmountWei);
         }
 
         if (_incrementEpoch) {
-            s.epoch = uint96(_epoch);
+            $.epoch = uint96(_epoch);
             emit EpochSet(_epoch);
         }
     }

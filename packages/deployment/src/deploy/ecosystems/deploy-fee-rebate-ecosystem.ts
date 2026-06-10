@@ -2,16 +2,24 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IAdminRegistry__factory } from 'packages/admin/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { FeeRebateClaimer__factory, FeeRebateRollingClaims__factory } from 'packages/tokenomics/src/types';
-import { deployContractAndSave, TRANSACTION_BUILDER_VERSION } from '../../utils/deploy-utils';
+import {
+  deployContractAndSave,
+  getMaxDeploymentVersionNameByDeploymentKey,
+  TRANSACTION_BUILDER_VERSION,
+} from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
-import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
+import {
+  encodeSetGlobalOperator,
+  encodeSetGlobalOperatorIfNecessary,
+} from '../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { expect } from 'chai';
+import { RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 const REVENUE_SWEEPER_ADDRESS = '0x59a8FE1333F7fE907639D94C39538608DE33F6c5';
@@ -32,7 +40,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    'FeeRebateClaimerImplementationV1',
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateClaimerImplementation', 2),
   );
   const feeRebateClaimerImplementation = FeeRebateClaimer__factory.connect(
     feeRebateClaimerImplementationAddress,
@@ -53,7 +61,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const feeRebateRollingClaimsImplementationAddress = await deployContractAndSave(
     'FeeRebateRollingClaims',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    'FeeRebateRollingClaimsImplementationV1',
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateRollingClaimsImplementation', 2),
   );
   const feeRebateRollingClaimsImplementation = FeeRebateRollingClaims__factory.connect(
     feeRebateRollingClaimsImplementationAddress,
@@ -81,8 +89,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   );
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetGlobalOperator(core, feeRebateRollingClaimsProxy, true),
-    await encodeSetGlobalOperator(core, feeRebateClaimerProxy, true),
+    ...await encodeSetGlobalOperatorIfNecessary(core, feeRebateRollingClaimsProxy, true),
+    ...await encodeSetGlobalOperatorIfNecessary(core, feeRebateClaimerProxy, true),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { feeRebateClaimerProxy },
@@ -138,6 +146,62 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       feeRebateClaimerProxy.address,
     ]),
   ];
+
+  {
+    const proxy = RegistryProxy__factory.connect(feeRebateClaimerProxyAddress, core.hhUser1);
+    if ((await proxy.implementation()) !== feeRebateClaimerImplementationAddress) {
+      if (core.network !== Network.Berachain) {
+        throw new Error('FeeRebateClaimerProxy can only be upgraded on Berachain');
+      }
+
+      const marketIds = [
+        core.marketIds.weth,
+        core.marketIds.wbera,
+        core.marketIds.usdc,
+        core.marketIds.honey,
+        core.marketIds.wbtc,
+        core.marketIds.usdt,
+        core.marketIds.rUsd,
+        core.marketIds.usde,
+        core.marketIds.iBera,
+        core.marketIds.byusd,
+      ];
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateClaimerProxy: proxy },
+          'feeRebateClaimerProxy',
+          'upgradeTo',
+          [feeRebateClaimerImplementationAddress],
+        ),
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateClaimerProxy },
+          'feeRebateClaimerProxy',
+          'initializeV2',
+          [[1, 2], [1779942644, 1780532970], marketIds],
+        ),
+      );
+    }
+  }
+  {
+    const proxy = RegistryProxy__factory.connect(feeRebateRollingClaimsProxyAddress, core.hhUser1);
+    if ((await proxy.implementation()) !== feeRebateRollingClaimsImplementationAddress) {
+      if (core.network !== Network.Berachain) {
+        throw new Error('FeeRebateRollingClaimsProxy can only be upgraded on Berachain');
+      }
+
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateRollingClaimsProxy: proxy },
+          'feeRebateRollingClaimsProxy',
+          'upgradeTo',
+          [feeRebateRollingClaimsImplementationAddress],
+        ),
+      );
+    }
+  }
 
   return {
     core,
