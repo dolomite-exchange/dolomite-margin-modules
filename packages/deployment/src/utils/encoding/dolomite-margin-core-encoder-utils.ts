@@ -306,6 +306,20 @@ export async function encodeSetIsBorrowOnly<T extends DolomiteV2Network>(
   );
 }
 
+export async function encodePauseMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminPauseMarket: core.adminPauseMarket },
+    'adminPauseMarket',
+    'pauseMarket',
+    [marketId],
+    { skipWrappingCalldataInSubmitTransaction: true },
+  );
+}
+
 interface SingleCollateralWithStrictDebtParamsForEncoding {
   debtMarketIds: BigNumberish[];
   marginRatioOverride: { value: BigNumberish };

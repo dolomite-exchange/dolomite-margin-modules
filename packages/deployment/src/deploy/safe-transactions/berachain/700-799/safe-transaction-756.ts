@@ -1,10 +1,14 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IERC20Metadata__factory } from '../../../../../../gamma/src/types';
+import { parseBtc, parseUsdc } from '../../../../../../base/src/utils/math-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import {
+  encodePauseMarket,
+  encodeSetBorrowCap,
+  encodeSetSupplyCap,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -18,22 +22,20 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const markets = [];
-  const marketCount = await core.dolomiteMargin.getNumMarkets();
-  for (let i = 0; i < marketCount.toNumber(); i += 1) {
-    const token = await core.dolomiteMargin.getMarketTokenAddress(i);
-    const decimals = await IERC20Metadata__factory.connect(token, core.hhUser1).decimals();
+  const transactions: EncodedTransaction[] = [
+    await encodeSetSupplyCap(core, core.marketIds.usdc, parseUsdc(`${25_000_000}`)),
+    await encodeSetSupplyCap(core, core.marketIds.usdt, parseUsdc(`${25_000_000}`)),
+    await encodeSetSupplyCap(core, core.marketIds.byusd, parseUsdc(`${25_000_000}`)),
+    await encodeSetSupplyCap(core, core.marketIds.wbtc, parseBtc(`${100}`)),
 
-    const index = await core.dolomiteMargin.getMarketCurrentIndex(i);
-    if (!index.supply.eq(ONE_ETH_BI) && decimals < 18) {
-      markets.push(i);
-    }
-  }
+    await encodeSetBorrowCap(core, core.marketIds.usdc, parseUsdc(`${20_000_000}`)),
+    await encodeSetBorrowCap(core, core.marketIds.usdt, parseUsdc(`${20_000_000}`)),
+    await encodeSetBorrowCap(core, core.marketIds.byusd, parseUsdc(`${20_000_000}`)),
+    await encodeSetBorrowCap(core, core.marketIds.wbtc, parseBtc(`${50}`)),
 
-  const transactions: EncodedTransaction[] = [];
-  for (const market of markets) {
-    transactions.push(await encodeSetSupplyCap(core, market, ONE_BI));
-  }
+    await encodePauseMarket(core, core.marketIds.eBtc),
+    await encodePauseMarket(core, core.marketIds.lbtc),
+  ];
 
   return {
     core,

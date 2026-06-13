@@ -1,23 +1,10 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
-import {
-  OptimalUtilizationRate,
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-  UpperPercentage
-} from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import {
-  encodeSetIsCollateralOnly,
-  encodeSetLiquidationPenalty,
-  encodeSetMinCollateralization,
-  encodeSetSupplyCap,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeUpdateModularInterestSetterParams } from '../../../../utils/encoding/interest-setter-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -56,8 +43,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-    },
+    invariants: async () => {},
   };
 }
 

@@ -1,18 +1,17 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IERC20Metadata__factory } from '../../../../../../gamma/src/types';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Adjust caps for some assets
+ * - Adjust solvBTC and uniBTC to be reduce-only mode for open debt
  */
-async function main(): Promise<DryRunOutput<Network.Berachain>> {
-  const network = await getAndCheckSpecificNetwork(Network.Berachain);
+async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
@@ -21,11 +20,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const markets = [];
   const marketCount = await core.dolomiteMargin.getNumMarkets();
   for (let i = 0; i < marketCount.toNumber(); i += 1) {
-    const token = await core.dolomiteMargin.getMarketTokenAddress(i);
-    const decimals = await IERC20Metadata__factory.connect(token, core.hhUser1).decimals();
-
-    const index = await core.dolomiteMargin.getMarketCurrentIndex(i);
-    if (!index.supply.eq(ONE_ETH_BI) && decimals < 18) {
+    const collateralOnly = await core.dolomiteMargin.getMarketIsClosing(i);
+    console.log('Borrow details: ', i, collateralOnly);
+    if (!collateralOnly) {
       markets.push(i);
     }
   }

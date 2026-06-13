@@ -46,6 +46,9 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
     bytes32 private constant _FILE = "FeeRebateClaimer";
     bytes32 private constant _FEE_REBATE_ROLLING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeRebateRollingClaimsStorage")) - 1); // solhint-disable-line max-line-length
+    /// @notice Thursday May 21, 2026 @ 00:00:00
+    uint256 private constant _START_TIMESTAMP = 1779321600;
+    uint256 private constant _ONE_WEEK_SECONDS = 7 days;
 
     // ======================================================
     // ==================== Constructor =====================
@@ -54,9 +57,12 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     constructor(address _dolomiteRegistry, address _dolomiteMargin) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
     }
 
-    function initialize(uint96 _epoch) public override {
-        _getFeeRebateClaimerStorage().epoch = _epoch;
-        emit EpochSet(_epoch);
+    function initialize() public override {
+        uint256 epochTimestamp = block.timestamp / _ONE_WEEK_SECONDS * _ONE_WEEK_SECONDS;
+        uint96 epoch = uint96((epochTimestamp - _START_TIMESTAMP) / _ONE_WEEK_SECONDS); // safe cast
+
+        _getFeeRebateClaimerStorage().currentEpoch = epoch;
+        emit EpochSet(epoch);
 
         super.initialize();
         initializeV2(
@@ -121,7 +127,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         IFeeRebateRollingClaims _feeRebateRollingClaims = $.feeRebateRollingClaims;
 
         Require.that(
-            epoch() == _feeRebateRollingClaims.currentEpoch(),
+            currentEpoch() == _feeRebateRollingClaims.currentEpoch(),
             _FILE,
             "Epoch mismatch"
         );
@@ -182,9 +188,9 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         return $.revenueSweeper;
     }
 
-    function epoch() public view returns (uint256) {
+    function currentEpoch() public view returns (uint256) {
         FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
-        return $.epoch;
+        return $.currentEpoch;
     }
 
     function getSweepableAmountsByMarketIds(
@@ -208,6 +214,10 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         }
 
         return sweepableAmounts;
+    }
+
+    function startTimestamp() public pure returns (uint256) {
+        return _START_TIMESTAMP;
     }
 
     // ==================================================================
@@ -263,11 +273,17 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
         FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
         Require.that(
-            $.epoch + 1 == _epoch,
+            $.currentEpoch + 1 == _epoch,
             _FILE,
             "Invalid epoch",
-            $.epoch + 1,
+            $.currentEpoch + 1,
             _epoch
+        );
+        Require.that(
+            block.timestamp >= startTimestamp() + (_ONE_WEEK_SECONDS * _epoch),
+            _FILE,
+            "Epoch not passed yet",
+            startTimestamp() + (_ONE_WEEK_SECONDS * _epoch)
         );
 
         IAdminClaimExcessTokens _adminFeeClaimer = $.adminFeeClaimer;
@@ -302,7 +318,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         }
 
         if (_incrementEpoch) {
-            $.epoch = uint96(_epoch);
+            $.currentEpoch = uint96(_epoch);
             emit EpochSet(_epoch);
         }
     }

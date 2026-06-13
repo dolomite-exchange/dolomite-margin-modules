@@ -29,6 +29,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
+import { IFeeRebateClaimer } from "./interfaces/IFeeRebateClaimer.sol";
 import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.sol";
 
 
@@ -64,8 +65,15 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerSetFeeRebateClaimer(address _feeRebateClaimer) external onlyDolomiteMarginOwner(msg.sender) {
+    function initialize(address _feeRebateClaimer) external initializer {
+        super.initialize();
         _ownerSetFeeRebateClaimer(_feeRebateClaimer);
+
+        FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
+
+        uint256 epoch = IFeeRebateClaimer(_feeRebateClaimer).currentEpoch();
+        $.currentEpoch = uint96(epoch);
+        emit EpochSet(epoch);
     }
 
     function handlerSetMerkleRoots(
@@ -111,6 +119,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         }
 
         $.currentEpoch = uint96(_expectedEpoch);
+        emit EpochSet(_expectedEpoch);
     }
 
     // ======================================================

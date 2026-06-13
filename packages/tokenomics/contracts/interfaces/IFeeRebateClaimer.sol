@@ -34,7 +34,7 @@ interface IFeeRebateClaimer {
 
     struct FeeRebateClaimerStorage {
         /// @notice 1-based epoch
-        uint96 epoch;
+        uint96 currentEpoch;
         IAdminClaimExcessTokens adminFeeClaimer;
         IFeeRebateRollingClaims feeRebateRollingClaims;
         address revenueSweeper;
@@ -51,8 +51,6 @@ interface IFeeRebateClaimer {
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
-
-    function initialize(uint96 _epoch) external;
 
     function initializeV2(
         uint256[] calldata _epochs,
@@ -89,7 +87,10 @@ interface IFeeRebateClaimer {
     function revenueSweeper() external view returns (address);
 
     /// @notice 1-based epoch
-    function epoch() external view returns (uint256);
+    function currentEpoch() external view returns (uint256);
+
+    /// @notice The timestamp that epoch 1 started
+    function startTimestamp() external view returns (uint256);
 
     function getSweepableAmountsByMarketIds(
         uint256[] calldata _marketIds
