@@ -40,7 +40,7 @@ contract ChroniclePriceOracleV3 is IChroniclePriceOracle, OnlyDolomiteMargin {
     // ========================= Constants =========================
 
     bytes32 private constant _FILE = "ChroniclePriceOracleV3";
-    uint256 private constant _ONE_DOLLAR = 10 ** 36;
+    uint256 internal constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
 
@@ -128,6 +128,7 @@ contract ChroniclePriceOracleV3 is IChroniclePriceOracle, OnlyDolomiteMargin {
         address _token
     )
     public
+    virtual
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
