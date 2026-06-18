@@ -4,7 +4,7 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IAdminRegistry__factory } from 'packages/admin/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { DolomiteNetwork, ONE_WEEK_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network, ONE_WEEK_SECONDS } from 'packages/base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, getRealLatestBlockNumber, impersonate } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { FeeRebateClaimer__factory, FeeRebateRollingClaims__factory } from 'packages/tokenomics/src/types';
@@ -41,7 +41,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateClaimerImplementation', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateClaimerImplementation', 5),
   );
   const feeRebateClaimerImplementation = FeeRebateClaimer__factory.connect(
     feeRebateClaimerImplementationAddress,
@@ -62,13 +62,17 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const feeRebateRollingClaimsImplementationAddress = await deployContractAndSave(
     'FeeRebateRollingClaims',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateRollingClaimsImplementation', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateRollingClaimsImplementation', 4),
   );
   const feeRebateRollingClaimsImplementation = FeeRebateRollingClaims__factory.connect(
     feeRebateRollingClaimsImplementationAddress,
     core.hhUser1,
   );
-  const feeRebateRollingClaimsInitCalldata = await feeRebateRollingClaimsImplementation.populateTransaction['initialize(address)'](feeRebateClaimerProxy.address);
+  // tslint:disable-next-line
+  const feeRebateRollingClaimsInitCalldata = await feeRebateRollingClaimsImplementation.populateTransaction[
+    'initialize(address)'
+    // tslint:disable-next-line
+  ](feeRebateClaimerProxy.address);
   const feeRebateRollingClaimsProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(
@@ -142,7 +146,10 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
 
   {
     const proxy = RegistryProxy__factory.connect(feeRebateClaimerProxyAddress, core.hhUser1);
-    if ((await proxy.implementation()) !== feeRebateClaimerImplementationAddress) {
+    if (
+      (await proxy.implementation()) !== feeRebateClaimerImplementationAddress &&
+      core.network === Network.Berachain
+    ) {
       transactions.push(
         await prettyPrintEncodedDataWithTypeSafety(
           core,
@@ -150,6 +157,26 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
           'feeRebateClaimerProxy',
           'upgradeTo',
           [feeRebateClaimerImplementationAddress],
+        ),
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateClaimerProxy },
+          'feeRebateClaimerProxy',
+          'initializeV4',
+          [
+            [
+              core.marketIds.weth,
+              core.marketIds.wbera,
+              core.marketIds.usdc,
+              core.marketIds.honey,
+              core.marketIds.wbtc,
+              core.marketIds.usdt,
+              core.marketIds.rUsd,
+              core.marketIds.usde,
+              core.marketIds.iBera,
+              core.marketIds.byusd,
+            ],
+          ],
         ),
       );
     }

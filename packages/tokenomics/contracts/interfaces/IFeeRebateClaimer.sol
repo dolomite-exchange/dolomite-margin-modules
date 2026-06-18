@@ -40,12 +40,14 @@ interface IFeeRebateClaimer {
         address revenueSweeper;
         mapping(uint256 => mapping(uint256 => uint256)) epochToMarketIdToClaimAmountMap;
         mapping(uint256 => mapping(uint256 => uint256)) epochToMarketIdToClaimTimestampMap;
+        mapping(uint256 => uint256) marketIdToTotalClaimAmountMap;
     }
 
     event AdminFeeClaimerSet(address adminFeeClaimer);
     event FeeRebateRollingClaimsSet(address feeRebateRollingClaims);
     event RevenueSweeperSet(address revenueSweeper);
     event MarketIdToFeesClaimed(uint256 epoch, uint256 marketId, uint256 claimedAmountWei);
+    event MarketIdTotalFeesUpdated(uint256 marketId, uint256 totalClaimedAmountWei);
     event EpochSet(uint256 epoch);
 
     // ======================================================
@@ -77,6 +79,8 @@ interface IFeeRebateClaimer {
     // ======================================================
 
     function getClaimAmountByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256);
+
+    function getTotalClaimAmountByMarketId(uint256 _marketId) external view returns (uint256);
 
     function getClaimTimestampByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256);
 

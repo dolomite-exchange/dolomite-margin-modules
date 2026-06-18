@@ -70,6 +70,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             /* _timestamps = */ new uint256[](0),
             /* _marketIds = */ new uint256[](0)
         );
+        initializeV4(/* _marketIds = */ new uint256[](0));
     }
 
     function initializeV2(
@@ -95,6 +96,27 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             for (uint j; j < _marketIds.length; ++j) {
                 $.epochToMarketIdToClaimTimestampMap[_epochs[i]][_marketIds[j]] = _timestamps[i];
             }
+        }
+    }
+
+    function initializeV4(uint256[] memory _marketIds) public reinitializer(4) {
+        if (_marketIds.length == 0) {
+            return;
+        }
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+
+        uint256[] memory totals = new uint256[](_marketIds.length);
+        uint256 epoch = currentEpoch();
+        // Epochs are 1-based
+        for (uint256 i = 1; i <= epoch; ++i) {
+            for (uint256 j; j < _marketIds.length; ++j) {
+                totals[j] += $.epochToMarketIdToClaimAmountMap[i][_marketIds[j]];
+            }
+        }
+
+        for (uint256 i; i < _marketIds.length; ++i) {
+            $.marketIdToTotalClaimAmountMap[_marketIds[i]] = totals[i];
+            emit MarketIdTotalFeesUpdated(_marketIds[i], totals[i]);
         }
     }
 
@@ -166,6 +188,11 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     function getClaimAmountByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
         FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
         return $.epochToMarketIdToClaimAmountMap[_epoch][_marketId];
+    }
+
+    function getTotalClaimAmountByMarketId(uint256 _marketId) external view returns (uint256) {
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.marketIdToTotalClaimAmountMap[_marketId];
     }
 
     function getClaimTimestampByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
@@ -286,7 +313,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             startTimestamp() + (_ONE_WEEK_SECONDS * _epoch)
         );
 
-        IAdminClaimExcessTokens _adminFeeClaimer = $.adminFeeClaimer;
+        IAdminClaimExcessTokens adminFeeClaimer_ = $.adminFeeClaimer;
         for (uint256 i; i < _marketIds.length; i++) {
             uint256 marketId = _marketIds[i];
             Require.that(
@@ -297,30 +324,37 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
                 marketId
             );
 
-            IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: 0
-            });
-            IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(account, marketId);
-
-            address token = DOLOMITE_MARGIN().getMarketTokenAddress(marketId);
-            _adminFeeClaimer.claimExcessTokens(token, address(this), true);
-
-            IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, marketId);
-
-            IDolomiteStructs.Wei memory claimedAmount = balanceAfter.sub(balanceBefore);
-            assert(claimedAmount.isZero() || claimedAmount.isPositive());
-
-            uint256 claimedAmountWei = claimedAmount.value;
+            uint256 previousTotalClaimedAmount = $.marketIdToTotalClaimAmountMap[marketId];
+            uint256 claimedAmountWei = _performClaim(adminFeeClaimer_, marketId);
             $.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
             $.epochToMarketIdToClaimTimestampMap[_epoch][marketId] = block.timestamp;
+            $.marketIdToTotalClaimAmountMap[marketId] = previousTotalClaimedAmount + claimedAmountWei;
             emit MarketIdToFeesClaimed(_epoch, marketId, claimedAmountWei);
+            emit MarketIdTotalFeesUpdated(marketId, previousTotalClaimedAmount + claimedAmountWei);
         }
 
         if (_incrementEpoch) {
             $.currentEpoch = uint96(_epoch);
             emit EpochSet(_epoch);
         }
+    }
+
+    function _performClaim(IAdminClaimExcessTokens _adminFeeClaimer, uint256 _marketId) internal returns (uint256) {
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: 0
+        });
+        IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(account, _marketId);
+
+        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        _adminFeeClaimer.claimExcessTokens(token, address(this), true);
+
+        IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, _marketId);
+
+        IDolomiteStructs.Wei memory claimedAmount = balanceAfter.sub(balanceBefore);
+        assert(claimedAmount.isZero() || claimedAmount.isPositive());
+
+        return claimedAmount.value;
     }
 
     function _getFeeRebateClaimerStorage(

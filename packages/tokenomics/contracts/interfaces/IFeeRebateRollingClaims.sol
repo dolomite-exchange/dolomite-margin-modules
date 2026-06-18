@@ -61,6 +61,8 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     // ==================== Admin Functions =================
     // ======================================================
 
+    function initialize(address _feeClaimer) external;
+
     /* solhint-disable max-line-length */
 
     /**
@@ -70,12 +72,15 @@ interface IFeeRebateRollingClaims is IBaseClaim {
      * @param  _totalAmounts    The new total amount of marketId that's been allocated to claims. This should be set via
      *                          `this.marketIdToTotalAmount(_marketId) + feeRebateClaimer.getClaimAmountByEpochAndMarketId(latest, _marketId)`
      * @param  _expectedEpoch   The epoch that's expected to be next when incrementing `epoch`
+     * @param  _incrementEpoch  True if the epoch is being incremented or false to update the merkle roots and total
+     *                          amounts for the current epoch
      */
     function handlerSetMerkleRoots(
         uint256[] calldata _marketIds,
         bytes32[] calldata _merkleRoots,
         uint256[] calldata _totalAmounts,
-        uint256 _expectedEpoch
+        uint256 _expectedEpoch,
+        bool _incrementEpoch
     ) external;
 
     /* solhint-enable max-line-length */
