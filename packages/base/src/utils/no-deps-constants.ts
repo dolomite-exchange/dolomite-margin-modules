@@ -26,7 +26,7 @@ export type DolomiteV2Network =
   | Network.Ethereum
   | Network.Ink
   | Network.Mantle
-  // | Network.PolygonZkEvm
+  | Network.PolygonZkEvm
   | Network.Sepolia
   | Network.SuperSeed
   | Network.XLayer;

@@ -1,7 +1,6 @@
 import { BigNumberish } from 'ethers';
 import { IERC20 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
-import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
 import {
   CoreProtocolAbstract,
   CoreProtocolMarketIds,
@@ -29,26 +28,17 @@ interface CoreProtocolMarketIdsPolygonZkEvm extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParamsPolygonZkEvm {
   marketIds: CoreProtocolMarketIdsPolygonZkEvm;
-  paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensPolygonZkEvm;
 }
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
-
   public override readonly marketIds: CoreProtocolMarketIdsPolygonZkEvm;
   public override readonly tokens: CoreProtocolTokensPolygonZkEvm;
   public readonly network: Network.PolygonZkEvm = Network.PolygonZkEvm;
 
-  public readonly paraswapEcosystem: ParaswapEcosystem;
-
-  constructor(
-    params: CoreProtocolParams<Network.PolygonZkEvm>,
-    zkEvmParams: CoreProtocolParamsPolygonZkEvm,
-  ) {
+  constructor(params: CoreProtocolParams<Network.PolygonZkEvm>, zkEvmParams: CoreProtocolParamsPolygonZkEvm) {
     super(params);
     this.marketIds = zkEvmParams.marketIds;
     this.tokens = zkEvmParams.tokens;
-
-    this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
   }
 }

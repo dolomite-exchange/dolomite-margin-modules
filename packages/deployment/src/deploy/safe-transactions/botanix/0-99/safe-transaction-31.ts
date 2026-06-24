@@ -2,32 +2,25 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
+import { expect } from 'chai';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeSetGlobalOperator } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Change earnings rate for veDOLO rebates
+ * - Expires all borrowers
  */
-async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
-  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
+async function main(): Promise<DryRunOutput<Network.Botanix>> {
+  const network = await getAndCheckSpecificNetwork(Network.Botanix);
   const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetEarningsRate',
-      [{ value: parseEther(`${0.8}`) }],
-    ),
-  );
+  const transactions: EncodedTransaction[] = [
+    await encodeSetGlobalOperator(core, core.adminExpirePosition.address, true),
+  ];
 
   return {
     core,
@@ -43,7 +36,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      expect(
+        await core.adminRegistry.hasPermission(
+          await core.adminRegistry.ADMIN_FUNCTION_SELECTOR(),
+          core.adminExpirePosition.address,
+          core.gnosisSafeAddress,
+        ),
+      ).to.be.true;
+    },
   };
 }
 

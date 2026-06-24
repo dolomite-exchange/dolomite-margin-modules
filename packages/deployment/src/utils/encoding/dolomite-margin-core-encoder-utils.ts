@@ -320,6 +320,20 @@ export async function encodePauseMarket<T extends DolomiteNetwork>(
   );
 }
 
+export async function encodeUnpauseMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminPauseMarket: core.adminPauseMarket },
+    'adminPauseMarket',
+    'unpauseMarket',
+    [marketId, core.oracleAggregatorV2.address],
+    { skipWrappingCalldataInSubmitTransaction: true },
+  );
+}
+
 interface SingleCollateralWithStrictDebtParamsForEncoding {
   debtMarketIds: BigNumberish[];
   marginRatioOverride: { value: BigNumberish };

@@ -1,33 +1,32 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import {
+  encodeSetBorrowCap,
+  encodeSetIsCollateralOnly,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Change earnings rate for veDOLO rebates
+ * - Adjust caps for some assets
  */
-async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
-  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
+  const network = await getAndCheckSpecificNetwork(Network.Berachain);
   const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetEarningsRate',
-      [{ value: parseEther(`${0.8}`) }],
-    ),
-  );
+  const transactions: EncodedTransaction[] = [
+    await encodeSetBorrowCap(core, core.marketIds.eBtc, ONE_BI),
+    await encodeSetBorrowCap(core, core.marketIds.lbtc, ONE_BI),
+    await encodeSetBorrowCap(core, core.marketIds.usda, ONE_BI),
+
+    await encodeSetIsCollateralOnly(core, core.marketIds.lbtc, true),
+  ];
 
   return {
     core,
@@ -35,7 +34,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       addExecuteImmediatelyTransactions: true,
       chainId: core.network,
-      logGasUsage: true,
       version: '1.0',
       meta: {
         txBuilderVersion: '1.16.5',
