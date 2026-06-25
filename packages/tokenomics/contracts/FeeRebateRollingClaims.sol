@@ -80,7 +80,8 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         uint256[] calldata _marketIds,
         bytes32[] calldata _merkleRoots,
         uint256[] calldata _totalAmounts,
-        uint256 _expectedEpoch
+        uint256 _expectedEpoch,
+        bool _incrementEpoch
     ) external onlyHandler(msg.sender) {
         Require.that(
             _marketIds.length == _merkleRoots.length && _merkleRoots.length == _totalAmounts.length,
@@ -92,34 +93,39 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             _FILE,
             "Lengths cannot be 0"
         );
-        Require.that(
-            _getFeeRebateRollingClaimsStorage().currentEpoch + 1 == _expectedEpoch,
-            _FILE,
-            "Invalid epoch"
-        );
 
         FeeRebateRollingClaimsStorage storage $ = _getFeeRebateRollingClaimsStorage();
-        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: $.feeRebateClaimer,
-            number: 0
-        });
-        for (uint256 i; i < _marketIds.length; i++) {
-            IDolomiteStructs.Wei memory balance = DOLOMITE_MARGIN().getAccountWei(account, _marketIds[i]);
+
+        if (_incrementEpoch) {
             Require.that(
-                balance.isZero() || balance.isPositive(),
+                $.currentEpoch + 1 == _expectedEpoch,
                 _FILE,
-                "Fee claimer invalid balance"
+                "Invalid epoch"
             );
+        } else {
             Require.that(
-                _totalAmounts[i] - $.marketIdToMarket[_marketIds[i]].claimAmount < balance.value,
+                $.currentEpoch == _expectedEpoch,
+                _FILE,
+                "Invalid epoch"
+            );
+        }
+
+        IFeeRebateClaimer feeRebateClaimer_ = IFeeRebateClaimer($.feeRebateClaimer);
+        for (uint256 i; i < _marketIds.length; i++) {
+            // Total amount cannot be more than what has been claimed
+            uint256 totalClaimAmount = feeRebateClaimer_.getTotalClaimAmountByMarketId(_marketIds[i]);
+            Require.that(
+                _totalAmounts[i] <= totalClaimAmount,
                 _FILE,
                 "Invalid total amount"
             );
             _ownerSetMarketIdToMerkleRoot(_marketIds[i], _merkleRoots[i], _totalAmounts[i]);
         }
 
-        $.currentEpoch = uint96(_expectedEpoch);
-        emit EpochSet(_expectedEpoch);
+        if (_incrementEpoch) {
+            $.currentEpoch = uint96(_expectedEpoch);
+            emit EpochSet(_expectedEpoch);
+        }
     }
 
     // ======================================================

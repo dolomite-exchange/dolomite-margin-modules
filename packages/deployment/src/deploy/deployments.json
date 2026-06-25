@@ -129,6 +129,11 @@
       "transaction": "0x5706942938a82f085416fed24510eacf4eb3fdf04ca3aafefa068c19f9df2944",
       "isVerified": true
     },
+    "1101": {
+      "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
+      "transaction": "0x5706942938a82f085416fed24510eacf4eb3fdf04ca3aafefa068c19f9df2944",
+      "isVerified": true
+    },
     "3637": {
       "address": "0xaE857EA645F9320543A8dE88e2491c0491B204a0",
       "transaction": "0xccd357da59eec9cd892b043ce4552edd1870cb2c681024824cda90529076bd8f",
@@ -4245,6 +4250,20 @@
       "isVerified": true
     }
   },
+  "FeeRebateClaimerImplementationV4": {
+    "80094": {
+      "address": "0xfE0b0dCD53e0f1f7b0e8B122dA18d76A59C33378",
+      "transaction": "0x03a7756271b156bf4d00b2a31cce1326177dab753508badf3336e186bbe775b3",
+      "isVerified": true
+    }
+  },
+  "FeeRebateClaimerImplementationV5": {
+    "80094": {
+      "address": "0xf1E2314B86C3F5C6461FC39Ad6D4f35cc67B0387",
+      "transaction": "0x6c7da7ecd8687ce6b28263a5deefb84855cf01d5ec801403db06c215a5064ea1",
+      "isVerified": true
+    }
+  },
   "FeeRebateClaimerProxy": {
     "80094": {
       "address": "0x6BE1fed8a38B3555A337f58BB9E10FC0465964C0",
@@ -4270,6 +4289,13 @@
     "80094": {
       "address": "0x64EB3709c097711A8646f3D5fA53C97ee36e00B3",
       "transaction": "0x51abf2758408e8622975756c15ef23648b9f04aa4be1370000d064aa4c8ea42e",
+      "isVerified": true
+    }
+  },
+  "FeeRebateRollingClaimsImplementationV4": {
+    "80094": {
+      "address": "0xE297E39164649115b6A94eF77B4Dcfd3Ad504685",
+      "transaction": "0x6575ab3ba6116d2756f90bb5d809dff2dbe17b70e5febce969b694151aac8c87",
       "isVerified": true
     }
   },

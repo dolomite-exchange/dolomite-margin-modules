@@ -1921,7 +1921,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           USDT_MAP[typedConfig.network].marketId,
         ],
       },
-      paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       tokens: {
         ...coreProtocolParams.tokens,
         dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),

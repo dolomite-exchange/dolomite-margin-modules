@@ -58,6 +58,7 @@ export const SUBGRAPH_URL_MAP: Record<DolomiteNetwork, string> = {
   [Network.Ethereum]: '',
   [Network.Ink]: '',
   [Network.Mantle]: `${SUBGRAPH_BASE_URL}/subgraphs/dolomite-mantle/${SUBGRAPH_VERSION}`,
+  [Network.PolygonZkEvm]: '',
   [Network.Sepolia]: '',
   [Network.SuperSeed]: '',
   [Network.XLayer]: `${SUBGRAPH_BASE_URL}/subgraphs/dolomite-x-layer/${SUBGRAPH_VERSION}`,
@@ -97,6 +98,13 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const BTC_CX_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0x852724426b2851487B278A3377449BF26B06C1ba',
+    marketId: -1,
+  },
+};
+
 export const BYUSD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x688e72142674041f8f6Af4c808a4045cA1D6aC82',
@@ -118,6 +126,7 @@ export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<DolomiteNetwork, string> = {
   [Network.Ethereum]: CoreDeployments.ChainlinkPriceOracleV1[Network.Ethereum].address,
   [Network.Ink]: CoreDeployments.ChainlinkPriceOracleV1[Network.Ink].address,
   [Network.Mantle]: CoreDeployments.ChainlinkPriceOracleV1[Network.Mantle].address,
+  [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
   [Network.Sepolia]: CoreDeployments.ChainlinkPriceOracleV1[Network.Sepolia]?.address,
   [Network.SuperSeed]: CoreDeployments.ChainlinkPriceOracleV1[Network.SuperSeed].address,
   [Network.XLayer]: CoreDeployments.ChainlinkPriceOracleV1[Network.XLayer].address,
@@ -2879,7 +2888,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       aggregatorAddress: '0x2eeCADd4D8d3a4939440f07419741C4898095317',
     },
     [MATIC_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
+      aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
     },
     [POL_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
