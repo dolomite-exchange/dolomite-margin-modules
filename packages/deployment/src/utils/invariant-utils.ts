@@ -22,7 +22,7 @@ export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: 
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
   const decimals = invalidToken ? invalidToken.decimals : await meta.decimals();
-  const price = await core.oracleAggregatorV2.getPrice(token.address);
+  const price = await core.oracleAggregatorV2.getPrice(token.address, { gasPrice: 0 });
   console.log(`\tPrice for ${symbol}:`, `$${formatUnits(price.value, 36 - decimals)}`);
 }
 

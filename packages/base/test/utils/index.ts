@@ -155,7 +155,7 @@ export async function impersonateOrFallback(
 export async function impersonate(
   targetAccount: string | { address: string },
   giveEther: boolean = false,
-  balance = ONE_ETH_BI,
+  balance = ONE_ETH_BI.mul(1_000),
 ): Promise<SignerWithAddressWithSafety> {
   const targetAddress = typeof targetAccount === 'string' ? targetAccount : targetAccount.address;
   await hardhatNetwork.provider.request({

@@ -186,7 +186,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   options: {
     skipWrappingCalldataInSubmitTransaction?: boolean;
     submitAndExecuteImmediately?: boolean;
-  } = { skipWrappingCalldataInSubmitTransaction: false, submitAndExecuteImmediately: false },
+  } = {
+    skipWrappingCalldataInSubmitTransaction: false,
+    submitAndExecuteImmediately: false,
+  },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));

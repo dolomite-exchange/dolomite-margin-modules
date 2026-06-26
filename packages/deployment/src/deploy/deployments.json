@@ -9551,6 +9551,13 @@
       "isVerified": true
     }
   },
+  "OracleAggregatorV2Berachain": {
+    "80094": {
+      "address": "0x622C8D85F0197efd2E4730ad5D78cf39C715B49D",
+      "transaction": "0x5b1dde0f813b5788c1f6f4811cafca255f01f28ecd8a4aaec8e74bd143dc2fc4",
+      "isVerified": true
+    }
+  },
   "PancakeV3PriceOracle": {
     "1": {
       "address": "0x535694AECf750d317992B10b2080271f00F4bc0B",
