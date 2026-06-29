@@ -1,8 +1,8 @@
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { disableInterestAccrual, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TestChronicleScribe, TestChronicleScribe__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -16,6 +16,7 @@ import {
 } from '../src/types';
 
 const WETH_PRICE = parseUnits('2260', 18);
+const BERA_PRICE = parseUnits('0.20', 18);
 const GAS_LIMIT = BigNumber.from(`${125_000}`);
 
 const lowerRate = BigNumber.from('60000000000000000');
@@ -54,8 +55,11 @@ describe('ModularLinearStepFunctionInterestSetterBerachain', () => {
     );
 
     await scribeWeth.setLatestAnswer(WETH_PRICE);
-    await scribeWbera.setLatestAnswer(WETH_PRICE); // BERA = $2260
+    await scribeWeth.setDecimals(18);
+    await scribeWbera.setLatestAnswer(BERA_PRICE);
+    await scribeWbera.setDecimals(18);
     await scribeUsdc.setLatestAnswer(parseEther('1')); // USDC = $1
+    await scribeUsdc.setDecimals(18);
 
     await core.chroniclePriceOracleV3
       .connect(core.governance)
@@ -82,6 +86,11 @@ describe('ModularLinearStepFunctionInterestSetterBerachain', () => {
     await interestSetter
       .connect(core.governance)
       .ownerSetSettingsByToken(core.tokens.wbtc.address, lowerRate, upperRate, optimalRate);
+
+    await disableInterestAccrual(core, core.marketIds.wbtc);
+
+    const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.wbtc);
+    console.log('index', index.supply.toString());
 
     snapshotId = await snapshot();
   });
@@ -209,28 +218,31 @@ describe('ModularLinearStepFunctionInterestSetterBerachain', () => {
       expect(rate.value).to.eq(BigNumber.from('33333333333333333').div(secondsPerYear));
     });
 
-    it('reverts for a token with < 18 decimals when gas price is too low and excess has dropped', async () => {
-      // 1. Perform the initial snapshot (excess will be 0)
-      await interestSetter.snapshotExcessEarnings([core.marketIds.wbtc]);
+    it(
+      'reverts for a token with < 18 decimals when gas price is too low and excess has dropped due to claim',
+      async () => {
+        // 1. Perform the initial snapshot (excess will be 0)
+        await interestSetter.snapshotExcessEarnings([core.marketIds.wbtc]);
 
-      // 2. We need excess tokens to drop.
-      await core.adminClaimExcessTokens
-        .connect(core.gnosisSafe)
-        .claimExcessTokens(core.tokens.wbtc.address, core.hhUser1.addressLower, false);
+        // 2. We need excess tokens to drop.
+        await core.adminClaimExcessTokens
+          .connect(core.gnosisSafe)
+          .claimExcessTokens(core.tokens.wbtc.address, core.hhUser1.addressLower, false);
 
-      const excessAfterClaim = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.wbtc);
-      const excessBeforeClaim = await interestSetter.getSnapshotByToken(core.tokens.wbtc.address);
-      const diff = subWei(excessAfterClaim, excessBeforeClaim);
-      expect(diff.sign).to.eq(false);
-      expect(diff.value).to.be.gt(ONE_ETH_BI);
+        const excessAfterClaim = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.wbtc);
+        const excessBeforeClaim = await interestSetter.getSnapshotByToken(core.tokens.wbtc.address);
+        const diff = subWei(excessAfterClaim, excessBeforeClaim);
+        expect(diff.sign).to.eq(false);
+        expect(diff.value).to.be.gt(ONE_BI);
 
-      await expectThrow(
-        interestSetter.getInterestRate(core.tokens.wbtc.address, parseUnits('50', 8), parseUnits('100', 8), {
-          gasPrice: parseUnits('1', 'wei'),
-        }),
-        `ModularLinearStepInterestSetterB: Gas price too low <${core.tokens.wbtc.address.toLowerCase()}>`,
-      );
-    });
+        await expectThrow(
+          interestSetter.getInterestRate(core.tokens.wbtc.address, parseUnits('50', 8), parseUnits('100', 8), {
+            gasPrice: parseUnits('1', 'wei'),
+          }),
+          `ModularLinearStepInterestSetterB: Gas price too low <${core.tokens.wbtc.address.toLowerCase()}>`,
+        );
+      },
+    );
 
     it('reverts when snapshotting too early', async () => {
       await interestSetter.snapshotExcessEarnings([core.marketIds.usdc]);

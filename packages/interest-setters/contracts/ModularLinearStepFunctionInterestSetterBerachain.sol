@@ -19,14 +19,14 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import "hardhat/console.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
-import { IOracleAggregatorV2 } from "@dolomite-exchange/modules-oracles/contracts/interfaces/IOracleAggregatorV2.sol";
-import { IModularLinearStepFunctionInterestSetter } from "./interfaces/IModularLinearStepFunctionInterestSetter.sol";
-
+import {IModularLinearStepFunctionInterestSetter} from "./interfaces/IModularLinearStepFunctionInterestSetter.sol";
+import {IOracleAggregatorV2} from "@dolomite-exchange/modules-oracles/contracts/interfaces/IOracleAggregatorV2.sol";
+import {OnlyDolomiteMargin} from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import {Require} from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import {TypesLib} from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 
 /**
  * @title   ModularLinearStepFunctionInterestSetterBerachain
@@ -218,11 +218,11 @@ contract ModularLinearStepFunctionInterestSetterBerachain is
     }
 
     function _validateTokenForBerachain(address _token) internal view {
-        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
         uint8 tokenDecimals = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()))
             .getDecimalsByToken(_token);
-        uint256 gasPrice = tx.gasprice;
         if (tokenDecimals < 18) {
+            uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
+            uint256 gasPrice = tx.gasprice;
             Snapshot memory snapshot = _tokenToExcessBalanceSnapshot[_token];
             IDolomiteStructs.Wei memory oldExcess = IDolomiteStructs.Wei({
                 sign: snapshot.sign,
@@ -230,11 +230,15 @@ contract ModularLinearStepFunctionInterestSetterBerachain is
             });
             IDolomiteStructs.Wei memory diff = DOLOMITE_MARGIN().getNumExcessTokens(marketId).sub(oldExcess);
 
+            console.log("gasPrice", gasPrice);
+            console.log("!_isAcceptableDiff", !_isAcceptableDiff(diff));
             if (!_isAcceptableDiff(diff) && gasPrice != 0) {
                 uint256 tokenPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
                 uint256 beraPrice = DOLOMITE_MARGIN().getMarketPrice(_WBERA_MARKET_ID).value;
+                console.log("gasPriceUSD", gasPrice, gasLimit, beraPrice);
+                console.log("tokenPrice", tokenPrice);
                 Require.that(
-                    gasPrice * gasLimit * beraPrice / _ONE_BERA >= tokenPrice * _ONE_BERA / _ONE_DOLLAR,
+                    gasPrice * gasLimit * beraPrice >= tokenPrice,
                     _FILE,
                     "Gas price too low",
                     _token,
