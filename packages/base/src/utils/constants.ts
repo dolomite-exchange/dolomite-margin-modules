@@ -1484,6 +1484,10 @@ export const DOLO_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xd5980e98a89e2d2361b3be657e8a003c6d3514e3',
 };
 
+export const DOLO_USDC_UNISWAP_V3_POOL_MAP: Record<Network.Ethereum, string> = {
+  [Network.Ethereum]: '0x003896387666C5c11458EEb3F927B72a11b19783',
+};
+
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };

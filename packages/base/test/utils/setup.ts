@@ -1788,6 +1788,14 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
   }
   if (config.network === Network.Ethereum) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Ethereum>;
+    const twapPriceOracle = PancakeV3PriceOracleWithModifiers__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey(
+        'UniswapTWAPPriceOracleV3WithModifiers',
+        Network.Ethereum,
+        ADDRESS_ZERO,
+      ),
+      hhUser1,
+    );
     return new CoreProtocolEthereum(coreProtocolParams as CoreProtocolParams<Network.Ethereum>, {
       chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
         ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
@@ -1860,6 +1868,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      twapPriceOracleV3: twapPriceOracle
     }) as any;
   }
   if (config.network === Network.Mantle) {
