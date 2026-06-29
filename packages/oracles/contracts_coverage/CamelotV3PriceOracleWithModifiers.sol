@@ -25,19 +25,20 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IPancakeV3Pair } from "./interfaces/IPancakeV3Pair.sol";
+import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
 import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
+import "hardhat/console.sol";
 
 /**
- * @title   PancakeV3PriceOracleWithModifiers
+ * @title   CamelotV3PriceOracleWithModifiers
  * @author  Dolomite
  *
  * Gets the TWAP from an LP pool and sets floor/ceil prices
  */
-contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
+contract CamelotV3PriceOracleWithModifiers is OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Events =========================
@@ -46,7 +47,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "PancakeV3PriceOracleWithModifier";
+    bytes32 private constant _FILE = "CamelotV3PriceOracleWithModifier";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
@@ -81,9 +82,9 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
         external
         onlyDolomiteMarginOwner(msg.sender)
     {
-        if (IPancakeV3Pair(_tokenInfo.pair).token0() == _token|| IPancakeV3Pair(_tokenInfo.pair).token1() == _token) { /* FOR COVERAGE TESTING */ }
+        if (IAlgebraV3Pool(_tokenInfo.pair).token0() == _token|| IAlgebraV3Pool(_tokenInfo.pair).token1() == _token) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IPancakeV3Pair(_tokenInfo.pair).token0() == _token|| IPancakeV3Pair(_tokenInfo.pair).token1() == _token,
+            IAlgebraV3Pool(_tokenInfo.pair).token0() == _token|| IAlgebraV3Pool(_tokenInfo.pair).token1() == _token,
             _FILE,
             "Invalid pair"
         );
@@ -126,7 +127,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
     returns (IDolomiteStructs.MonetaryPrice memory) {
         TokenInfo memory tokenInfo = getTokenInfo(_token);
 
-        IPancakeV3Pair currentPair = IPancakeV3Pair(tokenInfo.pair);
+        IAlgebraV3Pool currentPair = IAlgebraV3Pool(tokenInfo.pair);
 
         address outputToken;
         {
@@ -135,7 +136,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
         }
 
         uint128 tokenDecimalsFactor = uint128(10 ** uint256(tokenInfo.decimals)); // Safe cast; decimals <= 18
-        int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), tokenInfo.observationInterval);
+        int24 tick = OracleLibrary.consultAlgebraPool(address(currentPair), tokenInfo.observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, tokenDecimalsFactor, _token, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
