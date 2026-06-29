@@ -1,5 +1,6 @@
 import { BigNumberish } from 'ethers';
 import {
+  CamelotV3PriceOracleWithModifiers,
   ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
@@ -209,6 +210,7 @@ interface CoreProtocolParamsArbitrumOne {
   abraEcosystem: AbraEcosystem;
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
+  camelotTwapPriceOracleV3: CamelotV3PriceOracleWithModifiers;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
@@ -238,6 +240,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly abraEcosystem: AbraEcosystem;
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
+  public readonly camelotTwapPriceOracleV3: CamelotV3PriceOracleWithModifiers;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   public readonly chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
@@ -266,6 +269,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.abraEcosystem = arbParams.abraEcosystem;
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
+    this.camelotTwapPriceOracleV3 = arbParams.camelotTwapPriceOracleV3;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
     this.chaosLabsPriceOracleV3 = arbParams.chaosLabsPriceOracleV3;
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;

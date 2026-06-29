@@ -2,6 +2,7 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import {
+  CamelotV3PriceOracleWithModifiers__factory,
   ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
   ConstantPriceOracle__factory,
@@ -1276,12 +1277,21 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   if (config.network === Network.ArbitrumOne) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.ArbitrumOne>;
+    const camelotTwapPriceOracle = CamelotV3PriceOracleWithModifiers__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey(
+        'CamelotTWAPPriceOracleV3WithModifiers',
+        Network.ArbitrumOne,
+        ADDRESS_ZERO,
+      ),
+      hhUser1,
+    );
     return new CoreProtocolArbitrumOne(coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>, {
       chainlinkPriceOracleV1,
       chainlinkPriceOracleV3,
       abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
       arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
       camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
+      camelotTwapPriceOracleV3: camelotTwapPriceOracle,
       chainlinkAutomationRegistry: IChainlinkAutomationRegistry__factory.connect(
         CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
         governance,

@@ -17,6 +17,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
 import { TokenInfo } from './index';
 import {
+  CamelotV3PriceOracleWithModifiers,
   ChainlinkPriceOracleV3,
   ChainsightPriceOracleV3,
   ChroniclePriceOracleV3,
@@ -97,6 +98,7 @@ export type CoreProtocolWithTwapV3<T extends DolomiteNetwork> = Extract<
     config: CoreProtocolConfig<T>;
     dolomiteMargin: DolomiteMargin<T>;
     twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
+    camelotTwapPriceOracleV3: CamelotV3PriceOracleWithModifiers;
     oracleAggregatorV2: OracleAggregatorV2;
   }
 >;

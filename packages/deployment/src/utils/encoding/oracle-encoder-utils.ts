@@ -605,6 +605,46 @@ export async function encodeInsertTwapOracle<T extends DolomiteNetwork>(
   return [...(await encodeInsertOracle(core, token, twapOracle, tokenPair))];
 }
 
+export async function encodeInsertCamelotTwapV3Oracle<T extends DolomiteNetwork>(
+  core: CoreProtocolWithTwapV3<T>,
+  token: IERC20,
+  tokenInfo: {
+    tokenPool: IAlgebraV3Pool;
+    observationInterval: BigNumberish;
+    minPrice: BigNumberish;
+    maxPrice: BigNumberish;
+    tokenPair: IERC20 | undefined;
+  },
+): Promise<EncodedTransaction[]> {
+  const { tokenPool, observationInterval, minPrice, maxPrice, tokenPair } = tokenInfo;
+
+  if (BigNumber.from(observationInterval).lt(900)) {
+    throw new Error('Invalid observation interval!');
+  }
+  if (BigNumber.from(minPrice).gt(maxPrice)) {
+    throw new Error('Invalid min/max price!');
+  }
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { camelotTwapPriceOracleV3: core.camelotTwapPriceOracleV3 },
+      'camelotTwapPriceOracleV3',
+      'ownerSetTokenInfo',
+      [
+        token.address,
+        {
+          pair: tokenPool.address,
+          decimals: await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals(),
+          observationInterval: BigNumber.from(observationInterval),
+          minPrice: BigNumber.from(minPrice),
+          maxPrice: BigNumber.from(maxPrice),
+        },
+      ],
+    ),
+    ...(await encodeInsertOracle(core, token, core.camelotTwapPriceOracleV3, tokenPair)),
+  ];
+}
+
 export async function encodeInsertTwapV3Oracle<T extends DolomiteNetwork>(
   core: CoreProtocolWithTwapV3<T>,
   token: IERC20,

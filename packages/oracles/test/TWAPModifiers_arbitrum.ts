@@ -90,6 +90,7 @@ describe('TWAPModifiers_arbitrum', () => {
         maxPrice: parseEther('55')
       }
     );
+
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
       token: core.tokens.grail.address,
       decimals: 18,
