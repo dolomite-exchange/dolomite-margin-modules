@@ -25,7 +25,7 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
+import { IPancakeV3Pair } from "./interfaces/IPancakeV3Pair.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
 import { OracleLibrary } from "./utils/OracleLibrary.sol";
@@ -82,7 +82,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
         onlyDolomiteMarginOwner(msg.sender)
     {
         Require.that(
-            IAlgebraV3Pool(_tokenInfo.pair).token0() == _token|| IAlgebraV3Pool(_tokenInfo.pair).token1() == _token,
+            IPancakeV3Pair(_tokenInfo.pair).token0() == _token|| IPancakeV3Pair(_tokenInfo.pair).token1() == _token,
             _FILE,
             "Invalid pair"
         );
@@ -121,7 +121,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
     returns (IDolomiteStructs.MonetaryPrice memory) {
         TokenInfo memory tokenInfo = getTokenInfo(_token);
 
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(tokenInfo.pair);
+        IPancakeV3Pair currentPair = IPancakeV3Pair(tokenInfo.pair);
 
         address outputToken;
         {
