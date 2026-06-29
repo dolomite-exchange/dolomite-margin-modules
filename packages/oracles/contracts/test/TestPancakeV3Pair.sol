@@ -3,6 +3,13 @@ pragma solidity ^0.8.9;
 
 import { IPancakeV3Pair } from "../interfaces/IPancakeV3Pair.sol";
 
+
+/**
+ * @title   TestPancakeV3Pair
+ * @author  Dolomite
+ *
+ * A test implementation of the pancake pair interface
+ */
 contract TestPancakeV3Pair is IPancakeV3Pair {
     address public token0;
     address public token1;

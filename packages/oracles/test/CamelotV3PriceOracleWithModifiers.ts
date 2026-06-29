@@ -17,7 +17,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 const FIFTEEN_MINUTES = BigNumber.from('900');
 
 const GRAIL_TOKEN_INFO: CamelotV3PriceOracleWithModifiers.TokenInfoStruct = {
-  pair: "0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F",
+  pair: '0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F',
   decimals: 18,
   observationInterval: FIFTEEN_MINUTES,
   minPrice: parseEther('35'),
@@ -54,7 +54,7 @@ describe('CamelotV3PriceOracleWithModifiers', () => {
       TestPancakeV3Pair__factory.bytecode,
       [],
     );
-      
+
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
       token: core.tokens.grail.address,
       decimals: 18,
