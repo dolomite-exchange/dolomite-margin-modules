@@ -138,6 +138,7 @@ export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
 
 export const TEN_BI = BigNumber.from('10');
 
+export const MAX_UINT_112_BI = BigNumber.from('0xffffffffffffffffffffffffffff');
 export const MAX_INT_192_BI = BigNumber.from('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
 export const MAX_UINT_256_BI = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 

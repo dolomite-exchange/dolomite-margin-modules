@@ -20,18 +20,18 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { ILido } from "./interfaces/ILido.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { ICappedStEthExchangeRatePriceOracle } from "./interfaces/ICappedStEthExchangeRatePriceOracle.sol";
+import { ILido } from "./interfaces/ILido.sol";
 
 
 /**
  * @title   CappedStEthExchangeRatePriceOracle
  * @author  Dolomite
  *
- * An implementation of the IDolomitePriceOracle interface that gets the wstETH <> stETH exchange rate
+ * An implementation of the IDolomitePriceOracle interface that gets the capped wstETH <> stETH exchange rate
  */
 contract CappedStEthExchangeRatePriceOracle is ICappedStEthExchangeRatePriceOracle, OnlyDolomiteMargin {
 
@@ -94,7 +94,8 @@ contract CappedStEthExchangeRatePriceOracle is ICappedStEthExchangeRatePriceOrac
         );
         if (_params.snapshotTimestamp > snapshotTimestamp && _params.snapshotTimestamp < block.timestamp - _MINIMUM_SNAPSHOT_DELAY) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _params.snapshotTimestamp > snapshotTimestamp && _params.snapshotTimestamp < block.timestamp - _MINIMUM_SNAPSHOT_DELAY,
+            _params.snapshotTimestamp > snapshotTimestamp
+            && _params.snapshotTimestamp < block.timestamp - _MINIMUM_SNAPSHOT_DELAY,
             _FILE,
             "Invalid snapshot timestamp"
         );

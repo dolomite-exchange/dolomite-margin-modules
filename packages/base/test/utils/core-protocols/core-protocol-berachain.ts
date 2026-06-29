@@ -1,6 +1,6 @@
 import {
   ChainsightPriceOracleV3,
-  ChroniclePriceOracleV3,
+  ChroniclePriceOracleV3, PancakeV3PriceOracleWithModifiers,
   RedstonePriceOracleV3,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
@@ -172,6 +172,7 @@ export interface CoreProtocolParamsBerachain {
   tokenomics: TokenomicsEcosystem;
   tokenomicsAirdrop: TokenomicsAirdropEcosystem;
   tokens: CoreProtocolTokensBerachain;
+  twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 }
 
 export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachain> {
@@ -187,13 +188,11 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly tokenomics: TokenomicsEcosystem;
   public readonly tokenomicsAirdrop: TokenomicsAirdropEcosystem;
   public readonly tokens: CoreProtocolTokensBerachain;
+  public readonly twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 
   public readonly berachainRewardsEcosystem: BerachainRewardsEcosystem;
 
-  constructor(
-    params: CoreProtocolParams<Network.Berachain>,
-    berachainParams: CoreProtocolParamsBerachain,
-  ) {
+  constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
     super(params);
     this.berachainRewardsEcosystem = berachainParams.berachainRewardsEcosystem;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
@@ -208,5 +207,6 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.tokenomics = berachainParams.tokenomics;
     this.tokenomicsAirdrop = berachainParams.tokenomicsAirdrop;
     this.tokens = berachainParams.tokens;
+    this.twapPriceOracleV3 = berachainParams.twapPriceOracleV3;
   }
 }

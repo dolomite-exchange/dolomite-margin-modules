@@ -609,6 +609,10 @@ export const HENLO_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const HENLO_WBERA_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xB8c0bA2D17C4cc1f3d9a25eaBD123AD24a009EbE',
+};
+
 export const HONEY_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xFCBD14DC51f0A4d49d5E53C2E0950e0bC26d0Dce',
@@ -635,6 +639,10 @@ export const KDK_MAP: Record<Network.Berachain, TokenWithMarketId> = {
     address: '0xc0D1aC00A30fA4e30e44AFc7313d6312c87E21dF',
     marketId: 46,
   },
+};
+
+export const KDK_USDT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x7CDd3096e66db59e83e6df262DCeA7a6c5134107',
 };
 
 export const LBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
@@ -1353,6 +1361,10 @@ export const WG_BERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const WG_BERA_IBGT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xb186949793248AbF961ee8cfF59c6A0Dd314FBBc',
+};
+
 export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
@@ -1466,6 +1478,10 @@ export const BTC_PLACEHOLDER_MAP: Record<
     address: '0x2100000021000000210000002100000021000000',
     marketId: -1,
   },
+};
+
+export const DOLO_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xd5980e98a89e2d2361b3be657e8a003c6d3514e3',
 };
 
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1884,11 +1900,19 @@ export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const IBERA_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xFCB24b3b7E87E3810b150d25D5964c566D9A2B6F',
+};
+
 export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
     marketId: 34,
   },
+};
+
+export const IBGT_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x12bf773F18cEC56F14e7cb91d82984eF5A3148EE',
 };
 
 export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain, string> = {

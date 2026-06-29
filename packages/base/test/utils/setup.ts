@@ -11,6 +11,7 @@ import {
   IChaosLabsPriceOracleV3__factory,
   OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
+  PancakeV3PriceOracleWithModifiers__factory,
   RedstonePriceOracleV3__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -1561,6 +1562,14 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const twapPriceOracle = PancakeV3PriceOracleWithModifiers__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey(
+        'KodiakTWAPPriceOracleV3WithModifiers',
+        Network.Berachain,
+        ADDRESS_ZERO,
+      ),
+      hhUser1,
+    );
     const tokenomics = await createTokenomicsEcosystem(typedConfig.network, hhUser1);
     const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
@@ -1573,6 +1582,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       chainsightPriceOracleV3: chainsightPriceOracle,
       pendleEcosystem: pendleEcosystem,
       redstonePriceOracleV3: redstonePriceOracle,
+      twapPriceOracleV3: twapPriceOracle,
       dTokens: {
         ...coreProtocolParams.dTokens,
         beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),

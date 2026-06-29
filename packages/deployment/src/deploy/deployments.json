@@ -7086,6 +7086,13 @@
       "isVerified": true
     }
   },
+  "KodiakTWAPPriceOracleV3WithModifiersV1": {
+    "80094": {
+      "address": "0xac54783c89f58A8F9a3a1a1EDc7F063311f780c3",
+      "transaction": "0xc11f9b42aedb6f2eb375c2016d47913fd0742fc660a4fbdf768319d4dc44e95b",
+      "isVerified": true
+    }
+  },
   "LinearStepFunction10L90U90OInterestSetter": {
     "196": {
       "address": "0xc4d82e8e5240ac7C816aCA138eb41534c9aD76e1",
