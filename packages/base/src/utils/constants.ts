@@ -1484,6 +1484,51 @@ export const DOLO_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xd5980e98a89e2d2361b3be657e8a003c6d3514e3',
 };
 
+export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Base]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Bnb]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Botanix]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Ethereum]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Ink]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Mantle]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.PolygonZkEvm]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Sepolia]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.SuperSeed]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.XLayer]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+};
+
+export const DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Base]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Berachain]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Bnb]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Botanix]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Ethereum]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Ink]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Mantle]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.PolygonZkEvm]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.Sepolia]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.SuperSeed]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+  [Network.XLayer]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
+};
+
+export const DOLOMITE_PAUSER_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Base]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Berachain]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Bnb]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Botanix]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Ethereum]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Ink]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Mantle]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.PolygonZkEvm]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.Sepolia]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.SuperSeed]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+  [Network.XLayer]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+};
+
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };
@@ -1821,36 +1866,6 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   // v2 = 0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4; need to fix once they enable the L2 safe module
   [Network.SuperSeed]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
   [Network.XLayer]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-};
-
-export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Base]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Bnb]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Botanix]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Ethereum]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Ink]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Mantle]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.PolygonZkEvm]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Sepolia]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.SuperSeed]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.XLayer]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-};
-
-export const DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Base]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Berachain]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Bnb]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Botanix]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Ethereum]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Ink]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Mantle]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.PolygonZkEvm]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Sepolia]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.SuperSeed]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.XLayer]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
 };
 
 export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {

@@ -8,11 +8,13 @@ import {
 } from 'packages/admin/src/types';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 import { IDolomiteMargin, IDolomiteMarginV2, RegistryProxy__factory } from '../../../../../base/src/types';
+import { DOLOMITE_PAUSER_ADDRESS_MAP } from '../../../../../base/src/utils/constants';
 import {
   ADMIN_CLAIM_EXCESS_TOKENS_ROLE,
   ADMIN_PAUSE_MARKET_ROLE,
   BYPASS_TIMELOCK_ROLE,
   EXECUTOR_ROLE,
+  Network,
 } from '../../../../../base/src/utils/no-deps-constants';
 import { ModuleDeployments } from '../../../utils';
 import { getMaxDeploymentVersionNumberByDeploymentKey } from '../../../utils/deploy-utils';
@@ -125,6 +127,13 @@ export async function encodeDolomiteOwnerMigrations(
         ALL_FUNCTIONS,
         adminPauseMarket,
         core.gnosisSafeAddress,
+      )),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        (await adminPauseMarket.populateTransaction.pauseMarket(0)).data!.slice(0, 10),
+        adminPauseMarket,
+        DOLOMITE_PAUSER_ADDRESS_MAP[core.network as Network],
       )),
       ...(await encodeGrantAdminRegistryPermissionIfNecessary(
         core,

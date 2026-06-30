@@ -2,7 +2,7 @@ import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-de
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { FunctionFragment } from '@ethersproject/abi';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { AdminRegistry } from 'packages/admin/src/types';
+import { AdminRegistry, IAdminRegistry } from 'packages/admin/src/types';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
@@ -110,7 +110,7 @@ export const ALL_FUNCTIONS = '0x11111111';
 
 export async function encodeGrantAdminRegistryPermissionIfNecessary<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
-  adminRegistry: AdminRegistry,
+  adminRegistry: IAdminRegistry,
   selector: string | typeof ALL_FUNCTIONS,
   contract: { address: string },
   account: string | { address: string },
@@ -119,19 +119,14 @@ export async function encodeGrantAdminRegistryPermissionIfNecessary<T extends Do
     return Promise.reject(new Error('Invalid selector'));
   }
 
+  const accountAddress = typeof account === 'string' ? account : account.address;
   const transactions: EncodedTransaction[] = [];
-  if (
-    !(await adminRegistry.hasPermission(
-      selector,
-      contract.address,
-      typeof account === 'string' ? account : account.address,
-    ))
-  ) {
+  if (!(await adminRegistry.hasPermission(selector, contract.address, accountAddress))) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(core, { adminRegistry }, 'adminRegistry', 'grantPermission', [
         selector,
         contract.address,
-        core.gnosisSafeAddress,
+        accountAddress,
       ]),
     );
   }

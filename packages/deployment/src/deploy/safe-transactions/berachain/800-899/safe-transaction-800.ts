@@ -1,13 +1,11 @@
-import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ERC4626PriceOracle__factory } from 'packages/oracles/src/types';
 import { TestPriceOracleForAdmin__factory } from '../../../../../../base/src/types';
-import { DOLOMITE_PAUSER_ADDRESS_MAP } from '../../../../../../base/src/utils/constants';
+import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
+import { Network } from '../../../../../../base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
+import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
 import { ModuleDeployments } from '../../../../utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeGrantAdminRegistryPermissionIfNecessary } from '../../../../utils/encoding/dolomite-owner-encoder-utils';
 import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -44,15 +42,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     core.twapPriceOracleV3,
   );
 
-  const transactions: EncodedTransaction[] = [
-    ...await encodeGrantAdminRegistryPermissionIfNecessary(
-      core,
-      core.adminRegistry,
-      (await core.adminPauseMarket.populateTransaction.pauseMarket(0)).data!.slice(0, 10),
-      core.adminPauseMarket,
-      DOLOMITE_PAUSER_ADDRESS_MAP[core.network],
-    ),
-  ];
+  const transactions: EncodedTransaction[] = [];
 
   return {
     core,
