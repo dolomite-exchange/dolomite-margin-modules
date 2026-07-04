@@ -121,12 +121,17 @@ import {
   DOLOMITE_DAO_GNOSIS_SAFE_MAP,
   DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP,
   DPLV_GLP_MAP,
+  DPT_CM_ETH_FEB_2025_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
   DPT_GLP_SEP_2024_MAP,
+  DPT_METH_DEC_2024_MAP,
+  DPT_MNT_OCT_2024_MAP,
   DPT_R_ETH_JUN_2025_MAP,
   DPT_RS_ETH_SEP_2024_MAP,
+  DPT_USDE_DEC_2024_MAP,
+  DPT_USDE_JUL_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
   DPT_WE_ETH_JUN_2024_MAP,
   DPT_WE_ETH_SEP_2024_MAP,
@@ -347,20 +352,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolConfigBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolConfigEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolConfigBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolConfigEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolConfigMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolConfigPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolConfigXLayer
+                : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -824,22 +829,22 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.Sepolia
-  ? CoreProtocolSepolia
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolPolygonZkEvm
+              : T extends Network.Sepolia
+                ? CoreProtocolSepolia
+                : T extends Network.XLayer
+                  ? CoreProtocolXLayer
+                  : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -1012,7 +1017,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const adminRegistry = IAdminRegistry__factory.connect(
     ModuleDeployments.AdminRegistryProxy[config.network].address,
-    governance
+    governance,
   );
 
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
@@ -1871,6 +1876,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       marketIds: {
         ...coreProtocolParams.marketIds,
         cmEth: CM_ETH_MAP[typedConfig.network].marketId,
+        dPtCmethFeb2025: DPT_CM_ETH_FEB_2025_MAP[typedConfig.network].marketId,
+        dPtMethDec2024: DPT_METH_DEC_2024_MAP[typedConfig.network].marketId,
+        dPtMntOct2024: DPT_MNT_OCT_2024_MAP[typedConfig.network].marketId,
+        dPtUsdeJul2024: DPT_USDE_JUL_2024_MAP[typedConfig.network].marketId,
+        dPtUsdeDec2024: DPT_USDE_DEC_2024_MAP[typedConfig.network].marketId,
         fbtc: FBTC_MAP[typedConfig.network].marketId,
         meth: METH_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
@@ -1894,6 +1904,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokens: {
         ...coreProtocolParams.tokens,
         cmEth: IERC20__factory.connect(CM_ETH_MAP[typedConfig.network].address, hhUser1),
+        dPtCmethFeb2025: IERC20__factory.connect(DPT_CM_ETH_FEB_2025_MAP[typedConfig.network].address, hhUser1),
+        dPtMethDec2024: IERC20__factory.connect(DPT_METH_DEC_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtMntOct2024: IERC20__factory.connect(DPT_MNT_OCT_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtUsdeJul2024: IERC20__factory.connect(DPT_USDE_JUL_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtUsdeDec2024: IERC20__factory.connect(DPT_USDE_DEC_2024_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
         usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),

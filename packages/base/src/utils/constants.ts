@@ -2918,7 +2918,29 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
   },
   [Network.Ink]: {},
-  [Network.Mantle]: {},
+  [Network.Mantle]: {
+    [FBTC_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x73b15e19b247263D03D7938f1356304b7B330Ff0',
+    },
+    [METH_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',
+    },
+    [USDC_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x22b422CECb0D4Bd5afF3EA999b048FA17F5263bD',
+    },
+    [USDE_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x5166FC3adff16E99bb099834a1315e57C5444394',
+    },
+    [USDT_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0xd86048D5e4fe96157CE03Ae519A9045bEDaa6551',
+    },
+    [WETH_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x5bc7Cf88EB131DB18b5d7930e793095140799aD5',
+    },
+    [WMNT_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0xD97F20bEbeD74e8144134C4b148fE93417dd0F96',
+    },
+  },
   [Network.PolygonZkEvm]: {
     [DAI_MAP[Network.PolygonZkEvm]!.address]: {
       aggregatorAddress: '0xa4Fd5C39d975067c877F287E78D600da07E8344c',

@@ -4,8 +4,8 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { encodeSetBorrowCap, encodeSetSupplyCap, encodeSetSupplyCapWithMagic } from 'packages/deployment/src/utils/encoding/dolomite-margin-core-encoder-utils';
-import { checkBorrowCap, checkSupplyCap } from 'packages/deployment/src/utils/invariant-utils';
+import { checkBorrowCap, checkIsCollateralOnly, checkSupplyCap } from 'packages/deployment/src/utils/invariant-utils';
+import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -18,13 +18,13 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    await encodeSetSupplyCap(core, core.marketIds.cmEth, 1),
-    await encodeSetSupplyCap(core, core.marketIds.fbtc, 1),
-    await encodeSetBorrowCap(core, core.marketIds.cmEth, 1),
-    await encodeSetBorrowCap(core, core.marketIds.fbtc, 1),
+  await encodeReportCard(
+    core,
+    [core.chroniclePriceOracleV3, core.redstonePriceOracleV3, core.constantPriceOracle, core.chainlinkPriceOracleV3],
+    undefined,
+  );
 
-  ];
+  const transactions: EncodedTransaction[] = [];
 
   return {
     core,
@@ -42,8 +42,12 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     invariants: async () => {
       await checkSupplyCap(core, core.marketIds.cmEth, 1);
       await checkSupplyCap(core, core.marketIds.fbtc, 1);
+
       await checkBorrowCap(core, core.marketIds.cmEth, 1);
       await checkBorrowCap(core, core.marketIds.fbtc, 1);
+
+      await checkIsCollateralOnly(core, core.marketIds.cmEth, true);
+      await checkIsCollateralOnly(core, core.marketIds.fbtc, true);
     },
   };
 }
