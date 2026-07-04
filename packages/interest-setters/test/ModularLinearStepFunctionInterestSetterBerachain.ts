@@ -89,6 +89,9 @@ describe('ModularLinearStepFunctionInterestSetterBerachain', () => {
 
     await disableInterestAccrual(core, core.marketIds.wbtc);
 
+    await core.dolomiteMargin.connect(core.governance)
+      .ownerSetPriceOracle(core.marketIds.wbtc, core.oracleAggregatorV2.address);
+
     const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.wbtc);
     console.log('index', index.supply.toString());
 
@@ -239,7 +242,7 @@ describe('ModularLinearStepFunctionInterestSetterBerachain', () => {
           interestSetter.getInterestRate(core.tokens.wbtc.address, parseUnits('50', 8), parseUnits('100', 8), {
             gasPrice: parseUnits('1', 'wei'),
           }),
-          `ModularLinearStepInterestSetterB: Gas price too low <${core.tokens.wbtc.address.toLowerCase()}>`,
+          `ModularLinearStepInterestSetterB: Gas price too low <${core.tokens.wbtc.address.toLowerCase()}, 1>`,
         );
       },
     );

@@ -220,9 +220,9 @@ contract ModularLinearStepFunctionInterestSetterBerachain is
     function _validateTokenForBerachain(address _token) internal view {
         uint8 tokenDecimals = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()))
             .getDecimalsByToken(_token);
-        if (tokenDecimals < 18) {
+        uint256 gasPrice = tx.gasprice;
+        if (tokenDecimals < 18 && gasPrice != 0) {
             uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
-            uint256 gasPrice = tx.gasprice;
             Snapshot memory snapshot = _tokenToExcessBalanceSnapshot[_token];
             IDolomiteStructs.Wei memory oldExcess = IDolomiteStructs.Wei({
                 sign: snapshot.sign,
@@ -232,7 +232,7 @@ contract ModularLinearStepFunctionInterestSetterBerachain is
 
             console.log("gasPrice", gasPrice);
             console.log("!_isAcceptableDiff", !_isAcceptableDiff(diff));
-            if (!_isAcceptableDiff(diff) && gasPrice != 0) {
+            if (!_isAcceptableDiff(diff)) {
                 uint256 tokenPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
                 uint256 beraPrice = DOLOMITE_MARGIN().getMarketPrice(_WBERA_MARKET_ID).value;
                 console.log("gasPriceUSD", gasPrice, gasLimit, beraPrice);
