@@ -14,6 +14,11 @@ import { IMantleRewardStation } from 'packages/mantle/src/types';
 
 export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
   cmEth: IERC20;
+  dPtCmethFeb2025: IERC20;
+  dPtMethDec2024: IERC20;
+  dPtMntOct2024: IERC20;
+  dPtUsdeJul2024: IERC20;
+  dPtUsdeDec2024: IERC20;
   fbtc: IERC20;
   meth: IERC20;
   usde: IERC20;
@@ -25,6 +30,11 @@ export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Man
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
   cmEth: BigNumberish;
+  dPtCmethFeb2025: BigNumberish;
+  dPtMethDec2024: BigNumberish;
+  dPtMntOct2024: BigNumberish;
+  dPtUsdeJul2024: BigNumberish;
+  dPtUsdeDec2024: BigNumberish;
   fbtc: BigNumberish;
   meth: BigNumberish;
   usde: BigNumberish;
