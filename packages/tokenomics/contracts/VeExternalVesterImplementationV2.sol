@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
@@ -830,7 +831,9 @@ contract VeExternalVesterImplementationV2 is
         );
 
         uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
-        return rewardPrice - (rewardPrice * discount / _ONE_ETH_BASE);
+        rewardPrice -= (rewardPrice * discount / _ONE_ETH_BASE);
+
+        return Math.max(rewardPrice, 0.03 ether);
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {
