@@ -7,6 +7,8 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding
 import getScriptName from '../../../../utils/get-script-name';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
 
+const FLOOR_PRICE_START_TIMESTAMP = 1_785_124_800; // July 27 @todo @Corey, update this
+
 /**
  * This script encodes the following transactions:
  * - Upgrade the vester to include the floor price of 3 cents
@@ -29,6 +31,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await core.tokenomics.veExternalVester.PAYMENT_MARKET_ID(),
       await core.tokenomics.veExternalVester.REWARD_TOKEN(), // dolo
       await core.tokenomics.veExternalVester.REWARD_MARKET_ID(),
+      FLOOR_PRICE_START_TIMESTAMP
     ],
     'VeExternalVesterImplementationV9',
   );
@@ -59,9 +62,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-      console.log(await core.tokenomics.veExternalVester.VE_TOKEN());
-    },
+    invariants: async () => {},
   };
 }
 
