@@ -5,7 +5,13 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { expect } from 'chai';
-import { IDolomitePriceOracle, IERC20, IERC20Metadata__factory, VeExternalVesterImplementationV2, VeExternalVesterImplementationV2__factory } from '../src/types';
+import {
+  IDolomitePriceOracle,
+  IERC20,
+  IERC20Metadata__factory,
+  VeExternalVesterImplementationV2,
+  VeExternalVesterImplementationV2__factory
+} from '../src/types';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -23,7 +29,7 @@ const FLOOR_PRICE_START_TIMESTAMP = 1_785_124_800; // July 27
 const NFT_ID = BigNumber.from('4625');
 
 const PAYMENT_TOKEN_PRICE = BigNumber.from('1000000000000000000000000000000'); // $1.00 in USDC
-const REWARD_TOKEN_PRICE = parseEther('.02')
+const REWARD_TOKEN_PRICE = parseEther('.02');
 
 describe('VeExternalVesterV3', () => {
   let snapshotId: string;
@@ -32,7 +38,6 @@ describe('VeExternalVesterV3', () => {
 
   let vesterImplementation: VeExternalVesterImplementationV2;
   let vester: VeExternalVesterImplementationV2;
-  let dao: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -145,15 +150,13 @@ describe('VeExternalVesterV3', () => {
         vestingId: NFT_ID,
       });
 
-      const maxPaymentAmount = BigNumber.from('11000'); // .011 USDC. It is a little less than 50% discount at 2 cent DOLO
-
       const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await increase(ONE_WEEK);
       await vester.connect(core.hhUser1).closePositionAndBuyTokens(
         NFT_ID,
         MAX_UINT_256_BI,
         convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
-        maxPaymentAmount,
+        BigNumber.from('11000'), // .011 USDC - at execution price of 2 cents, this passes
       );
     });
 
@@ -182,7 +185,7 @@ describe('VeExternalVesterV3', () => {
           NFT_ID,
           MAX_UINT_256_BI,
           convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
-          BigNumber.from('11000'), // .011 USDC - at price of 2 cents, this would pass
+          BigNumber.from('11000'), // .011 USDC - at price of 2 cents, this would pass but fails at 3 cents
         ),
         'VeExternalVesterImplementationV2: Cost exceeds max payment amount'
       );
