@@ -37,7 +37,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
         upperRate: UpperPercentage._50,
       }));
     } else {
-      transactions.push(await encodeUpdateModularInterestSetterParams(core, marketId, { lowerRate: LowerPercentage._8 }));
+      transactions.push(await encodeUpdateModularInterestSetterParams(core, marketId, {
+        lowerRate: LowerPercentage._8
+      }));
     }
   }
 

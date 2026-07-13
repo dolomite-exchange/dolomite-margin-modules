@@ -6,7 +6,6 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
-import { defaultAbiCoder } from 'ethers/lib/utils';
 
 /**
  * This script encodes the following transactions:
