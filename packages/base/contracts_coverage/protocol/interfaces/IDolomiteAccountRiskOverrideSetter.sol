@@ -39,6 +39,12 @@ interface IDolomiteAccountRiskOverrideSetter {
     );
     event RiskFeatureSet(uint256 indexed marketId, RiskFeature riskFeature, bytes extraData);
     event DefaultAccountCheckActivated();
+    event WhitelistedSettingsSet(
+        address indexed user,
+        uint256 marketIdBitmap,
+        IDolomiteStructs.Decimal marginRatioOverride,
+        IDolomiteStructs.Decimal liquidationRewardOverride
+    );
 
     // ===================== Enums =====================
 
@@ -73,6 +79,12 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     struct SingleCollateralRiskStruct {
         uint256[] debtMarketIds;
+        IDolomiteStructs.Decimal marginRatioOverride;
+        IDolomiteStructs.Decimal liquidationRewardOverride;
+    }
+
+    struct WhitelistedSettings {
+        uint256 marketIdBitmap;
         IDolomiteStructs.Decimal marginRatioOverride;
         IDolomiteStructs.Decimal liquidationRewardOverride;
     }
