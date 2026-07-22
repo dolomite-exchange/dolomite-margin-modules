@@ -33,7 +33,7 @@ describe('DolomiteOwnerV3', () => {
 
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
-  let verifierRole: BytesLike;
+  let vetoRole: BytesLike;
   let computedRole: any;
   let setMaxWeiRole: any;
 
@@ -51,7 +51,7 @@ describe('DolomiteOwnerV3', () => {
 
     bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
     executorRole = await dolomiteOwner.EXECUTOR_ROLE();
-    verifierRole = await dolomiteOwner.VERIFIER_ROLE();
+    vetoRole = await dolomiteOwner.VETO_ROLE();
 
     computedRole = [{ destination: OTHER_ADDRESS, selector: OTHER_SELECTOR }];
     setMaxWeiRole = [{ destination: core.dolomiteMargin.address, selector: core.dolomiteMargin.interface.getSighash('ownerSetMaxWei') }];
@@ -423,155 +423,12 @@ describe('DolomiteOwnerV3', () => {
       const txn1 = await dolomiteOwner.transactions(0);
       expect(txn1.destination).to.equal(dolomiteOwner.address);
       expect(txn1.executed).to.be.false;
-      expect(txn1.verified).to.be.false;
       expect(txn1.cancelled).to.be.false;
 
       const txn2 = await dolomiteOwner.transactions(1);
       expect(txn2.destination).to.equal(dolomiteOwner.address);
       expect(txn2.executed).to.be.false;
-      expect(txn2.verified).to.be.false;
       expect(txn2.cancelled).to.be.false;
-    });
-  });
-
-  describe('#verifyTransaction', () => {
-    it('should work normally for default admin', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-
-      const result = await dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0);
-      await expectEvent(dolomiteOwner, result, 'TransactionVerified', { transactionId: 0 });
-
-      const txn = await dolomiteOwner.transactions(0);
-      expect(txn.verified).to.be.true;
-      expect(txn.executed).to.be.false;
-      expect(txn.cancelled).to.be.false;
-    });
-
-    it('should work normally for verifier', async () => {
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(verifierRole, core.hhUser1.address);
-
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-
-      const result = await dolomiteOwner.connect(core.hhUser1).verifyTransaction(0);
-      await expectEvent(dolomiteOwner, result, 'TransactionVerified', { transactionId: 0 });
-
-      const txn = await dolomiteOwner.transactions(0);
-      expect(txn.verified).to.be.true;
-    });
-
-    it('should work normally before timelock', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-
-      expect(await dolomiteOwner.isTimelockComplete(0)).to.be.false;
-      const result = await dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0);
-      await expectEvent(dolomiteOwner, result, 'TransactionVerified', { transactionId: 0 });
-
-      const txn = await dolomiteOwner.transactions(0);
-      expect(txn.verified).to.be.true;
-    });
-
-    it('should work normally past timelock', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await increase(SECONDS_TIME_LOCKED);
-
-      expect(await dolomiteOwner.isTimelockComplete(0)).to.be.true;
-      const result = await dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0);
-      await expectEvent(dolomiteOwner, result, 'TransactionVerified', { transactionId: 0 });
-
-      const txn = await dolomiteOwner.transactions(0);
-      expect(txn.verified).to.be.true;
-    });
-
-    it('should fail if transaction does not exist', async () => {
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0),
-        'DolomiteOwnerV3: Transaction does not exist',
-      );
-    });
-
-    it('should fail if transaction is expired', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await increase(SECONDS_TIME_LOCKED + SECONDS_VALID);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0),
-        'DolomiteOwnerV3: Transaction expired',
-      );
-    });
-
-    it('should fail if transaction is already verified', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0),
-        'DolomiteOwnerV3: Transaction not verifiable',
-      );
-    });
-
-    it('should fail if transaction is executed', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await increase(SECONDS_TIME_LOCKED);
-      await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0),
-        'DolomiteOwnerV3: Transaction not verifiable',
-      );
-    });
-
-    it('should fail if transaction is cancelled', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0),
-        'DolomiteOwnerV3: Transaction not verifiable',
-      );
-    });
-
-    it('should fail if not called by default admin or verifier role', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).verifyTransaction(0),
-        'DolomiteOwnerV3: Missing role',
-      );
-    });
-  });
-
-  describe('#verifyTransactions', () => {
-    it('should work normally', async () => {
-      const transaction1 = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      const transaction2 = await dolomiteOwner.populateTransaction.ownerSetSecondsValid(ONE_DAY_SECONDS * 5);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction1.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction2.data!);
-
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0, 1]);
-
-      const txn1 = await dolomiteOwner.transactions(0);
-      expect(txn1.verified).to.be.true;
-      expect(txn1.executed).to.be.false;
-
-      const txn2 = await dolomiteOwner.transactions(1);
-      expect(txn2.verified).to.be.true;
-      expect(txn2.executed).to.be.false;
-    });
-
-    it('should fail if not default admin or verifier role', async () => {
-      await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).verifyTransactions([0, 1]),
-        'DolomiteOwnerV3: Missing role',
-      );
     });
   });
 
@@ -579,7 +436,6 @@ describe('DolomiteOwnerV3', () => {
     it('should work normally', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransaction(0);
       await increase(SECONDS_TIME_LOCKED);
 
       const result = await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
@@ -594,24 +450,9 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(bypassTimelockRole, core.hhUser1.address);
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(executorRole, core.hhUser1.address);
 
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(verifierRole, core.hhUser2.address);
-
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
       const result = await dolomiteOwner.connect(core.hhUser1).executeTransaction(0);
-      await expectEvent(dolomiteOwner, result, 'TransactionExecuted', { transactionId: 0 });
-
-      const txn = await dolomiteOwner.transactions(0);
-      expect(txn.executed).to.be.true;
-      expect(await dolomiteOwner.secondsTimeLocked()).to.equal(123);
-    });
-
-    it('should work normally if there are no verifiers', async () => {
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await increase(SECONDS_TIME_LOCKED);
-
-      const result = await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
       await expectEvent(dolomiteOwner, result, 'TransactionExecuted', { transactionId: 0 });
 
       const txn = await dolomiteOwner.transactions(0);
@@ -650,7 +491,7 @@ describe('DolomiteOwnerV3', () => {
     it('should fail if transaction is cancelled', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0);
+      await dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0);
       await increase(SECONDS_TIME_LOCKED);
 
       await expectThrow(
@@ -668,19 +509,6 @@ describe('DolomiteOwnerV3', () => {
       await expectThrow(
         dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0),
         'DolomiteOwnerV3: Transaction not executable <0>',
-      );
-    });
-
-    it('should fail if there is a verifier and the transaction is not verified', async () => {
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(verifierRole, core.hhUser1.address);
-
-      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await increase(SECONDS_TIME_LOCKED);
-
-      await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0),
-        'DolomiteOwnerV3: Transaction not verified <0>',
       );
     });
 
@@ -744,12 +572,26 @@ describe('DolomiteOwnerV3', () => {
     });
   });
 
-  describe('#ownerCancelTransaction', () => {
-    it('should work normally', async () => {
+  describe('#cancelTransaction', () => {
+    it('should work normally when called by default admin', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
 
-      const result = await dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0);
+      const result = await dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0);
+      await expectEvent(dolomiteOwner, result, 'TransactionCancelled', { transactionId: 0 });
+
+      const txn = await dolomiteOwner.transactions(0);
+      expect(txn.cancelled).to.be.true;
+      expect(txn.executed).to.be.false;
+    });
+
+    it('should work normally when called by veto role', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(vetoRole, core.hhUser3.address);
+
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+
+      const result = await dolomiteOwner.connect(core.hhUser3).cancelTransaction(0);
       await expectEvent(dolomiteOwner, result, 'TransactionCancelled', { transactionId: 0 });
 
       const txn = await dolomiteOwner.transactions(0);
@@ -759,7 +601,7 @@ describe('DolomiteOwnerV3', () => {
 
     it('should fail if the transaction does not exist', async () => {
       await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0),
+        dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0),
         'DolomiteOwnerV3: Transaction does not exist',
       );
     });
@@ -767,10 +609,10 @@ describe('DolomiteOwnerV3', () => {
     it('should fail if transaction is already cancelled', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0);
+      await dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0);
 
       await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0),
+        dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0),
         'DolomiteOwnerV3: Transaction not cancellable',
       );
     });
@@ -782,30 +624,30 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
 
       await expectThrow(
-        dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransaction(0),
+        dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0),
         'DolomiteOwnerV3: Transaction not cancellable',
       );
     });
 
-    it('should fail if not called by default admin', async () => {
+    it('should fail if not called by default admin or veto role', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
 
       await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).ownerCancelTransaction(0),
-        `AccessControl: account ${core.hhUser1.address.toLowerCase()} is missing role ${BYTES_ZERO}`,
+        dolomiteOwner.connect(core.hhUser1).cancelTransaction(0),
+        'DolomiteOwnerV3: Missing role'
       );
     });
   });
 
-  describe('#ownerCancelTransactions', () => {
-    it('should work normally', async () => {
+  describe('#cancelTransactions', () => {
+    it('should work normally for default admin', async () => {
       const transaction1 = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       const transaction2 = await dolomiteOwner.populateTransaction.ownerSetSecondsValid(ONE_DAY_SECONDS * 5);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction1.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction2.data!);
 
-      await dolomiteOwner.connect(core.gnosisSafe).ownerCancelTransactions([0, 1]);
+      await dolomiteOwner.connect(core.gnosisSafe).cancelTransactions([0, 1]);
 
       const txn1 = await dolomiteOwner.transactions(0);
       expect(txn1.cancelled).to.be.true;
@@ -816,10 +658,29 @@ describe('DolomiteOwnerV3', () => {
       expect(txn2.executed).to.be.false;
     });
 
-    it('should fail if not called by default admin', async () => {
+    it('should work normally for veto role', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(vetoRole, core.hhUser3.address);
+
+      const transaction1 = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
+      const transaction2 = await dolomiteOwner.populateTransaction.ownerSetSecondsValid(ONE_DAY_SECONDS * 5);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction1.data!);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction2.data!);
+
+      await dolomiteOwner.connect(core.hhUser3).cancelTransactions([0, 1]);
+
+      const txn1 = await dolomiteOwner.transactions(0);
+      expect(txn1.cancelled).to.be.true;
+      expect(txn1.executed).to.be.false;
+
+      const txn2 = await dolomiteOwner.transactions(1);
+      expect(txn2.cancelled).to.be.true;
+      expect(txn2.executed).to.be.false;
+    });
+
+    it('should fail if not called by default admin or veto role', async () => {
       await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).ownerCancelTransactions([0, 1]),
-        `AccessControl: account ${core.hhUser1.address.toLowerCase()} is missing role ${BYTES_ZERO}`,
+        dolomiteOwner.connect(core.hhUser1).cancelTransactions([0, 1]),
+        'DolomiteOwnerV3: Missing role'
       );
     });
   });
@@ -830,32 +691,24 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
-
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0, 1]);
-
       await increase(SECONDS_TIME_LOCKED);
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
     });
 
-    it('should work normally for pending + verified + executed transactions', async () => {
-      expect(await dolomiteOwner.getTransactionCount(true, true, true)).to.eq(4);
-    });
-
-    it('should work normally for pending + verified transactions', async () => {
-      expect(await dolomiteOwner.getTransactionCount(true, true, false)).to.eq(3);
+    it('should work normally for pending + executed transactions', async () => {
+      expect(await dolomiteOwner.getTransactionCount(true, true)).to.eq(3);
     });
 
     it('should work normally for pending transactions', async () => {
-      expect(await dolomiteOwner.getTransactionCount(true, false, false)).to.eq(3);
+      expect(await dolomiteOwner.getTransactionCount(true, false)).to.eq(2);
     });
 
     it('should work normally for executed transactions', async () => {
-      expect(await dolomiteOwner.getTransactionCount(false, false, true)).to.eq(1);
+      expect(await dolomiteOwner.getTransactionCount(false, true)).to.eq(1);
     });
 
     it('should work normally for neither pending nor executed transactions', async () => {
-      expect(await dolomiteOwner.getTransactionCount(false, false, false)).to.eq(0);
+      expect(await dolomiteOwner.getTransactionCount(false, false)).to.eq(0);
     });
   });
 
@@ -865,55 +718,42 @@ describe('DolomiteOwnerV3', () => {
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
-      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(core.dolomiteRegistry.address, data.data!);
-
-      await dolomiteOwner.connect(core.gnosisSafe).verifyTransactions([0, 1]);
-
       await increase(SECONDS_TIME_LOCKED);
       await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
     });
 
     it('should work normally for pending + executed transactions', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 4, true, true, true);
-      expect(ids.length).to.eq(4);
+      const ids = await dolomiteOwner.getTransactionIds(0, 3, true, true);
+      expect(ids.length).to.eq(3);
       expect(ids[0]).to.eq(0);
       expect(ids[1]).to.eq(1);
       expect(ids[2]).to.eq(2);
-      expect(ids[3]).to.eq(3);
     });
 
     it('should work normally for pending transactions', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 4, true, false, false);
-      expect(ids.length).to.eq(3);
+      const ids = await dolomiteOwner.getTransactionIds(0, 3, true, false);
+      expect(ids.length).to.eq(2);
       expect(ids[0]).to.eq(1);
       expect(ids[1]).to.eq(2);
-      expect(ids[2]).to.eq(3);
-    });
-
-    it('should work normally for verified transactions', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 4, false, true, false);
-      expect(ids.length).to.eq(1);
-      expect(ids[0]).to.eq(1);
     });
 
     it('should work normally for executed transactions', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 3, false, false, true);
+      const ids = await dolomiteOwner.getTransactionIds(0, 3, false, true);
       expect(ids.length).to.eq(1);
       expect(ids[0]).to.eq(0);
     });
 
     it('should work normally for neither pending nor executed transactions', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 4, false, false, false);
+      const ids = await dolomiteOwner.getTransactionIds(0, 3, false, false);
       expect(ids.length).to.eq(0);
     });
 
     it('should work if to is greater than transaction count', async () => {
-      const ids = await dolomiteOwner.getTransactionIds(0, 5, true, true, true);
-      expect(ids.length).to.eq(4);
+      const ids = await dolomiteOwner.getTransactionIds(0, 5, true, true);
+      expect(ids.length).to.eq(3);
       expect(ids[0]).to.eq(0);
       expect(ids[1]).to.eq(1);
       expect(ids[2]).to.eq(2);
-      expect(ids[3]).to.eq(3);
     });
   });
 });

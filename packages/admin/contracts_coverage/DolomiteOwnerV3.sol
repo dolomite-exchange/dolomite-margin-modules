@@ -48,7 +48,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
+    bytes32 public constant VETO_ROLE = keccak256("VETO_ROLE");
 
     // ================================================
     // =================== State Variables ============
@@ -223,17 +223,17 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // ============= Transaction Functions ============
     // ================================================
 
-    function ownerCancelTransaction(
+    function cancelTransaction(
         uint256 _transactionId
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _ownerCancelTransaction(_transactionId);
+    ) external onlyRoleOrDefaultAdmin(msg.sender, VETO_ROLE) {
+        _cancelTransaction(_transactionId);
     }
 
-    function ownerCancelTransactions(
+    function cancelTransactions(
         uint256[] calldata _transactionIds
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRoleOrDefaultAdmin(msg.sender, VETO_ROLE) {
         for (uint256 i; i < _transactionIds.length; i++) {
-            _ownerCancelTransaction(_transactionIds[i]);
+            _cancelTransaction(_transactionIds[i]);
         }
     }
 
@@ -274,20 +274,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         }
 
         return transactionIds;
-    }
-
-    function verifyTransaction(
-        uint256 _transactionId
-    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
-        _verifyTransaction(_transactionId);
-    }
-
-    function verifyTransactions(
-        uint256[] calldata _transactionIds
-    ) external onlyRoleOrDefaultAdmin(msg.sender, VERIFIER_ROLE) {
-        for (uint256 i; i < _transactionIds.length; i++) {
-            _verifyTransaction(_transactionIds[i]);
-        }
     }
 
     function executeTransaction(
@@ -343,14 +329,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function getTransactionCount(
         bool _pending,
-        bool _verified,
         bool _executed
     ) external view returns (uint256) {
         uint256 count;
         for (uint256 i; i < transactionCount; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
                 || (_executed && transactions[i].executed)
             ) {
                 count += 1;
@@ -363,7 +347,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         uint256 _from,
         uint256 _to,
         bool _pending,
-        bool _verified,
         bool _executed
     ) external view returns (uint256[] memory) {
         if (_to > transactionCount) {
@@ -375,7 +358,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         for (i = _from; i < _to; ++i) {
             if (
                 (_pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (_verified && transactions[i].verified && !transactions[i].executed && !transactions[i].cancelled)
                 || (_executed && transactions[i].executed)
             ) {
                 transactionIdsTemp[count] = i;
@@ -460,21 +442,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         emit SecondsValidChanged(_secondsValid);
     }
 
-    function _verifyTransaction(
-        uint256 _transactionId
-    ) internal transactionExists(_transactionId) notExpired(_transactionId) {
-        Transaction storage txn = transactions[_transactionId];
-        if (!txn.executed && !txn.verified && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            !txn.executed && !txn.verified && !txn.cancelled,
-            _FILE,
-            "Transaction not verifiable"
-        );
-
-        txn.verified = true;
-        emit TransactionVerified(_transactionId);
-    }
-
     function _executeTransaction(
         uint256 _transactionId
     )
@@ -490,16 +457,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             !txn.executed && !txn.cancelled,
             _FILE,
             "Transaction not executable",
-            _transactionId
-        );
-
-        if (txn.verified || _roleToAddresses[VERIFIER_ROLE].length() == 0 || hasRole(BYPASS_TIMELOCK_ROLE, msg.sender)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            txn.verified
-                || _roleToAddresses[VERIFIER_ROLE].length() == 0
-                || hasRole(BYPASS_TIMELOCK_ROLE, msg.sender),
-            _FILE,
-            "Transaction not verified",
             _transactionId
         );
 
@@ -528,7 +485,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         return transactionId;
     }
 
-    function _ownerCancelTransaction(
+    function _cancelTransaction(
         uint256 _transactionId
     ) internal transactionExists(_transactionId) {
         Transaction storage txn = transactions[_transactionId];
