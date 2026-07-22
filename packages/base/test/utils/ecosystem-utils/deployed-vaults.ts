@@ -33,6 +33,9 @@ import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 import { marketToIsolationModeVaultInfoBnb } from 'packages/deployment/src/deploy/isolation-mode/bnb-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoSepolia
+} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/sepolia-isolation-mode';
 
 export class DeployedVault {
   public contractName: string;
@@ -206,6 +209,8 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
       marketToIsolationModeVaultInfoPolygonZkEvm,
       deployedVaults,
     );
+  } else if (config.network === Network.Sepolia) {
+    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoSepolia, deployedVaults);
   } else if (config.network === Network.SuperSeed) {
     skippedMarkets = await initializeVaults(
       config,

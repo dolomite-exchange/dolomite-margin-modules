@@ -1,19 +1,24 @@
+import { RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { expect } from 'chai';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IAdminRegistry__factory } from 'packages/admin/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate } from 'packages/base/test/utils';
+import { DolomiteNetwork, Network, ONE_WEEK_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import { advanceByTimeDelta, getRealLatestBlockNumber, impersonate } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { FeeRebateClaimer__factory, FeeRebateRollingClaims__factory } from 'packages/tokenomics/src/types';
-import { deployContractAndSave, TRANSACTION_BUILDER_VERSION } from '../../utils/deploy-utils';
+import {
+  deployContractAndSave,
+  getMaxDeploymentVersionNameByDeploymentKey,
+  TRANSACTION_BUILDER_VERSION,
+} from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
+import { encodeSetGlobalOperatorIfNecessary } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
-import { encodeSetGlobalOperator } from '../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { expect } from 'chai';
 
-const HANDLER_ADDRESS = '0xdf86dfdf493bcd2b838a44726a1e58f66869ccbe';
+const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 const REVENUE_SWEEPER_ADDRESS = '0x59a8FE1333F7fE907639D94C39538608DE33F6c5';
 
 /**
@@ -29,10 +34,14 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const serverEpoch = await fetch('https://api.dolomite.io/liquidity-mining/ve-dolo-rebate/metadata')
+    .then((response) => response.json())
+    .then((json) => json['metadata']['currentEpochIndex']);
+
   const feeRebateClaimerImplementationAddress = await deployContractAndSave(
     'FeeRebateClaimer',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    'FeeRebateClaimerImplementationV1',
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateClaimerImplementation', 5),
   );
   const feeRebateClaimerImplementation = FeeRebateClaimer__factory.connect(
     feeRebateClaimerImplementationAddress,
@@ -53,14 +62,17 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const feeRebateRollingClaimsImplementationAddress = await deployContractAndSave(
     'FeeRebateRollingClaims',
     [core.dolomiteRegistry.address, core.dolomiteMargin.address],
-    'FeeRebateRollingClaimsImplementationV1',
+    getMaxDeploymentVersionNameByDeploymentKey('FeeRebateRollingClaimsImplementation', 4),
   );
   const feeRebateRollingClaimsImplementation = FeeRebateRollingClaims__factory.connect(
     feeRebateRollingClaimsImplementationAddress,
     core.hhUser1,
   );
-  // tslint:disable-next-line:max-line-length
-  const feeRebateRollingClaimsInitCalldata = await feeRebateRollingClaimsImplementation.populateTransaction.initialize();
+  // tslint:disable-next-line
+  const feeRebateRollingClaimsInitCalldata = await feeRebateRollingClaimsImplementation.populateTransaction[
+    'initialize(address)'
+    // tslint:disable-next-line
+  ](feeRebateClaimerProxy.address);
   const feeRebateRollingClaimsProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(
@@ -81,8 +93,8 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   );
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetGlobalOperator(core, feeRebateRollingClaimsProxy, true),
-    await encodeSetGlobalOperator(core, feeRebateClaimerProxy, true),
+    ...(await encodeSetGlobalOperatorIfNecessary(core, feeRebateRollingClaimsProxy, true)),
+    ...(await encodeSetGlobalOperatorIfNecessary(core, feeRebateClaimerProxy, true)),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { feeRebateClaimerProxy },
@@ -122,13 +134,6 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       core,
       { feeRebateRollingClaimsProxy },
       'feeRebateRollingClaimsProxy',
-      'ownerSetFeeRebateClaimer',
-      [feeRebateClaimerProxy.address],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { feeRebateRollingClaimsProxy },
-      'feeRebateRollingClaimsProxy',
       'ownerSetClaimEnabled',
       [false],
     ),
@@ -138,6 +143,58 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       feeRebateClaimerProxy.address,
     ]),
   ];
+
+  {
+    const proxy = RegistryProxy__factory.connect(feeRebateClaimerProxyAddress, core.hhUser1);
+    if (
+      (await proxy.implementation()) !== feeRebateClaimerImplementationAddress &&
+      core.network === Network.Berachain
+    ) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateClaimerProxy: proxy },
+          'feeRebateClaimerProxy',
+          'upgradeTo',
+          [feeRebateClaimerImplementationAddress],
+        ),
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateClaimerProxy },
+          'feeRebateClaimerProxy',
+          'initializeV4',
+          [
+            [
+              core.marketIds.weth,
+              core.marketIds.wbera,
+              core.marketIds.usdc,
+              core.marketIds.honey,
+              core.marketIds.wbtc,
+              core.marketIds.usdt,
+              core.marketIds.rUsd,
+              core.marketIds.usde,
+              core.marketIds.iBera,
+              core.marketIds.byusd,
+            ],
+          ],
+        ),
+      );
+    }
+  }
+  {
+    const proxy = RegistryProxy__factory.connect(feeRebateRollingClaimsProxyAddress, core.hhUser1);
+    if ((await proxy.implementation()) !== feeRebateRollingClaimsImplementationAddress) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { feeRebateRollingClaimsProxy: proxy },
+          'feeRebateRollingClaimsProxy',
+          'upgradeTo',
+          [feeRebateRollingClaimsImplementationAddress],
+        ),
+      );
+    }
+  }
 
   return {
     core,
@@ -152,6 +209,14 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
       },
     },
     invariants: async () => {
+      console.log('\tStart timestamp: ', (await feeRebateClaimerProxy.startTimestamp()).toNumber());
+      console.log('\tStart epoch: ', (await feeRebateClaimerProxy.currentEpoch()).toNumber());
+
+      // the contracts should start one behind the server
+      assertHardhatInvariant(
+        (await feeRebateClaimerProxy.currentEpoch()).add(1).eq(serverEpoch),
+        'Invalid epoch on feeRebateClaimerProxy',
+      );
       assertHardhatInvariant(
         (await feeRebateClaimerProxy.handler()) === HANDLER_ADDRESS,
         'Invalid handler on feeRebateClaimerProxy',
@@ -169,6 +234,11 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
         'Invalid revenue sweeper on feeRebateClaimerProxy',
       );
 
+      // the contracts should start one behind the server
+      assertHardhatInvariant(
+        (await feeRebateRollingClaimsProxy.currentEpoch()).add(1).eq(serverEpoch),
+        'Invalid epoch on feeRebateClaimerProxy',
+      );
       assertHardhatInvariant(
         (await feeRebateRollingClaimsProxy.handler()) === HANDLER_ADDRESS,
         'Invalid handler on feeRebateRollingClaimsProxy',
@@ -201,14 +271,16 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
 
       if ((await core.dolomiteMargin.getNumMarkets()).gt(0)) {
         const handler = await impersonate(HANDLER_ADDRESS);
+        await advanceByTimeDelta(ONE_WEEK_SECONDS);
+        expect(await feeRebateClaimerProxy.currentEpoch()).to.eq(serverEpoch - 1);
 
-        expect(await feeRebateClaimerProxy.epoch()).to.eq(0);
-
+        console.log(`\tPerforming claim for USDC for epoch ${serverEpoch}...`);
         await feeRebateClaimerProxy
           .connect(handler)
-          .handlerClaimRewardsByEpochAndMarketId(1, [core.marketIds.usdc], true);
+          .handlerClaimRewardsByEpochAndMarketId(serverEpoch, [core.marketIds.usdc], true);
+        console.log(`\tSuccessfully claimed for USDC for epoch ${serverEpoch}...`);
 
-        expect(await feeRebateClaimerProxy.epoch()).to.eq(1);
+        expect(await feeRebateClaimerProxy.currentEpoch()).to.eq(serverEpoch);
         expect(await feeRebateClaimerProxy.getClaimAmountByEpochAndMarketId(1, core.marketIds.usdc)).to.not.eq(0);
       }
     },

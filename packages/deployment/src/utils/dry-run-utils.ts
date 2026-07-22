@@ -119,18 +119,18 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       const ownerAddress = await result.core.dolomiteMargin.owner();
       const invalidOwnerError = getInvalidOwnerError(ownerAddress);
       const transactionIds = await getTransactionIds(ownerAddress, result);
+      const configGasLimit: number | 'auto' = hardhat.config.networks[hardhat.network.name].gas;
+      const overrides: Overrides = {
+        gasLimit: typeof configGasLimit === 'number' ? configGasLimit : undefined,
+      };
 
       for (const transaction of result.upload.transactions) {
         const signer = result.core.gnosisSafe;
-        const gasLimit = 50_000_000;
-        const overrides: Overrides = {
-          gasLimit,
-        };
         let txResult: TransactionResponse;
         if (transaction.to === result.core.governance.address || transaction.to !== ownerAddress) {
           txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
             signer.sendTransaction({
-              gasLimit,
+              gasLimit: overrides.gasLimit,
               to: transaction.to,
               data: transaction.data,
             }),
@@ -153,7 +153,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
           } else if (ownerAddress === result.core.gnosisSafe.address) {
             txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
               signer.sendTransaction({
-                gasLimit,
+                gasLimit: overrides.gasLimit,
                 to: transaction.to,
                 data: transaction.data,
               }),
@@ -197,15 +197,15 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
             let txResult: TransactionResponse | undefined;
             if (ownerAddress === result.core.ownerAdapterV1.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
+                result.core.ownerAdapterV1.executeTransactions([transactionId], overrides),
               );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
+                result.core.ownerAdapterV2.executeTransactions([transactionId], overrides),
               );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.delayedMultiSig.executeTransaction(transactionId, {}),
+                result.core.delayedMultiSig.executeTransaction(transactionId, overrides),
               );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');

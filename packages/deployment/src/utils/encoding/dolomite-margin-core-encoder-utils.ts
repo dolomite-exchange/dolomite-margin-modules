@@ -2,6 +2,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 
 import { BYTES_EMPTY, DolomiteNetwork, DolomiteV2Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import { OracleAggregatorV2 } from 'packages/oracles/src/types';
 import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
@@ -303,6 +304,35 @@ export async function encodeSetIsBorrowOnly<T extends DolomiteV2Network>(
       isBorrowOnly ? AccountRiskOverrideRiskFeature.BORROW_ONLY : AccountRiskOverrideRiskFeature.NONE,
       BYTES_EMPTY,
     ],
+  );
+}
+
+export async function encodePauseMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminPauseMarket: core.adminPauseMarket },
+    'adminPauseMarket',
+    'pauseMarket',
+    [marketId],
+    { skipWrappingCalldataInSubmitTransaction: true },
+  );
+}
+
+export async function encodeUnpauseMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  oracleAggregatorV2: OracleAggregatorV2 = core.oracleAggregatorV2,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminPauseMarket: core.adminPauseMarket },
+    'adminPauseMarket',
+    'unpauseMarket',
+    [marketId, oracleAggregatorV2.address],
+    { skipWrappingCalldataInSubmitTransaction: true },
   );
 }
 

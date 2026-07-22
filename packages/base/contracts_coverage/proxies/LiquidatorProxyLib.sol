@@ -29,6 +29,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 
 
 /**
@@ -120,7 +121,6 @@ library LiquidatorProxyLib {
             );
         }
     }
-
 
     function getMarketInfos(
         IDolomiteMargin _dolomiteMargin,

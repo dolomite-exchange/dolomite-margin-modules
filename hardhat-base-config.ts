@@ -11,6 +11,7 @@ import {
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import dotenv from 'dotenv';
+import { ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { HardhatUserConfig } from 'hardhat/types';
 import 'tsconfig-paths/register';
@@ -54,6 +55,10 @@ if (!mantleWeb3Url) {
 const polygonZkEvmWeb3Url = process.env.POLYGON_ZKEVM_WEB3_PROVIDER_URL;
 if (!polygonZkEvmWeb3Url) {
   throw new Error('No POLYGON_ZKEVM_WEB3_PROVIDER_URL provided!');
+}
+const sepoliaWeb3Url = process.env.SEPOLIA_WEB3_PROVIDER_URL;
+if (!sepoliaWeb3Url) {
+  throw new Error('No SEPOLIA_WEB3_PROVIDER_URL provided!');
 }
 const superSeedWeb3Url = process.env.SUPER_SEED_WEB3_PROVIDER_URL;
 if (!superSeedWeb3Url) {
@@ -141,7 +146,7 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Base, 10),
       url: baseWeb3Url,
       gas: 20_000_000, // 20M gas
-      gasPrice: 30_000_000, // 0.03 gwei
+      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Berachain]: {
@@ -154,14 +159,14 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Bnb, 10),
       url: bnbchainWeb3Url,
       gas: 20_000_000, // 20M gas
-      gasPrice: 50_000_000, // 0.05 gwei
+      gasPrice: ethers.utils.parseUnits('0.05', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Botanix]: {
       chainId: parseInt(Network.Botanix, 10),
       url: botanixWeb3Url,
       gas: 15_000_000, // 15M gas
-      gasPrice: 800_000, // 0.0008 gwei
+      gasPrice: ethers.utils.parseUnits('0.0008', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Ethereum]: {
@@ -174,28 +179,34 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Ink, 10),
       url: inkWeb3Url,
       gas: 30_000_000, // 30M gas
-      gasPrice: 30_000_000, // 0.03 gwei
+      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Mantle]: {
       chainId: parseInt(Network.Mantle, 10),
       url: mantleWeb3Url,
-      gas: 25_000_000_000, // 25B gas
-      gasPrice: 30_000_000, // 0.03 gwei
+      gas: 30_000_000, // 30M gas
+      gasPrice: ethers.utils.parseUnits('50', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.PolygonZkEvm]: {
       chainId: parseInt(Network.PolygonZkEvm, 10),
       url: polygonZkEvmWeb3Url,
       gas: 20_000_000, // 20M gas
-      gasPrice: 30_000_000, // 0.03 gwei
+      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Sepolia]: {
+      chainId: parseInt(Network.Sepolia, 10),
+      url: sepoliaWeb3Url,
+      gas: 10_000_000, // 10M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.SuperSeed]: {
       chainId: parseInt(Network.SuperSeed, 10),
       url: superSeedWeb3Url,
       gas: 30_000_000, // 30M gas
-      gasPrice: 30_000_000, // 0.03 gwei
+      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {
@@ -252,6 +263,7 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: etherscanApiKey,
       [NetworkName.PolygonZkEvm]: etherscanApiKey,
+      [NetworkName.Sepolia]: etherscanApiKey,
       [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
@@ -326,6 +338,14 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://zkevm.polygonscan.com',
+        },
+      },
+      {
+        network: NetworkName.Sepolia,
+        chainId: parseInt(Network.Sepolia, 10),
+        urls: {
+          apiURL: 'https://api.etherscan.io/v2/api',
+          browserURL: 'https://sepolia.etherscan.io',
         },
       },
       {

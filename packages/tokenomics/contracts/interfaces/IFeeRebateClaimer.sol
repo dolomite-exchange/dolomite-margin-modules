@@ -34,22 +34,31 @@ interface IFeeRebateClaimer {
 
     struct FeeRebateClaimerStorage {
         /// @notice 1-based epoch
-        uint96 epoch;
+        uint96 currentEpoch;
         IAdminClaimExcessTokens adminFeeClaimer;
         IFeeRebateRollingClaims feeRebateRollingClaims;
         address revenueSweeper;
         mapping(uint256 => mapping(uint256 => uint256)) epochToMarketIdToClaimAmountMap;
+        mapping(uint256 => mapping(uint256 => uint256)) epochToMarketIdToClaimTimestampMap;
+        mapping(uint256 => uint256) marketIdToTotalClaimAmountMap;
     }
 
     event AdminFeeClaimerSet(address adminFeeClaimer);
     event FeeRebateRollingClaimsSet(address feeRebateRollingClaims);
     event RevenueSweeperSet(address revenueSweeper);
     event MarketIdToFeesClaimed(uint256 epoch, uint256 marketId, uint256 claimedAmountWei);
+    event MarketIdTotalFeesUpdated(uint256 marketId, uint256 totalClaimedAmountWei);
     event EpochSet(uint256 epoch);
 
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
+
+    function initializeV2(
+        uint256[] calldata _epochs,
+        uint256[] calldata _timestamps,
+        uint256[] calldata _marketIds
+    ) external;
 
     function ownerSetAdminFeeClaimer(address _adminFeeClaimer) external;
 
@@ -71,6 +80,10 @@ interface IFeeRebateClaimer {
 
     function getClaimAmountByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256);
 
+    function getTotalClaimAmountByMarketId(uint256 _marketId) external view returns (uint256);
+
+    function getClaimTimestampByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256);
+
     function adminFeeClaimer() external view returns (address);
 
     function feeRebateRollingClaims() external view returns (IFeeRebateRollingClaims);
@@ -78,7 +91,10 @@ interface IFeeRebateClaimer {
     function revenueSweeper() external view returns (address);
 
     /// @notice 1-based epoch
-    function epoch() external view returns (uint256);
+    function currentEpoch() external view returns (uint256);
+
+    /// @notice The timestamp that epoch 1 started
+    function startTimestamp() external view returns (uint256);
 
     function getSweepableAmountsByMarketIds(
         uint256[] calldata _marketIds

@@ -541,7 +541,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      * Get the global minimum margin-ratio that every position must maintain to prevent being
      * liquidated.
      *
-     * @param  account       The account whose margin ratio is being queried. This is used to determine if there is an
+     * @param  account      The account whose margin ratio is being queried. This is used to determine if there is an
      *                      override that supersedes the global minimum.
      * @return  The margin ratio for this account
      */
@@ -655,7 +655,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
     /**
      * Get the margin ratio override for an account owner. Used to enable e-mode for certain isolation mode vaults.
      *
-     * @param  account                       The account to check if there is a risk override.
+     * @param  account                      The account to check if there is a risk override.
      * @return marginRatioOverride          The margin ratio override for an account owner. Defaults to 0 if there's no
      *                                      override in place.
      * @return liquidationSpreadOverride    The margin ratio override for an account owner. Defaults to 0 if there's no

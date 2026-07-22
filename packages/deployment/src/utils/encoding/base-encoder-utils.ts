@@ -22,6 +22,8 @@ import { EncodedTransaction } from '../dry-run-utils';
 let mostRecentTokenDecimals: number | undefined = undefined;
 const numMarketsKey = 'numMarkets';
 const marketIdToMarketNameCache: Record<string, string | undefined> = {};
+const marketIdToTokenAddressCache: Record<string, string | undefined> = {};
+const tokenToDecimalsCache: Record<string, number | undefined> = {};
 
 export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number | undefined) {
   mostRecentTokenDecimals = _mostRecentTokenDecimals;
@@ -42,11 +44,13 @@ export async function getFormattedMarketName<T extends DolomiteNetwork>(
 
   const cachedName = marketIdToMarketNameCache[marketId.toString()];
   if (typeof cachedName !== 'undefined') {
+    setMostRecentTokenDecimals(tokenToDecimalsCache[marketIdToTokenAddressCache[marketId.toString()] ?? '']);
     return cachedName;
   }
   const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
   const marketName = await getFormattedTokenName(core, tokenAddress);
   marketIdToMarketNameCache[marketId.toString()] = marketName;
+  marketIdToTokenAddressCache[marketId.toString()] = tokenAddress.toLowerCase();
   return marketName;
 }
 
@@ -62,7 +66,7 @@ export async function getFormattedTokenName<T extends DolomiteNetwork>(
 
   await fetchTokenDecimals(core, tokenAddress);
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
-  const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
+  const cachedName = addressToNameCache[tokenAddress.toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
   }
@@ -79,13 +83,22 @@ async function fetchTokenDecimals<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokenAddress: string,
 ): Promise<void> {
+  const tokenAddressLower = tokenAddress.toLowerCase();
+  if (tokenToDecimalsCache[tokenAddressLower]) {
+    setMostRecentTokenDecimals(tokenToDecimalsCache[tokenAddressLower]);
+    return;
+  }
+
   try {
-    const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+    const token = IERC20Metadata__factory.connect(tokenAddressLower, core.hhUser1);
     const tokenInfo = INVALID_TOKEN_MAP[core.network][token.address];
     if (tokenInfo) {
-      mostRecentTokenDecimals = tokenInfo.decimals;
+      tokenToDecimalsCache[tokenAddressLower] = tokenInfo.decimals;
+      setMostRecentTokenDecimals(tokenInfo.decimals);
     } else {
-      mostRecentTokenDecimals = await token.decimals();
+      const decimals = await token.decimals();
+      tokenToDecimalsCache[tokenAddressLower] = decimals;
+      setMostRecentTokenDecimals(decimals);
     }
   } catch (e) {}
 }
@@ -120,7 +133,8 @@ export function isMarketIdParam(paramType: ParamType): boolean {
 export function isTokenParam(paramType: ParamType): boolean {
   return (
     (paramType.name.includes('token') || paramType.name.includes('Token')) &&
-    !paramType.name.toLowerCase().includes('decimals')
+    !paramType.name.toLowerCase().includes('decimals') &&
+    !(paramType.name.includes('tokenInfo') && paramType.type === 'tuple')
   );
 }
 
@@ -201,9 +215,15 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const fragment = contract.interface.getFunction(methodName.toString());
     const mappedArgs: string[] = [];
     for (let i = 0; i < (args as any[]).length; i++) {
-      mappedArgs.push(
-        await getReadableArg(core, fragment.inputs[i], (args as any[])[i], methodName.toString(), args, decimals),
-      );
+      const param = fragment.inputs[i];
+      try {
+        mappedArgs.push(
+          await getReadableArg(core, param, (args as any[])[i], methodName.toString(), args, decimals),
+        );
+      } catch (e) {
+        console.error(`Could not get mapped arg for ${param.format()} with arg ${(args as any[])[i]} at index ${i}`);
+        return Promise.reject(e);
+      }
     }
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;

@@ -46,12 +46,78 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
     bytes32 private constant _FILE = "FeeRebateClaimer";
     bytes32 private constant _FEE_REBATE_ROLLING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeRebateRollingClaimsStorage")) - 1); // solhint-disable-line max-line-length
+    /// @notice Thursday May 21, 2026 @ 00:00:00
+    uint256 private constant _START_TIMESTAMP = 1779321600;
+    uint256 private constant _ONE_WEEK_SECONDS = 7 days;
 
     // ======================================================
     // ==================== Constructor =====================
     // ======================================================
 
     constructor(address _dolomiteRegistry, address _dolomiteMargin) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+    }
+
+    function initialize() public override {
+        uint256 epochTimestamp = block.timestamp / _ONE_WEEK_SECONDS * _ONE_WEEK_SECONDS;
+        uint96 epoch = uint96((epochTimestamp - _START_TIMESTAMP) / _ONE_WEEK_SECONDS); // safe cast
+
+        _getFeeRebateClaimerStorage().currentEpoch = epoch;
+        emit EpochSet(epoch);
+
+        super.initialize();
+        initializeV2(
+            /* _epochs = */ new uint256[](0),
+            /* _timestamps = */ new uint256[](0),
+            /* _marketIds = */ new uint256[](0)
+        );
+        initializeV4(/* _marketIds = */ new uint256[](0));
+    }
+
+    function initializeV2(
+        uint256[] memory _epochs,
+        uint256[] memory _timestamps,
+        uint256[] memory _marketIds
+    ) public reinitializer(2) {
+        Require.that(
+            _epochs.length == _timestamps.length,
+            _FILE,
+            "Invalid epochs or timestamps"
+        );
+
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        for (uint256 i; i < _epochs.length; ++i) {
+            Require.that(
+                _timestamps[i] < block.timestamp,
+                _FILE,
+                "Invalid timestamp",
+                _timestamps[i]
+            );
+
+            for (uint j; j < _marketIds.length; ++j) {
+                $.epochToMarketIdToClaimTimestampMap[_epochs[i]][_marketIds[j]] = _timestamps[i];
+            }
+        }
+    }
+
+    function initializeV4(uint256[] memory _marketIds) public reinitializer(4) {
+        if (_marketIds.length == 0) {
+            return;
+        }
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+
+        uint256[] memory totals = new uint256[](_marketIds.length);
+        uint256 epoch = currentEpoch();
+        // Epochs are 1-based
+        for (uint256 i = 1; i <= epoch; ++i) {
+            for (uint256 j; j < _marketIds.length; ++j) {
+                totals[j] += $.epochToMarketIdToClaimAmountMap[i][_marketIds[j]];
+            }
+        }
+
+        for (uint256 i; i < _marketIds.length; ++i) {
+            $.marketIdToTotalClaimAmountMap[_marketIds[i]] = totals[i];
+            emit MarketIdTotalFeesUpdated(_marketIds[i], totals[i]);
+        }
     }
 
     // ======================================================
@@ -63,8 +129,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function ownerSetFeeRebateRollingClaims(
-        address
-        _feeRebateRollingClaims
+        address _feeRebateRollingClaims
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetFeeRebateRollingClaims(_feeRebateRollingClaims);
     }
@@ -84,7 +149,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         IFeeRebateRollingClaims _feeRebateRollingClaims = $.feeRebateRollingClaims;
 
         Require.that(
-            epoch() == _feeRebateRollingClaims.currentEpoch(),
+            currentEpoch() == _feeRebateRollingClaims.currentEpoch(),
             _FILE,
             "Epoch mismatch"
         );
@@ -121,28 +186,38 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     // ==============================================================
 
     function getClaimAmountByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.epochToMarketIdToClaimAmountMap[_epoch][_marketId];
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.epochToMarketIdToClaimAmountMap[_epoch][_marketId];
+    }
+
+    function getTotalClaimAmountByMarketId(uint256 _marketId) external view returns (uint256) {
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.marketIdToTotalClaimAmountMap[_marketId];
+    }
+
+    function getClaimTimestampByEpochAndMarketId(uint256 _epoch, uint256 _marketId) external view returns (uint256) {
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.epochToMarketIdToClaimTimestampMap[_epoch][_marketId];
     }
 
     function adminFeeClaimer() public view returns (address) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return address(s.adminFeeClaimer);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return address($.adminFeeClaimer);
     }
 
     function feeRebateRollingClaims() public view returns (IFeeRebateRollingClaims) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.feeRebateRollingClaims;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.feeRebateRollingClaims;
     }
 
     function revenueSweeper() public view returns (address) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.revenueSweeper;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.revenueSweeper;
     }
 
-    function epoch() public view returns (uint256) {
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        return s.epoch;
+    function currentEpoch() public view returns (uint256) {
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        return $.currentEpoch;
     }
 
     function getSweepableAmountsByMarketIds(
@@ -168,6 +243,10 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
         return sweepableAmounts;
     }
 
+    function startTimestamp() public pure returns (uint256) {
+        return _START_TIMESTAMP;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -179,8 +258,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid fee claimer address"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.adminFeeClaimer = IAdminClaimExcessTokens(_adminFeeClaimer);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.adminFeeClaimer = IAdminClaimExcessTokens(_adminFeeClaimer);
         emit AdminFeeClaimerSet(_adminFeeClaimer);
     }
 
@@ -191,8 +270,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid fee rebate claims"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.feeRebateRollingClaims = IFeeRebateRollingClaims(_feeRebateRollingClaims);
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.feeRebateRollingClaims = IFeeRebateRollingClaims(_feeRebateRollingClaims);
         emit FeeRebateRollingClaimsSet(_feeRebateRollingClaims);
     }
 
@@ -203,8 +282,8 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Invalid revenue sweeper"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
-        s.revenueSweeper = _revenueSweeper;
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
+        $.revenueSweeper = _revenueSweeper;
         emit RevenueSweeperSet(_revenueSweeper);
     }
 
@@ -219,46 +298,63 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
             "Epoch cannot be 0"
         );
 
-        FeeRebateClaimerStorage storage s = _getFeeRebateClaimerStorage();
+        FeeRebateClaimerStorage storage $ = _getFeeRebateClaimerStorage();
         Require.that(
-            s.epoch + 1 == _epoch,
+            $.currentEpoch + 1 == _epoch,
             _FILE,
             "Invalid epoch",
-            s.epoch + 1,
+            $.currentEpoch + 1,
             _epoch
         );
+        Require.that(
+            block.timestamp >= startTimestamp() + (_ONE_WEEK_SECONDS * _epoch),
+            _FILE,
+            "Epoch not passed yet",
+            startTimestamp() + (_ONE_WEEK_SECONDS * _epoch)
+        );
 
-        IAdminClaimExcessTokens _adminFeeClaimer = s.adminFeeClaimer;
+        IAdminClaimExcessTokens adminFeeClaimer_ = $.adminFeeClaimer;
         for (uint256 i; i < _marketIds.length; i++) {
             uint256 marketId = _marketIds[i];
             Require.that(
-                s.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0,
+                $.epochToMarketIdToClaimAmountMap[_epoch][marketId] == 0,
                 _FILE,
                 "Already claimed",
                 _epoch,
                 marketId
             );
 
-            IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: 0
-            });
-            IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(account, marketId);
-
-            address token = DOLOMITE_MARGIN().getMarketTokenAddress(marketId);
-            _adminFeeClaimer.claimExcessTokens(token, address(this), true);
-
-            IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, marketId);
-
-            uint256 claimedAmountWei = balanceAfter.sub(balanceBefore).value;
-            s.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
+            uint256 previousTotalClaimedAmount = $.marketIdToTotalClaimAmountMap[marketId];
+            uint256 claimedAmountWei = _performClaim(adminFeeClaimer_, marketId);
+            $.epochToMarketIdToClaimAmountMap[_epoch][marketId] = claimedAmountWei;
+            $.epochToMarketIdToClaimTimestampMap[_epoch][marketId] = block.timestamp;
+            $.marketIdToTotalClaimAmountMap[marketId] = previousTotalClaimedAmount + claimedAmountWei;
             emit MarketIdToFeesClaimed(_epoch, marketId, claimedAmountWei);
+            emit MarketIdTotalFeesUpdated(marketId, previousTotalClaimedAmount + claimedAmountWei);
         }
 
         if (_incrementEpoch) {
-            s.epoch = uint96(_epoch);
+            $.currentEpoch = uint96(_epoch);
             emit EpochSet(_epoch);
         }
+    }
+
+    function _performClaim(IAdminClaimExcessTokens _adminFeeClaimer, uint256 _marketId) internal returns (uint256) {
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: 0
+        });
+        IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(account, _marketId);
+
+        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        _adminFeeClaimer.claimExcessTokens(token, address(this), true);
+
+        IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(account, _marketId);
+
+        IDolomiteStructs.Wei memory claimedAmount = balanceAfter.sub(balanceBefore);
+        assert(claimedAmount.isZero() || claimedAmount.isPositive());
+
+        return claimedAmount.value;
     }
 
     function _getFeeRebateClaimerStorage(

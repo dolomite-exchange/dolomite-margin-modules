@@ -11,6 +11,7 @@ import {
   IChaosLabsPriceOracleV3__factory,
   OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
+  PancakeV3PriceOracleWithModifiers__factory,
   RedstonePriceOracleV3__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -31,7 +32,9 @@ import {
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
   IAdminClaimExcessTokens__factory,
+  IAdminExpirePosition__factory,
   IAdminPauseMarket__factory,
+  IAdminRegistry__factory,
 } from 'packages/admin/src/types';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
@@ -118,12 +121,17 @@ import {
   DOLOMITE_DAO_GNOSIS_SAFE_MAP,
   DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP,
   DPLV_GLP_MAP,
+  DPT_CM_ETH_FEB_2025_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
   DPT_GLP_SEP_2024_MAP,
+  DPT_METH_DEC_2024_MAP,
+  DPT_MNT_OCT_2024_MAP,
   DPT_R_ETH_JUN_2025_MAP,
   DPT_RS_ETH_SEP_2024_MAP,
+  DPT_USDE_DEC_2024_MAP,
+  DPT_USDE_JUL_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
   DPT_WE_ETH_JUN_2024_MAP,
   DPT_WE_ETH_SEP_2024_MAP,
@@ -251,6 +259,7 @@ import { CoreProtocolBotanix } from './core-protocols/core-protocol-botanix';
 import { CoreProtocolEthereum } from './core-protocols/core-protocol-ethereum';
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
+import { CoreProtocolSepolia } from './core-protocols/core-protocol-sepolia';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -328,6 +337,10 @@ interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mant
   readonly mantle: boolean;
 }
 
+interface CoreProtocolConfigSepolia extends CoreProtocolConfigParent<Network.Sepolia> {
+  readonly sepolia: boolean;
+}
+
 interface CoreProtocolConfigPolygonZkEvm extends CoreProtocolConfigParent<Network.PolygonZkEvm> {
   readonly polygonZkEvm: boolean;
 }
@@ -339,20 +352,20 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolConfigBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolConfigEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolConfigBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolConfigEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolConfigMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolConfigPolygonZkEvm
+              : T extends Network.XLayer
+                ? CoreProtocolConfigXLayer
+                : never;
 
 export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
@@ -774,6 +787,15 @@ function getCoreProtocolConfig<T extends DolomiteNetwork>(network: T, blockNumbe
     } as CoreProtocolConfigPolygonZkEvm as any;
   }
 
+  if (network === Network.Sepolia) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      sepolia: true,
+    } as CoreProtocolConfigSepolia as any;
+  }
+
   if (network === Network.XLayer) {
     return {
       network,
@@ -807,20 +829,22 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Botanix
-  ? CoreProtocolBotanix
-  : T extends Network.Ethereum
-  ? CoreProtocolEthereum
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Botanix
+        ? CoreProtocolBotanix
+        : T extends Network.Ethereum
+          ? CoreProtocolEthereum
+          : T extends Network.Mantle
+            ? CoreProtocolMantle
+            : T extends Network.PolygonZkEvm
+              ? CoreProtocolPolygonZkEvm
+              : T extends Network.Sepolia
+                ? CoreProtocolSepolia
+                : T extends Network.XLayer
+                  ? CoreProtocolXLayer
+                  : never;
 
 export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
@@ -854,6 +878,7 @@ export function getWethContract<T extends DolomiteNetwork>(
     case Network.Ethereum:
     case Network.Ink:
     case Network.PolygonZkEvm:
+    case Network.Sepolia:
     case Network.SuperSeed:
       return IWETH__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
     case Network.Berachain:
@@ -980,8 +1005,18 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     governance,
   );
 
+  const adminExpirePosition = IAdminExpirePosition__factory.connect(
+    ModuleDeployments.AdminExpirePositionV1[config.network].address,
+    governance,
+  );
+
   const adminPauseMarket = IAdminPauseMarket__factory.connect(
     ModuleDeployments.AdminPauseMarketV2[config.network].address,
+    governance,
+  );
+
+  const adminRegistry = IAdminRegistry__factory.connect(
+    ModuleDeployments.AdminRegistryProxy[config.network].address,
     governance,
   );
 
@@ -1150,7 +1185,9 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     adminClaimExcessTokens,
+    adminExpirePosition,
     adminPauseMarket,
+    adminRegistry,
     borrowPositionProxyV2,
     borrowPositionRouter,
     chainlinkPriceOracleV1,
@@ -1530,6 +1567,14 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const twapPriceOracle = PancakeV3PriceOracleWithModifiers__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey(
+        'KodiakTWAPPriceOracleV3WithModifiers',
+        Network.Berachain,
+        ADDRESS_ZERO,
+      ),
+      hhUser1,
+    );
     const tokenomics = await createTokenomicsEcosystem(typedConfig.network, hhUser1);
     const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
@@ -1542,6 +1587,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       chainsightPriceOracleV3: chainsightPriceOracle,
       pendleEcosystem: pendleEcosystem,
       redstonePriceOracleV3: redstonePriceOracle,
+      twapPriceOracleV3: twapPriceOracle,
       dTokens: {
         ...coreProtocolParams.dTokens,
         beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),
@@ -1830,6 +1876,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       marketIds: {
         ...coreProtocolParams.marketIds,
         cmEth: CM_ETH_MAP[typedConfig.network].marketId,
+        dPtCmethFeb2025: DPT_CM_ETH_FEB_2025_MAP[typedConfig.network].marketId,
+        dPtMethDec2024: DPT_METH_DEC_2024_MAP[typedConfig.network].marketId,
+        dPtMntOct2024: DPT_MNT_OCT_2024_MAP[typedConfig.network].marketId,
+        dPtUsdeJul2024: DPT_USDE_JUL_2024_MAP[typedConfig.network].marketId,
+        dPtUsdeDec2024: DPT_USDE_DEC_2024_MAP[typedConfig.network].marketId,
         fbtc: FBTC_MAP[typedConfig.network].marketId,
         meth: METH_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
@@ -1853,6 +1904,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokens: {
         ...coreProtocolParams.tokens,
         cmEth: IERC20__factory.connect(CM_ETH_MAP[typedConfig.network].address, hhUser1),
+        dPtCmethFeb2025: IERC20__factory.connect(DPT_CM_ETH_FEB_2025_MAP[typedConfig.network].address, hhUser1),
+        dPtMethDec2024: IERC20__factory.connect(DPT_METH_DEC_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtMntOct2024: IERC20__factory.connect(DPT_MNT_OCT_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtUsdeJul2024: IERC20__factory.connect(DPT_USDE_JUL_2024_MAP[typedConfig.network].address, hhUser1),
+        dPtUsdeDec2024: IERC20__factory.connect(DPT_USDE_DEC_2024_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
         usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
@@ -1890,7 +1946,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           USDT_MAP[typedConfig.network].marketId,
         ],
       },
-      paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       tokens: {
         ...coreProtocolParams.tokens,
         dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
@@ -1904,6 +1959,26 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        ],
+      },
+    }) as any;
+  }
+  if (config.network === Network.Sepolia) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Sepolia>;
+    return new CoreProtocolSepolia(coreProtocolParams as CoreProtocolParams<Network.Sepolia>, {
+      marketIds: {
+        ...coreProtocolParams.marketIds,
+        usd1: USD1_MAP[typedConfig.network].marketId,
+        stablecoins: [USD1_MAP[typedConfig.network].marketId, ...coreProtocolParams.marketIds.stablecoins],
+        stablecoinsWithUnifiedInterestRateModels: [...coreProtocolParams.marketIds.stablecoins],
+      },
+      tokens: {
+        ...coreProtocolParams.tokens,
+        usd1: IERC20__factory.connect(USD1_MAP[typedConfig.network].address, hhUser1),
+        weth: coreProtocolParams.tokens.weth as any,
+        stablecoins: [
+          IERC20__factory.connect(USD1_MAP[typedConfig.network].address, hhUser1),
+          ...coreProtocolParams.tokens.stablecoins,
         ],
       },
     }) as any;
