@@ -2,15 +2,13 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { TestPriceOracleForAdmin__factory } from '../../../../../../base/src/types';
-import { ModuleDeployments } from '../../../../utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { encodeExpirePositions } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Adjust caps for some assets
+ * - Expire RDNT positions
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -19,20 +17,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const testPriceOracle = TestPriceOracleForAdmin__factory.connect(
-    ModuleDeployments.TestPriceOracleForAdmin[network].address,
-    core.hhUser1,
-  );
-  await encodeReportCard(core, [
-    testPriceOracle,
-    core.constantPriceOracle,
-    core.chroniclePriceOracleV3,
-    core.chainlinkPriceOracleV3,
-    core.gmxV2Ecosystem.live.priceOracle,
-    core.redstonePriceOracleV3,
-  ]);
-
-  const transactions: EncodedTransaction[] = [];
+  const positions = await import('./borrow-27-accounts.json');
+  const expirations = positions.default.map((p) => ({
+    account: p,
+    owedMarkets: [core.marketIds.radiant],
+    expirationTimestamp: 1784646900, // Tue Jul 21 2026 15:15:00 GMT+0000
+  }));
+  const transactions: EncodedTransaction[] = [await encodeExpirePositions(core, expirations)];
 
   return {
     core,
@@ -47,7 +38,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+    },
   };
 }
 
