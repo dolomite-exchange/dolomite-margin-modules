@@ -22,44 +22,38 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
-import { IParaswapAugustusRouter } from "../interfaces/traders/IParaswapAugustusRouter.sol";
+import { IParaswapAugustusRouterV6 } from "../interfaces/traders/IParaswapAugustusRouterV6.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
- * @title   ParaswapAggregatorTraderV2
+ * @title   ParaswapAggregatorTraderV3
  * @author  Dolomite
  *
  * Contract for performing an external trade with Paraswap using typesafe decoding of the function calls.
  */
-contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
+contract ParaswapAggregatorTraderV3 is AggregatorTraderBase {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "ParaswapAggregatorTraderV2";
+    bytes32 private constant _FILE = "ParaswapAggregatorTraderV3";
     uint256 private constant _SCALE_AMOUNT = 1e36;
-    bytes4 public constant MEGA_SWAP_SELECTOR = IParaswapAugustusRouter.megaSwap.selector; // 0x46c67b6d
-    bytes4 public constant MULTI_SWAP_SELECTOR = IParaswapAugustusRouter.multiSwap.selector; // 0xa94e78ef
-    bytes4 public constant SIMPLE_SWAP_SELECTOR = IParaswapAugustusRouter.simpleSwap.selector; // 0x54e3f31b
 
     // ============ Storage ============
 
-    IParaswapAugustusRouter immutable public PARASWAP_AUGUSTUS_ROUTER; // solhint-disable-line
-    address immutable public PARASWAP_TRANSFER_PROXY; // solhint-disable-line
+    IParaswapAugustusRouterV6 immutable public PARASWAP_AUGUSTUS_ROUTER; // solhint-disable-line
 
     // ============ Constructor ============
 
     constructor(
         address _paraswapAugustusRouter,
-        address _paraswapTransferProxy,
         address _dolomiteMargin
     )
     AggregatorTraderBase(_dolomiteMargin)
     {
-        PARASWAP_AUGUSTUS_ROUTER = IParaswapAugustusRouter(_paraswapAugustusRouter);
-        PARASWAP_TRANSFER_PROXY = _paraswapTransferProxy;
+        PARASWAP_AUGUSTUS_ROUTER = IParaswapAugustusRouterV6(_paraswapAugustusRouter);
     }
 
     // ============ Public Functions ============
@@ -75,7 +69,7 @@ contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), PARASWAP_TRANSFER_PROXY, _inputAmount);
+        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(PARASWAP_AUGUSTUS_ROUTER), _inputAmount);
 
         (
             uint256 minAmountOutWei,
@@ -121,30 +115,81 @@ contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
         bytes4 _paraswapFunctionSelector,
         bytes memory _paraswapCallData
     ) internal {
-        if (_paraswapFunctionSelector == MEGA_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.MegaSwapSellData memory data = abi.decode(
+        if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountIn.selector) {
+            (
+                address executor,
+                IParaswapAugustusRouterV6.GenericData memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit,
+                bytes memory executorData
+            ) = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.MegaSwapSellData)
+                (address, IParaswapAugustusRouterV6.GenericData, uint256, bytes, bytes)
             );
-            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
-            data.fromAmount = _inputAmount;
-            PARASWAP_AUGUSTUS_ROUTER.megaSwap(data);
-        } else if (_paraswapFunctionSelector == MULTI_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.MultiSwapSellData memory data = abi.decode(
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountIn(executor, swapData, partnerAndFee, permit, executorData);
+        } else if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountInOnBalancerV2.selector) {
+            (
+                IParaswapAugustusRouterV6.BalancerV2Data memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit,
+                bytes memory data
+            ) = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.MultiSwapSellData)
+                (IParaswapAugustusRouterV6.BalancerV2Data, uint256, bytes, bytes)
             );
-            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
-            data.fromAmount = _inputAmount;
-            PARASWAP_AUGUSTUS_ROUTER.multiSwap(data);
-        } else if (_paraswapFunctionSelector == SIMPLE_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.SimpleSwapSellData memory data = abi.decode(
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountInOnBalancerV2(swapData, partnerAndFee, permit, data);
+        } else if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountInOnCurveV1.selector) {
+            (
+                IParaswapAugustusRouterV6.CurveV1Data memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit
+            ) = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.SimpleSwapSellData)
+                (IParaswapAugustusRouterV6.CurveV1Data, uint256, bytes)
             );
-            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
-            data.fromAmount = _inputAmount;
-            PARASWAP_AUGUSTUS_ROUTER.simpleSwap(data);
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountInOnCurveV1(swapData, partnerAndFee, permit);
+        } else if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountInOnCurveV2.selector) {
+            (
+                IParaswapAugustusRouterV6.CurveV2Data memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit
+            ) = abi.decode(
+                _paraswapCallData,
+                (IParaswapAugustusRouterV6.CurveV2Data, uint256, bytes)
+            );
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountInOnCurveV2(swapData, partnerAndFee, permit);
+        } else if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountInOnUniswapV2.selector) {
+            (
+                IParaswapAugustusRouterV6.UniswapV2Data memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit
+            ) = abi.decode(
+                _paraswapCallData,
+                (IParaswapAugustusRouterV6.UniswapV2Data, uint256, bytes)
+            );
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountInOnUniswapV2(swapData, partnerAndFee, permit);
+        } else if (_paraswapFunctionSelector == IParaswapAugustusRouterV6.swapExactAmountInOnUniswapV3.selector) {
+            (
+                IParaswapAugustusRouterV6.UniswapV3Data memory swapData,
+                uint256 partnerAndFee,
+                bytes memory permit
+            ) = abi.decode(
+                _paraswapCallData,
+                (IParaswapAugustusRouterV6.UniswapV3Data, uint256, bytes)
+            );
+            swapData.quotedAmount = _getScaledExpectedOutputAmount(swapData.fromAmount, _inputAmount, swapData.quotedAmount);
+            swapData.fromAmount = _inputAmount;
+            PARASWAP_AUGUSTUS_ROUTER.swapExactAmountInOnUniswapV3(swapData, partnerAndFee, permit);
         } else {
             revert(string(abi.encodePacked(
                 Require.stringifyTruncated(_FILE),

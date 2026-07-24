@@ -9193,6 +9193,13 @@
       "isVerified": true
     }
   },
+  "MockImmersveAuthRouter": {
+    "42161": {
+      "address": "0xCBDA3d031565a40AeE3cF2b41d38F3001a13A1fc",
+      "transaction": "0xd6173441094b8160c84d760bb680cee273b7e27875515b7bdd3ff100a9a208e4",
+      "isVerified": true
+    }
+  },
   "ModularLinearStepFunctionInterestSetter": {
     "1": {
       "address": "0xe125c33e0190E7F2048D28188d53A1C23aCE6029",
@@ -9581,6 +9588,13 @@
     "42161": {
       "address": "0xd991d9E0a22a51391c25B258eeF8C1c4a392383a",
       "transaction": "0xaf6cecf15044ebb61a0eebfc533424fc5358227a4e98618399b2ca4478c8fe85",
+      "isVerified": true
+    }
+  },
+  "ParaswapAggregatorTraderV3": {
+    "42161": {
+      "address": "0xbD29E4F253F7E91C2A560FC0FFfB97498C0C4b41",
+      "transaction": "0x3b1ecbf6c1431d86585caf45cf2ca6a4a9c9eb2db569fa701ac98d2a43ea93cc",
       "isVerified": true
     }
   },
@@ -12252,6 +12266,41 @@
       "isVerified": true
     }
   },
+  "SimpleIsolationModeTokenVaultV1": {
+    "42161": {
+      "address": "0x5b1F84eE420A977ca4D07FB3eF87f044dB6584BD",
+      "transaction": "0xe7803d02f7da69e32a7cb18b9a3ef961d73d5a39d44b970d19cc3c5d43fd4dff",
+      "isVerified": true
+    }
+  },
+  "SimpleSavEthIsolationModeUnwrapperTraderV2": {
+    "42161": {
+      "address": "0x991c93eeC7956FffaA9ad2Bccc415A0Bb27E6826",
+      "transaction": "0x1580d2fb35f3c7b5ce51ed645d57ba6a2d75cbbb3c3b62a94627c006f76df41c",
+      "isVerified": true
+    }
+  },
+  "SimpleSavEthIsolationModeVaultFactory": {
+    "42161": {
+      "address": "0x51Bc8E41cBEc0AA97EC07C73597829c70b2eED46",
+      "transaction": "0x4ca5e9ca2b505a836b6214f1606ab5b72164d53bb0084825329382feee2b7723",
+      "isVerified": true
+    }
+  },
+  "SimpleSavEthIsolationModeVaultFactoryDeadProxy": {
+    "42161": {
+      "address": "0x62E454067Be814fB0614B4De20DB42E87143DfB5",
+      "transaction": "0x4ca5e9ca2b505a836b6214f1606ab5b72164d53bb0084825329382feee2b7723",
+      "isVerified": true
+    }
+  },
+  "SimpleSavEthIsolationModeWrapperTraderV2": {
+    "42161": {
+      "address": "0x8E9d6c35CF0f1729Cc01185d0049474101288b45",
+      "transaction": "0x8a334ef0b3cff3e1bd090691637b42c5163817b73a7ed2d329e134e8be568732",
+      "isVerified": true
+    }
+  },
   "SizeTWAPPriceOracleV1": {
     "42161": {
       "address": "0xAd635C94F1855De31add582ac4ce0DaB699f9B1b",
@@ -12495,7 +12544,8 @@
     "42161": {
       "address": "0x531BC6E97b65adF8B3683240bd594932Cfb63797",
       "transaction": "0xb120e987446a66ef0def072fb79c06df6ea5ea6872254e0377ec615716686d93",
-      "isVerified": true
+      "isVerified": true,
+      "notes": "oARB VesterProxy"
     }
   },
   "VestingClaimsImplementationV1": {

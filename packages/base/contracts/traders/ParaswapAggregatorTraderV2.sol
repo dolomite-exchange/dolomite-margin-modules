@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
-import { IParaswapAugustusRouter } from "../interfaces/traders/IParaswapAugustusRouter.sol";
+import { IParaswapAugustusRouterV5 } from "../interfaces/traders/IParaswapAugustusRouterV5.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
@@ -40,13 +40,13 @@ contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
 
     bytes32 private constant _FILE = "ParaswapAggregatorTraderV2";
     uint256 private constant _SCALE_AMOUNT = 1e36;
-    bytes4 public constant MEGA_SWAP_SELECTOR = IParaswapAugustusRouter.megaSwap.selector; // 0x46c67b6d
-    bytes4 public constant MULTI_SWAP_SELECTOR = IParaswapAugustusRouter.multiSwap.selector; // 0xa94e78ef
-    bytes4 public constant SIMPLE_SWAP_SELECTOR = IParaswapAugustusRouter.simpleSwap.selector; // 0x54e3f31b
+    bytes4 public constant MEGA_SWAP_SELECTOR = IParaswapAugustusRouterV5.megaSwap.selector; // 0x46c67b6d
+    bytes4 public constant MULTI_SWAP_SELECTOR = IParaswapAugustusRouterV5.multiSwap.selector; // 0xa94e78ef
+    bytes4 public constant SIMPLE_SWAP_SELECTOR = IParaswapAugustusRouterV5.simpleSwap.selector; // 0x54e3f31b
 
     // ============ Storage ============
 
-    IParaswapAugustusRouter immutable public PARASWAP_AUGUSTUS_ROUTER; // solhint-disable-line
+    IParaswapAugustusRouterV5 immutable public PARASWAP_AUGUSTUS_ROUTER; // solhint-disable-line
     address immutable public PARASWAP_TRANSFER_PROXY; // solhint-disable-line
 
     // ============ Constructor ============
@@ -58,7 +58,7 @@ contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
     )
     AggregatorTraderBase(_dolomiteMargin)
     {
-        PARASWAP_AUGUSTUS_ROUTER = IParaswapAugustusRouter(_paraswapAugustusRouter);
+        PARASWAP_AUGUSTUS_ROUTER = IParaswapAugustusRouterV5(_paraswapAugustusRouter);
         PARASWAP_TRANSFER_PROXY = _paraswapTransferProxy;
     }
 
@@ -122,25 +122,25 @@ contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
         bytes memory _paraswapCallData
     ) internal {
         if (_paraswapFunctionSelector == MEGA_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.MegaSwapSellData memory data = abi.decode(
+            IParaswapAugustusRouterV5.MegaSwapSellData memory data = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.MegaSwapSellData)
+                (IParaswapAugustusRouterV5.MegaSwapSellData)
             );
             data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
             PARASWAP_AUGUSTUS_ROUTER.megaSwap(data);
         } else if (_paraswapFunctionSelector == MULTI_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.MultiSwapSellData memory data = abi.decode(
+            IParaswapAugustusRouterV5.MultiSwapSellData memory data = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.MultiSwapSellData)
+                (IParaswapAugustusRouterV5.MultiSwapSellData)
             );
             data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
             PARASWAP_AUGUSTUS_ROUTER.multiSwap(data);
         } else if (_paraswapFunctionSelector == SIMPLE_SWAP_SELECTOR) {
-            IParaswapAugustusRouter.SimpleSwapSellData memory data = abi.decode(
+            IParaswapAugustusRouterV5.SimpleSwapSellData memory data = abi.decode(
                 _paraswapCallData,
-                (IParaswapAugustusRouter.SimpleSwapSellData)
+                (IParaswapAugustusRouterV5.SimpleSwapSellData)
             );
             data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
