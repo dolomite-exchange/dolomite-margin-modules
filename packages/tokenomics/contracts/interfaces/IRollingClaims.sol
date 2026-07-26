@@ -41,7 +41,7 @@ interface IRollingClaims is IBaseClaim {
     // ================== External Functions ================
     // ======================================================
 
-    function handlerSetMerkleRoot(bytes32 _merkleRoot, uint256 _expectedEpoch) external;
+    function handlerSetMerkleRoot(bytes32 _merkleRoot, uint256 _expectedEpoch, bool _incrementEpoch) external;
 
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 
