@@ -26,7 +26,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core.dolomiteRegistry.address,
       core.dolomiteMargin.address,
     ],
-    getMaxDeploymentVersionNameByDeploymentKey('ODoloRollingClaimsImplementation', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('ODoloRollingClaimsImplementation', 4),
   );
 
   const transactions: EncodedTransaction[] = [

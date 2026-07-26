@@ -9423,6 +9423,13 @@
       "isVerified": true
     }
   },
+  "ODoloRollingClaimsImplementationV4": {
+    "80094": {
+      "address": "0xE465254aC870159cc54aa231516305D5bD734E7B",
+      "transaction": "0xc419f008eac22f4b91f71e5e72113265c48aa188d09334bfec0db89f23954fa2",
+      "isVerified": false
+    }
+  },
   "ODoloRollingClaimsProxy": {
     "80094": {
       "address": "0x79E6E932bf6686a4D357D7821E6e08835Ba8A026",

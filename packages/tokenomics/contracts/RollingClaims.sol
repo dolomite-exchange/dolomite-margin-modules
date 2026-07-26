@@ -72,7 +72,7 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
         uint256 _expectedEpoch,
         bool _incrementEpoch
     ) external onlyHandler(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
+        _handlerSetMerkleRoot(_merkleRoot, _incrementEpoch);
         Require.that(
             _getRollingClaimsStorage().currentEpoch == _expectedEpoch,
             _FILE,
@@ -127,7 +127,7 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
     // ==================================================================
 
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot, bool _incrementEpoch) internal {
+    function _handlerSetMerkleRoot(bytes32 _merkleRoot, bool _incrementEpoch) internal {
         bytes32 merkleRootBefore = _getBaseClaimStorage().merkleRoot;
         super._ownerSetMerkleRoot(_merkleRoot);
 
