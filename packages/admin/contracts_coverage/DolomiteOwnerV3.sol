@@ -27,7 +27,6 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwnerV3 } from "./interfaces/IDolomiteOwnerV3.sol";
 
-
 /**
  * @title   DolomiteOwnerV3
  * @author  Dolomite
@@ -59,6 +58,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     EnumerableSet.AddressSet private _allAddresses;
 
     uint32 public secondsTimeLocked;
+    uint32 public secondsVetoTimeLocked;
     uint32 public secondsValid;
     uint192 public transactionCount;
     mapping (uint256 => Transaction) public transactions;
@@ -140,11 +140,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     constructor(
         address _admin,
         uint32 _secondsTimeLocked,
+        uint32 _secondsVetoTimeLocked,
         uint32 _secondsValid
     ) AccessControl() {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
+        _ownerSetSecondsVetoTimeLocked(_secondsVetoTimeLocked);
         _ownerSetSecondsValid(_secondsValid);
     }
 
@@ -156,6 +158,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         uint32 _secondsTimeLocked
     ) external onlySelf(msg.sender) {
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
+    }
+
+    function ownerSetSecondsVetoTimeLocked(
+        uint32 _secondsVetoTimeLocked
+    ) external onlySelf(msg.sender) {
+        _ownerSetSecondsVetoTimeLocked(_secondsVetoTimeLocked);
     }
 
     function ownerSetSecondsValid(
@@ -247,13 +255,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             _FILE,
             "Invalid calldata length"
         );
-
-        bytes32 rawData;
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            rawData := mload(add(_data, 32))
-        }
-        bytes4 selector = bytes4(rawData);
+        bytes4 selector = _getSelectorFromData(_data);
 
         if (isUserApprovedToSubmitTransaction(msg.sender, _destination, selector)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -392,11 +394,19 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     }
 
     function isTimelockComplete(uint256 _transactionId) public view returns (bool) {
-        return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked;
+        if (_isRevokeVetoTransaction(transactions[_transactionId])) {
+            return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsVetoTimeLocked;
+        } else {
+            return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked;
+        }
     }
 
     function isTimelockExpired(uint256 _transactionId) public view returns (bool) {
+        if (_isRevokeVetoTransaction(transactions[_transactionId])) {
+        return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsVetoTimeLocked + secondsValid;
+        } else {
         return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked + secondsValid;
+        }
     }
 
     function calculateRole(bytes4 _selector, address _contract) public pure returns (bytes32) {
@@ -426,6 +436,20 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
         secondsTimeLocked = _secondsTimeLocked;
         emit SecondsTimeLockedChanged(_secondsTimeLocked);
+    }
+
+    function _ownerSetSecondsVetoTimeLocked(
+        uint32 _secondsVetoTimeLocked
+    ) internal {
+        if (_secondsVetoTimeLocked != 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _secondsVetoTimeLocked != 0,
+            _FILE,
+            "Invalid veto timelock"
+        );
+
+        secondsVetoTimeLocked = _secondsVetoTimeLocked;
+        emit SecondsVetoTimeLockedChanged(_secondsVetoTimeLocked);
     }
 
     function _ownerSetSecondsValid(
@@ -496,8 +520,31 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             "Transaction not cancellable"
         );
 
+        if (_isRevokeVetoTransaction(txn)) {
+            if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+                _FILE,
+                "Missing role"
+            );
+        }
+
         txn.cancelled = true;
         emit TransactionCancelled(_transactionId);
+    }
+
+    function _isRevokeVetoTransaction(Transaction storage _txn) internal view returns (bool) {
+        if (_txn.destination != address(this)) return false;
+
+        bytes memory transactionData = _txn.data;
+
+        bytes4 selector = _getSelectorFromData(transactionData);
+        if (selector != this.revokeRole.selector) return false;
+
+        bytes32 role = _getRoleFromData(transactionData);
+        if (role != VETO_ROLE) return false;
+
+        return true;
     }
 
     function _grantRole(bytes32 role, address account) internal override {
@@ -525,5 +572,22 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             _FILE,
             "Cannot renounce ownership"
         );
+    }
+
+    function _getSelectorFromData(bytes memory _data) internal pure returns (bytes4) {
+        bytes32 rawData;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            rawData := mload(add(_data, 32))
+        }
+        return bytes4(rawData);
+    }
+
+    function _getRoleFromData(bytes memory _data) internal pure returns (bytes32 role) {
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            role := mload(add(_data, 36))
+        }
     }
 }

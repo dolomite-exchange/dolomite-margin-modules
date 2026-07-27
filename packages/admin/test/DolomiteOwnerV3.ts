@@ -23,6 +23,7 @@ const OTHER_SELECTOR = '0x12345678';
 const OTHER_ROLE = '0x1234567800000000000000001234567812345678123456781234567812345678';
 
 const SECONDS_TIME_LOCKED = ONE_DAY_SECONDS;
+const SECONDS_VETO_TIME_LOCKED = ONE_WEEK_SECONDS;
 const SECONDS_VALID = ONE_DAY_SECONDS * 3;
 
 describe('DolomiteOwnerV3', () => {
@@ -45,7 +46,7 @@ describe('DolomiteOwnerV3', () => {
     dolomiteOwner = await createContractWithAbi<DolomiteOwnerV3>(
       DolomiteOwnerV3__factory.abi,
       DolomiteOwnerV3__factory.bytecode,
-      [core.gnosisSafe.address, SECONDS_TIME_LOCKED, SECONDS_VALID]
+      [core.gnosisSafe.address, SECONDS_TIME_LOCKED, SECONDS_VETO_TIME_LOCKED, SECONDS_VALID]
     );
     dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
 
@@ -101,6 +102,39 @@ describe('DolomiteOwnerV3', () => {
     it('should fail if not called by self', async () => {
       await expectThrow(
         dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsTimeLocked(123),
+        `DolomiteOwnerV3: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetSecondsVetoTimeLocked', () => {
+    it('should work normally', async () => {
+      expect(await dolomiteOwner.secondsVetoTimeLocked()).to.equal(SECONDS_VETO_TIME_LOCKED);
+
+      const newSecondsVetoTimeLocked = 123;
+      const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsVetoTimeLocked(
+        newSecondsVetoTimeLocked,
+      );
+
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      const result = await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+      await expectEvent(dolomiteOwner, result, 'SecondsVetoTimeLockedChanged', {
+        _secondsVetoTimeLocked: newSecondsVetoTimeLocked,
+      });
+      expect(await dolomiteOwner.secondsVetoTimeLocked()).to.equal(newSecondsVetoTimeLocked);
+    });
+
+    it('should fail if 0', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerSetSecondsVetoTimeLocked(0),
+        'DolomiteOwnerV3: Invalid veto timelock',
+      );
+    });
+
+    it('should fail if not called by self', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.gnosisSafe).ownerSetSecondsVetoTimeLocked(123),
         `DolomiteOwnerV3: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
     });
@@ -316,6 +350,23 @@ describe('DolomiteOwnerV3', () => {
       expect(userRoles.length).to.eq(0);
       expect(roleAddresses.length).to.eq(1);
       expect(roleAddresses).to.contain(core.gnosisSafe.address);
+    });
+
+    it('should work normally with veto role', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(vetoRole, core.hhUser1.address);
+      expect(await dolomiteOwner.hasRole(vetoRole, core.hhUser1.address)).to.be.true;
+
+      const transaction = await dolomiteOwner.populateTransaction.revokeRole(vetoRole, core.hhUser1.address);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_VETO_TIME_LOCKED);
+      await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
+      const roleAddresses = await dolomiteOwner.getRoleAddresses(vetoRole);
+
+      expect(await dolomiteOwner.hasRole(vetoRole, core.hhUser1.address)).to.be.false;
+      expect(userRoles.length).to.eq(0);
+      expect(roleAddresses.length).to.eq(0);
     });
 
     it('should fail if no other default admins', async () => {
@@ -597,6 +648,34 @@ describe('DolomiteOwnerV3', () => {
       const txn = await dolomiteOwner.transactions(0);
       expect(txn.cancelled).to.be.true;
       expect(txn.executed).to.be.false;
+    });
+
+    it('should work normally when default admin cancels revoke veto role', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(vetoRole, core.hhUser1.address);
+      expect(await dolomiteOwner.hasRole(vetoRole, core.hhUser1.address)).to.be.true;
+
+      const transaction = await dolomiteOwner.populateTransaction.revokeRole(vetoRole, core.hhUser1.address);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+
+      const result = await dolomiteOwner.connect(core.gnosisSafe).cancelTransaction(0);
+      await expectEvent(dolomiteOwner, result, 'TransactionCancelled', { transactionId: 0 });
+
+      const txn = await dolomiteOwner.transactions(0);
+      expect(txn.cancelled).to.be.true;
+      expect(txn.executed).to.be.false;
+    });
+
+    it('should fail if vetoer tries to cancel revoke veto role', async () => {
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(vetoRole, core.hhUser1.address);
+      expect(await dolomiteOwner.hasRole(vetoRole, core.hhUser1.address)).to.be.true;
+
+      const transaction = await dolomiteOwner.populateTransaction.revokeRole(vetoRole, core.hhUser1.address);
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).cancelTransaction(0),
+        'DolomiteOwnerV3: Missing role',
+      );
     });
 
     it('should fail if the transaction does not exist', async () => {

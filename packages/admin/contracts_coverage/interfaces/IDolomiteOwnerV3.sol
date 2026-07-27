@@ -59,6 +59,7 @@ interface IDolomiteOwnerV3 is IAccessControl {
     // ========================================================
 
     event SecondsTimeLockedChanged(uint32 _secondsTimeLocked);
+    event SecondsVetoTimeLockedChanged(uint32 _secondsVetoTimeLocked);
     event SecondsValidChanged(uint32 _secondsValid);
     event RoleAdded(bytes32 indexed _role);
     event RoleRemoved(bytes32 indexed _role);
