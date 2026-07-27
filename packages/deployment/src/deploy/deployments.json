@@ -4258,6 +4258,11 @@
     }
   },
   "FeeRebateClaimerImplementationV5": {
+    "42161": {
+      "address": "0xf1E2314B86C3F5C6461FC39Ad6D4f35cc67B0387",
+      "transaction": "0x61cfb40de94040e795cd81227921e214ab4bed112e65988ca6612a8cd706c4b7",
+      "isVerified": true
+    },
     "80094": {
       "address": "0xf1E2314B86C3F5C6461FC39Ad6D4f35cc67B0387",
       "transaction": "0x6c7da7ecd8687ce6b28263a5deefb84855cf01d5ec801403db06c215a5064ea1",
@@ -4265,6 +4270,11 @@
     }
   },
   "FeeRebateClaimerProxy": {
+    "42161": {
+      "address": "0x6BE1fed8a38B3555A337f58BB9E10FC0465964C0",
+      "transaction": "0xeb2e40fd7b2da2ab73ec6e6457f9f3a0c78bef8c8738681aaa859151718bbec7",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x6BE1fed8a38B3555A337f58BB9E10FC0465964C0",
       "transaction": "0x722f1994b40875d42696750103066dc68fa6c61274d129c3cb6c516fc5b59564",
@@ -4293,6 +4303,11 @@
     }
   },
   "FeeRebateRollingClaimsImplementationV4": {
+    "42161": {
+      "address": "0xE297E39164649115b6A94eF77B4Dcfd3Ad504685",
+      "transaction": "0x9f80dc1484dab80de8a10c0dbf276ce9aa8fb89e8d7de89db70c1ce340d2b712",
+      "isVerified": true
+    },
     "80094": {
       "address": "0xE297E39164649115b6A94eF77B4Dcfd3Ad504685",
       "transaction": "0x6575ab3ba6116d2756f90bb5d809dff2dbe17b70e5febce969b694151aac8c87",
@@ -4300,6 +4315,11 @@
     }
   },
   "FeeRebateRollingClaimsProxy": {
+    "42161": {
+      "address": "0xea9421044430FA791c3Ab16E0B90f142aa6C11ef",
+      "transaction": "0x75cd9fe8c511676e0221cc24c49d910d6e6293360e06550f73c7bf28a70b4131",
+      "isVerified": true
+    },
     "80094": {
       "address": "0xea9421044430FA791c3Ab16E0B90f142aa6C11ef",
       "transaction": "0xc7096f2f4e799ff80a25116552932c3baab028cdaec310948e8270bf760ebc43",
@@ -9427,7 +9447,7 @@
     "80094": {
       "address": "0xE465254aC870159cc54aa231516305D5bD734E7B",
       "transaction": "0xc419f008eac22f4b91f71e5e72113265c48aa188d09334bfec0db89f23954fa2",
-      "isVerified": false
+      "isVerified": true
     }
   },
   "ODoloRollingClaimsProxy": {
