@@ -15,7 +15,7 @@ import {
   encodeSetSingleCollateralWithStrictDebtByMarketId,
   encodeSetSupplyCap,
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeInsertChronicleOracleV3, encodeInsertTwapOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertChronicleOracleV3, encodeInsertRedstoneOracleV3, encodeInsertTwapOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 
@@ -33,15 +33,15 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetIsCollateralOnly(core, marketIds.henlo, true),
-    await encodeSetSupplyCap(core, marketIds.henlo, ONE_BI),
-    ...(await encodeInsertTwapOracle(core, core.tokens.henlo, henloOracle, core.tokens.wbera)),
-
-    ...(await encodeInsertTwapOracle(core, core.tokens.iBera, iBeraOracle, core.tokens.wbera)),
-
-    ...(await encodeInsertTwapOracle(core, core.tokens.iBgt, iBgtOracle, core.tokens.wbera)),
-
-    ...(await encodeInsertTwapOracle(core, core.tokens.diBgt, iBgtOracle, core.tokens.wbera)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.wbera)), // @follow-up @Corey this is BTC not WBTC from Redstone.
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.usdc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.honey)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.wbtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.usdt)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.stone)), // @follow-up Supply cap is 1 wei. Not sure if you want this one
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.ylStEth)), // @follow-up Supply cap is 1 wei. Not sure if you want this one
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.pumpBtc)), // @follow-up Supply cap is 1 wei. Not sure if you want this one
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.rsEth)), // @follow-up Supply cap is 1 wei. Not sure if you want this one
   ];
 
   return {
@@ -58,10 +58,15 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await printPriceForVisualCheck(core, core.tokens.henlo);
-      await printPriceForVisualCheck(core, core.tokens.iBera);
-      await printPriceForVisualCheck(core, core.tokens.iBgt);
-      await printPriceForVisualCheck(core, core.tokens.diBgt);
+      await printPriceForVisualCheck(core, core.tokens.wbera);
+      await printPriceForVisualCheck(core, core.tokens.usdc);
+      await printPriceForVisualCheck(core, core.tokens.honey);
+      await printPriceForVisualCheck(core, core.tokens.wbtc);
+      await printPriceForVisualCheck(core, core.tokens.usdt);
+      await printPriceForVisualCheck(core, core.tokens.stone);
+      await printPriceForVisualCheck(core, core.tokens.ylStEth);
+      await printPriceForVisualCheck(core, core.tokens.pumpBtc);
+      await printPriceForVisualCheck(core, core.tokens.rsEth);
     },
   };
 }
