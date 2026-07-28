@@ -37,15 +37,15 @@ interface IDolomiteStructs {
     // ========================= Enums =========================
 
     enum ActionType {
-        Deposit,   // supply tokens
-        Withdraw,  // borrow tokens
-        Transfer,  // transfer balance between accounts
-        Buy,       // buy an amount of some token (externally)
-        Sell,      // sell an amount of some token (externally)
-        Trade,     // trade tokens against another account
-        Liquidate, // liquidate an undercollateralized or expiring account
-        Vaporize,  // use excess tokens to zero-out a completely negative account
-        Call       // send arbitrary data to an address
+        Deposit,   // supply tokens = 0
+        Withdraw,  // borrow tokens = 1
+        Transfer,  // transfer balance between accounts = 2
+        Buy,       // buy an amount of some token (externally) = 3
+        Sell,      // sell an amount of some token (externally) = 4
+        Trade,     // trade tokens against another account = 5
+        Liquidate, // liquidate an undercollateralized or expiring account = 6
+        Vaporize,  // use excess tokens to zero-out a completely negative account = 7
+        Call       // send arbitrary data to an address = 8
     }
 
     enum AssetDenomination {

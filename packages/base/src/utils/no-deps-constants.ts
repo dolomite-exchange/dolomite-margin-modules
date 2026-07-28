@@ -8,13 +8,10 @@ export enum Network {
   Base = '8453',
   Berachain = '80094',
   Bnb = '56',
-  Botanix = '3637',
   Ethereum = '1',
   Ink = '57073',
   Mantle = '5000',
-  PolygonZkEvm = '1101',
   Sepolia = '11155111',
-  SuperSeed = '5330',
   XLayer = '196',
 }
 
@@ -22,31 +19,25 @@ export type DolomiteV2Network =
   | Network.Base
   | Network.Berachain
   | Network.Bnb
-  | Network.Botanix
   | Network.Ethereum
   | Network.Ink
   | Network.Mantle
-  | Network.PolygonZkEvm
   | Network.Sepolia
-  | Network.SuperSeed
   | Network.XLayer;
 
 export type DolomiteNetwork = Network.ArbitrumOne | DolomiteV2Network;
 
-export type DolomiteNetworkNoBotanixOrEthereum = Exclude<DolomiteNetwork, Network.Botanix | Network.Ethereum>;
+export type DolomiteNetworkNoEthereum = Exclude<DolomiteNetwork, Network.Ethereum>;
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
   Berachain = 'berachain',
   Bnb = 'bnb',
-  Botanix = 'botanix',
   Ethereum = 'ethereum',
   Ink = 'ink',
   Mantle = 'mantle',
-  PolygonZkEvm = 'polygon_zkevm',
   Sepolia = 'sepolia',
-  SuperSeed = 'super_seed',
   XLayer = 'x_layer',
 }
 
@@ -55,13 +46,10 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,
   [Network.Bnb]: NetworkName.Bnb,
-  [Network.Botanix]: NetworkName.Botanix,
   [Network.Ethereum]: NetworkName.Ethereum,
   [Network.Ink]: NetworkName.Ink,
   [Network.Mantle]: NetworkName.Mantle,
-  [Network.PolygonZkEvm]: NetworkName.PolygonZkEvm,
   [Network.Sepolia]: NetworkName.Sepolia,
-  [Network.SuperSeed]: NetworkName.SuperSeed,
   [Network.XLayer]: NetworkName.XLayer,
 };
 
@@ -73,13 +61,10 @@ export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> 
   [Network.Base]: 'base',
   [Network.Berachain]: undefined,
   [Network.Bnb]: 'bsc',
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: 'ethereum',
   [Network.Ink]: undefined,
   [Network.Mantle]: 'mantle',
-  [Network.PolygonZkEvm]: 'polygon-zkevm',
   [Network.Sepolia]: 'sepolia',
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: 'xlayer',
 };
 
@@ -88,13 +73,10 @@ export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
   [Network.Base]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Berachain]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Bnb]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
-  [Network.Botanix]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Ethereum]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Ink]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Mantle]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
-  [Network.PolygonZkEvm]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.Sepolia]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
-  [Network.SuperSeed]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   [Network.XLayer]: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
 };
 
@@ -108,13 +90,10 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 160822,
   [Network.Bnb]: 0, // TODO:
-  [Network.Botanix]: 0, // TODO:
   [Network.Ethereum]: 22_308_000, // TODO:
   [Network.Ink]: 0, // TODO:
   [Network.Mantle]: 66_804_500,
-  [Network.PolygonZkEvm]: 9_860_500,
   [Network.Sepolia]: 0, // TODO:
-  [Network.SuperSeed]: 0,
   [Network.XLayer]: 854_000,
 };
 
@@ -138,6 +117,7 @@ export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
 
 export const TEN_BI = BigNumber.from('10');
 
+export const MAX_UINT_112_BI = BigNumber.from('0xffffffffffffffffffffffffffff');
 export const MAX_INT_192_BI = BigNumber.from('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
 export const MAX_UINT_256_BI = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 

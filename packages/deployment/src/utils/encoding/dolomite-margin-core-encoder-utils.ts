@@ -2,6 +2,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 
 import { BYTES_EMPTY, DolomiteNetwork, DolomiteV2Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import { OracleAggregatorV2 } from 'packages/oracles/src/types';
 import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
@@ -19,6 +20,9 @@ import {
   isValidAmountForCapForToken,
   prettyPrintEncodedDataWithTypeSafety,
 } from './base-encoder-utils';
+import {
+  IAdminExpirePosition,
+} from '@dolomite-exchange/modules-admin/src/types/contracts/interfaces/IAdminExpirePosition';
 
 export async function encodeSetGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
@@ -323,13 +327,14 @@ export async function encodePauseMarket<T extends DolomiteNetwork>(
 export async function encodeUnpauseMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
+  oracleAggregatorV2: OracleAggregatorV2 = core.oracleAggregatorV2,
 ): Promise<EncodedTransaction> {
   return prettyPrintEncodedDataWithTypeSafety(
     core,
     { adminPauseMarket: core.adminPauseMarket },
     'adminPauseMarket',
     'unpauseMarket',
-    [marketId, core.oracleAggregatorV2.address],
+    [marketId, oracleAggregatorV2.address],
     { skipWrappingCalldataInSubmitTransaction: true },
   );
 }
@@ -366,5 +371,19 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
         [mappedParams],
       ),
     ],
+  );
+}
+
+export async function encodeExpirePositions<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  positions: IAdminExpirePosition.ExpirePositionParamsStruct[],
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminExpirePosition: core.adminExpirePosition },
+    'adminExpirePosition',
+    'expirePositions',
+    [positions],
+    { skipWrappingCalldataInSubmitTransaction: true },
   );
 }

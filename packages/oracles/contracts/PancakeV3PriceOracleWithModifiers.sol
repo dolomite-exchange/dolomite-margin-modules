@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
@@ -34,124 +35,144 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
  * @title   PancakeV3PriceOracleWithModifiers
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1 interface that makes gets the TWAP from an LP pool. Skips checks in
- * `getPrice` so more than one token price be retrieved. Can also have a minimum price for the `TOKEN`
+ * Gets the TWAP from an LP pool and sets floor/ceil prices
  */
-contract PancakeV3PriceOracleWithModifiers is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Events =========================
 
-    event FloorPriceUpdated(uint256 floorPrice);
+    event TokenInfoUpdated(address token, TokenInfo tokenInfo);
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "PancakeV3PriceOracleNoTokenCheck";
+    bytes32 private constant _FILE = "PancakeV3PriceOracleWithModifier";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
     // ========================= Storage =========================
 
-    uint32 public observationInterval;
-    uint256 public floorPrice;
+    struct TokenInfo {
+        address pair;
+        uint8 decimals;
+        uint32 observationInterval;
+        uint112 minPrice;
+        uint112 maxPrice;
+    }
 
-    address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
-    address public immutable PAIR;
-    uint256 public immutable TOKEN_DECIMALS_FACTOR; // solhint-disable-line var-name-mixedcase
+    mapping (address => TokenInfo) private _tokenInfos;
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================= Constructor =========================
 
     constructor(
-        address _token,
-        address _pair,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        TOKEN = _token;
-        PAIR = _pair;
-        _ownerSetObservationInterval(15 minutes);
-        _ownerSetFloorPrice(0);
-
-        TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-
-        assert(IAlgebraV3Pool(_pair).token0() == _token || IAlgebraV3Pool(_pair).token1() == _token);
     }
 
     // ========================= Admin Functions =========================
 
-    function ownerSetObservationInterval(
-        uint32 _observationInterval
+    function ownerSetTokenInfo(
+        address _token,
+        TokenInfo calldata _tokenInfo
     )
         external
         onlyDolomiteMarginOwner(msg.sender)
     {
-        _ownerSetObservationInterval(_observationInterval);
-    }
+        Require.that(
+            IAlgebraV3Pool(_tokenInfo.pair).token0() == _token|| IAlgebraV3Pool(_tokenInfo.pair).token1() == _token,
+            _FILE,
+            "Invalid pair"
+        );
+        Require.that(
+            _tokenInfo.decimals > 0 && _tokenInfo.decimals <= 18,
+            _FILE,
+            "Invalid decimals"
+        );
+        Require.that(
+            _tokenInfo.minPrice > 0 && _tokenInfo.maxPrice < type(uint112).max,
+            _FILE,
+            "Invalid min or max price"
+        );
+        Require.that(
+            _tokenInfo.minPrice < _tokenInfo.maxPrice,
+            _FILE,
+            "Min and max price cross"
+        );
+        Require.that(
+            _tokenInfo.observationInterval >= 15 minutes,
+            _FILE,
+            "Invalid observation interval"
+        );
 
-    function ownerSetFloorPrice(
-        uint256 _floorPrice
-    )
-        external
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        _ownerSetFloorPrice(_floorPrice);
+        _tokenInfos[_token] = _tokenInfo;
+        emit TokenInfoUpdated(_token, _tokenInfo);
     }
 
     // ========================= Public Functions =========================
 
     function getPrice(
-        address /* _token */
+        address _token
     )
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
+        TokenInfo memory tokenInfo = getTokenInfo(_token);
 
-        address poolToken0 = currentPair.token0();
-        address outputToken = poolToken0 == TOKEN ? currentPair.token1() : poolToken0;
+        IAlgebraV3Pool currentPair = IAlgebraV3Pool(tokenInfo.pair);
 
-        int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
-        uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), TOKEN, outputToken);
+        address outputToken;
+        {
+            address poolToken0 = currentPair.token0();
+            outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
+        }
+
+        uint128 tokenDecimalsFactor = uint128(10 ** uint256(tokenInfo.decimals)); // Safe cast; decimals <= 18
+        int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), tokenInfo.observationInterval);
+        uint256 quote = OracleLibrary.getQuoteAtTick(tick, tokenDecimalsFactor, _token, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
-        assert(outputTokenDecimals > 0);
+        assert(outputTokenDecimals != 0);
 
         IDolomiteStructs.MonetaryPrice memory price = IDolomiteStructs.MonetaryPrice({
-            value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
+            value: _standardizeNumberOfDecimals(quote, outputTokenDecimals, tokenDecimalsFactor)
         });
 
-        if (price.value < floorPrice) {
-            price.value = floorPrice;
-        }
+        Require.that(
+            price.value > tokenInfo.minPrice,
+            _FILE,
+            "Price too low"
+        );
+        Require.that(
+            price.value < tokenInfo.maxPrice,
+            _FILE,
+            "Price too large"
+        );
         return price;
+    }
+
+    function getTokenInfo(address _token) public view returns (TokenInfo memory) {
+        TokenInfo memory tokenInfo = _tokenInfos[_token];
+        Require.that(
+            tokenInfo.pair != address(0),
+            _FILE,
+            "Invalid token",
+            _token
+        );
+        return tokenInfo;
     }
 
     // ========================= Internal Functions =========================
 
-    function _ownerSetObservationInterval(
-        uint32 _observationInterval
-    )
-    internal {
-        observationInterval = _observationInterval;
-        emit ObservationIntervalUpdated(_observationInterval);
-    }
-
-    function _ownerSetFloorPrice(
-        uint256 _floorPrice
-    )
-    internal {
-        floorPrice = _floorPrice;
-        emit FloorPriceUpdated(_floorPrice);
-    }
-
     function _standardizeNumberOfDecimals(
         uint256 _value,
-        uint8 _valueDecimals
-    ) internal view returns (uint) {
-        uint256 priceFactor = _ONE_DOLLAR / TOKEN_DECIMALS_FACTOR;
+        uint8 _valueDecimals,
+        uint256 _tokenDecimalsFactor
+    ) internal pure returns (uint) {
+        uint256 priceFactor = _ONE_DOLLAR / _tokenDecimalsFactor;
         uint256 valueFactor = 10 ** uint256(_valueDecimals);
         return _value * priceFactor / valueFactor;
     }

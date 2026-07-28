@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IParaswapAugustusRouter
+ * @title   IParaswapAugustusRouterV5
  * @author  Dolomite
  *
  * @notice  Interface for executing trades via Paraswap
  */
-interface IParaswapAugustusRouter {
+interface IParaswapAugustusRouterV5 {
 
     // ============= Structs =============
 

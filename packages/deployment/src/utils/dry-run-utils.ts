@@ -348,7 +348,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
     if (encodedTransactionForExecution) {
       console.log('');
       console.log('');
-      console.log('\tGenerating safe hash for transaction submission...');
+      console.log('\tGenerating safe hash for transaction execution (after submission)...');
       const encodedTo = encodedTransactionForExecution.to;
       const encodedCalldata = encodedTransactionForExecution.data;
       const nextNonce = nonce + 1;

@@ -19,7 +19,8 @@ import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
   ChainsightPriceOracleV3,
-  ChroniclePriceOracleV3, ERC4626PriceOracle,
+  ChroniclePriceOracleV3,
+  ERC4626PriceOracle,
   IAlgebraV3Pool,
   IChainlinkAggregator,
   IChainlinkPriceOracleV1,
@@ -30,6 +31,7 @@ import {
   IERC20Metadata__factory,
   IRedstonePriceOracleV2__factory,
   OracleAggregatorV2,
+  PancakeV3PriceOracleWithModifiers,
   RedstonePriceOracleV3,
 } from './types';
 
@@ -85,6 +87,16 @@ export type CoreProtocolWithERC4626<T extends DolomiteNetwork> = Extract<
     config: CoreProtocolConfig<T>;
     dolomiteMargin: DolomiteMargin<T>;
     erc4626Oracle: ERC4626PriceOracle;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
+
+export type CoreProtocolWithTwapV3<T extends DolomiteNetwork> = Extract<
+  CoreProtocolType<T>,
+  {
+    config: CoreProtocolConfig<T>;
+    dolomiteMargin: DolomiteMargin<T>;
+    twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
     oracleAggregatorV2: OracleAggregatorV2;
   }
 >;
