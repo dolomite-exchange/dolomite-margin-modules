@@ -7,7 +7,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding
 import getScriptName from '../../../../utils/get-script-name';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
 
-const FLOOR_PRICE_START_TIMESTAMP = 1_785_124_800; // July 27 @todo @Corey, update this
+const FLOOR_PRICE_START_TIMESTAMP = 1786406400; // August 11, 2026 @ 00:00:00 UTC
 
 /**
  * This script encodes the following transactions:
