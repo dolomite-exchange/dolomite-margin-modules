@@ -53,6 +53,7 @@ export enum LowerPercentage {
 }
 
 export enum UpperPercentage {
+  _20 = '0.20',
   _30 = '0.30',
   _40 = '0.40',
   _45 = '0.45',
