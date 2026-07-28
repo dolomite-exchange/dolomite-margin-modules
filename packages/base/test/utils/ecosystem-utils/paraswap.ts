@@ -1,14 +1,17 @@
 import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
-  IParaswapAugustusRouter,
-  IParaswapAugustusRouter__factory,
+  IParaswapAugustusRouterV5,
+  IParaswapAugustusRouterV5__factory,
+  IParaswapAugustusRouterV6,
+  IParaswapAugustusRouterV6__factory,
   IParaswapFeeClaimer,
   IParaswapFeeClaimer__factory,
   ParaswapAggregatorTraderV2,
   ParaswapAggregatorTraderV2__factory,
 } from '../../../src/types';
 import {
-  PARASWAP_AUGUSTUS_ROUTER_MAP,
+  PARASWAP_AUGUSTUS_V5_ROUTER_MAP,
+  PARASWAP_AUGUSTUS_V6_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
 } from '../../../src/utils/constants';
@@ -17,7 +20,8 @@ import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddres
 import { getContractOpt } from '../setup';
 
 export interface ParaswapEcosystem {
-  augustusRouter: IParaswapAugustusRouter;
+  augustusRouterV5: IParaswapAugustusRouterV5;
+  augustusRouterV6: IParaswapAugustusRouterV6;
   feeClaimer: IParaswapFeeClaimer;
   transferProxy: string;
   live: {
@@ -36,7 +40,8 @@ export async function createParaswapEcosystem(
   );
 
   return {
-    augustusRouter: IParaswapAugustusRouter__factory.connect(PARASWAP_AUGUSTUS_ROUTER_MAP[network]!, signer),
+    augustusRouterV5: IParaswapAugustusRouterV5__factory.connect(PARASWAP_AUGUSTUS_V5_ROUTER_MAP[network]!, signer),
+    augustusRouterV6: IParaswapAugustusRouterV6__factory.connect(PARASWAP_AUGUSTUS_V6_ROUTER_MAP[network]!, signer),
     feeClaimer: IParaswapFeeClaimer__factory.connect(PARASWAP_FEE_CLAIMER_MAP[network]!, signer),
     transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
     live: {

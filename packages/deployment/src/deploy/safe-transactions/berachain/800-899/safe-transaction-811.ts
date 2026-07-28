@@ -1,17 +1,16 @@
-import { ERC4626PriceOracle__factory } from 'packages/oracles/src/types';
-import { TestPriceOracleForAdmin__factory } from '../../../../../../base/src/types';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
-import { ModuleDeployments } from '../../../../utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../../utils/deploy-utils';
 
 /**
  * This script encodes the following transactions:
- * - Adjust caps for some assets
+ * - Update oDOLO Rolling Claims
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -20,29 +19,25 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const erc4626PriceOracle = ERC4626PriceOracle__factory.connect(
-    ModuleDeployments.ERC4626PriceOracleV1[network].address,
-    core.hhUser1,
-  );
-  const testPriceOracle = TestPriceOracleForAdmin__factory.connect(
-    ModuleDeployments.TestPriceOracleForAdmin[network].address,
-    core.hhUser1,
-  );
-  await encodeReportCard(
-    core,
+  const rollingClaimsV3Address = await deployContractAndSave(
+    'RollingClaims',
     [
-      erc4626PriceOracle,
-      testPriceOracle,
-      core.constantPriceOracle,
-      core.chroniclePriceOracleV3,
-      core.chainlinkPriceOracleV3,
-      core.redstonePriceOracleV3,
-      core.twapPriceOracleV3,
+      core.tokenomics.oDolo.address,
+      core.dolomiteRegistry.address,
+      core.dolomiteMargin.address,
     ],
-    core.twapPriceOracleV3,
+    getMaxDeploymentVersionNameByDeploymentKey('ODoloRollingClaimsImplementation', 4),
   );
 
-  const transactions: EncodedTransaction[] = [];
+  const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { rollingClaims: core.tokenomics.rollingClaimsProxy },
+      'rollingClaims',
+      'upgradeTo',
+      [rollingClaimsV3Address],
+    ),
+  ];
 
   return {
     core,
@@ -57,7 +52,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      await printPriceForVisualCheck(core, core.tokens.savUsd);
+    },
   };
 }
 

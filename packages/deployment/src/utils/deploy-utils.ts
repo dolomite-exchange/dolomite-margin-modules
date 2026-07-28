@@ -913,11 +913,16 @@ export async function deploySimpleIsolationModeSystem<T extends DolomiteNetwork>
   allowableCollateralMarketIds: BigNumberish[],
   allowableDebtMarketIds: BigNumberish[],
 ): Promise<SimpleIsolationModeSystem> {
-  const officialName = await IERC20Metadata__factory.connect(underlyingToken.address, underlyingToken.signer).name();
-  if (!officialName.toUpperCase().includes(tokenName.toUpperCase())) {
+  const tokenWithMetadata = IERC20Metadata__factory.connect(underlyingToken.address, underlyingToken.signer);
+  const officialName = await tokenWithMetadata.name();
+  const officialSymbol = await tokenWithMetadata.symbol();
+  if (
+    !officialName.toUpperCase().includes(tokenName.toUpperCase())
+    && !officialSymbol.toUpperCase().includes(tokenName.toUpperCase())
+  ) {
     return Promise.reject(
       new Error(
-        `tokenName does not match official name onchain. onchain: [${officialName}], found: [${tokenName}]`,
+        `tokenName does not match official name onchain. onchain: [${officialName}] [${officialSymbol}], found: [${tokenName}]`,
       ),
     );
   }

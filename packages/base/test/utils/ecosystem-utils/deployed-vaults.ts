@@ -1,41 +1,53 @@
 import { marketToIsolationModeVaultInfoBase } from 'packages/deployment/src/deploy/isolation-mode/base-isolation-mode';
-import { marketToIsolationModeVaultInfoBotanix } from 'packages/deployment/src/deploy/isolation-mode/botanix-isolation-mode';
-import { marketToIsolationModeVaultInfoEthereum } from 'packages/deployment/src/deploy/isolation-mode/ethereum-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoEthereum,
+} from 'packages/deployment/src/deploy/isolation-mode/ethereum-isolation-mode';
 import { marketToIsolationModeVaultInfoInk } from 'packages/deployment/src/deploy/isolation-mode/ink-isolation-mode';
-import { marketToIsolationModeVaultInfoPolygonZkEvm } from 'packages/deployment/src/deploy/isolation-mode/polygon-zkevm-isolation-mode';
-import { marketToIsolationModeVaultInfoSuperSeed } from 'packages/deployment/src/deploy/isolation-mode/super-seed-isolation-mode';
-import { marketToIsolationModeVaultInfoXLayer } from 'packages/deployment/src/deploy/isolation-mode/xlayer-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoXLayer,
+} from 'packages/deployment/src/deploy/isolation-mode/xlayer-isolation-mode';
 import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
-import { BigNumber } from 'ethers';
+import {
+  prettyPrintEncodedDataWithTypeSafety,
+} from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
+import { BigNumber, ethers } from 'ethers';
 import { network as hardhatNetwork } from 'hardhat';
 import {
+  IERC20Metadata__factory,
   IIsolationModeVaultFactory,
   IIsolationModeVaultFactory__factory,
   IIsolationModeVaultFactoryOld,
   IIsolationModeVaultFactoryOld__factory,
+  MultiCallWithExceptionHandler__factory,
 } from 'packages/base/src/types';
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum-isolation-mode';
-import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoArbitrumOne,
+} from 'packages/deployment/src/deploy/isolation-mode/arbitrum-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoBerachain,
+} from 'packages/deployment/src/deploy/isolation-mode/berachain-isolation-mode';
 import {
   DeployedVaultInformation,
   IsolationModeVaultType,
 } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
-import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle-isolation-mode';
+import {
+  marketToIsolationModeVaultInfoMantle,
+} from 'packages/deployment/src/deploy/isolation-mode/mantle-isolation-mode';
 import {
   deployContractAndSave,
   getMaxDeploymentVersionNumberByDeploymentKey,
 } from 'packages/deployment/src/utils/deploy-utils';
-import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
+import { DolomiteMargin, isIsolationModeByName } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 import { marketToIsolationModeVaultInfoBnb } from 'packages/deployment/src/deploy/isolation-mode/bnb-isolation-mode';
 import {
-  marketToIsolationModeVaultInfoSepolia
+  marketToIsolationModeVaultInfoSepolia,
 } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/sepolia-isolation-mode';
+import { ModuleDeployments } from '@dolomite-exchange/modules-deployments/src/utils';
 
 export class DeployedVault {
   public contractName: string;
@@ -177,49 +189,33 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   let skippedMarkets = 0;
   const deployedVaults: DeployedVault[] = [];
   if (config.network === Network.ArbitrumOne) {
-    skippedMarkets = await initializeVaults(
+    skippedMarkets = initializeVaults(
       config,
       governance,
       marketToIsolationModeVaultInfoArbitrumOne,
       deployedVaults,
     );
   } else if (config.network === Network.Base) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBase, deployedVaults);
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoBase, deployedVaults);
   } else if (config.network === Network.Berachain) {
-    skippedMarkets = await initializeVaults(
+    skippedMarkets = initializeVaults(
       config,
       governance,
       marketToIsolationModeVaultInfoBerachain,
       deployedVaults,
     );
   } else if (config.network === Network.Bnb) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBnb, deployedVaults);
-  } else if (config.network === Network.Botanix) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoBotanix, deployedVaults);
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoBnb, deployedVaults);
   } else if (config.network === Network.Ethereum) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoEthereum, deployedVaults);
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoEthereum, deployedVaults);
   } else if (config.network === Network.Ink) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoInk, deployedVaults);
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoInk, deployedVaults);
   } else if (config.network === Network.Mantle) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoMantle, deployedVaults);
-  } else if (config.network === Network.PolygonZkEvm) {
-    skippedMarkets = await initializeVaults(
-      config,
-      governance,
-      marketToIsolationModeVaultInfoPolygonZkEvm,
-      deployedVaults,
-    );
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoMantle, deployedVaults);
   } else if (config.network === Network.Sepolia) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoSepolia, deployedVaults);
-  } else if (config.network === Network.SuperSeed) {
-    skippedMarkets = await initializeVaults(
-      config,
-      governance,
-      marketToIsolationModeVaultInfoSuperSeed,
-      deployedVaults,
-    );
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoSepolia, deployedVaults);
   } else if (config.network === Network.XLayer) {
-    skippedMarkets = await initializeVaults(config, governance, marketToIsolationModeVaultInfoXLayer, deployedVaults);
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoXLayer, deployedVaults);
   } else {
     throw new Error(`Invalid network, found ${config.network}`);
   }
@@ -235,12 +231,39 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   }
 
   const marketsCount = await dolomiteMargin.getNumMarkets();
+  const multiCall = MultiCallWithExceptionHandler__factory.connect(
+    ModuleDeployments.MultiCallWithExceptionHandlerV2[config.network].address,
+    dolomiteMargin.provider,
+  );
+
+  const addressCalls = [];
   for (let i = 0; i < marketsCount.toNumber(); i++) {
-    const tokenAddress = await dolomiteMargin.getMarketTokenAddress(i);
-    if (await isIsolationModeByTokenAddress(tokenAddress, dolomiteMargin.provider)) {
+    addressCalls.push({
+      target: dolomiteMargin.address,
+      callData: (await dolomiteMargin.populateTransaction.getMarketTokenAddress(i)).data!,
+    });
+  }
+  const { returnData: addressResults } = await multiCall.callStatic.aggregate(addressCalls);
+
+  const nameCalls = [];
+  for (let i = 0; i < marketsCount.toNumber(); i++) {
+    const token = IERC20Metadata__factory.connect(
+      ethers.utils.defaultAbiCoder.decode(['address'], addressResults[i].returnData)[0],
+      dolomiteMargin.provider,
+    );
+    nameCalls.push({
+      target: token.address,
+      callData: (await token.populateTransaction.name()).data!,
+    });
+  }
+  const { returnData: nameResults } = await multiCall.callStatic.aggregate(nameCalls);
+
+  for (let i = 0; i < marketsCount.toNumber(); i++) {
+    const tokenName = ethers.utils.defaultAbiCoder.decode(['string'], nameResults[i].returnData)[0];
+    if (isIsolationModeByName(tokenName)) {
       const vault = deployedVaults.find((v) => BigNumber.from(v.marketId).eq(i));
       if (!vault) {
-        throw new Error(`Missing isolation mode market ID ${i}: ${tokenAddress}`);
+        throw new Error(`Missing isolation mode market ID ${i}: ${nameCalls[i].target}`);
       }
 
       if (vault.implementationAddress !== (await vault.factory.userVaultImplementation())) {
@@ -252,12 +275,12 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   return deployedVaults;
 }
 
-async function initializeVaults<T extends DolomiteNetwork>(
+function initializeVaults<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   governance: SignerWithAddressWithSafety,
   marketToDeployedVaultInformation: Record<number, DeployedVaultInformation>,
   deployedVaults: DeployedVault[],
-): Promise<number> {
+): number {
   let skippedMarkets = 0;
   for (const [marketId, info] of Object.entries(marketToDeployedVaultInformation)) {
     try {
