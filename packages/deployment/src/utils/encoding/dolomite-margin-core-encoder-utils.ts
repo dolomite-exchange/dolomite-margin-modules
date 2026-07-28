@@ -20,6 +20,9 @@ import {
   isValidAmountForCapForToken,
   prettyPrintEncodedDataWithTypeSafety,
 } from './base-encoder-utils';
+import {
+  IAdminExpirePosition,
+} from '@dolomite-exchange/modules-admin/src/types/contracts/interfaces/IAdminExpirePosition';
 
 export async function encodeSetGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
@@ -368,5 +371,19 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
         [mappedParams],
       ),
     ],
+  );
+}
+
+export async function encodeExpirePositions<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  positions: IAdminExpirePosition.ExpirePositionParamsStruct[],
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { adminExpirePosition: core.adminExpirePosition },
+    'adminExpirePosition',
+    'expirePositions',
+    [positions],
+    { skipWrappingCalldataInSubmitTransaction: true },
   );
 }

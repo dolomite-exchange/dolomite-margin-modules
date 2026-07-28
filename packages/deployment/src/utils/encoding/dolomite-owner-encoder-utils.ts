@@ -133,3 +133,29 @@ export async function encodeGrantAdminRegistryPermissionIfNecessary<T extends Do
 
   return transactions;
 }
+
+export async function encodeRevokeAdminRegistryPermissionIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  adminRegistry: IAdminRegistry,
+  selector: string | typeof ALL_FUNCTIONS,
+  contract: { address: string },
+  account: string | { address: string },
+) {
+  if (selector.length !== 10) {
+    return Promise.reject(new Error('Invalid selector'));
+  }
+
+  const accountAddress = typeof account === 'string' ? account : account.address;
+  const transactions: EncodedTransaction[] = [];
+  if (await adminRegistry.hasPermission(selector, contract.address, accountAddress)) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(core, { adminRegistry }, 'adminRegistry', 'revokePermission', [
+        selector,
+        contract.address,
+        accountAddress,
+      ]),
+    );
+  }
+
+  return transactions;
+}

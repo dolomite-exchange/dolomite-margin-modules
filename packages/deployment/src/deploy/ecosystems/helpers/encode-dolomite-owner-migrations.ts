@@ -8,7 +8,12 @@ import {
 } from 'packages/admin/src/types';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 import { IDolomiteMargin, IDolomiteMarginV2, RegistryProxy__factory } from '../../../../../base/src/types';
-import { DOLOMITE_PAUSER_ADDRESS_MAP } from '../../../../../base/src/utils/constants';
+import {
+  DOLOMITE_PAUSER_ADDRESS_MAP,
+  DOLOMITE_PAUSER_SAFE_MAP,
+  HYPERNATIVE_DASHBOARD_PAUSER_ADDRESS_MAP,
+  HYPERNATIVE_KMS_PAUSER_ADDRESS_MAP,
+} from '../../../../../base/src/utils/constants';
 import {
   ADMIN_CLAIM_EXCESS_TOKENS_ROLE,
   ADMIN_PAUSE_MARKET_ROLE,
@@ -30,6 +35,7 @@ import {
   encodeAddressToFunctionSelectorForRole,
   encodeGrantAdminRegistryPermissionIfNecessary,
   encodeGrantRoleIfNecessary,
+  encodeRevokeAdminRegistryPermissionIfNecessary,
   encodeRevokeRoleIfNecessary,
 } from '../../../utils/encoding/dolomite-owner-encoder-utils';
 
@@ -105,7 +111,7 @@ export async function encodeDolomiteOwnerMigrations(
       )),
     );
 
-    // Admin Registry functions
+    // Revenue claimer permission granting
     transactions.push(
       ...(await encodeGrantAdminRegistryPermissionIfNecessary(
         core,
@@ -121,6 +127,8 @@ export async function encodeDolomiteOwnerMigrations(
         adminExpirePosition,
         core.gnosisSafeAddress,
       )),
+
+      // Pauser permission granting
       ...(await encodeGrantAdminRegistryPermissionIfNecessary(
         core,
         adminRegistry,
@@ -138,19 +146,53 @@ export async function encodeDolomiteOwnerMigrations(
       ...(await encodeGrantAdminRegistryPermissionIfNecessary(
         core,
         adminRegistry,
+        (await adminPauseMarket.populateTransaction.pauseMarket(0)).data!.slice(0, 10),
+        adminPauseMarket,
+        HYPERNATIVE_DASHBOARD_PAUSER_ADDRESS_MAP[core.network as Network],
+      )),
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
+        (await adminPauseMarket.populateTransaction.pauseMarket(0)).data!.slice(0, 10),
+        adminPauseMarket,
+        HYPERNATIVE_KMS_PAUSER_ADDRESS_MAP[core.network as Network],
+      )),
+
+      // Interest setter permission granting
+      ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+        core,
+        adminRegistry,
         ALL_FUNCTIONS,
         adminSetInterestSetter,
         core.gnosisSafeAddress,
       )),
     );
+
+    const pauserSafe = DOLOMITE_PAUSER_SAFE_MAP[core.network as Network];
+    if (pauserSafe) {
+      transactions.push(
+        ...(await encodeGrantAdminRegistryPermissionIfNecessary(
+          core,
+          adminRegistry,
+          (await adminPauseMarket.populateTransaction.pauseMarket(0)).data!.slice(0, 10),
+          adminPauseMarket,
+          pauserSafe,
+        )),
+      );
+    }
+
+    await encodeDolomiteOwnerRegressions(transactions, core, adminRegistry);
   }
 }
 
-export async function encodeDolomiteOwnerRegressions(transactions: EncodedTransaction[], core: any) {
-  async function revokeContractOwnership(nameWithoutVersionPostfix: string, role: string) {
+export async function encodeDolomiteOwnerRegressions(
+  transactions: EncodedTransaction[],
+  core: any,
+  adminRegistry: AdminRegistry,
+) {
+  async function revokeContractOwnership(nameWithoutVersionPostfix: string, role: string, callers: string[]) {
     const version = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, 1);
     for (let i = 1; i < version; i++) {
-      // Dolomite Owner Roles - AdminClaimExcessTokens
       const deploymentName = `${nameWithoutVersionPostfix}V${i}`;
       const contractAddress = (ModuleDeployments as any)[deploymentName][core.network]?.address;
       if (!contractAddress) {
@@ -163,9 +205,27 @@ export async function encodeDolomiteOwnerRegressions(transactions: EncodedTransa
         ...(await encodeRevokeRoleIfNecessary(core, role, contract)),
         ...(await encodeSetGlobalOperatorIfNecessary(core, contract, false)),
       );
+
+      for (const caller of callers) {
+        transactions.push(
+          ...(await encodeRevokeAdminRegistryPermissionIfNecessary(
+            core,
+            adminRegistry,
+            ALL_FUNCTIONS,
+            contract,
+            caller,
+          )),
+        );
+      }
     }
   }
 
-  await revokeContractOwnership('AdminClaimExcessTokens', ADMIN_CLAIM_EXCESS_TOKENS_ROLE);
-  await revokeContractOwnership('AdminPauseMarket', ADMIN_PAUSE_MARKET_ROLE);
+  const callers: string[] = [core.gnosisSafeAddress];
+  await revokeContractOwnership('AdminClaimExcessTokens', ADMIN_CLAIM_EXCESS_TOKENS_ROLE, callers);
+
+  const pauserSafe = DOLOMITE_PAUSER_SAFE_MAP[core.network as Network];
+  if (pauserSafe) {
+    callers.push(pauserSafe);
+  }
+  await revokeContractOwnership('AdminPauseMarket', ADMIN_PAUSE_MARKET_ROLE, callers);
 }

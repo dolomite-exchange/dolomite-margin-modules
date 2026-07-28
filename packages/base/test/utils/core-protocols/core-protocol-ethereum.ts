@@ -17,6 +17,7 @@ import {
 
 interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum> {
   aave: IERC20;
+  btcCx: IERC20;
   cUsd: IERC20;
   cbBtc: IERC20;
   crv: IERC20;
@@ -33,12 +34,14 @@ interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum
   wbtc: IERC20;
   weEth: IERC20;
   wlfi: IERC20;
+  wlfiCx: IERC20;
   wsrUsd: IERC20;
   wstEth: IERC20;
 }
 
 interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   aave: BigNumberish;
+  btcCx: BigNumberish;
   cUsd: BigNumberish;
   cbBtc: BigNumberish;
   crv: BigNumberish;
@@ -55,6 +58,7 @@ interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   wbtc: BigNumberish;
   weEth: BigNumberish;
   wlfi: BigNumberish;
+  wlfiCx: BigNumberish;
   wsrUsd: BigNumberish;
   wstEth: BigNumberish;
 }

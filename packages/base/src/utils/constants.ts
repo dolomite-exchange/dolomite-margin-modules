@@ -31,19 +31,11 @@ type EverythingButBase =
   | Network.ArbitrumOne
   | Network.Berachain
   | Network.Bnb
-  | Network.Botanix
   | Network.Ethereum
   | Network.Mantle
-  | Network.PolygonZkEvm
   | Network.XLayer;
 
-type EverythingButBaseAndBotanix =
-  | Network.ArbitrumOne
-  | Network.Berachain
-  | Network.Ethereum
-  | Network.Mantle
-  | Network.PolygonZkEvm
-  | Network.XLayer;
+type EverythingButBaseAndBnb = Exclude<EverythingButBase, Network.Bnb>;
 
 type RedstoneNetworks = Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle;
 
@@ -54,13 +46,10 @@ export const SUBGRAPH_URL_MAP: Record<DolomiteNetwork, string> = {
   [Network.Base]: `${SUBGRAPH_BASE_URL}/subgraphs/dolomite-base/${SUBGRAPH_VERSION}`,
   [Network.Berachain]: '',
   [Network.Bnb]: '',
-  [Network.Botanix]: '',
   [Network.Ethereum]: '',
   [Network.Ink]: '',
   [Network.Mantle]: `${SUBGRAPH_BASE_URL}/subgraphs/dolomite-mantle/${SUBGRAPH_VERSION}`,
-  [Network.PolygonZkEvm]: '',
   [Network.Sepolia]: '',
-  [Network.SuperSeed]: '',
   [Network.XLayer]: `${SUBGRAPH_BASE_URL}/subgraphs/dolomite-x-layer/${SUBGRAPH_VERSION}`,
 };
 
@@ -101,7 +90,7 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
 export const BTC_CX_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0x852724426b2851487B278A3377449BF26B06C1ba',
-    marketId: -1,
+    marketId: 20,
   },
 };
 
@@ -122,13 +111,10 @@ export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<DolomiteNetwork, string> = {
   [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
   [Network.Berachain]: CoreDeployments.ChainlinkPriceOracleV1[Network.Berachain].address,
   [Network.Bnb]: CoreDeployments.ChainlinkPriceOracleV1[Network.Bnb].address,
-  [Network.Botanix]: CoreDeployments.ChainlinkPriceOracleV1[Network.Botanix].address,
   [Network.Ethereum]: CoreDeployments.ChainlinkPriceOracleV1[Network.Ethereum].address,
   [Network.Ink]: CoreDeployments.ChainlinkPriceOracleV1[Network.Ink].address,
   [Network.Mantle]: CoreDeployments.ChainlinkPriceOracleV1[Network.Mantle].address,
-  [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
   [Network.Sepolia]: CoreDeployments.ChainlinkPriceOracleV1[Network.Sepolia]?.address,
-  [Network.SuperSeed]: CoreDeployments.ChainlinkPriceOracleV1[Network.SuperSeed].address,
   [Network.XLayer]: CoreDeployments.ChainlinkPriceOracleV1[Network.XLayer].address,
 };
 
@@ -468,6 +454,13 @@ export const DPX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const D_SAV_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x51Bc8E41cBEc0AA97EC07C73597829c70b2eED46',
+    marketId: 76,
+  },
+};
+
 export const DYT_GLP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x851729Df6C39BDB6E92721f2ADf750023D967eE8',
@@ -486,16 +479,10 @@ export const DAI_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = {
   },
   [Network.Berachain]: undefined,
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
-  [Network.PolygonZkEvm]: {
-    address: '0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4',
-    marketId: 1,
-  },
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -588,6 +575,13 @@ export const FRAX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
+    marketId: 29,
+  },
+};
+
 export const GRAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x894134a25a5faC1c2C26F1d8fBf05111a3CB9487',
@@ -609,14 +603,24 @@ export const HENLO_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const HENLO_WBERA_POOL_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '0xB8c0bA2D17C4cc1f3d9a25eaBD123AD24a009EbE',
-};
-
 export const HONEY_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xFCBD14DC51f0A4d49d5E53C2E0950e0bC26d0Dce',
     marketId: 3,
+  },
+};
+
+export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5',
+    marketId: 33,
+  },
+};
+
+export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
+    marketId: 34,
   },
 };
 
@@ -641,30 +645,11 @@ export const KDK_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const KDK_USDT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '0x7CDd3096e66db59e83e6df262DCeA7a6c5134107',
-};
-
 export const LBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xecAc9C5F704e954931349Da37F60E39f515c11c1',
     marketId: 6,
   },
-};
-
-export const LEVEL_INITIATOR_ADDRESS_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Base]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Berachain]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Bnb]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Botanix]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Ethereum]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Ink]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Mantle]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.PolygonZkEvm]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.Sepolia]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.SuperSeed]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
-  [Network.XLayer]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
 };
 
 export const LINK_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = {
@@ -681,38 +666,14 @@ export const LINK_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = 
     address: '0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD',
     marketId: -1,
   },
-  [Network.Botanix]: {
-    address: 'TODO',
-    marketId: -1,
-  },
   [Network.Ethereum]: {
     address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
     marketId: 3,
   },
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
-  [Network.PolygonZkEvm]: {
-    address: '0x4B16e4752711A7ABEc32799C976F3CeFc0111f2B',
-    marketId: 3,
-  },
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
-};
-
-export const LIQUIDATOR_ADDRESS_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Base]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Berachain]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Bnb]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Botanix]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Ethereum]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Ink]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Mantle]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.PolygonZkEvm]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.Sepolia]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.SuperSeed]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
-  [Network.XLayer]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
 };
 
 export const LORENZO_ST_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
@@ -733,17 +694,6 @@ export const MAGIC_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x85667409a723684Fe1e57Dd1ABDe8D88C2f54214',
     marketId: 8,
-  },
-};
-
-export const MANTLE_REWARD_STATION_MAP: Record<Network.Mantle, string> = {
-  [Network.Mantle]: '0xeD884f0460A634C69dbb7def54858465808AACEf',
-};
-
-export const MATIC_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
-  [Network.PolygonZkEvm]: {
-    address: '0xa2036f0538221a77A3937F1379699f44945018d0',
-    marketId: 6,
   },
 };
 
@@ -793,27 +743,6 @@ export const ORI_BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const P_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
-  [Network.Botanix]: {
-    address: '0x42725b4D9270CFe24F6852401fdDa88248CB4dE9',
-    marketId: 6,
-  },
-};
-
-export const YP_USD_MAP: Record<Network.Botanix, TokenWithMarketId> = {
-  [Network.Botanix]: {
-    address: '0xB0730D2992A003CcF99edB0a2dDC048e28393ec5',
-    marketId: 7,
-  },
-};
-
-export const PBTC_MAP: Record<Network.Botanix, TokenWithMarketId> = {
-  [Network.Botanix]: {
-    address: '0x0D2437F93Fed6EA64Ef01cCde385FB1263910C56',
-    marketId: 1,
-  },
-};
-
 export const PENDLE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8',
@@ -821,17 +750,17 @@ export const PENDLE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xc2c7ded5837f911b7efe5984b52182036fd66a20',
+    marketId: 43,
+  },
+};
+
 export const PEPE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00',
     marketId: -1,
-  },
-};
-
-export const POL_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
-  [Network.PolygonZkEvm]: {
-    address: '0x22B21BedDef74FE62F031D2c5c8F7a9F8a4b304D',
-    marketId: 8,
   },
 };
 
@@ -846,6 +775,17 @@ export const PREMIA_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x51fC0f6660482Ea73330E414eFd7808811a57Fa2',
     marketId: 26,
+  },
+};
+
+export const PUMP_BTC_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e',
+    marketId: -1,
+  },
+  [Network.Berachain]: {
+    address: '0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E',
+    marketId: 20,
   },
 };
 
@@ -899,6 +839,13 @@ export const R_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithMa
   },
 };
 
+export const S_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+    marketId: 40,
+  },
+};
+
 export const S_WBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x118D2cEeE9785eaf70C15Cd74CD84c9f8c3EeC9a',
@@ -906,10 +853,17 @@ export const S_WBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const SAV_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x23E3df1196b3249c9b0A9476f990F105591872De',
+    marketId: 75,
+  },
+};
+
 export const SAV_USD_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xA322e23a357cB7C596A7a834102B9d6d5b15da3e',
-    marketId: 75,
+    marketId: 76,
   },
   [Network.Berachain]: {
     address: '0xa744Fe3688291aC3A4a7eC917678783aD9946a1E',
@@ -922,10 +876,6 @@ export const SIZE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
     address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',
     marketId: -1,
   },
-};
-
-export const SIZE_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x123d123c6f062f7f5a6e82c396b34f1929125bf3',
 };
 
 export const STONE_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
@@ -960,14 +910,10 @@ export const STONE_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const S_USDA_MAP: Record<Network.Berachain | Network.Botanix, TokenWithMarketId> = {
+export const S_USDA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x2840F9d9f96321435Ab0f977E7FDBf32EA8b304f',
     marketId: 22,
-  },
-  [Network.Botanix]: {
-    address: '0x4B9d58314AA14ada0B96714cc87486A7a17231D0',
-    marketId: 5,
   },
 };
 
@@ -1004,13 +950,6 @@ export const SR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWithM
   [Network.Ethereum]: {
     address: '0x738d1115B90efa71AE468F1287fc864775e23a31',
     marketId: 10,
-  },
-};
-
-export const ST_BTC_MAP: Record<Network.Botanix, TokenWithMarketId> = {
-  [Network.Botanix]: {
-    address: '0xF4586028FFdA7Eca636864F80f8a3f2589E33795',
-    marketId: 3,
   },
 };
 
@@ -1082,14 +1021,10 @@ export const USD1_MAP: Record<Network.Ethereum | Network.Sepolia, TokenWithMarke
   },
 };
 
-export const USDA_MAP: Record<Network.Berachain | Network.Botanix, TokenWithMarketId> = {
+export const USDA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xff12470a969Dd362EB6595FFB44C82c959Fe9ACc',
     marketId: 25,
-  },
-  [Network.Botanix]: {
-    address: '0xdB8CAb508ADEeE23443312dC02917fd826d1ca6E',
-    marketId: -1,
   },
 };
 
@@ -1110,10 +1045,6 @@ export const USDC_MAP: Record<DolomiteNetwork, TokenWithMarketId> = {
     address: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
     marketId: 2,
   },
-  [Network.Botanix]: {
-    address: '0x29eE6138DD4C9815f46D34a4A1ed48F46758A402',
-    marketId: 2,
-  },
   [Network.Ethereum]: {
     address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     marketId: 2,
@@ -1126,17 +1057,9 @@ export const USDC_MAP: Record<DolomiteNetwork, TokenWithMarketId> = {
     address: '0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9',
     marketId: 2,
   },
-  [Network.PolygonZkEvm]: {
-    address: '0x37eAA0eF3549a5Bb7D431be78a3D99BD360d19e5',
-    marketId: 7,
-  },
   [Network.Sepolia]: {
     address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
     marketId: 2,
-  },
-  [Network.SuperSeed]: {
-    address: 'REPLACE',
-    marketId: 1,
   },
   [Network.XLayer]: {
     address: '0x74b7F16337b8972027F6196A17a631aC6dE26d22',
@@ -1193,10 +1116,6 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
     address: '0x55d398326f99059fF775485246999027B3197955',
     marketId: 5,
   },
-  [Network.Botanix]: {
-    address: '0x1217bfe6c773eec6cc4a38b5dc45b92292b6e189',
-    marketId: 4,
-  },
   [Network.Ethereum]: {
     address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     marketId: 5,
@@ -1204,10 +1123,6 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE',
     marketId: 4,
-  },
-  [Network.PolygonZkEvm]: {
-    address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
-    marketId: 5,
   },
   [Network.XLayer]: {
     address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
@@ -1247,7 +1162,7 @@ export const WSR_USD_MAP: Record<Network.Berachain | Network.Ethereum, TokenWith
   },
 };
 
-export const WBTC_MAP: Record<EverythingButBaseAndBotanix, TokenWithMarketId> = {
+export const WBTC_MAP: Record<EverythingButBaseAndBnb, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
     marketId: 4,
@@ -1263,10 +1178,6 @@ export const WBTC_MAP: Record<EverythingButBaseAndBotanix, TokenWithMarketId> = 
   [Network.Mantle]: {
     address: '0xCAbAE6f6Ea1ecaB08Ad02fE02ce9A44F09aebfA2',
     marketId: 3,
-  },
-  [Network.PolygonZkEvm]: {
-    address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
-    marketId: 4,
   },
   [Network.XLayer]: {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
@@ -1305,10 +1216,6 @@ export const WETH_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
     marketId: 0,
   },
-  [Network.Botanix]: {
-    address: '0x3292c42e8E9Ab3C6a12CFdA556BbCB6f113B1E28',
-    marketId: 0,
-  },
   [Network.Ethereum]: {
     address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     marketId: 0,
@@ -1321,16 +1228,8 @@ export const WETH_MAP: Record<Network, TokenWithMarketId> = {
     address: '0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111',
     marketId: 0,
   },
-  [Network.PolygonZkEvm]: {
-    address: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
-    marketId: 0,
-  },
   [Network.Sepolia]: {
     address: '0x097d90c9d3e0b50ca60e1ae45f6a81010f9fb534',
-    marketId: 0,
-  },
-  [Network.SuperSeed]: {
-    address: '0x4200000000000000000000000000000000000006',
     marketId: 0,
   },
   [Network.XLayer]: {
@@ -1361,14 +1260,17 @@ export const WG_BERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const WG_BERA_IBGT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '0xb186949793248AbF961ee8cfF59c6A0Dd314FBBc',
-};
-
 export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6',
     marketId: 13,
+  },
+};
+
+export const WLFI_CX_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
+  [Network.Ethereum]: {
+    address: '0x8AF3B9D0E53186ae13b32FD783f42663Bf48d389',
+    marketId: 21,
   },
 };
 
@@ -1489,13 +1391,10 @@ export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.Base]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Bnb]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.Botanix]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Ethereum]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Ink]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Mantle]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.PolygonZkEvm]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.Sepolia]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
-  [Network.SuperSeed]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
   [Network.XLayer]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
 };
 
@@ -1504,13 +1403,10 @@ export const DOLOMITE_FEE_AGENT_GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.Base]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Berachain]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Bnb]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.Botanix]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Ethereum]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Ink]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Mantle]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.PolygonZkEvm]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.Sepolia]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
-  [Network.SuperSeed]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
   [Network.XLayer]: '0x4D5f0344D245f1D13607e5b61DD317De3b3178b8',
 };
 
@@ -1519,14 +1415,23 @@ export const DOLOMITE_PAUSER_ADDRESS_MAP: Record<Network, string> = {
   [Network.Base]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Berachain]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Bnb]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
-  [Network.Botanix]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Ethereum]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Ink]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Mantle]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
-  [Network.PolygonZkEvm]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.Sepolia]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
-  [Network.SuperSeed]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
   [Network.XLayer]: '0x8a6DA87Cd07b03Aa6F34B99eC9d852BffB9c1534',
+};
+
+export const DOLOMITE_PAUSER_SAFE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x9B2B58317d074Fdf9110Bbb78447949DFbB1Cb06',
+  [Network.Base]: undefined,
+  [Network.Berachain]: '0x9B2B58317d074Fdf9110Bbb78447949DFbB1Cb06',
+  [Network.Bnb]: undefined,
+  [Network.Ethereum]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.Sepolia]: undefined,
+  [Network.XLayer]: undefined,
 };
 
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1829,13 +1734,6 @@ export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6',
 };
 
-export const GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
-    marketId: 29,
-  },
-};
-
 export const GMX_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
 };
@@ -1857,14 +1755,10 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.Base]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Berachain]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Bnb]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.Botanix]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ethereum]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Ink]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Mantle]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  [Network.PolygonZkEvm]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Sepolia]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
-  // v2 = 0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4; need to fix once they enable the L2 safe module
-  [Network.SuperSeed]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
   [Network.XLayer]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
 };
 
@@ -1882,6 +1776,10 @@ export const BERACHAIN_REWARDS_VAULT_FACTORY_MAP: Record<Network.Berachain, stri
 
 export const BGTM_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0x9999999999999999999999999999999999999999', // @todo fix and update
+};
+
+export const HENLO_WBERA_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xB8c0bA2D17C4cc1f3d9a25eaBD123AD24a009EbE',
 };
 
 export const HONEY_USDC_BEX_LP_TOKEN_MAP: Record<Network.Berachain, string> = {
@@ -1908,22 +1806,32 @@ export const HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain
   [Network.Berachain]: '0xA95Ff8097B0E405d1F4139F460fa4c89863784c0',
 };
 
-export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5',
-    marketId: 33,
-  },
+export const HYPERNATIVE_DASHBOARD_PAUSER_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Base]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Berachain]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Bnb]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Ethereum]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Ink]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Mantle]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.Sepolia]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+  [Network.XLayer]: '0x50642a6d4b5103ddbb3253036f3ea22288069aae',
+};
+
+export const HYPERNATIVE_KMS_PAUSER_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Base]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Berachain]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Bnb]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Ethereum]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Ink]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Mantle]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.Sepolia]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
+  [Network.XLayer]: '0x932A5786fb5037Df3Fc7EaA838b0B99F18EC9c5C',
 };
 
 export const IBERA_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xFCB24b3b7E87E3810b150d25D5964c566D9A2B6F',
-};
-
-export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
-    marketId: 34,
-  },
 };
 
 export const IBGT_WBERA_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
@@ -1936,20 +1844,6 @@ export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain, string> = {
 
 export const INFRARED_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xb71b3DaEA39012Fb0f2B14D2a9C86da9292fC126',
-};
-
-export const KYBER_AGGREGATOR_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
-  [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
-  [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
-  [Network.Berachain]: undefined,
-  [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
-  [Network.Ethereum]: undefined,
-  [Network.Ink]: undefined,
-  [Network.Mantle]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
-  [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
-  [Network.XLayer]: undefined,
 };
 
 export const JONES_ECOSYSTEM_GOVERNOR_V1_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1996,17 +1890,59 @@ export const JONES_WHITELIST_CONTROLLER_V2_MAP: Record<Network.ArbitrumOne, stri
   [Network.ArbitrumOne]: '0xDe3476a7C0a408325385605203665A8836c2bcca',
 };
 
+export const KDK_USDT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x7CDd3096e66db59e83e6df262DCeA7a6c5134107',
+};
+
+export const KYBER_AGGREGATOR_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
+  [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.Berachain]: undefined,
+  [Network.Bnb]: undefined,
+  [Network.Ethereum]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.Sepolia]: undefined,
+  [Network.XLayer]: undefined,
+};
+
+export const LEVEL_INITIATOR_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Base]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Berachain]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Bnb]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Ethereum]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Ink]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Mantle]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.Sepolia]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+  [Network.XLayer]: '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
+};
+
+export const LIQUIDATOR_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Base]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Berachain]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Bnb]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Ethereum]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Ink]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Mantle]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.Sepolia]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+  [Network.XLayer]: '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+};
+
+export const MANTLE_REWARD_STATION_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xeD884f0460A634C69dbb7def54858465808AACEf',
+};
+
 export const ODOS_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
   [Network.Base]: '0x19cEeAd7105607Cd444F5ad10dd51356436095a1',
   [Network.Berachain]: undefined,
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: '0xCf5540fFFCdC3d510B18bFcA6d2b9987b0772559',
   [Network.Ink]: undefined,
   [Network.Mantle]: '0xD9F4e85489aDCD0bAF0Cd63b4231c6af58c26745',
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2023,26 +1959,34 @@ export const OOGA_BOOGA_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> 
   [Network.Base]: undefined,
   [Network.Berachain]: '0xFd88aD4849BA0F729D6fF4bC27Ff948Ab1Ac3dE7',
   [Network.Bnb]: undefined,
-  [Network.Botanix]: '0x417fBC387fa853AEd674d62Ca1b21E3cE54C0F85',
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
-export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
+export const PARASWAP_AUGUSTUS_V5_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
   [Network.Berachain]: undefined,
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
+};
+
+export const PARASWAP_AUGUSTUS_V6_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
+  [Network.ArbitrumOne]: '0x6A000F20005980200259B80c5102003040001068',
+  [Network.Base]: undefined,
+  [Network.Berachain]: undefined,
+  [Network.Bnb]: undefined,
+  [Network.Ethereum]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.Sepolia]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2051,12 +1995,10 @@ export const PARASWAP_FEE_CLAIMER_MAP: Record<DolomiteNetwork, string | undefine
   [Network.Base]: '0x9aaB4B24541af30fD72784ED98D8756ac0eFb3C7',
   [Network.Berachain]: undefined,
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2065,12 +2007,10 @@ export const PARASWAP_TRANSFER_PROXY_MAP: Record<DolomiteNetwork, string | undef
   [Network.Base]: '0x93aAAe79a53759cD164340E4C8766E4Db5331cD7',
   [Network.Berachain]: undefined,
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2079,13 +2019,10 @@ export const PAYABLE_TOKEN_MAP: Record<Network, TokenWithMarketId> = {
   [Network.Base]: WETH_MAP[Network.Base],
   [Network.Berachain]: WBERA_MAP[Network.Berachain],
   [Network.Bnb]: WBNB_MAP[Network.Bnb],
-  [Network.Botanix]: PBTC_MAP[Network.Botanix],
   [Network.Ethereum]: WETH_MAP[Network.Ethereum],
   [Network.Ink]: WETH_MAP[Network.Base],
   [Network.Mantle]: WMNT_MAP[Network.Mantle],
-  [Network.PolygonZkEvm]: WETH_MAP[Network.PolygonZkEvm],
   [Network.Sepolia]: WETH_MAP[Network.Sepolia],
-  [Network.SuperSeed]: WETH_MAP[Network.SuperSeed],
   [Network.XLayer]: WOKB_MAP[Network.XLayer],
 };
 
@@ -2205,13 +2142,6 @@ export const PENDLE_PT_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0x89cD713a6607787F93d6743E67777Be9Ad73c54b',
 };
 
-export const PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0xc2c7ded5837f911b7efe5984b52182036fd66a20',
-    marketId: 43,
-  },
-};
-
 export const PENDLE_PT_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x1333B49BBdD06544a25647f9127358D9A9486105',
 };
@@ -2257,12 +2187,10 @@ export const PENDLE_PT_ORACLE_MAP: Record<DolomiteNetwork, string | undefined> =
   [Network.Base]: undefined,
   [Network.Berachain]: '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2',
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.Ink]: undefined,
   [Network.Mantle]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2271,12 +2199,10 @@ export const PENDLE_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.Base]: undefined,
   [Network.Berachain]: '0x888888888889758F76e7103c6CbF23ABbF58F946', // fall back to v4
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
   [Network.Ink]: undefined,
   [Network.Mantle]: '0x888888888889758F76e7103c6CbF23ABbF58F946', // fall back to v4
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2285,12 +2211,10 @@ export const PENDLE_ROUTER_V4_MAP: Record<DolomiteNetwork, string | undefined> =
   [Network.Base]: undefined,
   [Network.Berachain]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Ink]: undefined,
   [Network.Mantle]: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -2378,24 +2302,6 @@ export const PREMIA_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xc3e254E39c45c7886A12455cb8207c808486FAC3',
 };
 
-export const PUMP_BTC_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e',
-    marketId: -1,
-  },
-  [Network.Berachain]: {
-    address: '0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E',
-    marketId: 20,
-  },
-};
-
-export const S_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
-    marketId: 40,
-  },
-};
-
 /**
  * Special token that enables transfers and wraps around fsGLP
  */
@@ -2405,6 +2311,10 @@ export const S_GMX_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const SBF_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xd2D1162512F927a7e282Ef43a362659E4F2a728F',
+};
+
+export const SIZE_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x123d123c6f062f7f5a6e82c396b34f1929125bf3',
 };
 
 export const SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL = BigNumber.from('70000000000000000');
@@ -2449,6 +2359,10 @@ export const V_GLP_MAP: Record<Network.ArbitrumOne, string> = {
  */
 export const V_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x199070DDfd1CFb69173aa2F7e20906F26B363004',
+};
+
+export const WG_BERA_IBGT_KODIAK_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xb186949793248AbF961ee8cfF59c6A0Dd314FBBc',
 };
 
 // ************************* Oracles *************************
@@ -2597,7 +2511,6 @@ export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
     },
   },
   [Network.Bnb]: {},
-  [Network.Botanix]: {},
   [Network.Ethereum]: {
     [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
       symbol: 'BTC',
@@ -2607,7 +2520,6 @@ export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
   [Network.Ink]: {},
   [Network.Mantle]: {},
   [Network.Sepolia]: {},
-  [Network.SuperSeed]: {},
   [Network.XLayer]: {},
 };
 
@@ -2841,31 +2753,6 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
   },
   [Network.Berachain]: {},
   [Network.Bnb]: {},
-  [Network.Botanix]: {
-    // [LINK_MAP[Network.Botanix]!.address]: {
-    //   aggregatorAddress: '0x748499D61977694AD047121a3df677164e461Ca4',
-    // },
-    [PBTC_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0x632d2713F48ac2DF441b3cE46Bd7fa4467D419d1',
-    },
-    [S_USDA_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0x8216FE7A95858BC5113BC0523973bc61A3ac246c',
-      tokenPairAddress: USDA_MAP[Network.Botanix].address,
-    },
-    [ST_BTC_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0x0127B0C7f15d63a9d7a2a9Bf879581B29Ff65618',
-      tokenPairAddress: PBTC_MAP[Network.Botanix].address,
-    },
-    [USDC_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0x9563258f5FF50C176A3780ab02dF25cc39C092C0',
-    },
-    [USDT_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0xA6C9d2Fe0e02D8ef5315ad9ff7045FDae01d6Aff',
-    },
-    [WETH_MAP[Network.Botanix].address]: {
-      aggregatorAddress: '0x72DE17fa370220e32ae66A7f22Be7Ab58D41C9b7',
-    },
-  },
   [Network.Ethereum]: {
     [AAVE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x547a514d5e3769680Ce22B2361c10Ea13619e8a9',
@@ -2941,38 +2828,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
       aggregatorAddress: '0xD97F20bEbeD74e8144134C4b148fE93417dd0F96',
     },
   },
-  [Network.PolygonZkEvm]: {
-    [DAI_MAP[Network.PolygonZkEvm]!.address]: {
-      aggregatorAddress: '0xa4Fd5C39d975067c877F287E78D600da07E8344c',
-    },
-    [LINK_MAP[Network.PolygonZkEvm]!.address]: {
-      aggregatorAddress: '0x2eeCADd4D8d3a4939440f07419741C4898095317',
-    },
-    [MATIC_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
-    },
-    [POL_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
-    },
-    [USDC_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',
-    },
-    [USDT_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x8499f6E7D6Ac56C83f66206035D33bD1908a8b5D',
-    },
-    [WBTC_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0xAE243804e1903BdbE26ae5f35bc6E4794Be21574',
-    },
-    [WETH_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x97d9F9A00dEE0004BE8ca0A8fa374d486567eE2D',
-    },
-  },
   [Network.Sepolia]: {
     [WETH_MAP[Network.Sepolia].address]: {
       aggregatorAddress: '0x694AA1769357215DE4FAC081bf1f309aDC325306',
     },
   },
-  [Network.SuperSeed]: {},
   [Network.XLayer]: {
     [USDC_MAP[Network.XLayer].address]: {
       aggregatorAddress: '0xB8a08c178D96C315FbFB5661ABD208477391BC40',
@@ -3004,12 +2864,10 @@ export const CHAOS_LABS_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<st
   [Network.Base]: {},
   [Network.Berachain]: {},
   [Network.Bnb]: {},
-  [Network.Botanix]: {},
   [Network.Ethereum]: {},
   [Network.Ink]: {},
   [Network.Mantle]: {},
   [Network.Sepolia]: {},
-  [Network.SuperSeed]: {},
   [Network.XLayer]: {},
 };
 
@@ -3018,12 +2876,10 @@ export const CHAINSIGHT_ORACLE_ADDRESS_MAP: Record<DolomiteNetwork, string | und
   [Network.Base]: undefined,
   [Network.Berachain]: '0xD5F76a363135A0781295043241f18496dAa31E3d',
   [Network.Bnb]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Ink]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -3033,11 +2889,9 @@ export const CHAINSIGHT_SENDER_ADDRESS_MAP: Record<DolomiteNetwork, string | und
   [Network.Berachain]: '0x16D90c83817Cf64d40321018C8FC1E7e62c427da',
   [Network.Bnb]: undefined,
   [Network.Ink]: undefined,
-  [Network.Botanix]: undefined,
   [Network.Ethereum]: undefined,
   [Network.Mantle]: undefined,
   [Network.Sepolia]: undefined,
-  [Network.SuperSeed]: undefined,
   [Network.XLayer]: undefined,
 };
 
@@ -3058,13 +2912,11 @@ export const CHAINSIGHT_KEYS_MAP: Record<DolomiteNetwork, Record<string, Chainsi
     },
   },
   [Network.Bnb]: {},
-  [Network.Botanix]: {},
   [Network.Ethereum]: {},
   [Network.Ink]: {},
   [Network.Mantle]: {},
   [Network.Sepolia]: {},
   [Network.Sepolia]: {},
-  [Network.SuperSeed]: {},
   [Network.XLayer]: {},
 };
 
@@ -3249,6 +3101,10 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
     [S_USDE_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x197225B3B017eb9b72Ac356D6B3c267d0c04c57c',
       tokenPairAddress: USDE_MAP[Network.Berachain].address,
+    },
+    [SAV_USD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x2b9824644D9c03FDa5fddc40A7AeAB282b867c23',
+      tokenPairAddress: USDC_MAP[Network.Berachain].address,
     },
     [SDE_USD_MAP[Network.Berachain].address]: {
       aggregatorAddress: '', // TODO

@@ -4,12 +4,7 @@ import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'hardhat-tracer';
-import {
-  EVM_VERSION,
-  Network,
-  NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
-  NetworkName,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { EVM_VERSION, Network, NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -121,20 +116,13 @@ export const base_config: HardhatUserConfig = {
       blockGasLimit: 100000000429720,
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [
-            {
-              privateKey: process.env.DEPLOYER_PRIVATE_KEY,
-              balance: parseEther('1').toString(),
-            },
-          ]
+          {
+            privateKey: process.env.DEPLOYER_PRIVATE_KEY,
+            balance: parseEther('1').toString(),
+          },
+        ]
         : undefined,
       chainId: parseInt(Network.Berachain, 10),
-      chains: {
-        [Network.PolygonZkEvm]: {
-          hardforkHistory: {
-            berlin: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[Network.PolygonZkEvm] - 1,
-          },
-        },
-      },
     },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),
@@ -162,13 +150,6 @@ export const base_config: HardhatUserConfig = {
       gasPrice: ethers.utils.parseUnits('0.05', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
-    [NetworkName.Botanix]: {
-      chainId: parseInt(Network.Botanix, 10),
-      url: botanixWeb3Url,
-      gas: 15_000_000, // 15M gas
-      gasPrice: ethers.utils.parseUnits('0.0008', 'gwei').toNumber(),
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
     [NetworkName.Ethereum]: {
       chainId: parseInt(Network.Ethereum, 10),
       url: ethereumWeb3Url,
@@ -189,24 +170,10 @@ export const base_config: HardhatUserConfig = {
       gasPrice: ethers.utils.parseUnits('50', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
-    [NetworkName.PolygonZkEvm]: {
-      chainId: parseInt(Network.PolygonZkEvm, 10),
-      url: polygonZkEvmWeb3Url,
-      gas: 20_000_000, // 20M gas
-      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
     [NetworkName.Sepolia]: {
       chainId: parseInt(Network.Sepolia, 10),
       url: sepoliaWeb3Url,
       gas: 10_000_000, // 10M gas
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
-    [NetworkName.SuperSeed]: {
-      chainId: parseInt(Network.SuperSeed, 10),
-      url: superSeedWeb3Url,
-      gas: 30_000_000, // 30M gas
-      gasPrice: ethers.utils.parseUnits('0.03', 'gwei').toNumber(),
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {
@@ -258,13 +225,10 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.Base]: etherscanApiKey,
       [NetworkName.Berachain]: etherscanApiKey,
       [NetworkName.Bnb]: etherscanApiKey,
-      [NetworkName.Botanix]: botanixApiKey,
       [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: etherscanApiKey,
-      [NetworkName.PolygonZkEvm]: etherscanApiKey,
       [NetworkName.Sepolia]: etherscanApiKey,
-      [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
     customChains: [
@@ -301,14 +265,6 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
-        network: NetworkName.Botanix,
-        chainId: parseInt(Network.Botanix, 10),
-        urls: {
-          apiURL: 'https://api.routescan.io/v2/network/mainnet/evm/3637/etherscan/api',
-          browserURL: 'https://botanixscan.io',
-        },
-      },
-      {
         network: NetworkName.Ethereum,
         chainId: parseInt(Network.Ethereum, 10),
         urls: {
@@ -333,27 +289,11 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
-        network: NetworkName.PolygonZkEvm,
-        chainId: parseInt(Network.PolygonZkEvm, 10),
-        urls: {
-          apiURL: 'https://api.etherscan.io/v2/api',
-          browserURL: 'https://zkevm.polygonscan.com',
-        },
-      },
-      {
         network: NetworkName.Sepolia,
         chainId: parseInt(Network.Sepolia, 10),
         urls: {
           apiURL: 'https://api.etherscan.io/v2/api',
           browserURL: 'https://sepolia.etherscan.io',
-        },
-      },
-      {
-        network: NetworkName.SuperSeed,
-        chainId: parseInt(Network.SuperSeed, 10),
-        urls: {
-          apiURL: 'https://explorer.superseed.xyz/api',
-          browserURL: 'https://explorer.superseed.xyz',
         },
       },
       {
