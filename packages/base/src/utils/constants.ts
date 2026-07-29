@@ -2347,6 +2347,10 @@ export const UMAMI_WETH_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xbb84D79159D6bBE1DE148Dc82640CaA677e06126',
 };
 
+export const UNISWAP_DOLO_USDC_V3_POOL_MAP: Record<Network.Ethereum, string> = {
+  [Network.Ethereum]: '0x003896387666C5c11458EEb3F927B72a11b19783',
+};
+
 /**
  * Token that holds fsGLP for vesting esGMX into GMX
  */

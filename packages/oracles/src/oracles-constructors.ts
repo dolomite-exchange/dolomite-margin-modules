@@ -14,7 +14,6 @@ import {
 } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
 import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
@@ -110,31 +109,6 @@ export type CoreProtocolWithRedstone<T extends DolomiteNetwork> = Extract<
     oracleAggregatorV2: OracleAggregatorV2;
   }
 >;
-
-export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm(
-  core: CoreProtocolPolygonZkEvm,
-): Promise<[string[], string[], boolean[], string, string]> {
-  const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
-    Deployments.ChainlinkPriceOracleV1[core.config.network].address,
-    core.hhUser1,
-  );
-  const tokens: string[] = [];
-  const aggregators: string[] = [];
-  const invertPrice: boolean[] = [];
-
-  const filter = oldPriceOracle.filters.TokenInsertedOrUpdated();
-  let results = await oldPriceOracle.queryFilter(filter, 9792982, 9792983);
-  results = results.concat(await oldPriceOracle.queryFilter(filter, 9859954, 9859954));
-  results = results.concat(await oldPriceOracle.queryFilter(filter, 9893094, 9893094));
-
-  for (let i = 0; i < results.length; i++) {
-    const token = ethers.utils.defaultAbiCoder.decode(['address'], results[i].topics[1])[0];
-    tokens.push(token);
-    aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
-    invertPrice.push(false);
-  }
-  return [tokens, aggregators, invertPrice, core.dolomiteRegistry.address, core.dolomiteMargin.address];
-}
 
 export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1(
   core: CoreProtocolArbitrumOne,

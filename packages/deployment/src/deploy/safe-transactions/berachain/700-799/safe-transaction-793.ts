@@ -41,7 +41,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       core.redstonePriceOracleV3,
       core.twapPriceOracleV3,
     ],
-    core.twapPriceOracleV3,
   );
 
   const transactions: EncodedTransaction[] = [

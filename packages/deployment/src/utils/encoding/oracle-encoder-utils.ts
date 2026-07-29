@@ -14,6 +14,7 @@ import {
   IAlgebraV3Pool,
   IChainlinkAggregator__factory,
   IChronicleScribe__factory,
+  OracleAggregatorV2, OracleAggregatorV2__factory,
   TWAPPriceOracleV2,
 } from 'packages/oracles/src/types';
 import {
@@ -40,6 +41,51 @@ import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety, setMostRecentTokenDecimals } from './base-encoder-utils';
 import { encodeSetIsCollateralOnly, encodeSetSupplyCap } from './dolomite-margin-core-encoder-utils';
 
+async function encodeInsertOrUpdateToken<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+  oracle: IDolomitePriceOracle,
+  tokenDecimals: number | undefined,
+  tokenPairAddress: string | null | undefined,
+): Promise<EncodedTransaction> {
+  let _tokenDecimals = tokenDecimals;
+  if (_tokenDecimals === undefined) {
+    _tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  // Get the oracle aggregator dynamically; some assets on Berachain may use the special "Berachain" one
+  let oracleAggregatorV2: OracleAggregatorV2;
+  try {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    oracleAggregatorV2 = OracleAggregatorV2__factory.connect(
+      await core.dolomiteMargin.getMarketPriceOracle(marketId),
+      core.hhUser1,
+    );
+  } catch (e) {
+    oracleAggregatorV2 = core.oracleAggregatorV2;
+  }
+
+  return await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregatorV2 },
+    'oracleAggregatorV2',
+    'ownerInsertOrUpdateToken',
+    [
+      {
+        token: token.address,
+        decimals: _tokenDecimals,
+        oracleInfos: [
+          {
+            oracle: oracle.address,
+            tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+            weight: 100,
+          },
+        ],
+      },
+    ],
+  );
+}
+
 export async function encodeTestOracleAndDisableSupply<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
@@ -58,25 +104,7 @@ export async function encodeTestOracleAndDisableSupply<T extends DolomiteNetwork
       token.address,
       price,
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals(),
-          oracleInfos: [
-            {
-              oracle: testPriceOracle.address,
-              tokenPair: ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, testPriceOracle, undefined, undefined),
   ];
 }
 
@@ -161,25 +189,7 @@ export async function encodeInsertChainlinkOracleV3<T extends DolomiteNetwork>(
       'ownerInsertOrUpdateOracleToken',
       [token.address, aggregator.address, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.chainlinkPriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.chainlinkPriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -229,25 +239,7 @@ export async function encodeInsertChaosLabsOracleV3<T extends DolomiteNetwork>(
       'ownerInsertOrUpdateOracleToken',
       [token.address, aggregator.address, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.chaosLabsPriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.chaosLabsPriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -276,25 +268,7 @@ export async function encodeInsertChainsightOracleV3<T extends DolomiteNetwork>(
       'ownerInsertOrUpdateOracleToken',
       [token.address, key, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.chainsightPriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.chainsightPriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -345,25 +319,7 @@ export async function encodeInsertChronicleOracleV3<T extends DolomiteNetwork>(
       'ownerInsertOrUpdateOracleToken',
       [token.address, scribe.address, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.chroniclePriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.chroniclePriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -382,25 +338,7 @@ export async function encodeInsertConstantPriceOracleV3<T extends DolomiteNetwor
       'ownerSetTokenPrice',
       [token.address, price],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.constantPriceOracle.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.constantPriceOracle, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -449,25 +387,7 @@ export async function encodeInsertOkxOracleV3(
       'ownerInsertOrUpdateOracleToken',
       [token.address, aggregator.address, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.okxPriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.okxPriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 
@@ -476,24 +396,12 @@ export async function encodeInsertPendlePtOracle<T extends DolomiteNetwork>(
   pendleSystem: PendlePtSystem,
   token: IERC20,
 ): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
+  return encodeInsertOrUpdateToken(
     core,
-    { oracleAggregatorV2: core.oracleAggregatorV2 },
-    'oracleAggregatorV2',
-    'ownerInsertOrUpdateToken',
-    [
-      {
-        token: pendleSystem.factory.address,
-        decimals: await pendleSystem.factory.decimals(),
-        oracleInfos: [
-          {
-            oracle: pendleSystem.oracle.address,
-            tokenPair: token.address,
-            weight: 100,
-          },
-        ],
-      },
-    ],
+    pendleSystem.factory,
+    pendleSystem.oracle,
+    await pendleSystem.factory.decimals(),
+    token.address,
   );
 }
 
@@ -538,25 +446,7 @@ export async function encodeInsertRedstoneOracleV3<T extends DolomiteNetwork>(
       'ownerInsertOrUpdateOracleToken',
       [token.address, aggregator.address, invertPrice],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: tokenDecimals,
-          oracleInfos: [
-            {
-              oracle: core.redstonePriceOracleV3.address,
-              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
+    await encodeInsertOrUpdateToken(core, token, core.redstonePriceOracleV3, tokenDecimals, tokenPairAddress),
   ];
 }
 

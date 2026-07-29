@@ -12440,6 +12440,13 @@
       "isVerified": true
     }
   },
+  "UniswapTWAPPriceOracleV3WithModifiersV1": {
+    "1": {
+      "address": "0x9A398c700307C78f0806761FB5b31eB010De61a0",
+      "transaction": "0xf3d64b335056ba66761ec0abc0331206c5d61517a4a3ef798e946cef05dabcee",
+      "isVerified": true
+    }
+  },
   "USDMRouter": {
     "42161": {
       "address": "0xa9B377B97395C4031750cE8E9397c00c577F6C6D",
