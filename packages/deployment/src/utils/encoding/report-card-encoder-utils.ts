@@ -1,7 +1,7 @@
 import { BigNumber } from '@dolomite-exchange/dolomite-margin';
 import { formatUnits } from 'ethers/lib/utils';
 import { PancakeV3PriceOracleWithModifiers } from 'packages/oracles/src/types';
-import { DolomiteNetwork, Network } from '../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 
 const ONE = new BigNumber(1);
@@ -10,8 +10,13 @@ const TEN = new BigNumber(10);
 export async function encodeReportCard<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   acceptableOracles: { address: string }[],
-  twapPriceOracleV3: PancakeV3PriceOracleWithModifiers | undefined,
 ) {
+  let twapPriceOracleV3: PancakeV3PriceOracleWithModifiers | undefined = undefined;
+  if ('twapPriceOracleV3' in core) {
+    twapPriceOracleV3 = core.twapPriceOracleV3;
+  }
+  console.log('twapPriceOracleV3', twapPriceOracleV3?.address);
+
   const markets = await fetch(`https://api.dolomite.io/tokens/${core.network}`).then((res) => res.json());
   for (const token of markets['tokens']) {
     const decimals = parseInt(token.decimals, 10);
@@ -30,9 +35,9 @@ export async function encodeReportCard<T extends DolomiteNetwork>(
       stringBuilder.push(['\tBorrow cap: ', borrowCap.toFormat(decimals)]);
     }
     if (!isCollateralOnly && !isBorrowOnly) {
-      stringBuilder.push(['\tisCollateralOnly: ', isCollateralOnly]);
+      stringBuilder.push(['\tBorrowable: ', !isCollateralOnly]);
     } else if (!isCollateralOnly && isBorrowOnly) {
-      stringBuilder.push(['\tisBorrowOnly: ', isBorrowOnly]);
+      stringBuilder.push(['\tisBorrowOnly (no collateral): ', isBorrowOnly]);
     }
     if (oracles.length !== 1) {
       stringBuilder.push(['\tOracle: ', oracles.map((o) => o.oracle).join(', ')]);
@@ -42,8 +47,9 @@ export async function encodeReportCard<T extends DolomiteNetwork>(
       stringBuilder.push(['\tOracle: ', oracles[0].oracle]);
     } else if (twapPriceOracleV3 && oracles[0].oracle === twapPriceOracleV3.address) {
       const settings = await twapPriceOracleV3.getTokenInfo(token.id);
+      const twapPrice = (await twapPriceOracleV3.getPrice(token.id)).value;
       const results = {
-        currentPrice: formatUnits((await twapPriceOracleV3.getPrice(token.id)).value, 36 - settings.decimals),
+        currentPrice: formatUnits(twapPrice, 36 - settings.decimals),
         pair: settings.pair,
         observationInterval: settings.observationInterval,
         minPrice: formatUnits(settings.minPrice, 36 - settings.decimals),

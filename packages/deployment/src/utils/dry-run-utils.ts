@@ -1,5 +1,6 @@
 import {
   DolomiteNetwork,
+  Network,
   NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
   NETWORK_TO_SAFE_HASH_NAME_MAP,
@@ -11,6 +12,7 @@ import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
 import { execSync } from 'child_process';
 import { BaseContract, BigNumber, BigNumberish, ethers, type EventFilter } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
@@ -122,6 +124,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       const configGasLimit: number | 'auto' = hardhat.config.networks[hardhat.network.name].gas;
       const overrides: Overrides = {
         gasLimit: typeof configGasLimit === 'number' ? configGasLimit : undefined,
+        gasPrice: result.core.network === Network.Berachain ? parseUnits('100', 'gwei') : undefined,
       };
 
       for (const transaction of result.upload.transactions) {
@@ -131,6 +134,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
           txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
             signer.sendTransaction({
               gasLimit: overrides.gasLimit,
+              gasPrice: overrides.gasPrice,
               to: transaction.to,
               data: transaction.data,
             }),
@@ -154,6 +158,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
             txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
               signer.sendTransaction({
                 gasLimit: overrides.gasLimit,
+                gasPrice: overrides.gasPrice,
                 to: transaction.to,
                 data: transaction.data,
               }),

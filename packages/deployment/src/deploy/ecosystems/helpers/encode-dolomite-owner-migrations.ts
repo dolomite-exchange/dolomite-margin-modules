@@ -2,6 +2,7 @@ import {
   AdminClaimExcessTokens,
   AdminExpirePosition,
   AdminPauseMarket,
+  AdminPauseMarket__factory,
   AdminRegistry,
   AdminSetInterestSetter,
   DolomiteOwnerV2,
@@ -97,6 +98,17 @@ export async function encodeDolomiteOwnerMigrations(
 
     // Dolomite Owner Roles - AdminExpirePosition
     transactions.push(await encodeSetGlobalOperator(core, adminExpirePosition, true));
+
+    // Dolomite Owner Roles - AdminPauseMarketV1
+    const adminPauseMarketV1 = AdminPauseMarket__factory.connect(
+      '0x53E18f7483356caC74B1365ebF3F2f71f499A0dD',
+      core.hhUser1,
+    );
+    transactions.push(
+      ...(await encodeRevokeRoleIfNecessary(core, BYPASS_TIMELOCK_ROLE, adminPauseMarketV1)),
+      ...(await encodeRevokeRoleIfNecessary(core, EXECUTOR_ROLE, adminPauseMarketV1)),
+      ...(await encodeRevokeRoleIfNecessary(core, ADMIN_PAUSE_MARKET_ROLE, adminPauseMarketV1)),
+    );
 
     // Dolomite Owner Roles - AdminPauseMarket
     transactions.push(

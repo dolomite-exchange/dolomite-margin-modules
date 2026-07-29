@@ -1,6 +1,6 @@
 import {
   ChroniclePriceOracleV3,
-  ERC4626PriceOracle,
+  ERC4626PriceOracle, PancakeV3PriceOracleWithModifiers,
   RedstonePriceOracleV3,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
@@ -71,6 +71,7 @@ export interface CoreProtocolParamsEthereum {
   odosEcosystem: OdosEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokens: CoreProtocolTokensEthereum;
+  twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 }
 
 export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum> {
@@ -82,6 +83,7 @@ export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum>
   public override readonly marketIds: CoreProtocolMarketIdsEthereum;
   public readonly network: Network.Ethereum = Network.Ethereum;
   public override readonly tokens: CoreProtocolTokensEthereum;
+  public readonly twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 
   constructor(params: CoreProtocolParams<Network.Ethereum>, ethereumParams: CoreProtocolParamsEthereum) {
     super(params);
@@ -92,5 +94,6 @@ export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum>
     this.odosEcosystem = ethereumParams.odosEcosystem;
     this.redstonePriceOracleV3 = ethereumParams.redstonePriceOracleV3;
     this.tokens = ethereumParams.tokens;
+    this.twapPriceOracleV3 = ethereumParams.twapPriceOracleV3;
   }
 }

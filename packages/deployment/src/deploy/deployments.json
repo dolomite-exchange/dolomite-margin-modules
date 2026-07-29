@@ -9599,6 +9599,13 @@
       "isVerified": true
     }
   },
+  "OracleAggregatorV2Berachain": {
+    "80094": {
+      "address": "0x622C8D85F0197efd2E4730ad5D78cf39C715B49D",
+      "transaction": "0x5b1dde0f813b5788c1f6f4811cafca255f01f28ecd8a4aaec8e74bd143dc2fc4",
+      "isVerified": true
+    }
+  },
   "PancakeV3PriceOracle": {
     "1": {
       "address": "0x535694AECf750d317992B10b2080271f00F4bc0B",
@@ -12430,6 +12437,13 @@
     "11155111": {
       "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
       "transaction": "0x3ec6b31985cb193ee8f527e108b04437566c74b8408ba249b54e68d9731bb4d0",
+      "isVerified": true
+    }
+  },
+  "UniswapTWAPPriceOracleV3WithModifiersV1": {
+    "1": {
+      "address": "0x9A398c700307C78f0806761FB5b31eB010De61a0",
+      "transaction": "0xf3d64b335056ba66761ec0abc0331206c5d61517a4a3ef798e946cef05dabcee",
       "isVerified": true
     }
   },

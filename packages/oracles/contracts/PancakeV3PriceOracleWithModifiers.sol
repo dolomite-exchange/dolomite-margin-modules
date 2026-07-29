@@ -167,11 +167,22 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
 
     // ========================= Internal Functions =========================
 
+    /**
+     * @notice  Standardizes a value to the oracle's required 36-decimal precision format
+     * @dev     Converts a value from its native decimal precision to the 36-decimal standard used by the oracle
+     *          by adjusting for both the input value's decimals and the token's decimals. The formula is:
+     *          standardizedValue = (_value * (10^36 / _tokenDecimalsFactor)) / (10^_valueDecimals)
+     *
+     * @param  _value                   The value to standardize (e.g., a quote price)
+     * @param  _valueDecimals           The number of decimals the input value uses
+     * @param  _tokenDecimalsFactor     The decimal factor of the token (10^tokenDecimals)
+     * @return                          The value standardized to 36 minus token decimals
+     */
     function _standardizeNumberOfDecimals(
         uint256 _value,
         uint8 _valueDecimals,
         uint256 _tokenDecimalsFactor
-    ) internal pure returns (uint) {
+    ) internal pure returns (uint256) {
         uint256 priceFactor = _ONE_DOLLAR / _tokenDecimalsFactor;
         uint256 valueFactor = 10 ** uint256(_valueDecimals);
         return _value * priceFactor / valueFactor;

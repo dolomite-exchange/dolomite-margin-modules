@@ -2347,6 +2347,10 @@ export const UMAMI_WETH_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xbb84D79159D6bBE1DE148Dc82640CaA677e06126',
 };
 
+export const UNISWAP_DOLO_USDC_V3_POOL_MAP: Record<Network.Ethereum, string> = {
+  [Network.Ethereum]: '0x003896387666C5c11458EEb3F927B72a11b19783',
+};
+
 /**
  * Token that holds fsGLP for vesting esGMX into GMX
  */
@@ -2964,8 +2968,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
     [STONE_BTC_MAP[Network.Berachain].address]: {
-      // scribeAddress: '0x8f01f70be5deea5d4273d9a299a1a609bf1649c0', // TODO
-      scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589', // TODO Fix
+      scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589',
     },
     [UNI_BTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xbc1Ff886Dec21dfB75b6654aee438c6B71b6ffE3',
@@ -3087,12 +3090,29 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       aggregatorAddress: '0x09639692CE6ff12A06CA3AE9A24b3Aae4CD80DC8',
       tokenPairAddress: WBTC_MAP[Network.Berachain].address,
     },
+    [HONEY_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x2D4f3199a80b848F3d094745F3Bbd4224892654e',
+    },
     [IR_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x4F4E639745CfB234B6176E96c6afd83269baF52E',
     },
     [LBTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x84AD474c33c9cCefB1a2D8b77Bdd88bDc592f96b',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+    },
+    [LORENZO_ST_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
+    },
+    [PUMP_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x83c6f7F61A55Fc7A1337AbD45733AD9c1c68076D',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+    },
+    [R_USD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: 'TODO',
+    },
+    [RS_ETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xe7f71d6a24EBc391f5ee57B867ED429EB7Bd74f4',
+      tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
     [RSW_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x197225B3B017eb9b72Ac356D6B3c267d0c04c57c',
@@ -3109,26 +3129,57 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
     [SDE_USD_MAP[Network.Berachain].address]: {
       aggregatorAddress: '', // TODO
     },
-    [LORENZO_ST_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // TODO: fix this
-      // tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
-    },
     [SOLV_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x4E202A7E713d00804F9cE397260362bF5E0EaaA8',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
-    [X_SOLV_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x24eDD61cdA334bFf871A80DEB135073a7d7a9187',
-      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+    [SR_USD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: 'TODO',
+    },
+    [STONE_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x6A1c87d11dDe3D1d52c24f8EC59B91019f14170D',
+    },
+    [STONE_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
+    },
+    [UNI_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
+    },
+    [USDC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x4BAD96DD1C7D541270a0C92e1D4e5f12EEEA7a57',
     },
     [USDE_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xbbF121624c3b85C929Ac83872bf6c86b0976A55e',
+    },
+    [USDT_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x3fd49f2146FE0e10c4AE7E3fE04b3d5126385Ac4',
+    },
+    [WBERA_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x29d2fEC890B037B2d34f061F9a50f76F85ddBcAE',
+    },
+    [WBTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [WETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x3587a73AA02519335A8a6053a97657BECe0bC2Cc',
     },
     [WE_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x65eD6a4ac085620eE943c0B15525C4428D23e4Db',
+      tokenPairAddress: WETH_MAP[Network.Berachain].address,
+    },
+    [X_SOLV_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x24eDD61cdA334bFf871A80DEB135073a7d7a9187',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+    },
+    [YL_FBTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
+    },
+    [YL_PUMP_BTC_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x83c6f7F61A55Fc7A1337AbD45733AD9c1c68076D',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+    },
+    [YL_ST_ETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x607eb00a05b849A663C909285337e51C2C6F58d0',
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
   },

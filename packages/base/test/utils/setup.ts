@@ -1786,6 +1786,10 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      twapPriceOracleV3: PancakeV3PriceOracleWithModifiers__factory.connect(
+        ModuleDeployments.UniswapTWAPPriceOracleV3WithModifiersV1[typedConfig.network].address,
+        hhUser1,
+      ),
     }) as any;
   }
   if (config.network === Network.Mantle) {
