@@ -16,7 +16,7 @@ import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle
 
 /**
  * This script encodes the following transactions:
- * - Set CMETH and FBTC to downsize only
+ * - Update oracles to Chainlink
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);

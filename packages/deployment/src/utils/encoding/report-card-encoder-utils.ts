@@ -15,7 +15,6 @@ export async function encodeReportCard<T extends DolomiteNetwork>(
   if ('twapPriceOracleV3' in core) {
     twapPriceOracleV3 = core.twapPriceOracleV3;
   }
-  console.log('twapPriceOracleV3', twapPriceOracleV3?.address);
 
   const markets = await fetch(`https://api.dolomite.io/tokens/${core.network}`).then((res) => res.json());
   for (const token of markets['tokens']) {

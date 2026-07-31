@@ -2761,6 +2761,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [AAVE_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x547a514d5e3769680Ce22B2361c10Ea13619e8a9',
     },
+    [BTC_CX_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
+    },
     [BTC_PLACEHOLDER_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
     },
@@ -2807,9 +2810,15 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     [WLFI_MAP[Network.Ethereum].address]: {
       aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
     },
+    [WLFI_CX_MAP[Network.Ethereum].address]: {
+      aggregatorAddress: '0x14E5FC91Ddb3f97C33013Cc9fA74F54062Ad1Aa1',
+    },
   },
   [Network.Ink]: {},
   [Network.Mantle]: {
+    [CM_ETH_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',
+    },
     [FBTC_MAP[Network.Mantle].address]: {
       aggregatorAddress: '0x73b15e19b247263D03D7938f1356304b7B330Ff0',
     },

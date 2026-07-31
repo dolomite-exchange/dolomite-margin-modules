@@ -17,6 +17,10 @@ import { DolomiteNetwork, ONE_ETH_BI } from '../../../base/src/utils/no-deps-con
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
+export async function checkPrice<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
+  await printPriceForVisualCheck(core, token);
+}
+
 export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];

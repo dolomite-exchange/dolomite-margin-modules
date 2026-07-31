@@ -4,8 +4,8 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkBorrowCap, checkIsCollateralOnly, checkSupplyCap } from 'packages/deployment/src/utils/invariant-utils';
-import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
+import { checkPrice } from 'packages/deployment/src/utils/invariant-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -18,12 +18,9 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  await encodeReportCard(
-    core,
-    [core.chroniclePriceOracleV3, core.redstonePriceOracleV3, core.constantPriceOracle, core.chainlinkPriceOracleV3],
-  );
-
-  const transactions: EncodedTransaction[] = [];
+  const transactions: EncodedTransaction[] = [
+    ...await encodeInsertChainlinkOracleV3(core, core.tokens.cmEth),
+  ];
 
   return {
     core,
@@ -39,14 +36,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkSupplyCap(core, core.marketIds.cmEth, 1);
-      await checkSupplyCap(core, core.marketIds.fbtc, 1);
-
-      await checkBorrowCap(core, core.marketIds.cmEth, 1);
-      await checkBorrowCap(core, core.marketIds.fbtc, 1);
-
-      await checkIsCollateralOnly(core, core.marketIds.cmEth, true);
-      await checkIsCollateralOnly(core, core.marketIds.fbtc, true);
+      await checkPrice(core, core.tokens.cmEth);
     },
   };
 }
