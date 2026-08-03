@@ -2,7 +2,7 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { MatchaAggregatorTrader, MatchaAggregatorTrader__factory } from '../../src/types';
-import { AccountStruct } from '../../src/utils/constants';
+import { AccountStruct, MATCHA_ALLOWANCE_HOLDER_MAP } from '../../src/utils/constants';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
@@ -20,8 +20,6 @@ import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../
 import { getCalldataForMatcha } from '../utils/trader-utils';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { CoreProtocolEthereum } from '../utils/core-protocols/core-protocol-ethereum';
-
-const MATCHA_ALLOWANCE_HOLDER = '0x0000000000001fF3684f28c67538d4D072C22734';
 
 const defaultAccountNumber = '0';
 const wethStartAmount = parseEther('10');
@@ -46,7 +44,7 @@ describe('MatchaAggregatorTrader', () => {
     trader = await createContractWithAbi<MatchaAggregatorTrader>(
       MatchaAggregatorTrader__factory.abi,
       MatchaAggregatorTrader__factory.bytecode,
-      [MATCHA_ALLOWANCE_HOLDER, core.dolomiteMargin.address]
+      [MATCHA_ALLOWANCE_HOLDER_MAP[core.config.network]!, core.dolomiteMargin.address]
     );
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
@@ -66,7 +64,7 @@ describe('MatchaAggregatorTrader', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await trader.MATCHA_ALLOWANCE_HOLDER()).to.equal(MATCHA_ALLOWANCE_HOLDER);
+      expect(await trader.MATCHA_ALLOWANCE_HOLDER()).to.equal(MATCHA_ALLOWANCE_HOLDER_MAP[core.config.network]);
     });
   });
 
