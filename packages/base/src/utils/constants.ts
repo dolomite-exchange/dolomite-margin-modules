@@ -90,7 +90,7 @@ export const BERA_ETH_MAP: Record<Network.Berachain, TokenWithMarketId> = {
 export const BTC_CX_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0x852724426b2851487B278A3377449BF26B06C1ba',
-    marketId: 20,
+    marketId: 21,
   },
 };
 
@@ -1270,7 +1270,7 @@ export const WLFI_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
 export const WLFI_CX_MAP: Record<Network.Ethereum, TokenWithMarketId> = {
   [Network.Ethereum]: {
     address: '0x8AF3B9D0E53186ae13b32FD783f42663Bf48d389',
-    marketId: 21,
+    marketId: 22,
   },
 };
 
