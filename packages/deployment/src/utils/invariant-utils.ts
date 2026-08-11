@@ -27,7 +27,15 @@ export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: 
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
   const decimals = invalidToken ? invalidToken.decimals : await meta.decimals();
   const price = await core.oracleAggregatorV2.getPrice(token.address, { gasPrice: 0 });
+  const oracles = await core.oracleAggregatorV2.getOraclesByToken(token.address);
+  const oraclesPretty = oracles.map((o) => ({
+    oracle: o.oracle,
+    tokenPair: o.tokenPair,
+    weight: o.weight.toNumber(),
+  }));
   console.log(`\tPrice for ${symbol}:`, `$${formatUnits(price.value, 36 - decimals)}`);
+  console.log('\t');
+  console.log(`Oracles for ${symbol}: `, JSON.stringify(oraclesPretty, null, 4));
 }
 
 export async function printRiskDataVisualCheck<T extends DolomiteNetwork>(

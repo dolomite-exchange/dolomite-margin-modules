@@ -750,7 +750,7 @@ export const PENDLE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const PENDLE_PT_IBGT_DEC_2025_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xc2c7ded5837f911b7efe5984b52182036fd66a20',
     marketId: 43,
@@ -1944,6 +1944,10 @@ export const ODOS_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.Mantle]: '0xD9F4e85489aDCD0bAF0Cd63b4231c6af58c26745',
   [Network.Sepolia]: undefined,
   [Network.XLayer]: undefined,
+};
+
+export const OHM_HONEY_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x75159c541BD49B1b6C51F5F3e796579e7CCCb071',
 };
 
 export const OKX_DEX_ROUTER_MAP: Record<Network.XLayer, string> = {

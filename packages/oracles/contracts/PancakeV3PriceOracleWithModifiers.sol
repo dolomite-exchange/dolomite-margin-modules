@@ -176,7 +176,7 @@ contract PancakeV3PriceOracleWithModifiers is OnlyDolomiteMargin {
      * @param  _value                   The value to standardize (e.g., a quote price)
      * @param  _valueDecimals           The number of decimals the input value uses
      * @param  _tokenDecimalsFactor     The decimal factor of the token (10^tokenDecimals)
-     * @return                          The value standardized to 36 minus token decimals
+     * @return                          The value standardized to 36 minus tokenDecimals
      */
     function _standardizeNumberOfDecimals(
         uint256 _value,
