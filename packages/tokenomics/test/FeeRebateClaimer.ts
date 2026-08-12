@@ -7,7 +7,7 @@ import {
 import { IAdminRegistry__factory } from 'packages/admin/src/types';
 import { RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
@@ -37,6 +37,7 @@ describe('FeeRebateClaimer', () => {
       FeeRebateClaimer__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
+    await feeRebateClaimer['initialize(uint96)'](0);
 
     const adminRegistry = IAdminRegistry__factory.connect(
       await core.adminClaimExcessTokens.ADMIN_REGISTRY(),
@@ -88,6 +89,24 @@ describe('FeeRebateClaimer', () => {
       expect(await feeRebateClaimer.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await feeRebateClaimer.adminFeeClaimer()).to.eq(core.adminClaimExcessTokens.address);
       expect(await feeRebateClaimer.epoch()).to.eq(ZERO_BI);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should work normally', async () => {
+      await feeRebateClaimer.initialize();
+
+      await expectThrow(feeRebateClaimer.initialize(), 'Initializable: contract is already initialized');
+      await expectThrow(feeRebateClaimer.initializeV2([], [], []), 'Initializable: contract is already initialized');
+    });
+  });
+
+  describe('#initializeV2', () => {
+    it('should work normally', async () => {
+      await feeRebateClaimer.initializeV2([1, 2], [123, 1234], [0, 1]);
+
+      await expectThrow(feeRebateClaimer.initialize(), 'Initializable: contract is already initialized');
+      await expectThrow(feeRebateClaimer.initializeV2([], [], []), 'Initializable: contract is already initialized');
     });
   });
 
@@ -166,6 +185,7 @@ describe('FeeRebateClaimer', () => {
   describe('#handlerSweepRevenue', () => {
     it('should work normally when there is revenue to sweep', async () => {
       const excessUsdc = (await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc)).value;
+      const rebateAmount = excessUsdc.div(2);
 
       // 1. Claim tokens to FeeRebateClaimer
       await feeRebateClaimer.connect(core.hhUser5).handlerClaimRewardsByEpochAndMarketId(
@@ -180,12 +200,9 @@ describe('FeeRebateClaimer', () => {
 
       // 2. Update rollingClaims epoch to 1
       await rollingClaims.connect(core.governance).ownerSetHandler(core.hhUser1.address);
-      await rollingClaims.connect(core.hhUser1).handlerSetMerkleRoots(
-        [core.marketIds.usdc],
-        [BYTES_ZERO.replace('00', '01')],
-        [excessUsdc],
-        1,
-      );
+      await rollingClaims
+        .connect(core.hhUser1)
+        .handlerSetMerkleRoots([core.marketIds.usdc], [BYTES_ZERO.replace('00', '01')], [rebateAmount], 1);
 
       // Now epoch() == rollingClaims.currentEpoch() == 1
       // marketIdToTotalAmount(usdc) = excessUsdc
@@ -193,8 +210,14 @@ describe('FeeRebateClaimer', () => {
       // sweepable = balance - (total - claimed) = excessUsdc - (excessUsdc - 0) = 0
 
       await feeRebateClaimer.connect(core.hhUser5).handlerSweepRevenue([core.marketIds.usdc]);
-      // Should not emit transfer because sweepable is 0
-      await expectProtocolBalance(core, feeRebateClaimer, ZERO_BI, core.marketIds.usdc, excessUsdc);
+      // Sweepable is excessUsdc - rebateAmount
+      await expectProtocolBalance(
+        core,
+        feeRebateClaimer,
+        ZERO_BI,
+        core.marketIds.usdc,
+        excessUsdc.sub(rebateAmount).sub(ONE_BI),
+      );
 
       // Now let's make some users claim, so sweepable remains 0?
       // No, if totalAmount is excessUsdc, and balance is excessUsdc, sweepable is 0.
@@ -216,12 +239,15 @@ describe('FeeRebateClaimer', () => {
       await feeRebateClaimer.connect(core.hhUser5).handlerSweepRevenue([core.marketIds.usdc]);
       // It uses AccountActionLib.transfer which doesn't emit a standard event on the claimer,
       // but we can check the balance of the sweeper.
-      await expectProtocolBalance(core, sweeper, 0, core.marketIds.usdc, extraAmount);
-      expect((await core.dolomiteMargin.getAccountWei(
-        { owner: feeRebateClaimer.address, number: 0 },
+      await expectProtocolBalance(core, sweeper, 0, core.marketIds.usdc, extraAmount.add(excessUsdc.sub(rebateAmount)));
+
+      await expectProtocolBalance(
+        core,
+        feeRebateClaimer,
+        ZERO_BI,
         core.marketIds.usdc,
-      )).value)
-        .to.eq(excessUsdc);
+        excessUsdc.sub(rebateAmount).sub(ONE_BI),
+      );
     });
 
     it('should fail if marketIds is empty', async () => {

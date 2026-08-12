@@ -45,7 +45,7 @@ export function getParaswapAggregatorTraderConstructorParams<T extends DolomiteN
   core: CoreProtocolWithParaswap<T>,
 ): any[] {
   return [
-    core.paraswapEcosystem.augustusRouter.address,
+    core.paraswapEcosystem.augustusRouterV5.address,
     core.paraswapEcosystem.transferProxy,
     core.dolomiteMargin.address,
   ];
@@ -55,8 +55,17 @@ export function getParaswapAggregatorTraderV2ConstructorParams<T extends Dolomit
   core: CoreProtocolWithParaswap<T>,
 ): any[] {
   return [
-    core.paraswapEcosystem!.augustusRouter.address,
+    core.paraswapEcosystem!.augustusRouterV5.address,
     core.paraswapEcosystem!.transferProxy,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getParaswapAggregatorTraderV3ConstructorParams<T extends DolomiteNetwork>(
+  core: CoreProtocolWithParaswap<T>,
+): any[] {
+  return [
+    core.paraswapEcosystem!.augustusRouterV6.address,
     core.dolomiteMargin.address,
   ];
 }

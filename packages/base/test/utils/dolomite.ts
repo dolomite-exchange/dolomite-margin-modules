@@ -364,6 +364,11 @@ export async function isIsolationModeByTokenAddress(
   signerOrProvider: SignerWithAddressWithSafety | Provider,
 ): Promise<boolean> {
   const tokenName = await IERC20Metadata__factory.connect(tokenAddress, signerOrProvider).name();
+  return isIsolationModeByName(tokenName);
+}
 
+export function isIsolationModeByName(
+  tokenName: string,
+): boolean {
   return tokenName.startsWith('Dolomite Isolation:') || tokenName === 'Dolomite: Fee + Staked GLP';
 }

@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.1.10",
+  "version": "0.1.15",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -17,6 +17,7 @@
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:enso-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts enso",
+    "deploy:fee-rebate-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts fee-rebate",
     "deploy:glp-redemption-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts glp-redemption",
     "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
@@ -34,17 +35,15 @@
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:bnb": "NETWORK=bnb ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
-    "execute:botanix": "NETWORK=botanix ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:ethereum": "NETWORK=ethereum ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:get-transaction-ids": "ts-node src/deploy/other/execute-get-transaction-ids.ts",
-    "execute:golem-analyzer": "NETWORK=mainnet hardhat run src/deploy/other/golem-multisig-analyzer.ts",
     "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
-    "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:sepolia": "NETWORK=sepolia ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:test": "NETWORK=arbitrum_one ts-node test/execute-test-safe-transaction.ts",
     "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
     "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
-    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
+    "verify:sepolia": "hardhat --network sepolia run src/utils/verify-contract.ts",
     "verify:contract": "hardhat --network $NETWORK run src/utils/verify-contract.ts"
   },
   "files": [

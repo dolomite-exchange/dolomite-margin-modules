@@ -47,6 +47,20 @@ library DolomiteMarginVersionWrapperLib {
     // ============= Public Functions ============
     // ===========================================
 
+    function getVersionedMarginRatioOverrideForChain(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        IDolomiteStructs.AccountInfo memory _liquidAccount
+    ) internal view returns (IDolomiteStructs.Decimal memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return IDolomiteStructs.Decimal({
+                value: 0
+            });
+        } else {
+            return dv2(_dolomiteMargin).getMarginRatioOverrideByAccount(_liquidAccount);
+        }
+    }
+
     function getVersionedLiquidationSpreadForPair(
         IDolomiteMargin _dolomiteMargin,
         uint256 _chainId,

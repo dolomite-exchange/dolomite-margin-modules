@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
@@ -98,6 +99,8 @@ contract VeExternalVesterImplementationV2 is
     uint256 public override immutable REWARD_MARKET_ID; // solhint-disable-line
     IVeToken public override VE_TOKEN; // solhint-disable-line
 
+    uint256 public immutable FLOOR_PRICE_START_TIME;
+
     // =========================================================
     // ======================= Modifiers =======================
     // =========================================================
@@ -123,7 +126,8 @@ contract VeExternalVesterImplementationV2 is
         IERC20 _paymentToken,
         uint256 _paymentMarketId,
         IERC20 _rewardToken,
-        uint256 _rewardMarketId
+        uint256 _rewardMarketId,
+        uint256 _floorPriceStartTime
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         PAIR_TOKEN = _pairToken;
@@ -132,6 +136,8 @@ contract VeExternalVesterImplementationV2 is
         PAYMENT_MARKET_ID = _paymentMarketId;
         REWARD_TOKEN = _rewardToken;
         REWARD_MARKET_ID = _rewardMarketId;
+
+        FLOOR_PRICE_START_TIME = _floorPriceStartTime;
     }
 
     function initialize(
@@ -830,7 +836,13 @@ contract VeExternalVesterImplementationV2 is
         );
 
         uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
-        return rewardPrice - (rewardPrice * discount / _ONE_ETH_BASE);
+        rewardPrice -= (rewardPrice * discount / _ONE_ETH_BASE);
+
+        if (block.timestamp >= FLOOR_PRICE_START_TIME) {
+            return Math.max(rewardPrice, 0.03 ether);
+        } else {
+            return rewardPrice;
+        }
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {

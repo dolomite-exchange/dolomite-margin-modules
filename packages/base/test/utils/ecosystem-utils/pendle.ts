@@ -52,7 +52,7 @@ import {
   PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP,
   PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_MAR_2024_TOKEN_MAP,
-  PENDLE_PT_GLP_SEP_2024_TOKEN_MAP, PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP,
+  PENDLE_PT_GLP_SEP_2024_TOKEN_MAP, PENDLE_PT_IBGT_DEC_2025_MAP,
   PENDLE_PT_METH_DEC_2024_TOKEN_MAP,
   PENDLE_PT_MNT_OCT_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -712,7 +712,7 @@ export async function createPendleEcosystemBerachain(
         signer,
       ),
       ptIBgtToken: getContract(
-        PENDLE_PT_IBGT_DEC_2025_TOKEN_MAP[network].address,
+        PENDLE_PT_IBGT_DEC_2025_MAP[network].address,
         IPendlePtToken__factory.connect,
         signer,
       ),

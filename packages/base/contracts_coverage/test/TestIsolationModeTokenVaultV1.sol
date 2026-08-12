@@ -163,8 +163,4 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
     ) external pure returns (bool) {
         return IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(_selectors, _selector);
     }
-
-    function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
-        return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
-    }
 }

@@ -24,6 +24,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -64,11 +65,18 @@ contract FinalSettlementViaInternalSwapProxy is OnlyDolomiteMargin {
         });
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_accounts.length);
         for (uint256 i; i < _accounts.length; ++i) {
+            address recipient = _accounts[i].owner;
+            try IIsolationModeTokenVaultV1(recipient).OWNER() returns (address vaultOwner) {
+                recipient = vaultOwner;
+            } catch {
+                // Do nothing
+            }
+
             actions[i] = AccountActionLib.encodeWithdrawalAction(
                 /* _accountId = */ i,
                 _marketId,
                 amount,
-                _accounts[i].owner
+                recipient
             );
         }
 

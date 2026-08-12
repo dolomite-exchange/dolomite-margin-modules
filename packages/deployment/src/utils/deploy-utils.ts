@@ -141,6 +141,14 @@ export async function getDeployerSigner(): Promise<{ signer: Wallet | SignerWith
   return { wallet, signer: hhUser1 };
 }
 
+async function isVerified(instance: Etherscan, address: string): Promise<boolean> {
+  try {
+    return await instance.isVerified(address);
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function verifyContract(
   address: string,
   constructorArguments: any[],
@@ -157,7 +165,7 @@ export async function verifyContract(
     customChain.urls.browserURL,
     customChain.urls.apiURL === ETHERSCAN_V2_API_URL ? customChain.chainId : undefined,
   );
-  if (customChain.chainId.toString() === Network.PolygonZkEvm || await instance.isVerified(address)) {
+  if (customChain.chainId.toString() === Network.PolygonZkEvm || await isVerified(instance, address)) {
     console.log('\tContract is already verified. Skipping verification...');
     return;
   }
@@ -481,7 +489,7 @@ export async function deployContractAndSave(
       : undefined;
     const signer = options.signer ?? deployer ?? hardhat.ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'latest');
     }
 
     const gasPrice = options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice;
@@ -905,11 +913,16 @@ export async function deploySimpleIsolationModeSystem<T extends DolomiteNetwork>
   allowableCollateralMarketIds: BigNumberish[],
   allowableDebtMarketIds: BigNumberish[],
 ): Promise<SimpleIsolationModeSystem> {
-  const officialName = await IERC20Metadata__factory.connect(underlyingToken.address, underlyingToken.signer).name();
-  if (!officialName.toUpperCase().includes(tokenName.toUpperCase())) {
+  const tokenWithMetadata = IERC20Metadata__factory.connect(underlyingToken.address, underlyingToken.signer);
+  const officialName = await tokenWithMetadata.name();
+  const officialSymbol = await tokenWithMetadata.symbol();
+  if (
+    !officialName.toUpperCase().includes(tokenName.toUpperCase())
+    && !officialSymbol.toUpperCase().includes(tokenName.toUpperCase())
+  ) {
     return Promise.reject(
       new Error(
-        `tokenName does not match official name onchain. onchain: [${officialName}], found: [${tokenName}]`,
+        `tokenName does not match official name onchain. onchain: [${officialName}] [${officialSymbol}], found: [${tokenName}]`,
       ),
     );
   }
@@ -1150,6 +1163,7 @@ async function prettyPrintAndVerifyContract(
     const slowNetworks: Record<string, number | undefined> = {
       [Network.Ethereum]: 15,
       [Network.Ink]: 10,
+      [Network.Sepolia]: 30,
     };
     const sleepTimeSeconds = slowNetworks[chainId] ?? 5;
     console.log(

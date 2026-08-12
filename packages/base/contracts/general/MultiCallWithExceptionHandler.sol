@@ -46,6 +46,8 @@ contract MultiCallWithExceptionHandler {
         bytes returnData;
     }
 
+    bytes4 private constant _ERROR_SELECTOR = 0x08c379a0;
+
     function aggregate(Call[] memory calls) public returns (uint256 blockNumber, CallResult[] memory returnData) {
         blockNumber = block.number;
         returnData = new CallResult[](calls.length);
@@ -53,20 +55,35 @@ contract MultiCallWithExceptionHandler {
             // solium-disable-next-line security/no-low-level-calls
             (bool success, bytes memory result) = calls[i].target.call(calls[i].callData);
             if (!success) {
-                if (result.length < 68) {
-                    string memory targetString = calls[i].target.toHexString();
+                string memory targetString = calls[i].target.toHexString();
+                if (result.length < 4) {
                     result = abi.encodePacked("Multicall::aggregate: revert at <", targetString, ">");
                 } else {
+                    bytes4 selector;
                     // solium-disable-next-line security/no-inline-assembly
                     assembly {
-                        result := add(result, 0x04)
+                        selector := mload(add(result, 0x20))
                     }
-                    result = abi.encodePacked(
-                        "Multicall::aggregate: revert at <",
-                        calls[i].target.toHexString(),
-                        "> with reason: ",
-                        abi.decode(result, (string))
-                    );
+
+                    if (selector == _ERROR_SELECTOR && result.length >= 68) {
+                        // solium-disable-next-line security/no-inline-assembly
+                        assembly {
+                            result := add(result, 0x04)
+                        }
+                        result = abi.encodePacked(
+                            "Multicall::aggregate: revert at <",
+                            targetString,
+                            "> with reason: ",
+                            abi.decode(result, (string))
+                        );
+                    } else {
+                        result = abi.encodePacked(
+                            "Multicall::aggregate: revert at <",
+                            targetString,
+                            "> with reason: 0x",
+                            Strings.toHexString(uint256(uint32(selector)), 4)
+                        );
+                    }
                 }
             }
             returnData[i] = CallResult({

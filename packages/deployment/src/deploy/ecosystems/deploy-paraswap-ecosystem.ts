@@ -1,5 +1,5 @@
 import {
-  getParaswapAggregatorTraderConstructorParams,
+  getParaswapAggregatorTraderV3ConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/traders';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -16,10 +16,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     return Promise.reject(new Error('Invalid network, need paraswapEcosystem'));
   }
 
-  await deployContractAndSave(
-    'ParaswapAggregatorTraderV2',
-    getParaswapAggregatorTraderConstructorParams(core),
-  );
+  await deployContractAndSave('ParaswapAggregatorTraderV3', getParaswapAggregatorTraderV3ConstructorParams(core));
   return {
     core,
     invariants: async () => {

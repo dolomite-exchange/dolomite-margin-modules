@@ -65,6 +65,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dPtWeEthApr2024: IERC20;
   dPtWstEthJun2024: IERC20;
   dPtWstEthJun2025: IERC20;
+  dSavEth: IERC20;
   dpx: IERC20;
   dYtGlp: IERC20;
   ethPlus: IERC20;
@@ -92,6 +93,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   radiant: IERC20;
   sGlp: IERC20;
   sUsds: IERC20;
+  savEth: IERC20;
   savUsd: IERC20;
   size: IERC20;
   sol: IERC20;
@@ -167,6 +169,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dPtRsEthSep2024: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
+  dSavEth: BigNumberish;
   dai: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
@@ -190,6 +193,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   radiant: BigNumberish;
   sGlp: BigNumberish;
   sUsds: BigNumberish;
+  savEth: BigNumberish;
   savUsd: BigNumberish;
   tbtc: BigNumberish;
   uni: BigNumberish;
