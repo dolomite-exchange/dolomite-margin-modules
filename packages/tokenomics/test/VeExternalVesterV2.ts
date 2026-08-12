@@ -11,6 +11,7 @@ import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithA
 
 const PAIR_AMOUNT = ONE_ETH_BI;
 const MAX_PAIR_AMOUNT = PAIR_AMOUNT.mul(11).div(10); // 10% increase
+const FLOOR_PRICE_START_TIMESTAMP = 1_753_900_000;
 
 describe('VeExternalVesterV2', () => {
   let snapshotId: string;
@@ -39,6 +40,7 @@ describe('VeExternalVesterV2', () => {
         await core.tokenomics.veExternalVester.PAYMENT_MARKET_ID(),
         await core.tokenomics.veExternalVester.REWARD_TOKEN(), // dolo
         await core.tokenomics.veExternalVester.REWARD_MARKET_ID(),
+        FLOOR_PRICE_START_TIMESTAMP
       ]
     );
 
@@ -90,6 +92,7 @@ describe('VeExternalVesterV2', () => {
       expect(await vester.PAYMENT_MARKET_ID()).to.eq(core.marketIds.usdc);
       expect(await vester.PAIR_MARKET_ID()).to.eq(MAX_UINT_256_BI);
       expect(await vester.REWARD_MARKET_ID()).to.eq(MAX_UINT_256_BI);
+      expect(await vester.FLOOR_PRICE_START_TIME()).to.eq(FLOOR_PRICE_START_TIMESTAMP);
     });
   });
 

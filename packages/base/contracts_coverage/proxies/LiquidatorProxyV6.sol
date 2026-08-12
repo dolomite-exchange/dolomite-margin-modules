@@ -21,7 +21,7 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
-import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
+import { GenericTraderProxyBaseForLiquidator } from "./GenericTraderProxyBaseForLiquidator.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
 import { LiquidatorProxyLib } from "./LiquidatorProxyLib.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
@@ -47,7 +47,7 @@ import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 contract LiquidatorProxyV6 is
     HasLiquidatorRegistry,
     BaseLiquidatorProxy,
-    GenericTraderProxyBase,
+    GenericTraderProxyBaseForLiquidator,
     ReentrancyGuardUpgradeable,
     Initializable,
     ILiquidatorProxyV6
@@ -59,11 +59,6 @@ contract LiquidatorProxyV6 is
     bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
     uint256 private constant DOLOMITE_RAKE_ACCOUNT_ID = 3;
-    uint256 private constant _ONE = 1 ether;
-
-    // ============ State Variables ============
-
-    IDolomiteStructs.Decimal public dolomiteRake;
 
     // ============ Constructor ============
 
@@ -72,23 +67,42 @@ contract LiquidatorProxyV6 is
         address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        address _liquidatorAssetRegistry,
-        address _dolomiteAccountRiskOverride
+        address _liquidatorAssetRegistry
     )
     BaseLiquidatorProxy(
-        _dolomiteAccountRiskOverride,
         _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
         _chainId
     )
-    GenericTraderProxyBase(_dolomiteRegistry)
+    GenericTraderProxyBaseForLiquidator(_dolomiteRegistry)
     {}
 
     // ============ External Functions ============
 
     function initialize() external initializer {
         __ReentrancyGuardUpgradeable__init();
+    }
+
+    function ownerInitializeV2(
+        IDolomiteStructs.Decimal calldata _dolomiteRake,
+        IDolomiteStructs.Decimal calldata _partialLiquidationThreshold,
+        address _initialPartialLiquidator,
+        uint256[] calldata _initialPartialLiquidationMarketIds
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender)
+    reinitializer(2)
+    {
+        _ownerSetDolomiteRake(_dolomiteRake);
+        _ownerSetPartialLiquidationThreshold(_partialLiquidationThreshold);
+        _ownerSetIsPartialLiquidator(_initialPartialLiquidator, /* _isPartialLiquidator = */ true);
+
+        bool[] memory isSupportedList = new bool[](_initialPartialLiquidationMarketIds.length);
+        for (uint256 i; i < isSupportedList.length; i++) {
+            isSupportedList[i] = true;
+        }
+        _ownerSetMarketToPartialLiquidationSupported(_initialPartialLiquidationMarketIds, isSupportedList);
     }
 
     function liquidateViaProxyWithStrictInputMarket(
@@ -120,54 +134,24 @@ contract LiquidatorProxyV6 is
         _liquidate(_liquidateParams);
     }
 
-    function ownerSetDolomiteRake(
-        IDolomiteStructs.Decimal memory _dolomiteRake
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        if (_dolomiteRake.value < _ONE) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _dolomiteRake.value < _ONE,
-            _FILE,
-            "Invalid dolomite rake"
-        );
-        dolomiteRake = _dolomiteRake;
-        emit DolomiteRakeSet(_dolomiteRake);
+    function version() public view returns (uint8) {
+        return _getInitializedVersion();
     }
 
-    function ownerSetIsPartialLiquidator(
-        address _partialLiquidator,
-        bool _isPartialLiquidator
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        whitelistedPartialLiquidators[_partialLiquidator] = _isPartialLiquidator;
-        emit PartialLiquidatorSet(_partialLiquidator, _isPartialLiquidator);
+    function partialLiquidationThreshold() public view returns (IDolomiteStructs.Decimal memory) {
+        return _partialLiquidationStorage().partialLiquidationThreshold;
     }
 
-    function ownerSetMarketToPartialLiquidationSupported(
-        uint256[] memory _marketIds,
-        bool[] memory _isSupported
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        if (_marketIds.length == _isSupported.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _marketIds.length == _isSupported.length,
-            _FILE,
-            "Invalid market IDs length"
-        );
-        for (uint256 i = 0; i < _marketIds.length; i++) {
-            marketToPartialLiquidationSupported[_marketIds[i]] = _isSupported[i];
-        }
-        emit MarketToPartialLiquidationSupportedSet(_marketIds, _isSupported);
+    function isPartialLiquidationSupportedByMarketId(uint256 _marketId) public view returns (bool) {
+        return _partialLiquidationStorage().marketToPartialLiquidationSupported[_marketId];
     }
 
-    function ownerSetPartialLiquidationThreshold(
-        uint256 _partialLiquidationThreshold
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        if (_partialLiquidationThreshold < _ONE) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _partialLiquidationThreshold < _ONE,
-            _FILE,
-            "Invalid partial threshold"
-        );
-        partialLiquidationThreshold = _partialLiquidationThreshold;
-        emit PartialLiquidationThresholdSet(_partialLiquidationThreshold);
+    function isWhitelistedPartialLiquidator(address _account) public view returns (bool) {
+        return _partialLiquidationStorage().whitelistedPartialLiquidators[_account];
+    }
+
+    function dolomiteRake() public view returns (IDolomiteStructs.Decimal memory) {
+        return _partialLiquidationStorage().dolomiteRake;
     }
 
     // ============ Internal Functions ============
@@ -212,7 +196,7 @@ contract LiquidatorProxyV6 is
         constants.expirationTimestamp = _liquidateParams.expirationTimestamp;
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
-        constants.dolomiteRake = !isIsolationMode && _liquidateParams.expirationTimestamp == 0;
+        constants.includeDolomiteRake = !isIsolationMode && _liquidateParams.expirationTimestamp == 0;
 
         LiquidatorProxyLib.checkConstants(DOLOMITE_MARGIN(), constants);
 
@@ -245,7 +229,7 @@ contract LiquidatorProxyV6 is
             _liquidateParams.tradersPath
         );
         // the call to _getAccounts leaves accounts[LIQUID_ACCOUNT_ID] null because it fills in the traders starting at
-        // the `traderAccountCursor` index
+        // the `traderAccountCursor` index. So, we must populate it manually below
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
         accounts[DOLOMITE_RAKE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: DOLOMITE_REGISTRY.feeAgent(),
@@ -254,7 +238,7 @@ contract LiquidatorProxyV6 is
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getLiquidationActionsLength(constants.dolomiteRake, _liquidateParams.withdrawAllReward) +
+            _getLiquidationActionsLength(constants.includeDolomiteRake, _liquidateParams.withdrawAllReward) +
             _getActionsLengthForTraderParams(
                 genericCache,
                 _liquidateParams.tradersPath,
@@ -269,7 +253,7 @@ contract LiquidatorProxyV6 is
             genericCache
         );
         uint256 dolomiteRakeAmount;
-        if (constants.dolomiteRake) {
+        if (constants.includeDolomiteRake) {
             dolomiteRakeAmount = _appendDolomiteRakeTransferAction(
                 actions,
                 constants,
@@ -385,8 +369,9 @@ contract LiquidatorProxyV6 is
         view
         returns (uint256)
     {
+        PartialLiquidationStorage storage $ = _partialLiquidationStorage();
         uint256 heldWeiWithoutReward = _liquidatorCache.owedWeiToLiquidate * _liquidatorCache.owedPrice / _liquidatorCache.heldPrice; // solhint-disable-line max-line-length
-        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul(dolomiteRake); // solhint-disable-line max-line-length
+        uint256 dolomiteRakeAmount = (_liquidatorCache.solidHeldUpdateWithReward - heldWeiWithoutReward).mul($.dolomiteRake); // solhint-disable-line max-line-length
         _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeTransferAction(
             TRADE_ACCOUNT_ID,
             DOLOMITE_RAKE_ACCOUNT_ID,

@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.9;
 
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IModularLinearStepFunctionInterestSetter } from "./interfaces/IModularLinearStepFunctionInterestSetter.sol";
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 
 
 /**

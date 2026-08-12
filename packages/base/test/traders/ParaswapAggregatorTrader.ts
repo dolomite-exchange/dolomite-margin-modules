@@ -59,7 +59,7 @@ describe('ParaswapAggregatorTrader', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await trader.PARASWAP_AUGUSTUS_ROUTER()).to.equal(core.paraswapEcosystem!.augustusRouter.address);
+      expect(await trader.PARASWAP_AUGUSTUS_ROUTER()).to.equal(core.paraswapEcosystem!.augustusRouterV5.address);
       expect(await trader.PARASWAP_TRANSFER_PROXY()).to.equal(core.paraswapEcosystem!.transferProxy);
     });
   });

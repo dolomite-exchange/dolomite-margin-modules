@@ -17,13 +17,25 @@ import { DolomiteNetwork, ONE_ETH_BI } from '../../../base/src/utils/no-deps-con
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
+export async function checkPrice<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
+  await printPriceForVisualCheck(core, token);
+}
+
 export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
   const decimals = invalidToken ? invalidToken.decimals : await meta.decimals();
-  const price = await core.oracleAggregatorV2.getPrice(token.address);
+  const price = await core.oracleAggregatorV2.getPrice(token.address, { gasPrice: 0 });
+  const oracles = await core.oracleAggregatorV2.getOraclesByToken(token.address);
+  const oraclesPretty = oracles.map((o) => ({
+    oracle: o.oracle,
+    tokenPair: o.tokenPair,
+    weight: o.weight.toNumber(),
+  }));
   console.log(`\tPrice for ${symbol}:`, `$${formatUnits(price.value, 36 - decimals)}`);
+  console.log('\t');
+  console.log(`Oracles for ${symbol}: `, JSON.stringify(oraclesPretty, null, 4));
 }
 
 export async function printRiskDataVisualCheck<T extends DolomiteNetwork>(

@@ -55,12 +55,13 @@ interface IFeeRebateRollingClaims is IBaseClaim {
 
     event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot, uint256 totalAmount);
     event FeeRebateClaimerSet(address feeRebateClaimer);
+    event EpochSet(uint256 epoch);
 
     // ======================================================
     // ==================== Admin Functions =================
     // ======================================================
 
-    function ownerSetFeeRebateClaimer(address _feeRebateClaimer) external;
+    function initialize(address _feeClaimer) external;
 
     /* solhint-disable max-line-length */
 
@@ -71,12 +72,15 @@ interface IFeeRebateRollingClaims is IBaseClaim {
      * @param  _totalAmounts    The new total amount of marketId that's been allocated to claims. This should be set via
      *                          `this.marketIdToTotalAmount(_marketId) + feeRebateClaimer.getClaimAmountByEpochAndMarketId(latest, _marketId)`
      * @param  _expectedEpoch   The epoch that's expected to be next when incrementing `epoch`
+     * @param  _incrementEpoch  True if the epoch is being incremented or false to update the merkle roots and total
+     *                          amounts for the current epoch
      */
     function handlerSetMerkleRoots(
         uint256[] calldata _marketIds,
         bytes32[] calldata _merkleRoots,
         uint256[] calldata _totalAmounts,
-        uint256 _expectedEpoch
+        uint256 _expectedEpoch,
+        bool _incrementEpoch
     ) external;
 
     /* solhint-enable max-line-length */
@@ -100,6 +104,11 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
 
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
+
+    function userToMarketIdToClaimAmounts(
+        address _user,
+        uint256[] calldata _marketId
+    ) external view returns (uint256[] memory);
 
     function feeRebateClaimer() external view returns (address);
 

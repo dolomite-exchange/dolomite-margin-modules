@@ -11,9 +11,15 @@ import {
 } from './core-protocol-abstract';
 import { PendleEcosystemMantle } from '../ecosystem-utils/pendle';
 import { IMantleRewardStation } from 'packages/mantle/src/types';
+import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
 
 export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
   cmEth: IERC20;
+  dPtCmethFeb2025: IERC20;
+  dPtMethDec2024: IERC20;
+  dPtMntOct2024: IERC20;
+  dPtUsdeJul2024: IERC20;
+  dPtUsdeDec2024: IERC20;
   fbtc: IERC20;
   meth: IERC20;
   usde: IERC20;
@@ -25,6 +31,11 @@ export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Man
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
   cmEth: BigNumberish;
+  dPtCmethFeb2025: BigNumberish;
+  dPtMethDec2024: BigNumberish;
+  dPtMntOct2024: BigNumberish;
+  dPtUsdeJul2024: BigNumberish;
+  dPtUsdeDec2024: BigNumberish;
   fbtc: BigNumberish;
   meth: BigNumberish;
   usde: BigNumberish;
@@ -45,7 +56,6 @@ export interface CoreProtocolParamsMantle {
 }
 
 export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
-
   public override readonly marketIds: CoreProtocolMarketIdsMantle;
   public override readonly network: Network.Mantle = Network.Mantle;
   public override readonly tokens: CoreProtocolTokensMantle;
@@ -56,10 +66,7 @@ export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
   public readonly pendleEcosystem: PendleEcosystemMantle;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
 
-  constructor(
-    params: CoreProtocolParams<Network.Mantle>,
-    mantleParams: CoreProtocolParamsMantle,
-  ) {
+  constructor(params: CoreProtocolParams<Network.Mantle>, mantleParams: CoreProtocolParamsMantle) {
     super(params);
     this.marketIds = mantleParams.marketIds;
     this.tokens = mantleParams.tokens;

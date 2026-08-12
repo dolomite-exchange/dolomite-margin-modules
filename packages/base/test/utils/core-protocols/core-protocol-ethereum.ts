@@ -1,6 +1,6 @@
 import {
   ChroniclePriceOracleV3,
-  ERC4626PriceOracle,
+  ERC4626PriceOracle, PancakeV3PriceOracleWithModifiers,
   RedstonePriceOracleV3,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
@@ -17,6 +17,7 @@ import {
 
 interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum> {
   aave: IERC20;
+  btcCx: IERC20;
   cUsd: IERC20;
   cbBtc: IERC20;
   crv: IERC20;
@@ -33,12 +34,14 @@ interface CoreProtocolTokensEthereum extends CoreProtocolTokens<Network.Ethereum
   wbtc: IERC20;
   weEth: IERC20;
   wlfi: IERC20;
+  wlfiCx: IERC20;
   wsrUsd: IERC20;
   wstEth: IERC20;
 }
 
 interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   aave: BigNumberish;
+  btcCx: BigNumberish;
   cUsd: BigNumberish;
   cbBtc: BigNumberish;
   crv: BigNumberish;
@@ -55,6 +58,7 @@ interface CoreProtocolMarketIdsEthereum extends CoreProtocolMarketIds {
   wbtc: BigNumberish;
   weEth: BigNumberish;
   wlfi: BigNumberish;
+  wlfiCx: BigNumberish;
   wsrUsd: BigNumberish;
   wstEth: BigNumberish;
 }
@@ -67,6 +71,7 @@ export interface CoreProtocolParamsEthereum {
   odosEcosystem: OdosEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokens: CoreProtocolTokensEthereum;
+  twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 }
 
 export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum> {
@@ -78,6 +83,7 @@ export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum>
   public override readonly marketIds: CoreProtocolMarketIdsEthereum;
   public readonly network: Network.Ethereum = Network.Ethereum;
   public override readonly tokens: CoreProtocolTokensEthereum;
+  public readonly twapPriceOracleV3: PancakeV3PriceOracleWithModifiers;
 
   constructor(params: CoreProtocolParams<Network.Ethereum>, ethereumParams: CoreProtocolParamsEthereum) {
     super(params);
@@ -88,5 +94,6 @@ export class CoreProtocolEthereum extends CoreProtocolAbstract<Network.Ethereum>
     this.odosEcosystem = ethereumParams.odosEcosystem;
     this.redstonePriceOracleV3 = ethereumParams.redstonePriceOracleV3;
     this.tokens = ethereumParams.tokens;
+    this.twapPriceOracleV3 = ethereumParams.twapPriceOracleV3;
   }
 }

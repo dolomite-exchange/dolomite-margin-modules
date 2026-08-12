@@ -13,7 +13,7 @@ import {
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
-import { defaultAbiCoder, keccak256, parseEther, parseUnits } from 'ethers/lib/utils';
+import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
@@ -98,6 +98,7 @@ describe('FeeRebateRollingClaims', () => {
       FeeRebateClaimer__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
+    await feeRebateClaimer['initialize(uint96)'](0);
 
     const implementation = await createContractWithAbi<TestFeeRebateRollingClaims>(
       TestFeeRebateRollingClaims__factory.abi,

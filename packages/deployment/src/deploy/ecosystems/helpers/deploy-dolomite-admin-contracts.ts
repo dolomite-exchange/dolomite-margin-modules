@@ -1,5 +1,6 @@
 import {
   AdminClaimExcessTokens__factory,
+  AdminExpirePosition__factory,
   AdminPauseMarket__factory,
   AdminRegistry__factory,
   AdminSetInterestSetter__factory,
@@ -9,12 +10,13 @@ import { IDolomiteRegistry, RegistryProxy__factory } from '../../../../../base/s
 import { getRegistryProxyConstructorParams } from '../../../../../base/src/utils/constructors/dolomite';
 import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../../../base/src/utils/SignerWithAddressWithSafety';
-import { DolomiteMargin } from '../../../../../base/test/utils/dolomite';
+import { DolomiteMargin, Expiry } from '../../../../../base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 
 export async function deployDolomiteAdminContracts<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   dolomiteRegistry: IDolomiteRegistry,
+  expiry: Expiry<T>,
   modularInterestSetter: IModularLinearStepFunctionInterestSetter,
   hhUser1: SignerWithAddressWithSafety,
 ) {
@@ -62,8 +64,16 @@ export async function deployDolomiteAdminContracts<T extends DolomiteNetwork>(
   );
   const adminSetInterestSetter = AdminSetInterestSetter__factory.connect(adminSetInterestSetterAddress, hhUser1);
 
+  const adminExpirePositionAddress = await deployContractAndSave(
+    'AdminExpirePosition',
+    [expiry.address, adminRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('AdminExpirePosition', 1),
+  );
+  const adminExpirePosition = AdminExpirePosition__factory.connect(adminExpirePositionAddress, hhUser1);
+
   return {
     adminClaimExcessTokens,
+    adminExpirePosition,
     adminPauseMarket,
     adminRegistryImplementationAddress,
     adminRegistry,

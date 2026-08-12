@@ -36,7 +36,7 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Adjust caps
+ * - List wsrUSD and wstETH
  */
 async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   const network = await getAndCheckSpecificNetwork(Network.Ethereum);
@@ -59,6 +59,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
     ...(await encodeInsertChronicleOracleV3(core, core.tokens.wsrUsd)),
     ...(await encodeAddMarket(
       core,
+      core.marketIds.wsrUsd,
       core.tokens.wsrUsd,
       core.oracleAggregatorV2,
       core.interestSetters.alwaysZeroInterestSetter,
@@ -97,6 +98,7 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
     ...(await encodeInsertOracle(core, core.tokens.wstEth, stEthExchangeRatePriceOracle, core.tokens.weth)),
     ...(await encodeAddMarket(
       core,
+      core.marketIds.wstEth,
       core.tokens.wstEth,
       core.oracleAggregatorV2,
       core.interestSetters.alwaysZeroInterestSetter,

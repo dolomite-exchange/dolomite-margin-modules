@@ -75,20 +75,25 @@ describe('RollingClaims', () => {
 
   describe('#handlerSetClaim', () => {
     it('should work normally', async () => {
-      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, ONE_BI);
+      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, ONE_BI, true);
       expect(await rollingClaims.currentEpoch()).to.eq(ONE_BI);
+    });
+
+    it('should work normally when not incrementing', async () => {
+      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, ZERO_BI, false);
+      expect(await rollingClaims.currentEpoch()).to.eq(ZERO_BI);
     });
 
     it('should fail when handler is not caller', async () => {
       await expectThrow(
-        rollingClaims.connect(core.hhUser1).handlerSetMerkleRoot(merkleRoot, 0),
+        rollingClaims.connect(core.hhUser1).handlerSetMerkleRoot(merkleRoot, 0, true),
         'BaseClaim: Only handler can call',
       );
     });
 
     it('should fail when epochs do not match', async () => {
       await expectThrow(
-        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, 0),
+        rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(merkleRoot, 0, true),
         'RollingClaims: Invalid epoch',
       );
     });
@@ -158,7 +163,7 @@ describe('RollingClaims', () => {
       const newValidProof = tree.getHexProof(leaves[0]);
       const newValidProof2 = tree.getHexProof(leaves[1]);
 
-      await rollingClaims.connect(core.governance).ownerSetMerkleRoot(newMerkleRoot);
+      await rollingClaims.connect(core.hhUser5).handlerSetMerkleRoot(newMerkleRoot, 1, true);
       const res2 = await rollingClaims.connect(core.hhUser1).claim(newValidProof, parseEther('20'));
       await expectEvent(core.eventEmitterRegistry, res2, 'RewardClaimed', {
         distributor: rollingClaims.address,

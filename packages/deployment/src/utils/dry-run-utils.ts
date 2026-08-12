@@ -1,5 +1,6 @@
 import {
   DolomiteNetwork,
+  Network,
   NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
   NETWORK_TO_SAFE_HASH_NAME_MAP,
@@ -11,6 +12,7 @@ import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
 import { execSync } from 'child_process';
 import { BaseContract, BigNumber, BigNumberish, ethers, type EventFilter } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
@@ -119,18 +121,20 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
       const ownerAddress = await result.core.dolomiteMargin.owner();
       const invalidOwnerError = getInvalidOwnerError(ownerAddress);
       const transactionIds = await getTransactionIds(ownerAddress, result);
+      const configGasLimit: number | 'auto' = hardhat.config.networks[hardhat.network.name].gas;
+      const overrides: Overrides = {
+        gasLimit: typeof configGasLimit === 'number' ? configGasLimit : undefined,
+        gasPrice: result.core.network === Network.Berachain ? parseUnits('100', 'gwei') : undefined,
+      };
 
       for (const transaction of result.upload.transactions) {
         const signer = result.core.gnosisSafe;
-        const gasLimit = 50_000_000;
-        const overrides: Overrides = {
-          gasLimit,
-        };
         let txResult: TransactionResponse;
         if (transaction.to === result.core.governance.address || transaction.to !== ownerAddress) {
           txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
             signer.sendTransaction({
-              gasLimit,
+              gasLimit: overrides.gasLimit,
+              gasPrice: overrides.gasPrice,
               to: transaction.to,
               data: transaction.data,
             }),
@@ -153,7 +157,8 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
           } else if (ownerAddress === result.core.gnosisSafe.address) {
             txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
               signer.sendTransaction({
-                gasLimit,
+                gasLimit: overrides.gasLimit,
+                gasPrice: overrides.gasPrice,
                 to: transaction.to,
                 data: transaction.data,
               }),
@@ -197,15 +202,15 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
             let txResult: TransactionResponse | undefined;
             if (ownerAddress === result.core.ownerAdapterV1.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
+                result.core.ownerAdapterV1.executeTransactions([transactionId], overrides),
               );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
+                result.core.ownerAdapterV2.executeTransactions([transactionId], overrides),
               );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
               txResult = await executeTransactionAndTraceOnFailure(result.core, () =>
-                result.core.delayedMultiSig.executeTransaction(transactionId, {}),
+                result.core.delayedMultiSig.executeTransaction(transactionId, overrides),
               );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');
@@ -343,7 +348,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
     if (encodedTransactionForExecution) {
       console.log('');
       console.log('');
-      console.log('\tGenerating safe hash for transaction submission...');
+      console.log('\tGenerating safe hash for transaction execution (after submission)...');
       const encodedTo = encodedTransactionForExecution.to;
       const encodedCalldata = encodedTransactionForExecution.data;
       const nextNonce = nonce + 1;
