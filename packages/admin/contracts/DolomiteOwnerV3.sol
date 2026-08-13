@@ -517,15 +517,21 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     }
 
     function _isRevokeVetoTransaction(Transaction storage _txn) internal view returns (bool) {
-        if (_txn.destination != address(this)) return false;
+        if (_txn.destination != address(this)) {
+            return false;
+        }
 
         bytes memory transactionData = _txn.data;
 
         bytes4 selector = _getSelectorFromData(transactionData);
-        if (selector != this.revokeRole.selector) return false;
+        if (selector != this.revokeRole.selector) {
+            return false;
+        }
 
         bytes32 role = _getRoleFromData(transactionData);
-        if (role != VETO_ROLE) return false;
+        if (role != VETO_ROLE) {
+            return false;
+        }
 
         return true;
     }

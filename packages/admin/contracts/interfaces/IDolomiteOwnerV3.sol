@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -29,7 +30,7 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
  *
  * @notice  Interface for the DolomiteOwnerV3 contract
  */
-interface IDolomiteOwnerV3 is IAccessControl {
+interface IDolomiteOwnerV3 is IAccessControl, IDolomiteOwnerWithSubmitAndExecute {
 
     // ========================================================
     // ======================== Structs =======================
