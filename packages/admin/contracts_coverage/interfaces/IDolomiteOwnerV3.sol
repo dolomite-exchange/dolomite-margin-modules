@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -29,19 +30,19 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
  *
  * @notice  Interface for the DolomiteOwnerV3 contract
  */
-interface IDolomiteOwnerV3 is IAccessControl {
+interface IDolomiteOwnerV3 is IAccessControl, IDolomiteOwnerWithSubmitAndExecute {
 
     // ========================================================
     // ======================== Structs =======================
     // ========================================================
 
     struct Transaction {
+        uint32 lockedUntil;
+        uint32 validUntil;
+        bool executed;
+        bool cancelled;
         address destination;
         bytes data;
-        uint256 creationTimestamp;
-        bool executed;
-        bool verified;
-        bool cancelled;
     }
 
     struct TransactionExternal {
@@ -59,13 +60,13 @@ interface IDolomiteOwnerV3 is IAccessControl {
     // ========================================================
 
     event SecondsTimeLockedChanged(uint32 _secondsTimeLocked);
-    event SecondsVetoTimeLockedChanged(uint32 _secondsVetoTimeLocked);
+    event SecondsRevokeVetoTimeLockedChanged(uint32 _secondsRevokeVetoTimeLocked);
+    event SecondsForceRevokeVetoTimeLockedChanged(uint32 _secondsForceRevokeVetoTimeLocked);
     event SecondsValidChanged(uint32 _secondsValid);
     event RoleAdded(bytes32 indexed _role);
     event RoleRemoved(bytes32 indexed _role);
 
     event TransactionSubmitted(uint256 indexed transactionId);
     event TransactionCancelled(uint256 indexed transactionId);
-    event TransactionVerified(uint256 indexed transactionId);
     event TransactionExecuted(uint256 indexed transactionId);
 }
