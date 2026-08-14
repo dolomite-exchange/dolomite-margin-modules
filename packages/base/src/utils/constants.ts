@@ -1478,11 +1478,23 @@ export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x749291a06b1Eb031288A5c864F68de83e4091Ff8',
 };
 
+export const GLV_DEPOSIT_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xE092bFd05186546fDEAC888f5bCC2c42406d026d',
+};
+
 export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1EEA01a3592b8943737977b93ed24be7842D2427',
 };
 
+export const GLV_WITHDRAWAL_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x45048c62528a6A66FA5CC8D2b25b918701F0FAAA',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
+};
+
+export const GLV_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
@@ -1490,8 +1502,16 @@ export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2C670A23f1E798184647288072e84054938B5497',
 };
 
+export const GLV_READER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x85fcBD684D08053f1efAB302dCb04F22E20E65B1',
+};
+
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F',
+};
+
+export const GLV_ROUTER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x167540D2DFF14120365CfDDF2F86e3045D4fa712',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
