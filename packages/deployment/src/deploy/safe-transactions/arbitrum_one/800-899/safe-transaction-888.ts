@@ -36,6 +36,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
+      core.glvEcosystem.live,
+      'registry',
+      'ownerSetGlvHandler',
+      [core.glvEcosystem.glvHandler.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
       core.gmxV2Ecosystem.live,
       'registry',
       'ownerSetGmxExchangeRouter',
