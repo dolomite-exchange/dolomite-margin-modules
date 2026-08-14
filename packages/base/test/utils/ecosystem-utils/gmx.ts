@@ -146,6 +146,10 @@ import {
   GMX_ORDI_USD_MARKET_TOKEN_MAP,
   GMX_STX_USD_MARKET_TOKEN_MAP,
   GMX_TAO_USD_MARKET_TOKEN_MAP,
+  GMX_DEPOSIT_HANDLER_V22C_MAP,
+  GMX_EXCHANGE_ROUTER_V22C_MAP,
+  GMX_READER_V22C_MAP,
+  GMX_WITHDRAWAL_HANDLER_V22C_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -390,7 +394,7 @@ export async function createGmxEcosystemV2(
 
   const gmxV2Ecosystem: GmxV2Ecosystem = {
     gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network], IGmxDepositHandler__factory.connect, signer),
-    gmxDepositHandlerV2: getContract(GMX_DEPOSIT_HANDLER_V2_MAP[network], IGmxDepositHandler__factory.connect, signer),
+    gmxDepositHandlerV2: getContract(GMX_DEPOSIT_HANDLER_V22C_MAP[network], IGmxDepositHandler__factory.connect, signer),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network], true, signer),
     gmTokens: {
       aaveUsd: {
@@ -712,9 +716,9 @@ export async function createGmxEcosystemV2(
     },
     gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
     gmxDataStore: getContract(GMX_DATASTORE_MAP[network], IGmxDataStore__factory.connect, signer),
-    gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network], IGmxExchangeRouter__factory.connect, signer),
+    gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_V22C_MAP[network], IGmxExchangeRouter__factory.connect, signer),
     gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network], true, signer),
-    gmxReader: getContract(GMX_READER_MAP[network], IGmxReader__factory.connect, signer),
+    gmxReader: getContract(GMX_READER_V22C_MAP[network], IGmxReader__factory.connect, signer),
     gmxRouter: getContract(GMX_ROUTER_MAP[network], IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network],
@@ -722,7 +726,7 @@ export async function createGmxEcosystemV2(
       signer,
     ),
     gmxWithdrawalHandlerV2: getContract(
-      GMX_WITHDRAWAL_HANDLER_V2_MAP[network],
+      GMX_WITHDRAWAL_HANDLER_V22C_MAP[network],
       IGmxWithdrawalHandler__factory.connect,
       signer,
     ),

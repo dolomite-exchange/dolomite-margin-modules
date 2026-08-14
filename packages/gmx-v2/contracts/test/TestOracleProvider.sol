@@ -65,6 +65,8 @@ contract TestOracleProvider {
         address token;
         uint256 min;
         uint256 max;
+        uint256 rawMin;
+        uint256 rawMax;
         uint256 timestamp;
         address provider;
     }
@@ -81,6 +83,10 @@ contract TestOracleProvider {
         return true;
     }
 
+    function shouldCheckRefPrice() external view returns (bool) {
+        return false;
+    }
+
     function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
         try ORACLE_AGGREGATOR.getPrice(_token) returns (IDolomiteStructs.MonetaryPrice memory price) {
             uint256 priceUint = price.value / GMX_DECIMAL_ADJUSTMENT;
@@ -89,6 +95,8 @@ contract TestOracleProvider {
                 token: _token,
                 min: priceUint,
                 max: priceUint,
+                rawMin: priceUint,
+                rawMax: priceUint,
                 timestamp: block.timestamp,
                 provider: address(this)
             });
@@ -154,6 +162,8 @@ contract TestOracleProvider {
                 token: _token,
                 min: price,
                 max: price,
+                rawMin: price,
+                rawMax: price,
                 timestamp: block.timestamp,
                 provider: address(this)
             });
