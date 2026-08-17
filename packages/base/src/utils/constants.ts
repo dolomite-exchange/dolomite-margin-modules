@@ -1365,7 +1365,7 @@ export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
  * Used to plug in oracle prices onchain for canonical BTC
  */
 export const BTC_PLACEHOLDER_MAP: Record<
-  Network.ArbitrumOne | Network.Berachain | Network.Ethereum,
+  Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle,
   TokenWithMarketId
 > = {
   [Network.ArbitrumOne]: {
@@ -1377,6 +1377,10 @@ export const BTC_PLACEHOLDER_MAP: Record<
     marketId: -1,
   },
   [Network.Ethereum]: {
+    address: '0x2100000021000000210000002100000021000000',
+    marketId: -1,
+  },
+  [Network.Mantle]: {
     address: '0x2100000021000000210000002100000021000000',
     marketId: -1,
   },
@@ -2425,10 +2429,17 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
-export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
-  symbol: string;
-  decimals: number
-} | undefined>> = {
+export const INVALID_TOKEN_MAP: Record<
+  DolomiteNetwork,
+  Record<
+    string,
+    | {
+        symbol: string;
+        decimals: number;
+      }
+    | undefined
+  >
+> = {
   [Network.ArbitrumOne]: {
     [BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
       symbol: 'BTC',
@@ -2562,7 +2573,12 @@ export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
     },
   },
   [Network.Ink]: {},
-  [Network.Mantle]: {},
+  [Network.Mantle]: {
+    [BTC_PLACEHOLDER_MAP[Network.Mantle].address]: {
+      symbol: 'BTC',
+      decimals: 8,
+    },
+  },
   [Network.Sepolia]: {},
   [Network.XLayer]: {},
 };
@@ -2856,11 +2872,15 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
   },
   [Network.Ink]: {},
   [Network.Mantle]: {
+    [BTC_PLACEHOLDER_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x7db2275279F52D0914A481e14c4Ce5a59705A25b',
+    },
     [CM_ETH_MAP[Network.Mantle].address]: {
       aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',
     },
     [FBTC_MAP[Network.Mantle].address]: {
-      aggregatorAddress: '0x73b15e19b247263D03D7938f1356304b7B330Ff0',
+      aggregatorAddress: '0x2D787621f9C635ADe313126dF7615c02bff35517',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Mantle].address,
     },
     [METH_MAP[Network.Mantle].address]: {
       aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',

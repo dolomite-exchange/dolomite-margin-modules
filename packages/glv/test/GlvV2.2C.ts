@@ -29,10 +29,7 @@ import {
   IGlvToken,
   IGmxRoleStore__factory,
 } from '../src/types';
-import {
-  getGlvOracleParams,
-  getInitiateWrappingParams
-} from './glv-ecosystem-utils';
+import { getGlvOracleParams, getInitiateWrappingParams } from './glv-ecosystem-utils';
 import { TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
 import { getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
@@ -70,7 +67,7 @@ describe('GlvV2.2C', () => {
     hre.tracer.enabled = false;
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 494_477_000
+      blockNumber: 494_477_000,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
@@ -82,8 +79,10 @@ describe('GlvV2.2C', () => {
     glvUnwrapper = core.glvEcosystem.live.glvEth.unwrapper.connect(core.hhUser1);
 
     // Update glv router and reader
-    await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvRouter(core.glvEcosystem.glvRouter.address);
-    await core.glvEcosystem.live.registry.connect(core.governance).ownerSetGlvReader(core.glvEcosystem.glvReader.address);
+    await core.glvEcosystem.live.registry.connect(core.governance)
+      .ownerSetGlvRouter(core.glvEcosystem.glvRouter.address);
+    await core.glvEcosystem.live.registry.connect(core.governance)
+      .ownerSetGlvReader(core.glvEcosystem.glvReader.address);
 
     // Set up oracle provider
     const dataStore = core.gmxV2Ecosystem.gmxDataStore;
@@ -122,7 +121,7 @@ describe('GlvV2.2C', () => {
       glvMarketId,
       borrowAccountNumber,
       0,
-      { value: wethAmount }
+      { value: wethAmount },
     );
     await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, core.marketIds.weth, wethAmount);
 
@@ -132,7 +131,7 @@ describe('GlvV2.2C', () => {
       wethAmount,
       glvMarketId,
       parseEther('.0001'),
-      glvWrapper
+      glvWrapper,
     );
     const res = await core.genericTraderRouter.connect(core.hhUser1).swapExactInputForOutput(
       glvMarketId,
@@ -145,7 +144,7 @@ describe('GlvV2.2C', () => {
         makerAccounts: initiateWrappingParams.makerAccounts,
         userConfig: initiateWrappingParams.userConfig,
       },
-      { value: executionFee }
+      { value: executionFee },
     );
 
     await expectProtocolBalance(core, glvVault.address, borrowAccountNumber, glvMarketId, parseEther('.0001'));
@@ -164,7 +163,13 @@ describe('GlvV2.2C', () => {
       .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeGlvDeposit(
         depositKey,
-        await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider, GLV_ORACLE_V22),
+        await getGlvOracleParams(
+          core,
+          controller,
+          core.glvEcosystem.glvTokens.wethUsdc,
+          testOracleProvider,
+          GLV_ORACLE_V22,
+        ),
         { gasLimit },
       );
     hre.tracer.enabled = false;
@@ -232,7 +237,13 @@ describe('GlvV2.2C', () => {
       .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeGlvWithdrawal(
         withdrawalKey,
-        await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider, GLV_ORACLE_V22),
+        await getGlvOracleParams(
+          core,
+          controller,
+          core.glvEcosystem.glvTokens.wethUsdc,
+          testOracleProvider,
+          GLV_ORACLE_V22,
+        ),
         { gasLimit },
       );
     await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
