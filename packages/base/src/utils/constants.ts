@@ -3156,8 +3156,7 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       aggregatorAddress: '', // TODO
     },
     [E_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x09639692CE6ff12A06CA3AE9A24b3Aae4CD80DC8',
-      tokenPairAddress: WBTC_MAP[Network.Berachain].address,
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [HONEY_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x2D4f3199a80b848F3d094745F3Bbd4224892654e',
@@ -3166,15 +3165,13 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       aggregatorAddress: '0x4F4E639745CfB234B6176E96c6afd83269baF52E',
     },
     [LBTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x84AD474c33c9cCefB1a2D8b77Bdd88bDc592f96b',
-      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [LORENZO_ST_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [PUMP_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x83c6f7F61A55Fc7A1337AbD45733AD9c1c68076D',
-      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [R_USD_MAP[Network.Berachain].address]: {
       aggregatorAddress: 'TODO',
@@ -3199,14 +3196,13 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<RedstoneNetworks, Record<str
       aggregatorAddress: '', // TODO
     },
     [SOLV_BTC_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x4E202A7E713d00804F9cE397260362bF5E0EaaA8',
-      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
+      aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
     },
     [SR_USD_MAP[Network.Berachain].address]: {
       aggregatorAddress: 'TODO',
     },
     [STONE_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x6A1c87d11dDe3D1d52c24f8EC59B91019f14170D',
+      aggregatorAddress: '0x3587a73AA02519335A8a6053a97657BECe0bC2Cc', // Using WETH
     },
     [STONE_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // Using native BTC
