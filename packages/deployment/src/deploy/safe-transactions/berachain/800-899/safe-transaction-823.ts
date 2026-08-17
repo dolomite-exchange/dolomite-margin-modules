@@ -3,12 +3,13 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeInsertConstantPriceOracleV3, encodeInsertOracle, encodeInsertRedstoneOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import {
+  encodeInsertConstantPriceOracleV3,
+  encodeInsertRedstoneOracleV3,
+} from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { parseEther } from 'ethers/lib/utils';
-import { encodeSetIsCollateralOnly } from 'packages/deployment/src/utils/encoding/dolomite-margin-core-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -17,10 +18,10 @@ import { encodeSetIsCollateralOnly } from 'packages/deployment/src/utils/encodin
  *    - LBTC -> switch to BTC oracle, already wind down only
  *    - pumpBTC -> switch to BTC oracle, already wind down only
  *    - rsETH -> switch to constant oracle to ETH, already wind down only
- *    - rswETH ->  switch to constant oracle to ETH, already wind down only
+ *    - rswETH -> switch to constant oracle to ETH, already wind down only
  *    - solvBTC -> switch to BTC oracle, already wind down only
- *    - stone -> switch to ETH oracle, already wind down and only $25 of supply @follow-up you cool with this?
- *    - weETH -> switch to constant oracle to ETH, set is closing
+ *    - stone -> switch to ETH oracle, already wind down
+ *    - weETH -> switch to constant oracle to ETH, already wind down only
  *    - ylstETH -> switch to constant oracle to ETH, already wind down only
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
@@ -36,12 +37,31 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.pumpBtc)),
     ...(await encodeInsertRedstoneOracleV3(core, core.tokens.solvBtc)),
 
-    ...(await encodeInsertConstantPriceOracleV3(core, core.tokens.rsEth, parseEther(`${1.078110791623618630}`), core.tokens.weth.address)),
-    ...(await encodeInsertConstantPriceOracleV3(core, core.tokens.rswEth, parseEther(`${1.07705919}`), core.tokens.weth.address)),
-    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.stone)), // @follow-up Now using WETH oracle.
-    ...(await encodeInsertConstantPriceOracleV3(core, core.tokens.weEth, parseEther(`${1.10161758}`), core.tokens.weth.address)),
-    await encodeSetIsCollateralOnly(core, core.marketIds.weEth, true),
-    ...(await encodeInsertConstantPriceOracleV3(core, core.tokens.ylStEth, parseEther(`${1.07431448}`), core.tokens.weth.address)),
+    ...(await encodeInsertConstantPriceOracleV3(
+      core,
+      core.tokens.rsEth,
+      parseEther(`${1.078110791623618630}`),
+      core.tokens.weth.address,
+    )),
+    ...(await encodeInsertConstantPriceOracleV3(
+      core,
+      core.tokens.rswEth,
+      parseEther(`${1.07705919}`),
+      core.tokens.weth.address,
+    )),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.stone)),
+    ...(await encodeInsertConstantPriceOracleV3(
+      core,
+      core.tokens.weEth,
+      parseEther(`${1.10161758}`),
+      core.tokens.weth.address,
+    )),
+    ...(await encodeInsertConstantPriceOracleV3(
+      core,
+      core.tokens.ylStEth,
+      parseEther(`${1.07431448}`),
+      core.tokens.weth.address,
+    )),
   ];
 
   return {
