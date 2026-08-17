@@ -1,19 +1,20 @@
 import { BigNumberish } from 'ethers';
 import {
   IERC20__factory,
-  IsolationModeTraderProxy, IsolationModeTraderProxy__factory,
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from 'packages/base/src/types';
 import {
-  GLV_DEPOSIT_HANDLER_MAP,
-  GLV_HANDLER_MAP,
-  GLV_READER_MAP,
-  GLV_ROUTER_MAP,
+  GLV_DEPOSIT_HANDLER_V22C_MAP,
+  GLV_HANDLER_V22C_MAP,
+  GLV_READER_V22C_MAP,
+  GLV_ROUTER_V22C_MAP,
   GLV_TOKEN_WBTC_USDC_MAP,
   GLV_TOKEN_WETH_USDC_MAP,
   GLV_VAULT_MAP,
-  GLV_WITHDRAWAL_HANDLER_MAP,
+  GLV_WITHDRAWAL_HANDLER_V22C_MAP,
   NATIVE_USDC_MAP,
   WBTC_MAP,
   WETH_MAP,
@@ -25,7 +26,9 @@ import {
   GlvIsolationModeTokenVaultV1,
   GlvIsolationModeTokenVaultV1__factory,
   GlvIsolationModeUnwrapperTraderV2,
-  GlvIsolationModeUnwrapperTraderV2__factory, GlvIsolationModeVaultFactory, GlvIsolationModeVaultFactory__factory,
+  GlvIsolationModeUnwrapperTraderV2__factory,
+  GlvIsolationModeVaultFactory,
+  GlvIsolationModeVaultFactory__factory,
   GlvIsolationModeWrapperTraderV2,
   GlvIsolationModeWrapperTraderV2__factory,
   GlvRegistry,
@@ -105,10 +108,10 @@ export async function createGlvEcosystem(network: Network, signer: SignerWithAdd
   );
 
   return {
-    glvDepositHandler: getContract(GLV_DEPOSIT_HANDLER_MAP[network], IGlvHandler__factory.connect, signer),
-    glvHandler: getContract(GLV_HANDLER_MAP[network], IGlvHandler__factory.connect, signer),
-    glvReader: getContract(GLV_READER_MAP[network], IGlvReader__factory.connect, signer),
-    glvRouter: getContract(GLV_ROUTER_MAP[network], IGlvRouter__factory.connect, signer),
+    glvDepositHandler: getContract(GLV_DEPOSIT_HANDLER_V22C_MAP[network], IGlvHandler__factory.connect, signer),
+    glvHandler: getContract(GLV_HANDLER_V22C_MAP[network], IGlvHandler__factory.connect, signer),
+    glvReader: getContract(GLV_READER_V22C_MAP[network], IGlvReader__factory.connect, signer),
+    glvRouter: getContract(GLV_ROUTER_V22C_MAP[network], IGlvRouter__factory.connect, signer),
     glvTokens: {
       wbtcUsdc: {
         glvToken: getContract(GLV_TOKEN_WBTC_USDC_MAP[network], IGlvToken__factory.connect, signer),
@@ -126,7 +129,7 @@ export async function createGlvEcosystem(network: Network, signer: SignerWithAdd
       },
     },
     glvVault: { address: GLV_VAULT_MAP[network] },
-    glvWithdrawalHandler: getContract(GLV_WITHDRAWAL_HANDLER_MAP[network], IGlvHandler__factory.connect, signer),
+    glvWithdrawalHandler: getContract(GLV_WITHDRAWAL_HANDLER_V22C_MAP[network], IGlvHandler__factory.connect, signer),
     live: {
       glvBtc: {
         factory: GlvIsolationModeVaultFactory__factory.connect(

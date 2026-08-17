@@ -1365,7 +1365,7 @@ export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
  * Used to plug in oracle prices onchain for canonical BTC
  */
 export const BTC_PLACEHOLDER_MAP: Record<
-  Network.ArbitrumOne | Network.Berachain | Network.Ethereum,
+  Network.ArbitrumOne | Network.Berachain | Network.Ethereum | Network.Mantle,
   TokenWithMarketId
 > = {
   [Network.ArbitrumOne]: {
@@ -1377,6 +1377,10 @@ export const BTC_PLACEHOLDER_MAP: Record<
     marketId: -1,
   },
   [Network.Ethereum]: {
+    address: '0x2100000021000000210000002100000021000000',
+    marketId: -1,
+  },
+  [Network.Mantle]: {
     address: '0x2100000021000000210000002100000021000000',
     marketId: -1,
   },
@@ -1478,11 +1482,23 @@ export const GLV_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x749291a06b1Eb031288A5c864F68de83e4091Ff8',
 };
 
+export const GLV_DEPOSIT_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xE092bFd05186546fDEAC888f5bCC2c42406d026d',
+};
+
 export const GLV_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1EEA01a3592b8943737977b93ed24be7842D2427',
 };
 
+export const GLV_WITHDRAWAL_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x45048c62528a6A66FA5CC8D2b25b918701F0FAAA',
+};
+
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
+};
+
+export const GLV_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
@@ -1490,8 +1506,16 @@ export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2C670A23f1E798184647288072e84054938B5497',
 };
 
+export const GLV_READER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x85fcBD684D08053f1efAB302dCb04F22E20E65B1',
+};
+
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F',
+};
+
+export const GLV_ROUTER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x167540D2DFF14120365CfDDF2F86e3045D4fa712',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1514,6 +1538,10 @@ export const GMX_DEPOSIT_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x33871b8568eDC4adf33338cdD8cF52a0eCC84D42',
 };
 
+export const GMX_DEPOSIT_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x2c60a1890E24a727ccF504A9dA9912ace58b2EAD',
+};
+
 export const GMX_DEPOSIT_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55',
 };
@@ -1524,6 +1552,10 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1C3fa76e6E1088bCE750f23a5BFcffa1efEF6A41',
+};
+
+export const GMX_EXCHANGE_ROUTER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x7dE39FF2e232A2203196788d37e234cF8F1b83f1',
 };
 
 export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1730,6 +1762,10 @@ export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x470fbC46bcC0f16532691Df360A07d8Bf5ee0789',
 };
 
+export const GMX_READER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xfA26cBb46e2614609406de08CA1Dc7f70a684184',
+};
+
 export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6',
 };
@@ -1744,6 +1780,10 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x11e9E7464f3Bc887a7290ec41fCd22f619b177fd',
+};
+
+export const GMX_WITHDRAWAL_HANDLER_V22C_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xB25dDF7dE751e5c8bFa85c815d1b379732cF4925',
 };
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
@@ -2389,10 +2429,17 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
-export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
-  symbol: string;
-  decimals: number
-} | undefined>> = {
+export const INVALID_TOKEN_MAP: Record<
+  DolomiteNetwork,
+  Record<
+    string,
+    | {
+        symbol: string;
+        decimals: number;
+      }
+    | undefined
+  >
+> = {
   [Network.ArbitrumOne]: {
     [BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
       symbol: 'BTC',
@@ -2526,7 +2573,12 @@ export const INVALID_TOKEN_MAP: Record<DolomiteNetwork, Record<string, {
     },
   },
   [Network.Ink]: {},
-  [Network.Mantle]: {},
+  [Network.Mantle]: {
+    [BTC_PLACEHOLDER_MAP[Network.Mantle].address]: {
+      symbol: 'BTC',
+      decimals: 8,
+    },
+  },
   [Network.Sepolia]: {},
   [Network.XLayer]: {},
 };
@@ -2820,11 +2872,15 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
   },
   [Network.Ink]: {},
   [Network.Mantle]: {
+    [BTC_PLACEHOLDER_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0x7db2275279F52D0914A481e14c4Ce5a59705A25b',
+    },
     [CM_ETH_MAP[Network.Mantle].address]: {
       aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',
     },
     [FBTC_MAP[Network.Mantle].address]: {
-      aggregatorAddress: '0x73b15e19b247263D03D7938f1356304b7B330Ff0',
+      aggregatorAddress: '0x2D787621f9C635ADe313126dF7615c02bff35517',
+      tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Mantle].address,
     },
     [METH_MAP[Network.Mantle].address]: {
       aggregatorAddress: '0xB16FcAFB8378baA0a69142a325878FDCad58606A',
