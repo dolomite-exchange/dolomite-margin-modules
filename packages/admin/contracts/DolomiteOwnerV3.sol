@@ -55,7 +55,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // ================================================
 
     uint24 public secondsTimeLocked;
-    uint24 public secondsRevokeVetoTimeLocked;
     uint24 public secondsForceRevokeVetoTimeLocked;
     uint24 public secondsValid;
     uint184 public transactionCount;
@@ -110,11 +109,20 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         address _sender,
         uint256 _transactionId
     ) {
-        Require.that(
-            isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
-            _FILE,
-            "Timelock incomplete"
-        );
+        Transaction memory txn = transactions[_transactionId];
+        if (_isForceRevokeVetoTransaction(txn.destination, txn.data)) {
+            Require.that(
+                isTimelockComplete(_transactionId),
+                _FILE,
+                "Force revoke timelock incomplete"
+            );
+        } else {
+            Require.that(
+                isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
+                _FILE,
+                "Timelock incomplete"
+            );
+        }
         _;
     }
 
@@ -136,14 +144,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     constructor(
         address _admin,
         uint24 _secondsTimeLocked,
-        uint24 _secondsRevokeVetoTimeLocked,
         uint24 _secondsForceRevokeVetoTimeLocked,
         uint24 _secondsValid
     ) AccessControl() {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
-        _ownerSetSecondsVetoTimeLocked(_secondsRevokeVetoTimeLocked);
         _ownerSetSecondsForceRevokeVetoTimeLocked(_secondsForceRevokeVetoTimeLocked);
         _ownerSetSecondsValid(_secondsValid);
     }
@@ -156,12 +162,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         uint24 _secondsTimeLocked
     ) external onlySelf(msg.sender) {
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
-    }
-
-    function ownerSetSecondsVetoTimeLocked(
-        uint24 _secondsRevokeVetoTimeLocked
-    ) external onlySelf(msg.sender) {
-        _ownerSetSecondsVetoTimeLocked(_secondsRevokeVetoTimeLocked);
     }
 
     function ownerSetSecondsForceRevokeVetoTimeLocked(
@@ -189,6 +189,15 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
         for (uint256 i; i < len; ++i) {
             bytes32 role = calculateRole(_roles[i].selector, _roles[i].destination);
+            Require.that(
+                role != DEFAULT_ADMIN_ROLE
+                    && role != VETO_ROLE
+                    && role != EXECUTOR_ROLE
+                    && role != BYPASS_TIMELOCK_ROLE,
+                _FILE,
+                "Invalid computed role"
+            );
+
             _grantRole(role, _caller);
         }
     }
@@ -197,9 +206,9 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         address _caller
     ) external onlySelf(msg.sender) {
         Require.that(
-            !hasRole(DEFAULT_ADMIN_ROLE, _caller),
+            !hasRole(DEFAULT_ADMIN_ROLE, _caller) && !hasRole(VETO_ROLE, _caller),
             _FILE,
-            "Cannot renounce ownership"
+            "Cannot remove protected roles"
         );
 
         bytes32[] memory roles = _addressToRoles[_caller].values();
@@ -313,16 +322,54 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // =============== View Functions =================
     // ================================================
 
+    function getDefaultAdmin() external view returns (address) {
+        address[] memory admins = _roleToAddresses[DEFAULT_ADMIN_ROLE].values();
+        assert(admins.length == 1);
+        return admins[0];
+    }
+
+    function getBypassTimelockAddresses() external view returns (address[] memory) {
+        return _roleToAddresses[BYPASS_TIMELOCK_ROLE].values();
+    }
+
+    function getExecutorAddresses() external view returns (address[] memory) {
+        return _roleToAddresses[EXECUTOR_ROLE].values();
+    }
+
+    function getVetoAddresses() external view returns (address[] memory) {
+        return _roleToAddresses[VETO_ROLE].values();
+    }
+
     function getAddressRoles(address _address) external view returns (bytes32[] memory) {
         return _addressToRoles[_address].values();
     }
 
     function getComputedAddressRoles(address _address) external view returns (ComputedRole[] memory) {
+        // TODO: compact array, return separate struct for veto role, bypass timelock, etc.
         bytes32[] memory roles = _addressToRoles[_address].values();
-        ComputedRole[] memory result = new ComputedRole[](roles.length);
+        uint256 cursor = 0;
         for (uint256 i; i < roles.length; ++i) {
-            // @follow-up This will include selector and address from veto or bypass role
-            result[i] = calculateSelectorAndAddress(roles[i]);
+            if (
+                roles[i] != BYPASS_TIMELOCK_ROLE
+                && roles[i] != EXECUTOR_ROLE
+                && roles[i] != VETO_ROLE
+                && roles[i] != DEFAULT_ADMIN_ROLE
+            ) {
+                cursor += 1;
+            }
+        }
+
+        ComputedRole[] memory result = new ComputedRole[](cursor);
+        cursor = 0;
+        for (uint256 i; i < roles.length; ++i) {
+            if (
+                roles[i] != BYPASS_TIMELOCK_ROLE
+                && roles[i] != EXECUTOR_ROLE
+                && roles[i] != VETO_ROLE
+                && roles[i] != DEFAULT_ADMIN_ROLE
+            ) {
+                result[cursor++] = calculateSelectorAndAddress(roles[i]);
+            }
         }
 
         return result;
@@ -376,6 +423,9 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         );
         if (_to > transactionCount) {
             _to = transactionCount;
+        }
+        if (_from >= _to) {
+            return new uint256[](0);
         }
 
         uint256[] memory transactionIdsTemp = new uint256[](_to - _from);
@@ -453,26 +503,11 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         emit SecondsTimeLockedChanged(_secondsTimeLocked);
     }
 
-    function _ownerSetSecondsVetoTimeLocked(
-        uint24 _secondsRevokeVetoTimeLocked
-    ) internal {
-        // @follow-up What constraints do you want here?
-        Require.that(
-            _secondsRevokeVetoTimeLocked != 0,
-            _FILE,
-            "Invalid veto timelock"
-        );
-
-        secondsRevokeVetoTimeLocked = _secondsRevokeVetoTimeLocked;
-        emit SecondsRevokeVetoTimeLockedChanged(_secondsRevokeVetoTimeLocked);
-    }
-
     function _ownerSetSecondsForceRevokeVetoTimeLocked(
         uint24 _secondsForceRevokeVetoTimeLocked
     ) internal {
-        // @follow-up What constraints do you want here?
         Require.that(
-            _secondsForceRevokeVetoTimeLocked != 0,
+            _secondsForceRevokeVetoTimeLocked >= 7 days && _secondsForceRevokeVetoTimeLocked <= 90 days,
             _FILE,
             "Invalid force veto timelock"
         );
@@ -522,18 +557,21 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         address _destination,
         bytes memory _data
     ) internal notNull(_destination) returns (uint256) {
-        // @follow-up I think this code gets weird here. We should either do += for all or only =
         uint24 lockDuration = secondsTimeLocked;
-        if (_isRevokeVetoTransaction(_destination, _data)) {
-            lockDuration += secondsRevokeVetoTimeLocked;
-        } else if (_isForceRevokeVetoTransaction(_destination, _data)) {
+        uint32 lockedUntil = uint32(block.timestamp) + lockDuration;
+
+        uint32 l_secondsValid = secondsValid;
+        if (_isForceRevokeVetoTransaction(_destination, _data)) {
             lockDuration = secondsForceRevokeVetoTimeLocked;
+            lockedUntil = uint32(block.timestamp) + lockDuration;
+            // Forced revocation cannot expire
+            l_secondsValid = type(uint32).max - lockedUntil;
         }
 
         uint256 transactionId = transactionCount;
         transactions[transactionId] = Transaction({
-            lockedUntil: uint32(block.timestamp) + lockDuration,
-            validUntil: uint32(block.timestamp) + lockDuration + secondsValid,
+            lockedUntil: lockedUntil,
+            validUntil: lockedUntil + l_secondsValid,
             executed: false,
             cancelled : false,
             destination: _destination,
@@ -556,7 +594,11 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         );
 
         if (_isForceRevokeVetoTransaction(txn.destination, txn.data)) {
-            revert("Cannot cancel force revoke");
+            Require.that(
+                hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+                _FILE,
+                "Only admin can cancel frc revoke"
+            );
         } else if (_isRevokeVetoTransaction(txn.destination, txn.data)) {
             Require.that(
                 msg.sender != _getVetoerFromData(txn.data),
@@ -590,9 +632,9 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function _grantRole(bytes32 role, address account) internal override {
         Require.that(
-            account != _ADDRESS_ZERO,
+            account != _ADDRESS_ZERO && account != address(this),
             _FILE,
-            "Zero address"
+            "Invalid address"
         );
 
         if (role == DEFAULT_ADMIN_ROLE) {
@@ -600,6 +642,11 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
                 _addressToRoles[account].length() == 0,
                 _FILE,
                 "Admin can only have 1 role"
+            );
+            Require.that(
+                account.isContract(),
+                _FILE,
+                "Admin must be a contract"
             );
         } else {
             Require.that(
