@@ -46,9 +46,14 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     bytes32 private constant _FILE = "DolomiteOwnerV3";
     address private constant _ADDRESS_ZERO = address(0);
 
+    /// @notice Service role
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
+    /// @notice Service role
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    /// @notice Protected role
     bytes32 public constant VETO_ROLE = keccak256("VETO_ROLE");
+
+    uint32 public constant FORCED_REVOCATION_SECONDS_VALID = 2 weeks;
 
     // ================================================
     // =================== State Variables ============
@@ -158,6 +163,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // =================== Admin Functions ============
     // ================================================
 
+    function ownerTransferDefaultAdmin(address _newAdmin) external onlySelf(msg.sender) {
+        address oldAdmin = getDefaultAdmin();
+        _grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
+        _revokeRole(DEFAULT_ADMIN_ROLE, oldAdmin);
+    }
+
     function ownerSetSecondsTimeLocked(
         uint24 _secondsTimeLocked
     ) external onlySelf(msg.sender) {
@@ -203,7 +214,8 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     }
 
     function ownerUnregisterCaller(
-        address _caller
+        address _caller,
+        bool _unregisterServiceRoles
     ) external onlySelf(msg.sender) {
         Require.that(
             !hasRole(DEFAULT_ADMIN_ROLE, _caller) && !hasRole(VETO_ROLE, _caller),
@@ -213,7 +225,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
         bytes32[] memory roles = _addressToRoles[_caller].values();
         for (uint256 i; i < roles.length; ++i) {
-            _revokeRole(roles[i], _caller);
+            if (roles[i] == BYPASS_TIMELOCK_ROLE || roles[i] == EXECUTOR_ROLE) {
+                if (_unregisterServiceRoles) {
+                    _revokeRole(roles[i], _caller);
+                }
+            } else {
+                _revokeRole(roles[i], _caller);
+            }
         }
     }
 
@@ -221,6 +239,11 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         bytes32 _role,
         address _account
     ) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
+        Require.that(
+            _role != DEFAULT_ADMIN_ROLE,
+            _FILE,
+            "Invalid grantRole usage"
+        );
         _grantRole(_role, _account);
     }
 
@@ -321,12 +344,6 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     // ================================================
     // =============== View Functions =================
     // ================================================
-
-    function getDefaultAdmin() external view returns (address) {
-        address[] memory admins = _roleToAddresses[DEFAULT_ADMIN_ROLE].values();
-        assert(admins.length == 1);
-        return admins[0];
-    }
 
     function getBypassTimelockAddresses() external view returns (address[] memory) {
         return _roleToAddresses[BYPASS_TIMELOCK_ROLE].values();
@@ -448,6 +465,12 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         return _transactionIds;
     }
 
+    function getDefaultAdmin() public view returns (address) {
+        address[] memory admins = _roleToAddresses[DEFAULT_ADMIN_ROLE].values();
+        assert(admins.length == 1);
+        return admins[0];
+    }
+
     function isUserApprovedToSubmitTransaction(
         address _user,
         address _destination,
@@ -494,7 +517,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         uint24 _secondsTimeLocked
     ) internal {
         Require.that(
-            _secondsTimeLocked >= 60 && _secondsTimeLocked <= 2 weeks,
+            _secondsTimeLocked >= 60 seconds && _secondsTimeLocked <= 14 days,
             _FILE,
             "Invalid timelock"
         );
@@ -507,7 +530,7 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         uint24 _secondsForceRevokeVetoTimeLocked
     ) internal {
         Require.that(
-            _secondsForceRevokeVetoTimeLocked >= 7 days && _secondsForceRevokeVetoTimeLocked <= 90 days,
+            _secondsForceRevokeVetoTimeLocked >= 14 days && _secondsForceRevokeVetoTimeLocked <= 90 days,
             _FILE,
             "Invalid force veto timelock"
         );
@@ -564,8 +587,8 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         if (_isForceRevokeVetoTransaction(_destination, _data)) {
             lockDuration = secondsForceRevokeVetoTimeLocked;
             lockedUntil = uint32(block.timestamp) + lockDuration;
-            // Forced revocation cannot expire
-            l_secondsValid = type(uint32).max - lockedUntil;
+            // Forced revocation expire after a longer fixed duration
+            l_secondsValid = FORCED_REVOCATION_SECONDS_VALID;
         }
 
         uint256 transactionId = transactionCount;
@@ -630,14 +653,14 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         return false;
     }
 
-    function _grantRole(bytes32 role, address account) internal override {
+    function _grantRole(bytes32 _role, address account) internal override {
         Require.that(
             account != _ADDRESS_ZERO && account != address(this),
             _FILE,
             "Invalid address"
         );
 
-        if (role == DEFAULT_ADMIN_ROLE) {
+        if (_role == DEFAULT_ADMIN_ROLE) {
             Require.that(
                 _addressToRoles[account].length() == 0,
                 _FILE,
@@ -656,9 +679,9 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
             );
         }
 
-        super._grantRole(role, account);
-        _addressToRoles[account].add(role);
-        _roleToAddresses[role].add(account);
+        super._grantRole(_role, account);
+        _addressToRoles[account].add(_role);
+        _roleToAddresses[_role].add(account);
 
         if (!_allAddresses.contains(account)) {
             _allAddresses.add(account);
