@@ -224,7 +224,8 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
-            || gmxDataStore().roleStore().hasRole(_handler, _CONTROLLER_ROLE);
+            || _handler == glvDepositHandler()
+            || _handler == glvWithdrawalHandler();
     }
 
     function gmxDataStore() public view returns (IGmxDataStore) {

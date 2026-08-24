@@ -168,7 +168,8 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
-            || gmxDataStore().roleStore().hasRole(_handler, _CONTROLLER_ROLE);
+            || _handler == address(gmxDepositHandler())
+            || _handler == address(gmxWithdrawalHandler());
     }
 
     function gmxDepositHandler() public view returns (IGmxDepositHandler) {
