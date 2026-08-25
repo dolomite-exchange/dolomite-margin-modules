@@ -362,22 +362,9 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
     }
 
     function getComputedAddressRoles(address _address) external view returns (ComputedRole[] memory) {
-        // TODO: compact array, return separate struct for veto role, bypass timelock, etc.
         bytes32[] memory roles = _addressToRoles[_address].values();
-        uint256 cursor = 0;
-        for (uint256 i; i < roles.length; ++i) {
-            if (
-                roles[i] != BYPASS_TIMELOCK_ROLE
-                && roles[i] != EXECUTOR_ROLE
-                && roles[i] != VETO_ROLE
-                && roles[i] != DEFAULT_ADMIN_ROLE
-            ) {
-                cursor += 1;
-            }
-        }
+        ComputedRole[] memory result = new ComputedRole[](roles.length);
 
-        ComputedRole[] memory result = new ComputedRole[](cursor);
-        cursor = 0;
         for (uint256 i; i < roles.length; ++i) {
             if (
                 roles[i] != BYPASS_TIMELOCK_ROLE
@@ -385,7 +372,18 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
                 && roles[i] != VETO_ROLE
                 && roles[i] != DEFAULT_ADMIN_ROLE
             ) {
-                result[cursor++] = calculateSelectorAndAddress(roles[i]);
+                (address destination, bytes4 selector) = calculateSelectorAndAddress(roles[i]);
+                result[i] = ComputedRole({
+                    role: bytes32(0),
+                    destination: destination,
+                    selector: selector
+                });
+            } else {
+                result[i] = ComputedRole({
+                    role: roles[i],
+                    destination: address(0),
+                    selector: bytes4(0)
+                });
             }
         }
 
@@ -453,11 +451,8 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         return bytes32(_selector) | bytes32(uint256(uint160(_contract)));
     }
 
-    function calculateSelectorAndAddress(bytes32 role) public pure returns (ComputedRole memory) {
-        return ComputedRole({
-            destination: address(uint160(uint256(role))),
-            selector: bytes4(role)
-        });
+    function calculateSelectorAndAddress(bytes32 role) public pure returns (address destination, bytes4 selector) {
+        return (address(uint160(uint256(role))), bytes4(role));
     }
 
     // ================================================
@@ -531,16 +526,11 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         address _destination,
         bytes memory _data
     ) internal notNull(_destination) returns (uint256) {
-        uint24 lockDuration = secondsTimeLocked;
-        uint32 lockedUntil = uint32(block.timestamp) + lockDuration;
+        bool isForceRevokeVeto = _isForceRevokeVetoTransaction(_destination, _data);
 
-        uint32 l_secondsValid = secondsValid;
-        if (_isForceRevokeVetoTransaction(_destination, _data)) {
-            lockDuration = secondsForceRevokeVetoTimeLocked;
-            lockedUntil = uint32(block.timestamp) + lockDuration;
-            // Forced revocation expire after a longer fixed duration
-            l_secondsValid = FORCED_REVOCATION_SECONDS_VALID;
-        }
+        uint24 lockDuration = isForceRevokeVeto ? secondsForceRevokeVetoTimeLocked : secondsTimeLocked;
+        uint32 lockedUntil = uint32(block.timestamp) + lockDuration;
+        uint32 l_secondsValid = isForceRevokeVeto ? FORCED_REVOCATION_SECONDS_VALID : secondsValid;
 
         uint256 transactionId = transactionCount;
         transactions[transactionId] = Transaction({

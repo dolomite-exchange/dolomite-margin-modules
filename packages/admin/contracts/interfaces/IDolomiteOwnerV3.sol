@@ -51,6 +51,7 @@ interface IDolomiteOwnerV3 is IAccessControl, IDolomiteOwnerWithSubmitAndExecute
     }
 
     struct ComputedRole {
+        bytes32 role;
         address destination;
         bytes4 selector;
     }
