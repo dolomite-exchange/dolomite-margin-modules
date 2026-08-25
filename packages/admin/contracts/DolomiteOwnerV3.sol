@@ -400,69 +400,20 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
         return _allAddresses.values();
     }
 
-    function getTransactionCount(
+    function getTransactions(
         uint256 _from,
-        uint256 _to,
-        bool _pending,
-        bool _executed
-    ) external view returns (uint256) {
-        Require.that(
-            _to >= _from,
-            _FILE,
-            "Invalid range"
-        );
+        uint256 _to
+    ) external view returns (Transaction[] memory) {
         if (_to > transactionCount) {
             _to = transactionCount;
         }
 
-        uint256 count;
+        Transaction[] memory trans = new Transaction[](_to - _from);
         for (uint256 i = _from; i < _to; ++i) {
-            if (
-                (_pending && !transactions[i].executed && !transactions[i].cancelled && !isTimelockExpired(i))
-                || (_executed && transactions[i].executed)
-            ) {
-                count += 1;
-            }
-        }
-        return count;
-    }
-
-    function getTransactionIds(
-        uint256 _from,
-        uint256 _to,
-        bool _pending,
-        bool _executed
-    ) external view returns (uint256[] memory) {
-        Require.that(
-            _to >= _from,
-            _FILE,
-            "Invalid range"
-        );
-        if (_to > transactionCount) {
-            _to = transactionCount;
-        }
-        if (_from >= _to) {
-            return new uint256[](0);
+            trans[i - _from] = transactions[i];
         }
 
-        uint256[] memory transactionIdsTemp = new uint256[](_to - _from);
-        uint256 count;
-        for (uint256 i = _from; i < _to; ++i) {
-            if (
-                (_pending && !transactions[i].executed && !transactions[i].cancelled && !isTimelockExpired(i))
-                || (_executed && transactions[i].executed)
-            ) {
-                transactionIdsTemp[count] = i;
-                count += 1;
-            }
-        }
-
-        uint256[] memory _transactionIds = new uint256[](count);
-        for (uint256 i = 0; i < count; ++i) {
-            _transactionIds[i] = transactionIdsTemp[i];
-        }
-
-        return _transactionIds;
+        return trans;
     }
 
     function getDefaultAdmin() public view returns (address) {
