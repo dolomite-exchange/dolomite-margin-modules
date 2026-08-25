@@ -46,6 +46,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'upgradeTo',
       [glvRegistryImplAddress],
     ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxV2Ecosystem.live,
+      'registry',
+      'ownerSetIsHandler',
+      [core.gmxV2Ecosystem.gmxDepositHandlerV2.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxV2Ecosystem.live,
+      'registry',
+      'ownerSetIsHandler',
+      [core.gmxV2Ecosystem.gmxWithdrawalHandlerV2.address, true],
+    )
   ];
 
   return {
