@@ -4,12 +4,11 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { encodeReportCard } from '../../../../utils/encoding/report-card-encoder-utils';
-import { encodeSetBorrowCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Adjust USD1 borrow cap
+ * - Adjust BTCcx and WLFIcx caps
  */
 async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   const network = await getAndCheckSpecificNetwork(Network.Ethereum);
@@ -18,20 +17,21 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
     blockNumber: await getRealLatestBlockNumber(false, network),
   });
 
-  await encodeReportCard(
-    core,
-    [
-      core.chainlinkPriceOracleV3,
-      core.redstonePriceOracleV3,
-      core.chroniclePriceOracleV3,
-      core.constantPriceOracle,
-      core.erc4626Oracle,
-      core.twapPriceOracleV3,
-    ],
-  );
+  // await encodeReportCard(
+  //   core,
+  //   [
+  //     core.chainlinkPriceOracleV3,
+  //     core.redstonePriceOracleV3,
+  //     core.chroniclePriceOracleV3,
+  //     core.constantPriceOracle,
+  //     core.erc4626Oracle,
+  //     core.twapPriceOracleV3,
+  //   ],
+  // );
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetBorrowCapWithMagic(core, core.marketIds.usd1, 250_000_000),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.btcCx, 2_750),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.wlfiCx, 1),
   ];
 
   return {
