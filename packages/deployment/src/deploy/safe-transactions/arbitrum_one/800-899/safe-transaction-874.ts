@@ -59,7 +59,21 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'registry',
       'ownerSetIsHandler',
       [core.gmxV2Ecosystem.gmxWithdrawalHandlerV2.address, true],
-    )
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.glvEcosystem.live,
+      'registry',
+      'ownerSetIsHandler',
+      [core.glvEcosystem.glvDepositHandler.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.glvEcosystem.live,
+      'registry',
+      'ownerSetIsHandler',
+      [core.glvEcosystem.glvWithdrawalHandler.address, true],
+    ),
   ];
 
   return {
