@@ -29,7 +29,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminClaimExcessTokens } from "./interfaces/IAdminClaimExcessTokens.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./interfaces/IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -71,7 +71,7 @@ contract AdminClaimExcessTokens is IAdminClaimExcessTokens, OnlyDolomiteMargin, 
         checkPermission(this.claimExcessTokens.selector, msg.sender)
     {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerWithdrawExcessTokens.selector,

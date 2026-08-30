@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
 
 
 /**
