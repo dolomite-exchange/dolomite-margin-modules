@@ -122,7 +122,7 @@ export const base_config: HardhatUserConfig = {
           },
         ]
         : undefined,
-      chainId: parseInt(Network.Berachain, 10),
+      chainId: parseInt(Network.Ethereum, 10),
     },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),

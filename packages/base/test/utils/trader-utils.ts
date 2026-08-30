@@ -240,6 +240,41 @@ export async function getCalldataForOogaBooga(
   };
 }
 
+export async function getCalldataForMatcha(
+  chainId: Network,
+  inputToken: { address: address },
+  inputAmount: BigNumber,
+  outputToken: { address: address },
+  receiver: { address: address },
+): Promise<TraderOutput> {
+  const url = 'https://api.0x.org/swap/allowance-holder/quote';
+
+  const result = await axios.get(url, {
+    headers: {
+      '0x-api-key': process.env.ZEROX_API_KEY,
+      '0x-version': 'v2'
+    },
+    params: {
+      chainId: chainId,
+      buyToken: outputToken.address,
+      sellToken: inputToken.address,
+      sellAmount: inputAmount.toString(),
+      taker: receiver.address,
+      sellEntireBalance: true
+    },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in prices', error);
+      throw error;
+    });
+
+  return {
+    calldata: `0x${result.transaction.data.slice(10)}`, // get rid of the method ID
+    outputAmount: BigNumber.from(result.minBuyAmount),
+  };
+}
+
 export async function getCalldataForParaswap<T extends DolomiteNetwork>(
   inputAmount: BigNumber,
   inputToken: { address: address },
