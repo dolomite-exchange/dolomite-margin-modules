@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import {
   DolomiteAccountRiskOverrideSetter,
   DolomiteAccountRiskOverrideSetter__factory,
@@ -519,6 +519,42 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
     });
   });
 
+  describe('#ownerSetWhitelistedSettingsByUser', () => {
+    it('should work normally', async () => {
+      const marginRatio = { value: parseEther('.5') };
+      const liquidationReward = { value: parseEther('.5') };
+
+      const res = await riskOverrideSetter.connect(core.governance).ownerSetWhitelistSettingsByUser(
+        core.hhUser4.address,
+        getMarketIdBitmap([core.marketIds.wbera, core.marketIds.usdc]),
+        marginRatio,
+        liquidationReward
+      );
+      await expectEvent(riskOverrideSetter, res, 'WhitelistedSettingsSet', {
+        marketIdBitmap: 6,
+        marginRatioOverride: marginRatio,
+        liquidationRewardOverride: liquidationReward,
+      });
+
+      const settings = await riskOverrideSetter.getWhitelistedSettingsByUser(core.hhUser4.address);
+      expect(settings.marginRatioOverride.value).to.eq(marginRatio.value);
+      expect(settings.liquidationRewardOverride.value).to.eq(liquidationReward.value);
+      expect(settings.marketIdBitmap).to.eq(6); // market ids 1 and 2
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        riskOverrideSetter.connect(core.hhUser4).ownerSetWhitelistSettingsByUser(
+          core.hhUser4.address,
+          getMarketIdBitmap([core.marketIds.wbera, core.marketIds.usdc]),
+          { value: parseEther('.5') },
+          { value: parseEther('10') }
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser4.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#getRiskFeatureForSingleCollateralByMarketId', () => {
     it('should fail if risk feature is borrow only', async () => {
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
@@ -535,6 +571,33 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
   });
 
   describe('#getAccountRiskOverride', () => {
+    it('should work normally with whitelisted user', async () => {
+      const marginRatio = { value: parseEther('.2') };
+      const liquidationReward = { value: parseEther('.1') };
+      await riskOverrideSetter.connect(core.governance).ownerSetWhitelistSettingsByUser(
+        core.hhUser4.address,
+        getMarketIdBitmap([core.marketIds.wbera, core.marketIds.usdc]),
+        marginRatio,
+        liquidationReward
+      );
+
+      await setupWBERABalance(core, core.hhUser4, wberaAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser4, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
+      await core.borrowPositionProxyV2.connect(core.hhUser4).transferBetweenAccounts(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+
+      const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
+        { owner: core.hhUser4.address, number: borrowAccountNumber },
+      );
+      expect(accountRiskOverride[0].value).to.eq(marginRatio.value);
+      expect(accountRiskOverride[1].value).to.eq(liquidationReward.value);
+    });
+
     it('should work normally with borrow only', async () => {
       // setup USDC to be "borrow_only"
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
@@ -778,6 +841,30 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
     });
 
+    it('should fail if whitelisted user has an invalid market', async () => {
+      const marginRatio = { value: parseEther('.2') };
+      const liquidationReward = { value: parseEther('.1') };
+      await riskOverrideSetter.connect(core.governance).ownerSetWhitelistSettingsByUser(
+        core.hhUser4.address,
+        getMarketIdBitmap([core.marketIds.usdt, core.marketIds.usdc]),
+        marginRatio,
+        liquidationReward
+      );
+
+      await setupWBERABalance(core, core.hhUser4, wberaAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser4, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
+      await expectThrow(
+        core.borrowPositionProxyV2.connect(core.hhUser4).transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.usdc,
+          usdcAmount,
+          BalanceCheckFlag.None,
+        ),
+        `AccountRiskOverrideSetter: Invalid market id for user <${core.marketIds.wbera}>`
+      );
+    });
+
     it('should fail if user is using borrow only as collateral', async () => {
       await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
@@ -1016,3 +1103,10 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
     });
   });
 });
+
+function getMarketIdBitmap(marketIds: BigNumberish[]): BigNumber {
+  return marketIds.reduce(
+    (bitmap: BigNumber, marketId) => bitmap.or(ONE_BI.shl(BigNumber.from(marketId).toNumber())),
+    ZERO_BI,
+  );
+}

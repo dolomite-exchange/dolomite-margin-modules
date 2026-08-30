@@ -46,9 +46,11 @@ contract DolomiteAccountRiskOverrideSetter is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "AccountRiskOverrideSetter";
+
     bytes32 private constant _MARKET_TO_CATEGORY_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToCategoryMap")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CATEGORY_TO_CATEGORY_PARAM_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.categoryToCategoryParamMap")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _MARKET_TO_RISK_FEATURE_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToRiskFeatureMap")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _WHITELISTED_SETTINGS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelistedSettings")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER = 100;
 
     uint256 private constant _MASK_CATEGORY_BERA = 0x000F;
@@ -85,6 +87,21 @@ contract DolomiteAccountRiskOverrideSetter is
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _setUint256InMap(_MARKET_TO_CATEGORY_MAP_SLOT, address(uint160(_marketId)), uint256(_category));
         emit CategorySet(_marketId, _category);
+    }
+
+    function ownerSetWhitelistSettingsByUser(
+        address _user,
+        uint256 _marketIdBitmap,
+        IDolomiteStructs.Decimal calldata _marginRatioOverride,
+        IDolomiteStructs.Decimal calldata _liquidationRewardOverride
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        WhitelistedSettings storage settings = _getWhitelistedSettingsByUser(_user);
+
+        settings.marketIdBitmap = _marketIdBitmap;
+        settings.marginRatioOverride = _marginRatioOverride;
+        settings.liquidationRewardOverride = _liquidationRewardOverride;
+
+        emit WhitelistedSettingsSet(_user, _marketIdBitmap, _marginRatioOverride, _liquidationRewardOverride);
     }
 
     function ownerSetCategoryParam(
@@ -189,6 +206,21 @@ contract DolomiteAccountRiskOverrideSetter is
             return _getDefaultValuesForOverride();
         }
 
+        WhitelistedSettings memory settings = getWhitelistedSettingsByUser(_account.owner);
+        if (settings.marginRatioOverride.value != 0) {
+            for (uint256 i; i < marketIdsLength; ++i) {
+                if (settings.marketIdBitmap & (1 << marketIds[i]) != 0) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    settings.marketIdBitmap & (1 << marketIds[i]) != 0,
+                    _FILE,
+                    "Invalid market id for user",
+                    marketIds[i]
+                );
+            }
+
+            return (settings.marginRatioOverride, settings.liquidationRewardOverride);
+        }
+
         (
             IDolomiteStructs.Decimal memory marginRatioOverride,
             IDolomiteStructs.Decimal memory liquidationRewardOverride
@@ -287,6 +319,10 @@ contract DolomiteAccountRiskOverrideSetter is
         }
 
         return _getRiskFeatureParamByMarketId(_marketId);
+    }
+
+    function getWhitelistedSettingsByUser(address _user) public view returns (WhitelistedSettings memory) {
+        return _getWhitelistedSettingsByUser(_user);
     }
 
     // ===================== Internal Functions =====================
@@ -437,6 +473,15 @@ contract DolomiteAccountRiskOverrideSetter is
         return param;
     }
 
+    function _getWhitelistedSettingsByUser(
+        address _user
+    ) internal pure returns (WhitelistedSettings storage whitelistedSettings) {
+        bytes32 slot = keccak256(abi.encode(_WHITELISTED_SETTINGS_SLOT, _user));
+        assembly {
+            whitelistedSettings.slot := slot
+        }
+    }
+
     function _getMarketToRiskFeatureSlot(uint256 _marketId) internal pure returns (bytes32) {
         return keccak256(abi.encode(_MARKET_TO_RISK_FEATURE_MAP_SLOT, _marketId));
     }
@@ -513,4 +558,5 @@ contract DolomiteAccountRiskOverrideSetter is
         CategoryStruct storage categoryStruct = _getCategoryParamByCategory(_category);
         return (categoryStruct.marginRatioOverride, categoryStruct.liquidationRewardOverride);
     }
+
 }
