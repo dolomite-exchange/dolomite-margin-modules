@@ -71,6 +71,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DAO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dao")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _D_TOKEN_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dTokenHandler")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -245,6 +246,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetIsolationModeMulticallFunctions(_selectors);
     }
 
+    function ownerSetDTokenHandler(
+        address _dTokenHandler
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDTokenHandler(_dTokenHandler);
+    }
+
     // ========================== View Functions =========================
 
     function adminRegistry() public view returns (address) {
@@ -333,6 +342,10 @@ contract DolomiteRegistryImplementation is
         address result = _getAddress(_DAO_SLOT);
         assert(result != address(0));
         return result;
+    }
+
+    function dTokenHandler() public view returns (address) {
+        return _getAddress(_D_TOKEN_HANDLER_SLOT);
     }
 
     // ===================== Internal Functions =====================
@@ -599,5 +612,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DAO_SLOT, _dao);
         emit DaoSet(_dao);
+    }
+
+    function _ownerSetDTokenHandler(
+        address _dTokenHandler
+    ) internal {
+        Require.that(
+            _dTokenHandler != address(0),
+            _FILE,
+            "Invalid dTokenHandler"
+        );
+
+        _setAddress(_D_TOKEN_HANDLER_SLOT, _dTokenHandler);
+        emit DTokenHandlerSet(_dTokenHandler);
     }
 }
