@@ -43,6 +43,8 @@ interface IAdminRegistry {
     // ==================== View Functions ====================
     // ========================================================
 
+    function ADMIN_FUNCTION_SELECTOR() external pure returns (bytes4);
+
     function role(bytes4 _selector, address _contract) external pure returns (bytes32);
 
     function hasPermission(bytes4 _selector, address _contract, address _account) external view returns (bool);

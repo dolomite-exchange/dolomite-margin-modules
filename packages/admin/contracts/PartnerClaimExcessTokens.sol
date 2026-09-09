@@ -30,7 +30,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./interfaces/IDolomiteOwnerWithSubmitAndExecute.sol";
 import { IPartnerClaimExcessTokens } from "./interfaces/IPartnerClaimExcessTokens.sol";
 
 
@@ -123,7 +123,7 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, AdminRegistryHelper, IP
             "Invalid sender"
         );
 
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerWithdrawExcessTokens.selector,

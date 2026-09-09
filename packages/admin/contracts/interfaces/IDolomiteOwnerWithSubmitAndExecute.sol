@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2025 Dolomite
+    Copyright 2023 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,29 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { IAdminRegistryHelper } from "./IAdminRegistryHelper.sol";
-
 
 /**
- * @title   IAdminExpirePosition
+ * @title   IDolomiteOwnerWithSubmitAndExecute
  * @author  Dolomite
  *
- * @notice  Interface for the AdminExpirePosition contract
+ * @notice  Interface for the {submitTransactionAndExecute} function for IDolomiteOwner
  */
-interface IAdminExpirePosition is IAdminRegistryHelper {
-
-    struct ExpirePositionParams {
-        IDolomiteStructs.AccountInfo account;
-        uint256[] owedMarkets;
-        uint256 expirationTimestamp;
-    }
+interface IDolomiteOwnerWithSubmitAndExecute {
 
     // ========================================================
-    // ==================== Admin Functions ===================
+    // ================ Transaction Functions =================
     // ========================================================
 
-    function expirePositions(
-        ExpirePositionParams[] memory positions
-    ) external;
+    function submitTransactionAndExecute(address _destination, bytes calldata _data) external returns (bytes memory);
 }

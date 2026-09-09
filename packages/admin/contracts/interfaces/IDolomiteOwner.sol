@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -29,7 +30,7 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
  *
  * @notice  Interface for the DolomiteOwner contract
  */
-interface IDolomiteOwner is IAccessControl {
+interface IDolomiteOwner is IAccessControl, IDolomiteOwnerWithSubmitAndExecute {
 
     // ========================================================
     // ======================== Structs =======================
@@ -103,8 +104,6 @@ interface IDolomiteOwner is IAccessControl {
     function executeTransactions(uint256[] calldata _transactionIds) external returns (bytes[] memory);
 
     function executeTransaction(uint256 _transactionId) external returns (bytes memory);
-
-    function submitTransactionAndExecute(address _destination, bytes calldata _data) external returns (bytes memory);
 
     // ========================================================
     // =================== Getter Functions ===================
