@@ -6,6 +6,8 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import getScriptName from '../../../../utils/get-script-name';
 import { checkPrice } from 'packages/deployment/src/utils/invariant-utils';
 import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { BTC_PLACEHOLDER_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
 
 /**
  * This script encodes the following transactions:
@@ -18,8 +20,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const btc = IERC20__factory.connect(BTC_PLACEHOLDER_MAP[Network.Mantle].address, core.hhUser1);
+
   const transactions: EncodedTransaction[] = [
-    ...await encodeInsertChainlinkOracleV3(core, core.tokens.cmEth),
+    ...(await encodeInsertChainlinkOracleV3(core, btc, undefined, undefined, undefined, { ignoreDescription: true })),
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.fbtc)),
   ];
 
   return {
@@ -36,7 +41,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkPrice(core, core.tokens.cmEth);
+      await checkPrice(core, core.tokens.fbtc);
     },
   };
 }

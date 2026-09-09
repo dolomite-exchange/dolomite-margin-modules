@@ -4,22 +4,34 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkPrice } from 'packages/deployment/src/utils/invariant-utils';
-import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Set CMETH price oracle
+ * - Adjust BTCcx and WLFIcx caps
  */
-async function main(): Promise<DryRunOutput<Network.Mantle>> {
-  const network = await getAndCheckSpecificNetwork(Network.Mantle);
+async function main(): Promise<DryRunOutput<Network.Ethereum>> {
+  const network = await getAndCheckSpecificNetwork(Network.Ethereum);
   const core = await setupCoreProtocol({
     network,
-    blockNumber: await getRealLatestBlockNumber(true, network),
+    blockNumber: await getRealLatestBlockNumber(false, network),
   });
 
+  // await encodeReportCard(
+  //   core,
+  //   [
+  //     core.chainlinkPriceOracleV3,
+  //     core.redstonePriceOracleV3,
+  //     core.chroniclePriceOracleV3,
+  //     core.constantPriceOracle,
+  //     core.erc4626Oracle,
+  //     core.twapPriceOracleV3,
+  //   ],
+  // );
+
   const transactions: EncodedTransaction[] = [
-    ...await encodeInsertChainlinkOracleV3(core, core.tokens.cmEth),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.btcCx, 2_750),
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.wlfiCx, 1),
   ];
 
   return {
@@ -36,7 +48,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkPrice(core, core.tokens.cmEth);
     },
   };
 }
