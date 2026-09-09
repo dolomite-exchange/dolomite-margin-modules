@@ -4,6 +4,7 @@ import {
   Network,
   ONE_BI,
   ONE_ETH_BI,
+  THIRTY_MINS_SECONDS,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -26,8 +27,6 @@ import {
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
-
-const THIRTY_MINS = 60 * 30;
 
 /**
  * This script encodes the following transactions:
@@ -53,42 +52,42 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.dolo, {
       tokenPool: IAlgebraV3Pool__factory.connect(DOLO_WBERA_KODIAK_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: parseEther(`${0.001}`),
       maxPrice: parseEther(`${1_000}`),
       tokenPair: core.tokens.wbera,
     })),
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.henlo, {
       tokenPool: IAlgebraV3Pool__factory.connect(HENLO_WBERA_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: ONE_BI,
       maxPrice: MAX_UINT_112_BI.sub(1),
       tokenPair: core.tokens.wbera,
     })),
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.iBera, {
       tokenPool: IAlgebraV3Pool__factory.connect(IBERA_WBERA_KODIAK_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: parseEther(`${0.8}`),
       maxPrice: parseEther(`${1.5}`),
       tokenPair: core.tokens.wbera,
     })),
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.iBgt, {
       tokenPool: IAlgebraV3Pool__factory.connect(IBGT_WBERA_KODIAK_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: parseEther(`${0.8}`),
       maxPrice: parseEther(`${1.5}`),
       tokenPair: core.tokens.wbera,
     })),
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.wgBera, {
       tokenPool: IAlgebraV3Pool__factory.connect(WG_BERA_IBGT_KODIAK_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: parseEther(`${0.75}`),
       maxPrice: parseEther(`${1.5}`),
       tokenPair: core.tokens.iBgt,
     })),
     ...(await encodeInsertTwapV3Oracle(core as any, core.tokens.kdk, {
       tokenPool: IAlgebraV3Pool__factory.connect(KDK_USDT_KODIAK_POOL_MAP[network], core.hhUser1),
-      observationInterval: THIRTY_MINS, // 30 mins
+      observationInterval: THIRTY_MINS_SECONDS, // 30 mins
       minPrice: parseEther(`${0.001}`),
       maxPrice: parseEther(`${1_000}`),
       tokenPair: core.tokens.usdt,
