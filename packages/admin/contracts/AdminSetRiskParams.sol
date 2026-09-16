@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteAccountRiskOverrideSetter } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol"; // solhint-disable-line max-line-length
+import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMarginV2Admin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginV2Admin.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
@@ -39,7 +40,9 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSetRiskParams {
 
     bytes32 private constant _FILE = "AdminSetRiskParams";
+    uint256 private constant _ARBITRUM_CHAIN_ID = 42161;
     bytes32 public constant ADMIN_SET_RISK_PARAMS_ROLE = keccak256("ADMIN_SET_RISK_PARAMS_ROLE");
+    uint256 private immutable _CHAIN_ID;
 
     address public dolomiteAccountRiskOverride;
 
@@ -48,10 +51,12 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
     // ===================================================================
 
     constructor(
+        uint256 _chainId,
         address _dolomiteAccountRiskOverride,
         address _adminRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) AdminRegistryHelper(_adminRegistry) {
+        _CHAIN_ID = _chainId;
         _ownerSetDolomiteAccountRiskOverride(_dolomiteAccountRiskOverride);
     }
 
@@ -78,7 +83,7 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
-                IDolomiteMarginV2Admin.ownerSetMaxSupplyWei.selector,
+                _getMaxSupplyWeiSelector(),
                 _marketId,
                 _maxSupplyWei
             )
@@ -95,7 +100,7 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
             IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
                 address(DOLOMITE_MARGIN()),
                 abi.encodeWithSelector(
-                    IDolomiteMarginV2Admin.ownerSetMaxSupplyWei.selector,
+                    _getMaxSupplyWeiSelector(),
                     _marketIds[i],
                     _maxSupplyWeis[i]
                 )
@@ -180,7 +185,7 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
-                IDolomiteMarginV2Admin.ownerSetLiquidationSpreadPremium.selector,
+                _getMarketLiquidationSpreadPremiumSelector(),
                 _marketId,
                 _liquidationSpreadPremium
             )
@@ -197,7 +202,7 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
             IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
                 address(DOLOMITE_MARGIN()),
                 abi.encodeWithSelector(
-                    IDolomiteMarginV2Admin.ownerSetLiquidationSpreadPremium.selector,
+                    _getMarketLiquidationSpreadPremiumSelector(),
                     _marketIds[i],
                     _liquidationSpreadPremiums[i]
                 )
@@ -273,6 +278,10 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         );
     }
 
+    function isArbitrum() public view returns (bool) {
+        return _CHAIN_ID == _ARBITRUM_CHAIN_ID;
+    }
+
     // ===================================================================
     // ========================= Internal Functions ======================
     // ===================================================================
@@ -285,5 +294,19 @@ contract AdminSetRiskParams is OnlyDolomiteMargin, AdminRegistryHelper, IAdminSe
         );
         dolomiteAccountRiskOverride = _dolomiteAccountRiskOverride;
         emit DolomiteAccountRiskOverrideSet(_dolomiteAccountRiskOverride);
+    }
+
+    function _getMaxSupplyWeiSelector() internal view returns (bytes4) {
+        if (isArbitrum()) {
+            return IDolomiteMarginAdmin.ownerSetMaxWei.selector;
+        }
+        return IDolomiteMarginV2Admin.ownerSetMaxSupplyWei.selector;
+    }
+
+    function _getMarketLiquidationSpreadPremiumSelector() internal view returns (bytes4) {
+        if (isArbitrum()) {
+            return IDolomiteMarginAdmin.ownerSetSpreadPremium.selector;
+        }
+        return IDolomiteMarginV2Admin.ownerSetLiquidationSpreadPremium.selector;
     }
 }

@@ -4,7 +4,7 @@ import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/u
 import {
   ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
-  ConstantPriceOracle__factory, ERC4626PriceOracle,
+  ConstantPriceOracle__factory,
   ERC4626PriceOracle__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
@@ -36,7 +36,6 @@ import {
   IAdminClaimExcessTokens__factory,
   IAdminExpirePosition__factory,
   IAdminPauseMarket__factory,
-  IAdminRegistry__factory,
 } from 'packages/admin/src/types';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
@@ -968,11 +967,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const adminPauseMarket = IAdminPauseMarket__factory.connect(
     ModuleDeployments.AdminPauseMarketV2[config.network].address,
-    governance,
-  );
-
-  const adminRegistry = IAdminRegistry__factory.connect(
-    ModuleDeployments.AdminRegistryProxy[config.network].address,
     governance,
   );
 

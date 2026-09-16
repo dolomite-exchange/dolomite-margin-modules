@@ -7,7 +7,7 @@ import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { AdminSetRiskParams, AdminSetRiskParams__factory } from '../src/types';
-import { CoreProtocolEthereum } from 'packages/base/test/utils/core-protocols/core-protocol-ethereum';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 
@@ -40,16 +40,16 @@ const SET_CATEGORY_BY_MARKET_ID_SELECTOR = keccak256(toUtf8Bytes('setCategoryByM
 const SET_CATEGORY_PARAM_SELECTOR = keccak256(toUtf8Bytes('setCategoryParam(uint8,(uint256),(uint256))')).slice(0, 10);
 const SET_RISK_FEATURE_BY_MARKET_ID_SELECTOR = keccak256(toUtf8Bytes('setRiskFeatureByMarketId(uint256,uint8,bytes)')).slice(0, 10);
 
-const OWNER_SET_MAX_SUPPLY_WEI_SELECTOR = keccak256(toUtf8Bytes('ownerSetMaxSupplyWei(uint256,uint256)')).slice(0, 10);
+const OWNER_SET_MAX_SUPPLY_WEI_SELECTOR = keccak256(toUtf8Bytes('ownerSetMaxWei(uint256,uint256)')).slice(0, 10);
 const OWNER_SET_MAX_BORROW_WEI_SELECTOR = keccak256(toUtf8Bytes('ownerSetMaxBorrowWei(uint256,uint256)')).slice(0, 10);
 const OWNER_SET_MARGIN_PREMIUM_SELECTOR = keccak256(toUtf8Bytes('ownerSetMarginPremium(uint256,(uint256))')).slice(0, 10);
-const OWNER_SET_LIQUIDATION_SPREAD_PREMIUM_SELECTOR = keccak256(toUtf8Bytes('ownerSetLiquidationSpreadPremium(uint256,(uint256))')).slice(0, 10);
+const OWNER_SET_LIQUIDATION_SPREAD_PREMIUM_SELECTOR = keccak256(toUtf8Bytes('ownerSetSpreadPremium(uint256,(uint256))')).slice(0, 10);
 // tslint:enable
 
-describe('AdminSetRiskParams', () => {
+describe('AdminSetRiskParams_Arbitrum', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolEthereum;
+  let core: CoreProtocolArbitrumOne;
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
 
@@ -57,15 +57,15 @@ describe('AdminSetRiskParams', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      network: Network.Ethereum,
-      blockNumber: 24_800_000,
+      network: Network.ArbitrumOne,
+      blockNumber: 503_537_000,
     });
 
     adminSetRiskParams = await createContractWithAbi<AdminSetRiskParams>(
       AdminSetRiskParams__factory.abi,
       AdminSetRiskParams__factory.bytecode,
       [
-        Network.Ethereum,
+        Network.ArbitrumOne,
         core.dolomiteAccountRiskOverrideSetter.address,
         core.adminRegistry.address,
         core.dolomiteMargin.address,
@@ -106,7 +106,7 @@ describe('AdminSetRiskParams', () => {
       [core.dolomiteAccountRiskOverrideSetter.address],
     );
 
-    expect(await adminSetRiskParams.isArbitrum()).to.be.false;
+    expect(await adminSetRiskParams.isArbitrum()).to.be.true;
 
     snapshotId = await snapshot();
   });
@@ -165,7 +165,7 @@ describe('AdminSetRiskParams', () => {
         core.marketIds.usdc,
         maxSupplyWei
       );
-      expect((await core.dolomiteMargin.getMarketMaxSupplyWei(core.marketIds.usdc)).value).to.equal(maxSupplyWei);
+      expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc)).value).to.equal(maxSupplyWei);
     });
 
     it('should fail when caller does not have permission', async () => {
@@ -192,8 +192,8 @@ describe('AdminSetRiskParams', () => {
         [core.marketIds.usdc, core.marketIds.weth],
         maxSupplyWeis
       );
-      expect((await core.dolomiteMargin.getMarketMaxSupplyWei(core.marketIds.usdc)).value).to.equal(maxSupplyWeis[0]);
-      expect((await core.dolomiteMargin.getMarketMaxSupplyWei(core.marketIds.weth)).value).to.equal(maxSupplyWeis[1]);
+      expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc)).value).to.equal(maxSupplyWeis[0]);
+      expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.weth)).value).to.equal(maxSupplyWeis[1]);
     });
 
     it('should fail when caller does not have permission', async () => {
@@ -208,7 +208,7 @@ describe('AdminSetRiskParams', () => {
   });
 
   describe('#setMarketMaxBorrowWei', () => {
-    it('should work normally', async () => {
+    it('should fail normally on Arbitrum', async () => {
       await core.adminRegistry.connect(core.governance).grantPermission(
         SET_MARKET_MAX_BORROW_WEI_SELECTOR,
         adminSetRiskParams.address,
@@ -216,11 +216,9 @@ describe('AdminSetRiskParams', () => {
       );
 
       const maxBorrowWei = parseEther('500000');
-      await adminSetRiskParams.connect(core.hhUser4).setMarketMaxBorrowWei(
-        core.marketIds.usdc,
-        maxBorrowWei
+      await expectThrow(
+        adminSetRiskParams.connect(core.hhUser4).setMarketMaxBorrowWei(core.marketIds.usdc, maxBorrowWei),
       );
-      expect((await core.dolomiteMargin.getMarketMaxBorrowWei(core.marketIds.usdc)).value).to.equal(maxBorrowWei);
     });
 
     it('should fail when caller does not have permission', async () => {
@@ -235,7 +233,7 @@ describe('AdminSetRiskParams', () => {
   });
 
   describe('#setMarketMaxBorrowWeis', () => {
-    it('should work normally', async () => {
+    it('should fail normally on Arbitrum', async () => {
       await core.adminRegistry.connect(core.governance).grantPermission(
         SET_MARKET_MAX_BORROW_WEIS_SELECTOR,
         adminSetRiskParams.address,
@@ -243,12 +241,11 @@ describe('AdminSetRiskParams', () => {
       );
 
       const maxBorrowWeis = [parseEther('500000'), parseEther('1000000')];
-      await adminSetRiskParams.connect(core.hhUser4).setMarketMaxBorrowWeis(
-        [core.marketIds.usdc, core.marketIds.weth],
-        maxBorrowWeis
+      await expectThrow(
+        adminSetRiskParams
+          .connect(core.hhUser4)
+          .setMarketMaxBorrowWeis([core.marketIds.usdc, core.marketIds.weth], maxBorrowWeis),
       );
-      expect((await core.dolomiteMargin.getMarketMaxBorrowWei(core.marketIds.usdc)).value).to.equal(maxBorrowWeis[0]);
-      expect((await core.dolomiteMargin.getMarketMaxBorrowWei(core.marketIds.weth)).value).to.equal(maxBorrowWeis[1]);
     });
 
     it('should fail when caller does not have permission', async () => {
@@ -336,7 +333,7 @@ describe('AdminSetRiskParams', () => {
         core.marketIds.usdc,
         liquidationPremium
       );
-      expect((await core.dolomiteMargin.getMarketLiquidationSpreadPremium(core.marketIds.usdc)).value).to.equal(
+      expect((await core.dolomiteMargin.getMarketSpreadPremium(core.marketIds.usdc)).value).to.equal(
         liquidationPremium.value
       );
     });
@@ -365,10 +362,10 @@ describe('AdminSetRiskParams', () => {
         [core.marketIds.usdc, core.marketIds.weth],
         liquidationPremiums
       );
-      expect((await core.dolomiteMargin.getMarketLiquidationSpreadPremium(core.marketIds.usdc)).value).to.equal(
+      expect((await core.dolomiteMargin.getMarketSpreadPremium(core.marketIds.usdc)).value).to.equal(
         liquidationPremiums[0].value
       );
-      expect((await core.dolomiteMargin.getMarketLiquidationSpreadPremium(core.marketIds.weth)).value).to.equal(
+      expect((await core.dolomiteMargin.getMarketSpreadPremium(core.marketIds.weth)).value).to.equal(
         liquidationPremiums[1].value
       );
     });
