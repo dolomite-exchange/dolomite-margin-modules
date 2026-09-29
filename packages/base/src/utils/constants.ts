@@ -2010,6 +2010,18 @@ export const OOGA_BOOGA_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> 
   [Network.XLayer]: undefined,
 };
 
+export const MATCHA_ALLOWANCE_HOLDER_MAP: Record<DolomiteNetwork, string | undefined> = {
+  [Network.ArbitrumOne]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Base]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Berachain]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Bnb]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Ethereum]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Ink]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.Mantle]: '0x0000000000005e88410ccdfade4a5efae4b49562',
+  [Network.Sepolia]: '0x0000000000001fF3684f28c67538d4D072C22734',
+  [Network.XLayer]: undefined,
+};
+
 export const PARASWAP_AUGUSTUS_V5_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',

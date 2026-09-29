@@ -1,6 +1,8 @@
 import {
   ChainsightPriceOracleV3,
-  ChroniclePriceOracleV3, PancakeV3PriceOracleWithModifiers,
+  ChroniclePriceOracleV3,
+  ERC4626PriceOracle,
+  PancakeV3PriceOracleWithModifiers,
   RedstonePriceOracleV3,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
@@ -166,6 +168,7 @@ export interface CoreProtocolParamsBerachain {
   chainsightPriceOracleV3: ChainsightPriceOracleV3;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   ensoEcosystem: EnsoEcosystem;
+  erc4626Oracle: ERC4626PriceOracle;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
   pendleEcosystem: PendleEcosystemBerachain;
   redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -182,6 +185,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly chainsightPriceOracleV3: ChainsightPriceOracleV3;
   public readonly ensoEcosystem: EnsoEcosystem;
+  public readonly erc4626Oracle: ERC4626PriceOracle;
   public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
   public readonly pendleEcosystem: PendleEcosystemBerachain;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -200,6 +204,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.chainsightPriceOracleV3 = berachainParams.chainsightPriceOracleV3;
     this.dolomiteTokens = berachainParams.dTokens;
     this.ensoEcosystem = berachainParams.ensoEcosystem;
+    this.erc4626Oracle = berachainParams.erc4626Oracle;
     this.marketIds = berachainParams.marketIds;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.pendleEcosystem = berachainParams.pendleEcosystem;

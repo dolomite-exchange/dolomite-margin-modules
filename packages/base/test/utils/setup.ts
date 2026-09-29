@@ -4,7 +4,7 @@ import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/u
 import {
   ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
-  ConstantPriceOracle__factory,
+  ConstantPriceOracle__factory, ERC4626PriceOracle,
   ERC4626PriceOracle__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
@@ -1538,6 +1538,10 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
       chainsightPriceOracleV3: chainsightPriceOracle,
+      erc4626Oracle: ERC4626PriceOracle__factory.connect(
+        ModuleDeployments.ERC4626PriceOracleV1[typedConfig.network].address,
+        hhUser1,
+      ),
       pendleEcosystem: pendleEcosystem,
       redstonePriceOracleV3: redstonePriceOracle,
       twapPriceOracleV3: twapPriceOracle,
