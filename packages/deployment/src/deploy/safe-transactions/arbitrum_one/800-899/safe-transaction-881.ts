@@ -4,7 +4,6 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -69,42 +68,42 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           core.marketIds.dGlvBtc,
           core.liquidatorProxyV6.address
         )),
-        "liquidator v6 not valid"
+        'liquidator v6 not valid'
       );
       assertHardhatInvariant(
         (await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
           core.marketIds.dGlvEth,
           core.liquidatorProxyV6.address
         )),
-        "liquidator v6 not valid"
+        'liquidator v6 not valid'
       );
       assertHardhatInvariant(
         (await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
           core.marketIds.dGlvBtc,
           core.freezableLiquidatorProxy.address
         )),
-        "Freezable liquidator not valid"
+        'Freezable liquidator not valid'
       );
       assertHardhatInvariant(
         (await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
           core.marketIds.dGlvEth,
           core.freezableLiquidatorProxy.address
         )),
-        "Freezable liquidator not valid"
+        'Freezable liquidator not valid'
       );
       assertHardhatInvariant(
         !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
           core.marketIds.dGlvBtc,
           core.hhUser1.address
         )),
-        "Invalid liquidator"
+        'Invalid liquidator'
       );
       assertHardhatInvariant(
         !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
           core.marketIds.dGlvEth,
           core.hhUser1.address
         )),
-        "Invalid liquidator"
+        'Invalid liquidator'
       );
     },
   };
