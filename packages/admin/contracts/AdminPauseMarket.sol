@@ -29,7 +29,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminPauseMarket } from "./interfaces/IAdminPauseMarket.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./interfaces/IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -84,7 +84,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, AdminRegistryHelper, IDolomiteP
             "Market is already paused"
         );
 
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerSetPriceOracle.selector,
@@ -112,7 +112,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, AdminRegistryHelper, IDolomiteP
         );
         _tokenToPaused[token] = false;
 
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerSetPriceOracle.selector,
