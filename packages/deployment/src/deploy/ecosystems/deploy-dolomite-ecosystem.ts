@@ -8,6 +8,7 @@ import {
   GenericTraderProxyV2__factory,
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
+  IBorrowPositionProxyV2__factory,
   IDolomiteMarginV2,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
@@ -100,6 +101,10 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
     CoreDeployment.DepositWithdrawalProxy[network].address,
     hhUser1,
+  );
+  const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
+    CoreDeployment.BorrowPositionProxyV2[network].address,
+    hhUser1
   );
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
   const expiry = getExpiryContract<T>(config, hhUser1);
@@ -338,6 +343,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
     config,
     delayedMultiSig,
     depositWithdrawalProxy,
+    borrowPositionProxyV2,
     dolomiteMargin,
     dolomiteRegistry,
     governance,
@@ -405,6 +411,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   await encodeDolomiteRouterMigrations(
     core,
     DepositWithdrawalRouter__factory.connect(depositWithdrawalRouterProxyAddress, hhUser1),
+    BorrowPositionRouter__factory.connect(borrowPositionRouterProxyAddress, hhUser1),
     [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress, genericTraderRouterProxyAddress],
     [
       depositWithdrawalRouterImplementationAddress,
