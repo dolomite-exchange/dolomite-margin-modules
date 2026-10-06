@@ -21,67 +21,36 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { ICappedExchangeRatePriceOracle } from "./interfaces/ICappedExchangeRatePriceOracle.sol";
-import { ILido } from "./interfaces/ILido.sol";
 
 
 /**
- * @title   CappedStEthExchangeRatePriceOracle
+ * @title   CappedExchangeRatePriceOracle
  * @author  Dolomite
  *
- * An implementation of the IDolomitePriceOracle interface that gets the capped wstETH <> stETH exchange rate
+ * An implementation of the IDolomitePriceOracle interface that gets a capped exchange rate price oracle
  */
-contract CappedStEthExchangeRatePriceOracle is ICappedExchangeRatePriceOracle, OnlyDolomiteMargin {
+abstract contract CappedExchangeRatePriceOracle is ICappedExchangeRatePriceOracle, OnlyDolomiteMargin {
 
-    bytes32 private constant _FILE = "CappedStEthExchangeRateOracle";
+    bytes32 private constant _FILE = "CappedExchangeRateOracle";
 
     uint256 private constant _MINIMUM_SNAPSHOT_DELAY = 604800; // 7 days
     uint256 private constant _SECONDS_PER_YEAR = 31536000;
-
-    ILido public immutable LIDO;
-    address public immutable WST_ETH;
 
     uint256 public snapshotRatio;
     uint256 public snapshotTimestamp;
     uint256 public maxGrowthPerSecond;
 
     constructor(
-        address _lido,
-        address _wstEth,
         SetCapParameters memory _params,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        LIDO = ILido(_lido);
-        WST_ETH = _wstEth;
-
         _ownerSetCapParameters(_params);
     }
 
     function ownerSetCapParameters(SetCapParameters memory _params) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetCapParameters(_params);
-    }
-
-    function getPrice(
-        address token
-    ) external view returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            token == WST_ETH,
-            _FILE,
-            "Invalid token"
-        );
-
-        uint256 currentRatio = LIDO.getPooledEthByShares(1 ether);
-        uint256 maxRatio = _getMaxRatio();
-
-        if (currentRatio > maxRatio) {
-            currentRatio = maxRatio;
-        }
-
-        return IDolomiteStructs.MonetaryPrice({
-            value: currentRatio
-        });
     }
 
     function _ownerSetCapParameters(SetCapParameters memory _params) internal {
