@@ -3,15 +3,21 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { EEthExchangeRatePriceOracle__factory } from 'packages/oracles/src/types';
+import { CappedEEthExchangeRatePriceOracle__factory } from 'packages/oracles/src/types';
 import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeInsertOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+
+const MAX_GROWTH_PER_YEAR = parseEther('.0875');
+const SNAPSHOT_TIMESTAMP = 1789681767; // from block 26_000_000
+const SNAPSHOT_RATIO = BigNumber.from('1103886226680548462');
 
 /**
- * This script deploys EEthExchangeRatePriceOracle and sets it as the weETH oracle in OracleAggregatorV2.
+ * This script deploys CappedEEthExchangeRatePriceOracle and sets it as the weETH oracle in OracleAggregatorV2.
  */
 async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   const network = await getAndCheckSpecificNetwork(Network.Ethereum);
@@ -21,11 +27,15 @@ async function main(): Promise<DryRunOutput<Network.Ethereum>> {
   });
 
   const eEthExchangeRatePriceOracleAddress = await deployContractAndSave(
-    'EEthExchangeRatePriceOracle',
-    [core.tokens.weEth.address,core.dolomiteMargin.address],
-    'EEthExchangeRatePriceOracleV1',
+    'CappedEEthExchangeRatePriceOracle',
+    [
+      core.tokens.weEth.address,
+      { snapshotRatio: SNAPSHOT_RATIO, snapshotTimestamp: SNAPSHOT_TIMESTAMP, maxGrowthPerYear: MAX_GROWTH_PER_YEAR },
+      core.dolomiteMargin.address
+    ],
+    'CappedEEthExchangeRatePriceOracleV1',
   );
-  const eEthExchangeRatePriceOracle = EEthExchangeRatePriceOracle__factory.connect(
+  const eEthExchangeRatePriceOracle = CappedEEthExchangeRatePriceOracle__factory.connect(
     eEthExchangeRatePriceOracleAddress,
     core.hhUser1,
   );
