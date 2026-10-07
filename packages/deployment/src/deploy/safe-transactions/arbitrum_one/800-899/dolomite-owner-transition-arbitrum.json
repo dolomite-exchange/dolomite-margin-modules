@@ -1,0 +1,163 @@
+{
+  "0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4": {
+    "name": "Dolomite Gnosis Safe",
+    "old-roles": [
+      "0x0000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    "computed-roles": [],
+    "executor": false,
+    "bypassTimelock": false
+  },
+  "0x107CfC6Ab0776D8C9d452f44A24853Bec87ddBc5": {
+    "name": "DolomiteBridgedUsdc4626Token",
+    "old-roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x73D25BF215A7487badC695d7ADa30f1Ad509D642": {
+    "name": "DolomiteDai4626Token",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x444868B6e8079ac2c55eea115250f92C2b2c4D14": {
+    "name": "DolomiteUsdc4626Token",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0xF2d2d55Daf93b0660297eaA10969eBe90ead5CE8": {
+    "name": "DolomiteUsdt4626Token",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x29cF6e8eCeFb8d3c9dd2b727C1b7d1df1a754F6f": {
+    "name": "DolomiteWbtc4626Token",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0xf7b5127B510E568fdC39e6Bb54e2081BFaD489AF": {
+    "name": "DolomiteWeth4626Token",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x53D93b9CD019311CABF031e52CDaEED795f9A825": {
+    "name": "Gnosis safe owned by our gnosis safe that can call final settlement proxy",
+    "roles": [
+      "0x3d7f1b521814eb7269e2c2e6dc48d033c57a2c52156a21b09d856eb4f525d58c",
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+    ],
+    "computed-roles": [
+      { "address": "0xAcd89991e6732325c227Da86674bdcC6987a2373", "signature": "0x4a2ea511" },
+      { "address": "0xAcd89991e6732325c227Da86674bdcC6987a2373", "signature": "0x5609e61e" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x6DBd962b4f62D18F756b5DE57425574c4B8228D6": {
+    "name": "DolomiteUsdcToken",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x0a52BCb532F59F6a37A9d3B5bc9FfD47E461d995": {
+    "name": "DolomiteWbtcToken",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x0cd30a0e" },
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0x47c8D387bc491Da62053Dff6acfbF225F0eE74bC": {
+    "name": "AdminClaimExcessTokensV2",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xebeb1fd66be1e1671e89346bde616d3c80a23c8200e82898d23f4769ae075f75"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0x8f6bc659" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  },
+  "0xF73632B4834Be5B4AA1ab44C6398359FD482278e": {
+    "name": "AdminPauseMarketV2",
+    "roles": [
+      "0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63",
+      "0xb74ffa3c06e003b9396a9563087dd5e1f06cf2c92548550a731a01f76c77545f"
+    ],
+    "computed-roles": [
+      { "address": "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072", "signature": "0xe8e72f75" }
+    ],
+    "executor": true,
+    "bypassTimelock": true
+  }
+}
