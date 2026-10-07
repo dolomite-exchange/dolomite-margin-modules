@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { BytesLike } from 'ethers';
 import {
   ADDRESS_ZERO,
+  BYPASS_TIMELOCK_ROLE,
   BYTES_ZERO,
+  EXECUTOR_ROLE,
   Network,
   ONE_DAY_SECONDS,
   ONE_WEEK_SECONDS,
@@ -248,10 +250,12 @@ describe('DolomiteOwnerV3', () => {
   });
 
   describe('#ownerRegisterCaller', () => {
-    it('should work normally', async () => {
+    it('should work normally with no service roles', async () => {
       const transaction = await dolomiteOwner.populateTransaction.ownerRegisterCaller(
         core.hhUser1.address,
-        computedRole
+        computedRole,
+        false,
+        false
       );
 
       await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
@@ -280,12 +284,49 @@ describe('DolomiteOwnerV3', () => {
       expect(computedRoles[0].destination).to.eq(OTHER_ADDRESS);
     });
 
+    it('should work normally with service roles', async () => {
+      const transaction = await dolomiteOwner.populateTransaction.ownerRegisterCaller(
+        core.hhUser1.address,
+        computedRole,
+        true,
+        true
+      );
+
+      await dolomiteOwner.connect(core.gnosisSafe).submitTransaction(dolomiteOwner.address, transaction.data!);
+      await increase(SECONDS_TIME_LOCKED);
+      await dolomiteOwner.connect(core.gnosisSafe).executeTransaction(0);
+
+      const allAddreses = await dolomiteOwner.getAllAddressesWithRoles();
+      const userRoles = await dolomiteOwner.getAddressRoles(core.hhUser1.address);
+      const roleAddresses = await dolomiteOwner.getRoleAddresses(OTHER_ROLE);
+      const computedRoles = await dolomiteOwner.getComputedAddressRoles(core.hhUser1.address);
+
+      expect(await dolomiteOwner.isUserApprovedToSubmitTransaction(
+        core.hhUser1.address,
+        OTHER_ADDRESS,
+        OTHER_SELECTOR
+      )).to.be.true;
+      expect(allAddreses.length).to.eq(2);
+      expect(allAddreses).to.contain(core.hhUser1.address);
+      expect(allAddreses).to.contain(core.gnosisSafe.address);
+      expect(userRoles.length).to.eq(3);
+      expect(userRoles).to.contain(OTHER_ROLE);
+      expect(userRoles).to.contain(BYPASS_TIMELOCK_ROLE);
+      expect(userRoles).to.contain(EXECUTOR_ROLE);
+      expect(userRoles).to.contain(OTHER_ROLE);
+      expect(roleAddresses.length).to.eq(1);
+      expect(roleAddresses).to.contain(core.hhUser1.address);
+      expect(computedRoles.length).to.eq(3);
+    });
+
     it('should fail if attempting default admin', async () => {
       const zeroRole = [{ role: BYTES_ZERO, destination: ZERO_ADDRESS, selector: '0x00000000' }];
       await expectThrow(
         dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
           OTHER_ADDRESS,
-          zeroRole
+          zeroRole,
+          false,
+          false
         ),
         'DolomiteOwnerV3: Invalid computed role'
       );
@@ -295,7 +336,9 @@ describe('DolomiteOwnerV3', () => {
       await expectThrow(
         dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
           OTHER_ADDRESS,
-          []
+          [],
+          false,
+          false
         ),
         'DolomiteOwnerV3: Invalid roles'
       );
@@ -305,7 +348,9 @@ describe('DolomiteOwnerV3', () => {
       await expectThrow(
         dolomiteOwner.connect(core.gnosisSafe).ownerRegisterCaller(
           OTHER_ADDRESS,
-          computedRole
+          computedRole,
+          false,
+          false
         ),
         `DolomiteOwnerV3: Invalid caller <${core.gnosisSafe.address.toLowerCase()}>`,
       );
@@ -316,7 +361,9 @@ describe('DolomiteOwnerV3', () => {
     it('should work normally with no service roles', async () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
         core.hhUser1.address,
-        computedRole
+        computedRole,
+        false,
+        false
       );
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
         bypassTimelockRole,
@@ -350,15 +397,9 @@ describe('DolomiteOwnerV3', () => {
     it('should work normally with service roles', async () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
         core.hhUser1.address,
-        computedRole
-      );
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
-        executorRole,
-        core.hhUser1.address
-      );
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
-        bypassTimelockRole,
-        core.hhUser1.address
+        computedRole,
+        true,
+        true
       );
 
       const transaction = await dolomiteOwner.populateTransaction.ownerUnregisterCaller(core.hhUser1.address, true);
@@ -630,7 +671,9 @@ describe('DolomiteOwnerV3', () => {
     it('should work normally for a registered caller', async () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
         core.hhUser1.address,
-        computedRole
+        computedRole,
+        false,
+        false
       );
       const result = await dolomiteOwner.connect(core.hhUser1).submitTransaction(
         OTHER_ADDRESS,
@@ -708,7 +751,9 @@ describe('DolomiteOwnerV3', () => {
     it('should fail if registered caller submits to self', async () => {
       await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(
         core.hhUser1.address,
-        computedRole
+        computedRole,
+        false,
+        false
       );
       const transaction = await dolomiteOwner.populateTransaction.ownerSetSecondsTimeLocked(123);
       await expectThrow(
@@ -864,9 +909,7 @@ describe('DolomiteOwnerV3', () => {
 
   describe('#submitTransactionAndExecute', () => {
     it('should work normally', async () => {
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(executorRole, core.hhUser1.address);
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(bypassTimelockRole, core.hhUser1.address);
-      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(core.hhUser1.address, setMaxWeiRole);
+      await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerRegisterCaller(core.hhUser1.address, setMaxWeiRole, true, true);
 
       const transaction = await core.dolomiteMargin.populateTransaction.ownerSetMaxWei(0, 1000);
       const result = await dolomiteOwner.connect(core.hhUser1).submitTransactionAndExecute(

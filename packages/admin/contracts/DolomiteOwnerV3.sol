@@ -189,8 +189,13 @@ contract DolomiteOwnerV3 is AccessControl, IDolomiteOwnerV3 {
 
     function ownerRegisterCaller(
         address _caller,
-        ComputedRole[] calldata _roles
+        ComputedRole[] calldata _roles,
+        bool _bypassTimelockRole,
+        bool _executorRole
     ) external onlySelf(msg.sender) {
+        if (_bypassTimelockRole) _grantRole(BYPASS_TIMELOCK_ROLE, _caller);
+        if (_executorRole) _grantRole(EXECUTOR_ROLE, _caller);
+
         uint256 len = _roles.length;
         Require.that(
             len != 0,
