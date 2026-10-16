@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-/// @notice Mock contract for benchmarking an Immersve-style card auth flow on Arbitrum.
+/// @notice Mock contract for benchmarking an Rain-style card auth flow on Arbitrum.
 /// @dev This version does NOT move USDC. It simulates account availability/collateral checks
 ///      and emits deterministic events for approve/decline/idempotent retry paths.
-contract MockImmersveAuthRouter {
+contract MockRainAuthRouter {
     enum AuthStatus {
         NONE,
         FUNDED,
@@ -157,10 +157,10 @@ contract MockImmersveAuthRouter {
     }
 
     /// @notice Main benchmark function. This should mirror the future real auth function shape.
-    /// @param authId Unique Immersve/card auth id.
+    /// @param authId Unique Rain/card auth id.
     /// @param account Simulated card account.
     /// @param amount Auth amount, normally USDC 6-decimal units.
-    /// @param authHash Hash of the Immersve auth payload / normalized payment context.
+    /// @param authHash Hash of the Rain auth payload / normalized payment context.
     function fundAuth(
         bytes32 authId,
         address account,
@@ -207,7 +207,7 @@ contract MockImmersveAuthRouter {
             return (AuthStatus.DECLINED, reason);
         }
 
-        // Simulate the accounting effect of moving funds into the Immersve float.
+        // Simulate the accounting effect of moving funds into the Rain float.
         acct.availableBalance -= amount;
         acct.dailySpent += amount;
 

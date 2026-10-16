@@ -222,7 +222,7 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
 
   // Add a 1,000 block buffer
   const realBlockNumber = await getRealLatestBlockNumber(false, config.network);
-  if (skippedMarkets > 0 && config.blockNumber < realBlockNumber - 1_000 && hardhatNetwork.name === 'hardhat') {
+  if (config.blockNumber < realBlockNumber - 1_000 && hardhatNetwork.name === 'hardhat') {
     console.log('\tForked block detected. Skipping market & vault implementation checks.');
     return deployedVaults;
   }
@@ -235,6 +235,14 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
     ModuleDeployments.MultiCallWithExceptionHandlerV2[config.network].address,
     dolomiteMargin.provider,
   );
+
+  const code = await dolomiteMargin.provider.getCode(multiCall.address);
+  if (code === '0x' && hardhatNetwork.name === 'hardhat') {
+    await hardhatNetwork.provider.send('hardhat_setCode', [
+      multiCall.address,
+      MultiCallWithExceptionHandler__factory.bytecode,
+    ]);
+  }
 
   const addressCalls = [];
   for (let i = 0; i < marketsCount.toNumber(); i++) {
