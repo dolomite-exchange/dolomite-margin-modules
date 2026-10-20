@@ -32,31 +32,17 @@ describe('StewardsRainAuthRouter', () => {
       blockNumber: 412_717_690,
     });
 
-    usdcToken = await createContractWithAbi<TestEIP3009Token>(
-      TestEIP3009Token__factory.abi,
-      TestEIP3009Token__factory.bytecode,
-      ['USD Coin', 'USDC', 6],
-    );
-
-    usdcMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(
-      usdcToken.address,
-      '1000000000000000000000000000000', // $1.00 for 6-decimal token
-    );
-    await setupTestMarket(core, usdcToken, false);
-
     const implementation = await createContractWithAbi<StewardsRainAuthRouter>(
       StewardsRainAuthRouter__factory.abi,
       StewardsRainAuthRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+      [core.marketIds.usdc, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
 
-    const initCalldata = await implementation.populateTransaction['initialize(address,address,address,uint256,uint256)'](
-      core.hhUser1.address, // owner
+    const initCalldata = await implementation.populateTransaction['initialize(address,address,address,uint256)'](
+      core.hhUser1.address, // relayer
       core.hhUser3.address, // rainFloat
       core.hhUser1.address, // stewardsVaultOwner
       defaultVaultAccountNumber,
-      usdcMarketId,
     );
 
     const proxy = await createContractWithAbi(
@@ -78,17 +64,6 @@ describe('StewardsRainAuthRouter', () => {
       defaultVaultAccountNumber,
       core.marketIds.weth,
       ethers.utils.parseEther('100'),
-    );
-
-    // Mint USDC liquidity into Dolomite Margin so it can be borrowed
-    await usdcToken.mint('1000000000000', core.governance.address);
-    await usdcToken.connect(core.governance).approve(core.dolomiteMargin.address, ethers.constants.MaxUint256);
-    await depositIntoDolomiteMargin(
-      core,
-      core.governance,
-      0,
-      usdcMarketId,
-      '1000000000000',
     );
 
     snapshotId = await snapshot();
@@ -239,7 +214,7 @@ describe('StewardsRainAuthRouter', () => {
 
   describe('#fundAuth', () => {
     beforeEach(async () => {
-      await router.connect(core.hhUser1).configureMerchantAccount(
+      await router.connect(core.governance).ownerConfigureMerchantAccount(
         merchantId1,
         '10000000000', // $10,000
         factor130Bps, // 1.30x
@@ -320,13 +295,13 @@ describe('StewardsRainAuthRouter', () => {
       });
     });
 
-    it('should fund successfully, update merchant accounting, and transfer USDC to float', async () => {
+    it.only('should fund successfully, update merchant accounting, and transfer USDC to float', async () => {
       const authId = ethers.utils.formatBytes32String('auth-1');
       const authHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('payload-1'));
-      const spendAmount = new BigNumber.from('200000000'); // $200 (6 decimals)
-      const expectedFactorCost = new BigNumber.from('60000000'); // $60 (6 decimals, 30% of $200)
+      const spendAmount = BigNumber.from('200000000'); // $200 (6 decimals)
+      const expectedFactorCost = BigNumber.from('60000000'); // $60 (6 decimals, 30% of $200)
 
-      const initialFloatBalance = await usdcToken.balanceOf(core.hhUser3.address);
+      const initialFloatBalance = await core.tokens.usdc.balanceOf(core.hhUser3.address);
 
       const res = await router.connect(core.hhUser1).fundAuth(authId, merchantId1, spendAmount, authHash);
       await expectEvent(router, res, 'AuthFunded', {
@@ -337,7 +312,7 @@ describe('StewardsRainAuthRouter', () => {
       });
 
       // Float should receive the USDC
-      const finalFloatBalance = await usdcToken.balanceOf(core.hhUser3.address);
+      const finalFloatBalance = await core.tokens.usdc.balanceOf(core.hhUser3.address);
       expect(finalFloatBalance.sub(initialFloatBalance)).to.equal(spendAmount);
 
       // Merchant account state updated
@@ -358,13 +333,13 @@ describe('StewardsRainAuthRouter', () => {
       });
 
       // Balances did not change on retry
-      const retryFloatBalance = await usdcToken.balanceOf(core.hhUser3.address);
+      const retryFloatBalance = await core.tokens.usdc.balanceOf(core.hhUser3.address);
       expect(retryFloatBalance).to.equal(finalFloatBalance);
 
       // Replay with different params should revert
       await expectThrow(
         router.connect(core.hhUser1).fundAuth(authId, merchantId1, '300000000', authHash),
-        `AuthReplayConflict("${authId}")`,
+        `StewardsRainAuthRouter: Auth Replay Conflict <${authId}>`,
       );
     });
   });

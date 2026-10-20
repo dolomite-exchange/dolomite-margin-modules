@@ -81,7 +81,7 @@ interface IStewardsRainAuthRouter is IRouterBase {
     event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event RelayerUpdated(address indexed relayer, bool isRelayer);
     event RainFloatUpdated(address oldFloat, address newFloat);
-    event StewardsVaultUpdated(address vaultOwner, uint256 vaultAccountNumber, uint256 usdcMarketId);
+    event StewardsVaultUpdated(address vaultOwner, uint256 vaultAccountNumber);
 
     event MerchantConfigured(
         uint256 indexed merchantId,
@@ -154,34 +154,10 @@ interface IStewardsRainAuthRouter is IRouterBase {
     // ========================================================
 
     function initialize(
-        address _owner,
+        address _relayer,
         address _rainFloat,
         address _stewardsVaultOwner,
-        uint256 _stewardsVaultAccountNumber,
-        uint256 _usdcMarketId
-    ) external;
-
-    function setOwner(address _newOwner) external;
-
-    function setRelayer(address _relayer, bool _allowed) external;
-
-    function setRainFloat(address _rainFloat) external;
-
-    function setStewardsVault(
-        address _stewardsVaultOwner,
-        uint256 _stewardsVaultAccountNumber,
-        uint256 _usdcMarketId
-    ) external;
-
-    function configureMerchantAccount(
-        uint256 _merchantId,
-        uint256 _merchantLimit,
-        uint256 _factorBps,
-        uint256 _outstandingPrincipal,
-        uint256 _outstandingFactor,
-        uint256 _dailySpent,
-        uint256 _dailyLimit,
-        bool _enabled
+        uint256 _stewardsVaultAccountNumber
     ) external;
 
     function fundAuth(
@@ -212,13 +188,9 @@ interface IStewardsRainAuthRouter is IRouterBase {
 
     function isBatchProcessed(uint256 _batchId) external view returns (bool);
 
-    function owner() external view returns (address);
-
     function rainFloat() external view returns (address);
 
     function stewardsVaultOwner() external view returns (address);
 
     function stewardsVaultAccountNumber() external view returns (uint256);
-
-    function usdcMarketId() external view returns (uint256);
 }
