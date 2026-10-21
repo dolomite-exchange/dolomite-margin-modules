@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2026 Dolomite
+    Copyright 2023 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,13 +30,13 @@ import { ISGMX } from "./ISGMX.sol";
 
 
 /**
- * @title   IGLPIsolationModeTokenVaultV4NoAccountTransfers
+ * @title   IGLPIsolationModeTokenVaultV5
  * @author  Dolomite
  *
  * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV2 implementation
  *          contract for each user's proxy vault.
  */
-interface IGLPIsolationModeTokenVaultV4NoAccountTransfers is IIsolationModeTokenVaultV1WithFreezable {
+interface IGLPIsolationModeTokenVaultV4 is IIsolationModeTokenVaultV1WithFreezable {
 
     function getGmxVaultOrCreate() external returns (address);
 
@@ -90,13 +90,6 @@ interface IGLPIsolationModeTokenVaultV4NoAccountTransfers is IIsolationModeToken
     external;
 
     /**
-     * @notice Transfers GMX tokens from the vault owner's account to this vault and stakes it.
-     *
-     * @param  _amount  The amount of GMX to stake. This function must be called by the vault owner.
-     */
-    function stakeGmx(uint256 _amount) external;
-
-    /**
      * @notice Sends the unstaked GMX to the vault owner.
      *
      * @param  _amount  The amount of GMX to unstake. This function must be called by the vault owner.
@@ -116,12 +109,18 @@ interface IGLPIsolationModeTokenVaultV4NoAccountTransfers is IIsolationModeToken
     function unstakeEsGmx(uint256 _amount) external;
 
     /**
-     * @notice  Deposits `_esGmxAmount` into the vesting contract along with GLP to be converted into GMX tokens. This
-     *          function must be called by the vault owner.
+     * @notice  Signals a full account transfer to the recipient. This function must be called by the gmx vault
      *
-     * @param  _esGmxAmount The amount of esGMX to deposit into the vesting contract.
+     * @param  _recipient   The address of the recipient who will receive this vault's entire account
      */
-    function vestGlp(uint256 _esGmxAmount) external;
+    function signalAccountTransfer(address _recipient) external;
+
+    /**
+     * @notice  Cancels a full account transfer that has already been signaled.
+     *          This function must be called by the gmx vault
+     *
+     */
+    function cancelAccountTransfer() external;
 
     /**
      * @notice  Withdraws all esGMX that is vesting along with the paired fsGLP tokens used to vest the esGMX. Any
@@ -152,18 +151,9 @@ interface IGLPIsolationModeTokenVaultV4NoAccountTransfers is IIsolationModeToken
     function unvestGmx(bool _shouldStakeGmx, bool _addDepositIntoDolomite) external;
 
     /**
-     * @notice  Syncs the vault's GMX balance with the GMX vault. This function must be called by the GMX vault factory.
-     *          All GMX tokens will remain in this vault, but the GMX vault's Dolomite Balance will be updated with the
-     *          vault's balance.
-     *
-     * @param  _gmxVault  Matching GMX vault address for GLP vault owner
+     * @notice  Sends any excess GMX to the vault owner
      */
-    function sync(address _gmxVault) external;
-
-    /**
-     * @notice  Deposits any excess GMX balance in this GLP vault to the GMX vault. Does not touch staked-GMX
-     */
-    function sweepGmxTokensIntoGmxVault() external;
+    function sweepGmxTokens() external;
 
     /**
      * @return  The max amount of GMX tokens the user can unstake before having to unvest any paired GMX tokens for
