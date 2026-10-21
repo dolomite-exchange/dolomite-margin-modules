@@ -65,16 +65,20 @@ abstract contract ReentrancyGuardUpgradeable is ProxyContractHelpers {
         _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 
+    function _entered() internal view returns (bool) {
+        return _getUint256(_REENTRANCY_GUARD_SLOT) == _ENTERED;
+    }
+
     // ===================================================
     // ================ Private Functions ================
     // ===================================================
 
     function _nonReentrantBefore() private {
-        // @note:   This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
-        //          `initialize` fix
-        if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
+        // @note:   This CANNOT be `Requre.that(value == _NOT_ENTERED)` otherwise it will DOS old vaults that don't
+        //          have the `initialize` fix
+        if (!_entered()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            !_entered(),
             _FILE,
             "Reentrant call"
         );
