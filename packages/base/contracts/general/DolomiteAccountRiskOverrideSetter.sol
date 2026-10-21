@@ -144,6 +144,13 @@ contract DolomiteAccountRiskOverrideSetter is
                 );
             }
             _validateNoDebtMarketIdOverlap(singleCollateralRiskStructs);
+        } else if (_riskFeature == RiskFeature.DEBT_MARKET_WITH_STRICT_COLLATERAL) {
+            uint256 collateralBitmap = abi.decode(_extraData, (uint256));
+            Require.that(
+                collateralBitmap > 0,
+                _FILE,
+                "Invalid collateral bitmap"
+            );
         } else {
             assert(_riskFeature == RiskFeature.NONE || _riskFeature == RiskFeature.BORROW_ONLY);
             Require.that(
@@ -245,6 +252,20 @@ contract DolomiteAccountRiskOverrideSetter is
         (singleCollateralRiskStructs) = abi.decode(riskStruct.extraData, (SingleCollateralRiskStruct[]));
     }
 
+    function getRiskFeatureForDebtMarketWithStrictCollateral(
+        uint256 _marketId
+    ) public view returns (uint256) {
+        RiskFeatureStruct storage riskStruct = _getRiskFeatureParamByMarketId(_marketId);
+        Require.that(
+            riskStruct.riskFeature == RiskFeature.DEBT_MARKET_WITH_STRICT_COLLATERAL,
+            _FILE,
+            "Invalid risk feature",
+            uint256(riskStruct.riskFeature)
+        );
+
+        return abi.decode(riskStruct.extraData, (uint256));
+    }
+
     function getCategoryParamByCategory(Category _category) public pure returns (CategoryStruct memory) {
         CategoryStruct storage categoryStruct;
         bytes32 slot = keccak256(abi.encode(_CATEGORY_TO_CATEGORY_PARAM_MAP_SLOT, _category));
@@ -296,6 +317,8 @@ contract DolomiteAccountRiskOverrideSetter is
             if (riskFeature == RiskFeature.BORROW_ONLY) {
                 // Ensure the user is not using it as collateral
                 _validateBorrowOnly(_dolomiteMargin, _account, marketId);
+            } else if (riskFeature == RiskFeature.DEBT_MARKET_WITH_STRICT_COLLATERAL) {
+                _validateCollateralMarkets(_dolomiteMargin, _account, marketId, _marketIds);
             } else if (riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT) {
                 (SingleCollateralRiskStruct[] memory singleCollateralRiskStructs) =
                                     abi.decode(riskStruct.extraData, (SingleCollateralRiskStruct[]));
@@ -328,6 +351,27 @@ contract DolomiteAccountRiskOverrideSetter is
             "Market is borrow only",
             _marketId
         );
+    }
+
+    function _validateCollateralMarkets(
+        IDolomiteMargin _dolomiteMargin,
+        IDolomiteStructs.AccountInfo memory _account,
+        uint256 _debtMarketId,
+        uint256[] memory _marketIds
+    ) internal view {
+        uint256 validCollateralBitmap = getRiskFeatureForDebtMarketWithStrictCollateral(_debtMarketId);
+
+        for (uint256 i; i < _marketIds.length; ++i) {
+            uint256 marketId = _marketIds[i];
+            if (_dolomiteMargin.getAccountPar(_account, marketId).sign) {
+                Require.that(
+                    validCollateralBitmap & (1 << marketId) > 0,
+                    _FILE,
+                    "Invalid collateral for market",
+                    _debtMarketId
+                );
+            }
+        }
     }
 
     function _validateCollateralOnly(
