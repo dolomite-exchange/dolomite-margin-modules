@@ -51,6 +51,8 @@ contract BitmapRiskOverrideSetter is
 
         mapping(uint256 => uint256) debtMarketIdToStrictCollateralBitmap;
         uint256 debtWithStrictCollateralMarketIds;
+
+        // IMPORTANT - ONLY ADD TO THE BOTTOM OF THE STRUCT TO PREVENT STORAGE COLLISIONS
     }
 
     // ===========================================================
