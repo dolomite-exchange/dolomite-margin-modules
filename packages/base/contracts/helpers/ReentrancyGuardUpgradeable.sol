@@ -74,7 +74,7 @@ abstract contract ReentrancyGuardUpgradeable is ProxyContractHelpers {
     // ===================================================
 
     function _nonReentrantBefore() private {
-        // @note:   This CANNOT be `Require.that(value == _NOT_ENTERED)` otherwise it will DOS old vaults that don't
+        // @note:   This CANNOT be `Requre.that(value == _NOT_ENTERED)` otherwise it will DOS old vaults that don't
         //          have the `initialize` fix
         Require.that(
             !_entered(),
