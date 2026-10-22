@@ -102,7 +102,7 @@ describe('BitmapRiskOverrideSetter', () => {
       const res = await riskOverrideSetter.connect(core.governance).ownerSetBorrowOnlyBitmap(bitmap);
       await expectEvent(riskOverrideSetter, res, 'BorrowOnlyBitmapSet', { bitmap });
 
-      expect(await riskOverrideSetter.getBorrowOnlyBitmap());
+      expect(await riskOverrideSetter.getBorrowOnlyBitmap()).to.eq(bitmap);
     });
 
     it('should fail if not called by owner', async () => {
@@ -121,27 +121,71 @@ describe('BitmapRiskOverrideSetter', () => {
         liquidationRewardOverride: liquidationReward,
       };
       const res = await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
-        core.marketIds.wbera, riskStruct,
+        core.marketIds.wbera, [riskStruct],
       );
       await expectEvent(riskOverrideSetter, res, 'SingleCollateralStrictDebtSet', {
         collateralMarketId: core.marketIds.wbera,
-        singleCollateralStrictDebt: riskStruct,
       });
+      const expectedEvent = riskOverrideSetter.interface.encodeEventLog('SingleCollateralStrictDebtSet', [
+        core.marketIds.wbera, [riskStruct],
+      ]);
+      const receipt = await res.wait();
+      expect(receipt.events?.find(event => event.event === 'SingleCollateralStrictDebtSet')?.data)
+        .to.eq(expectedEvent.data);
 
       expect(await riskOverrideSetter.getSingleCollateralStrictDebtBitmap()).to.eq(getBitmap([core.marketIds.wbera]));
       const result = await riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbera);
-      expect(result.debtBitmap).to.eq(riskStruct.debtBitmap);
-      expect(result.marginRatioOverride.value).to.eq(marginRatio.value);
-      expect(result.liquidationRewardOverride.value).to.eq(liquidationReward.value);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].debtBitmap).to.eq(riskStruct.debtBitmap);
+      expect(result[0].marginRatioOverride.value).to.eq(marginRatio.value);
+      expect(result[0].liquidationRewardOverride.value).to.eq(liquidationReward.value);
+    });
+
+    it('should store and emit multiple settings in order', async () => {
+      const settings = [
+        {
+          debtBitmap: getBitmap([core.marketIds.usdc]),
+          marginRatioOverride: marginRatio,
+          liquidationRewardOverride: liquidationReward,
+        },
+        {
+          debtBitmap: getBitmap([core.marketIds.honey]),
+          marginRatioOverride: { value: parseEther('.2') },
+          liquidationRewardOverride: { value: parseEther('.03') },
+        },
+      ];
+      const res = await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
+        core.marketIds.wbera, settings,
+      );
+      await expectEvent(riskOverrideSetter, res, 'SingleCollateralStrictDebtSet', {
+        collateralMarketId: core.marketIds.wbera,
+      });
+      const expectedEvent = riskOverrideSetter.interface.encodeEventLog('SingleCollateralStrictDebtSet', [
+        core.marketIds.wbera, settings,
+      ]);
+      const receipt = await res.wait();
+      expect(receipt.events?.find(event => event.event === 'SingleCollateralStrictDebtSet')?.data)
+        .to.eq(expectedEvent.data);
+
+      const result = await riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbera);
+      expect(result).to.have.lengthOf(settings.length);
+      for (let i = 0; i < settings.length; ++i) {
+        expect(result[i].debtBitmap).to.eq(settings[i].debtBitmap);
+        expect(result[i].marginRatioOverride.value).to.eq(settings[i].marginRatioOverride.value);
+        expect(result[i].liquidationRewardOverride.value).to.eq(settings[i].liquidationRewardOverride.value);
+      }
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        riskOverrideSetter.connect(core.hhUser1).ownerSetSingleCollateralStrictDebt(core.marketIds.wbera, {
-          debtBitmap: getBitmap([core.marketIds.usdc]),
-          marginRatioOverride: marginRatio,
-          liquidationRewardOverride: liquidationReward,
-        }),
+        riskOverrideSetter.connect(core.hhUser1).ownerSetSingleCollateralStrictDebt(
+          core.marketIds.wbera,
+          [{
+            debtBitmap: getBitmap([core.marketIds.usdc]),
+            marginRatioOverride: marginRatio,
+            liquidationRewardOverride: liquidationReward,
+          }]
+        ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -158,7 +202,8 @@ describe('BitmapRiskOverrideSetter', () => {
         debtMarketId: core.marketIds.usdc,
       });
 
-      expect(await riskOverrideSetter.getDebtMarketIdToStrictCollateralBitmap(core.marketIds.usdc)).to.eq(collateralBitmap);
+      expect(await riskOverrideSetter.getDebtMarketIdToStrictCollateralBitmap(core.marketIds.usdc))
+        .to.eq(collateralBitmap);
     });
 
     it('should fail if not called by owner', async () => {
@@ -178,11 +223,14 @@ describe('BitmapRiskOverrideSetter', () => {
         marginRatioOverride: marginRatio,
         liquidationRewardOverride: liquidationReward,
       };
-      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(core.marketIds.wbtc, riskStruct);
+      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
+        core.marketIds.wbtc, [riskStruct],
+      );
       expect(await riskOverrideSetter.getSingleCollateralStrictDebtBitmap()).to.eq(getBitmap([core.marketIds.wbtc]));
 
       await riskOverrideSetter.connect(core.governance).ownerRemoveSingleCollateralStrictDebt(core.marketIds.wbtc);
       expect(await riskOverrideSetter.getSingleCollateralStrictDebtBitmap()).to.eq(ZERO_BI);
+      await expectThrow(riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbtc));
     });
 
     it('should fail if not called by owner', async () => {
@@ -200,7 +248,8 @@ describe('BitmapRiskOverrideSetter', () => {
         core.marketIds.usdc, collateralBitmap,
       );
       expect(await riskOverrideSetter.getDebtWithStrictCollateralBitmap()).to.eq(getBitmap([core.marketIds.usdc]));
-      expect(await riskOverrideSetter.getDebtMarketIdToStrictCollateralBitmap(core.marketIds.usdc)).to.eq(collateralBitmap);
+      expect(await riskOverrideSetter.getDebtMarketIdToStrictCollateralBitmap(core.marketIds.usdc))
+        .to.eq(collateralBitmap);
 
       await riskOverrideSetter.connect(core.governance).ownerRemoveDebtMarketWithStrictCollateral(core.marketIds.usdc);
       expect(await riskOverrideSetter.getDebtWithStrictCollateralBitmap()).to.eq(ZERO_BI);
@@ -354,14 +403,21 @@ describe('BitmapRiskOverrideSetter', () => {
       );
     });
 
-    it('should work normally with single collateral and multiple allowed debts', async () => {
+    it('should match a later setting with single collateral and multiple allowed debts', async () => {
       const riskStruct = {
         debtBitmap: getBitmap([core.marketIds.usdc, core.marketIds.honey]),
         marginRatioOverride: marginRatio,
         liquidationRewardOverride: liquidationReward,
       };
       await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
-        core.marketIds.wbera, riskStruct,
+        core.marketIds.wbera, [
+          {
+            debtBitmap: getBitmap([core.marketIds.weth]),
+            marginRatioOverride: { value: parseEther('.2') },
+            liquidationRewardOverride: { value: parseEther('.03') },
+          },
+          riskStruct,
+        ],
       );
       await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
@@ -394,10 +450,10 @@ describe('BitmapRiskOverrideSetter', () => {
         liquidationRewardOverride: liquidationReward,
       };
       await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
-        core.marketIds.wbera, riskStruct,
+        core.marketIds.wbera, [riskStruct],
       );
       await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
-        core.marketIds.weth, riskStruct,
+        core.marketIds.weth, [riskStruct],
       );
       await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
       await setupWETHBalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
@@ -412,6 +468,31 @@ describe('BitmapRiskOverrideSetter', () => {
           BalanceCheckFlag.None,
         ),
         'BitmapRiskOverrideSetter: Multiple strict markets'
+      );
+    });
+
+    it('should fail if user has single collateral + other collateral', async () => {
+      const riskStruct = {
+        debtBitmap: getBitmap([core.marketIds.usdc, core.marketIds.honey]),
+        marginRatioOverride: marginRatio,
+        liquidationRewardOverride: liquidationReward,
+      };
+      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(
+        core.marketIds.wbera, [riskStruct],
+      );
+      await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
+      await setupWETHBalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, wberaAmount);
+      await expectThrow(
+        core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          core.marketIds.usdc,
+          usdcAmount,
+          BalanceCheckFlag.None,
+        ),
+        'BitmapRiskOverrideSetter: Can only have single collateral'
       );
     });
 
@@ -484,11 +565,11 @@ describe('BitmapRiskOverrideSetter', () => {
     it('should fail if user borrows a market outside the allowed debt bitmap', async () => {
       await setupWBERABalance(core, core.hhUser1, wberaAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, core.marketIds.wbera, wberaAmount);
-      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(core.marketIds.wbera, {
+      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(core.marketIds.wbera, [{
         debtBitmap: getBitmap([core.marketIds.honey]),
         marginRatioOverride: marginRatio,
         liquidationRewardOverride: liquidationReward,
-      });
+      }]);
 
       await expectThrow(
         core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
@@ -498,7 +579,7 @@ describe('BitmapRiskOverrideSetter', () => {
           usdcAmount,
           BalanceCheckFlag.None,
         ),
-        'BitmapRiskOverrideSetter: Invalid debt markets',
+        'BitmapRiskOverrideSetter: Invalid single collateral',
       );
     });
 
@@ -555,12 +636,9 @@ describe('BitmapRiskOverrideSetter', () => {
     });
   });
 
-  describe('#getSingleCollateralStrictDebt', () => {
-    it('should return default values for an unconfigured market', async () => {
-      const result = await riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbera);
-      expect(result.debtBitmap).to.eq(ZERO_BI);
-      expect(result.marginRatioOverride.value).to.eq(ZERO_BI);
-      expect(result.liquidationRewardOverride.value).to.eq(ZERO_BI);
+  describe('#getSingleCollateralStrictDebtSettings', () => {
+    it('should revert for an unconfigured market', async () => {
+      await expectThrow(riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbera));
     });
   });
 

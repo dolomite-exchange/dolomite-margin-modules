@@ -34,7 +34,7 @@ interface IBitmapRiskOverrideSetter {
     event ActiveCategoriesSet(Category[] categories);
     event BorrowOnlyBitmapSet(uint256 bitmap);
     event CategorySet(Category category, uint256 bitmap, IDolomiteStructs.Decimal marginRatioOverride, IDolomiteStructs.Decimal liquidationRewardOverride);
-    event SingleCollateralStrictDebtSet(uint256 collateralMarketId, SingleCollateralStrictDebtStruct singleCollateralStrictDebt);
+    event SingleCollateralStrictDebtSet(uint256 collateralMarketId, SingleCollateralStrictDebtStruct[] singleCollateralStrictDebt);
     event DebtMarketWithStrictCollateralSet(uint256 debtMarketId, uint256 collateralBitmap);
 
     enum Category {

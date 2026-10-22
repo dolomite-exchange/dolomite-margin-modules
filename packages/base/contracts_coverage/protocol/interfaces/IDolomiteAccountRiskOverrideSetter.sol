@@ -55,7 +55,9 @@ interface IDolomiteAccountRiskOverrideSetter {
         /// @dev The asset cannot be used as collateral in a position and can only be borrowed
         BORROW_ONLY,
         /// @dev The asset cannot have other collateral assets held in the position and can only borrow specific debt
-        SINGLE_COLLATERAL_WITH_STRICT_DEBT
+        SINGLE_COLLATERAL_WITH_STRICT_DEBT,
+        /// @dev If the asset is debt, it can only have certain collateral assets
+        DEBT_MARKET_WITH_STRICT_COLLATERAL
     }
 
     // ===================== Structs =====================

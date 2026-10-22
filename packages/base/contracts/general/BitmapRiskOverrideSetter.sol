@@ -46,7 +46,7 @@ contract BitmapRiskOverrideSetter is
         mapping(Category => CategoryStruct) categories;
         Category[] activeCategories;
 
-        mapping(uint256 => SingleCollateralStrictDebtStruct) singleCollateralStrictDebt;
+        mapping(uint256 => bytes) singleCollateralStrictDebt;
         uint256 singleCollateralStrictDebtMarketIds;
 
         mapping(uint256 => uint256) debtMarketIdToStrictCollateralBitmap;
@@ -86,11 +86,11 @@ contract BitmapRiskOverrideSetter is
 
     function ownerSetSingleCollateralStrictDebt(
         uint256 _collateralMarketId,
-        SingleCollateralStrictDebtStruct calldata _singleCollateralStrictDebt
+        SingleCollateralStrictDebtStruct[] memory _singleCollateralStrictDebt
     ) external onlyDolomiteMarginOwner(msg.sender) {
         Storage storage s = _getStorage();
 
-        s.singleCollateralStrictDebt[_collateralMarketId] = _singleCollateralStrictDebt;
+        s.singleCollateralStrictDebt[_collateralMarketId] = abi.encode(_singleCollateralStrictDebt);
         s.singleCollateralStrictDebtMarketIds |= 1 << _collateralMarketId;
 
         emit SingleCollateralStrictDebtSet(_collateralMarketId, _singleCollateralStrictDebt);
@@ -199,9 +199,9 @@ contract BitmapRiskOverrideSetter is
         return s.debtWithStrictCollateralMarketIds;
     }
 
-    function getSingleCollateralStrictDebtSettings(uint256 _marketId) external view returns (SingleCollateralStrictDebtStruct memory) {
+    function getSingleCollateralStrictDebtSettings(uint256 _marketId) external view returns (SingleCollateralStrictDebtStruct[] memory) {
         Storage storage s = _getStorage();
-        return s.singleCollateralStrictDebt[_marketId];
+        return abi.decode(s.singleCollateralStrictDebt[_marketId], (SingleCollateralStrictDebtStruct[]));
     }
 
     function getDebtMarketIdToStrictCollateralBitmap(uint256 _marketId) external view returns (uint256) {
@@ -224,26 +224,6 @@ contract BitmapRiskOverrideSetter is
     ) public view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         Storage storage s = _getStorage();
 
-        // check singleCollateralStrictDebt
-        uint256 singleCollateralBitmap = _collateralBitmap & s.singleCollateralStrictDebtMarketIds;
-        if (singleCollateralBitmap > 0) {
-            Require.that(
-                singleCollateralBitmap & (singleCollateralBitmap - 1) == 0,
-                _FILE,
-                "Multiple strict markets"
-            );
-
-            uint256 singleCollateralMarketId = BitLib.fls(singleCollateralBitmap);
-            SingleCollateralStrictDebtStruct memory strictDebt = s.singleCollateralStrictDebt[singleCollateralMarketId];
-            Require.that(
-                strictDebt.debtBitmap | _debtBitmap == strictDebt.debtBitmap,
-                _FILE,
-                "Invalid debt markets"
-            );
-
-            return (strictDebt.marginRatioOverride, strictDebt.liquidationRewardOverride);
-        }
-
         // check borrow only
         Require.that(
             s.borrowOnlyBitmap & _collateralBitmap == 0,
@@ -258,13 +238,41 @@ contract BitmapRiskOverrideSetter is
             uint256 allowedCollateral = s.debtMarketIdToStrictCollateralBitmap[marketId];
 
             Require.that(
-                _collateralBitmap | allowedCollateral == allowedCollateral,
+                allowedCollateral | _collateralBitmap == allowedCollateral,
                 _FILE,
                 "Invalid collateral markets",
                 marketId
             );
 
             strictBorrowMarkets &= ~(1 << marketId);
+        }
+
+        // check singleCollateralStrictDebt
+        uint256 singleCollateralBitmap = _collateralBitmap & s.singleCollateralStrictDebtMarketIds;
+        if (singleCollateralBitmap > 0) {
+            Require.that(
+                singleCollateralBitmap & (singleCollateralBitmap - 1) == 0,
+                _FILE,
+                "Multiple strict markets"
+            );
+            Require.that(
+                singleCollateralBitmap == _collateralBitmap,
+                _FILE,
+                "Can only have single collateral"
+            );
+
+            uint256 singleCollateralMarketId = BitLib.fls(singleCollateralBitmap);
+            SingleCollateralStrictDebtStruct[] memory strictDebt = abi.decode(
+                s.singleCollateralStrictDebt[singleCollateralMarketId],
+                (SingleCollateralStrictDebtStruct[])
+            );
+            for (uint256 i; i < strictDebt.length; ++i) {
+                if (strictDebt[i].debtBitmap | _debtBitmap == strictDebt[i].debtBitmap) {
+                    return (strictDebt[i].marginRatioOverride, strictDebt[i].liquidationRewardOverride);
+                }
+            }
+
+            revert("BitmapRiskOverrideSetter: Invalid single collateral");
         }
 
         // loop through categories
