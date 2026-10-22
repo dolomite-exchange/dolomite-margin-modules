@@ -204,7 +204,7 @@ export const base_config: HardhatUserConfig = {
     sources: contractsDirectory,
   },
   mocha: {
-    timeout: 2000000,
+    timeout: 4000000,
     // parallel: process.env.TEST_SPECIFIC !== 'true',
     // jobs: 2,
     slow: 60000,

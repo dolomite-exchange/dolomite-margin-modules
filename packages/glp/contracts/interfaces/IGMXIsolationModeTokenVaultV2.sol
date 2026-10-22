@@ -32,9 +32,9 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modu
  */
 interface IGMXIsolationModeTokenVaultV2 is IIsolationModeTokenVaultV1WithFreezable {
 
-    function unstakeGmx(uint256 _amount) external;
+    function ownerUnstakeGmx() external;
 
-    function vestGmx(uint256 _esGmxAmount) external;
+    function unstakeGmx(uint256 _amount) external;
 
     function unvestGmx(bool _shouldStakeGmx) external;
 }

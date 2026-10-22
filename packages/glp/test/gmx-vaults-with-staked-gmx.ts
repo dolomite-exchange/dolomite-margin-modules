@@ -6,6 +6,8 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GLPIsolationModeTokenVaultV2__factory } from '../src/types';
 import vaultCreatedEvents from './gmx-vaults.json';
@@ -18,7 +20,7 @@ describe('gmx-vaults-with-staked-gmx', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 514843492
+      blockNumber: 514843492,
     });
 
     snapshotId = await snapshot();
@@ -28,10 +30,10 @@ describe('gmx-vaults-with-staked-gmx', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  it('should log vaults whose Dolomite balance exceeds their unstaked GMX balance', async () => {
+  it('should write vaults with staked GMX to a JSON file', async () => {
     const factory = core.gmxEcosystem.live.dGmx;
 
-    let count = 0;
+    const results: { owner: string; vault: string; gmxBalance: string }[] = [];
     for (const event of vaultCreatedEvents.result) {
       expect(event.address.toLowerCase()).to.eq(factory.address.toLowerCase());
       const decodedEvent = factory.interface.parseLog(event);
@@ -45,15 +47,15 @@ describe('gmx-vaults-with-staked-gmx', () => {
         await impersonate(vaultAddress, true),
       );
       const stakedGmx = await glpVault.gmxBalanceOf();
-      if (stakedGmx.gt(0)) {
-        count++;
-        console.log({
-          owner,
-          vault: vaultAddress,
-          gmxBalance: await glpVault.gmxBalanceOf()
-        });
-      }
+      results.push({
+        owner,
+        vault: vaultAddress,
+        gmxBalance: stakedGmx.toString(),
+      });
     }
-    console.log(count);
+
+    const outputPath = join(__dirname, 'gmx-vaults-with-staked-gmx.json');
+    await writeFile(outputPath, `${JSON.stringify(results, null, 2)}\n`, 'utf8');
+    console.log(`Wrote ${results.length} vaults to ${outputPath}`);
   });
 });

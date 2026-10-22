@@ -1,0 +1,4767 @@
+[
+  {
+    "owner": "0xaE3f36D1570b50Da6238225695A241e1eDF7A86A",
+    "vault": "0x42B299D58A2Da45765A3D14F5Ed81138b0038c4d",
+    "gmxBalance": "2582141203703703703"
+  },
+  {
+    "owner": "0xbA69674066bbD3799D65794866b79916c092e062",
+    "vault": "0xB1aEE5009Af6D7CE62BEbDe6E00FAcf4a32a2a25",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x52256ef863a713Ef349ae6E97A7E8f35785145dE",
+    "vault": "0xa0998620916B0157e25E7A684E61D6734eA60bd2",
+    "gmxBalance": "2150646544022044673"
+  },
+  {
+    "owner": "0x4cc78fACB66925ecA7624C01a2031eC1C7B2ae34",
+    "vault": "0x5FB19eA8CaA69F5c2C7149D71a23A26238fD8063",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB5c46131B4d8d13e4c0E476B9A2Ea5b43945891e",
+    "vault": "0xB713B7d6ed750Aeb06BE293F0877098A62b7301b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4A9026e6332b3DCb52E3D4d3CCbDfA3eeB73c23f",
+    "vault": "0x48e0b8026e08676689468F1DcF43203698Ff26A0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf578475B51f9f77b2421C321D4c0D530942a5448",
+    "vault": "0x0d3e502a107514bD40b50e4211a77A27663d8Aa3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb76c824BD9EDb60C7f17Db2dDc7A5589d20874D5",
+    "vault": "0x67C419427E47C3F162AC6758e437716428060218",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x68A8FB23e6fe18D29DA22929c75BE33e43bd81B3",
+    "vault": "0x555b15942C57FA3B887B80Bbb1116AAeab4DBb19",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x505A46C88Ae9FAdc438934bB8Cc6AdC026d4B1Af",
+    "vault": "0xe6A77c9dB0813e87c5fcc6401Bc6ad49E305dD9e",
+    "gmxBalance": "190239404623350996712"
+  },
+  {
+    "owner": "0x595816B1e4C115Fe307A721325DB6fA6dc5c2Bb3",
+    "vault": "0x02059B84d29999BAd47D36BC9fa7b29270E2D21d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC16f48cE7C684c9F9801c536a9aDaec82D22fFec",
+    "vault": "0x461e4d968e2F68F2aB42fEF9E24c95dfEdD6f02b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb9B4F5921dddd83313C5b70FE582F197C0D900a8",
+    "vault": "0x4a5180d19D08C891D4b4e2D63d7857DF626703bb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x05995bc5736707208EBDb18BC5bE812668b525B2",
+    "vault": "0x2923da51eA3f2b72d2e1518Adcab2bC32a77E03b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF74fae00465977F90092ccCff39D849Dc6fEBC56",
+    "vault": "0x031185f3506A0a01DE1079fcba52071dA243dCee",
+    "gmxBalance": "246860954689241832"
+  },
+  {
+    "owner": "0x8e77C563c2B2F35cd5560828e197E4eC57556687",
+    "vault": "0x1e2F50DFcBF8B4DDC2AaaAf00E5Ee40bA92B7aa6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4560A82501eFA87a90a2BCa4C247BFd884dC9368",
+    "vault": "0x7F73D9D1a12E527a22CB73A4067643E6c5628952",
+    "gmxBalance": "117869432641570135"
+  },
+  {
+    "owner": "0x34Ee2E826d3c6701DF3B081D84c282C11C5eB4Fc",
+    "vault": "0xFF04A0dd92EF277F12dAb21A686C8168fEa699b8",
+    "gmxBalance": "172880386588901230"
+  },
+  {
+    "owner": "0x672A318833EE156c3972c57c0eC6F933886Dbe7f",
+    "vault": "0xe23c7C8c949646F25a0007C1Ba9D36B23DD0c2fc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD5dE81E7e5E4F740a26Ebb254d6052e1D03B4787",
+    "vault": "0x9a28917618E783E3fF07C9a38B278Ba3C14E6aC2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2f077486332a1Cc67e62d95Cdb0670D7EDEf777F",
+    "vault": "0xd6636f6d9C2300349C6DFf7fc638E94fD118aA2d",
+    "gmxBalance": "50575833527264"
+  },
+  {
+    "owner": "0xb353D1ef1668c77772Ac26058D7f7ab58ddD39Df",
+    "vault": "0x1de00efc60cDA042828f127aa66ff7aA7F2cB97f",
+    "gmxBalance": "19995131670355"
+  },
+  {
+    "owner": "0x44CDDD49C6098B77108336FC5f10A4CC9037d764",
+    "vault": "0x49630735c53c7E3aaC1337038c296a286bb05002",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4271D22292aA37e13cD0C68b8210A7A6AF194407",
+    "vault": "0xC1b23cf306dc87ca4D56E7d511b7Da2F62B8cecB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4614B16551a21f7e29B57a4F8a8A4b63579d3cF4",
+    "vault": "0x710c7680B1352dCa1FC969f5AE56e8b6dDF900CF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8A2FA09530F858D2B064d5539aa755E8b901033a",
+    "vault": "0xc408b05E3Cd811BD9443224829b7D62768A3A9BD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2D83d947E46d1BAbA92dB00F40EADC4BB2A32966",
+    "vault": "0xd4B26E9C7e8C770C05d21524929230bCD943582b",
+    "gmxBalance": "163733859113381899"
+  },
+  {
+    "owner": "0x43A996fa50d2f378d707aCA9dDCDE1C30CB68f63",
+    "vault": "0xec7f7b8797b0dc6A93b78FceE738177732468FbE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd516c9877578f3d21c4221fbD3cB8D2a17312EBe",
+    "vault": "0x2Ba6F752986469cfA5fB30342e7Df33aA321dffD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x89EC941F01eEc9C8d2e1E924cC807ca4A1233617",
+    "vault": "0xC072039c7F501331ec994D64931d1159109092ad",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x15A884C3858fdf00552EeDC08e93f0B5113e1B08",
+    "vault": "0x8e42B63048520fEa1DDB75F0f41AD89CB20F9b3E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd49182C910B7f3EC0dC9F9749874CFe6b6F4b75F",
+    "vault": "0x9df8A8892D163a4b8ec79b67Ff4c220AD5303610",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x00cb97487391d0ac7819C77098dbfd75b1d76787",
+    "vault": "0x7CC948F308B9158635d4CEf0507169020dF4bd18",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5DF8eb6594cB07B6fFA5C53410450f0265937086",
+    "vault": "0x89Efe9A61F2BFd17a2bd4022F075D8F4c54e65b3",
+    "gmxBalance": "1191063695242953"
+  },
+  {
+    "owner": "0x47A6B229aAF701Ae7e7dbBb2D814AE7418876Bba",
+    "vault": "0xeefd567c70A7b7316B3805FF72a47384efB029C2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9445e93057F3f5e3452Ce50fC867b22a48B4d82A",
+    "vault": "0x52186880f5896A11e68f8BE9423822E188deE4A8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1A51d0aBb33D2A06c93b448528349E4C7Fc6FbA5",
+    "vault": "0x618025AF6901c084f1a52A086134c5AD319c383B",
+    "gmxBalance": "7901742508213040"
+  },
+  {
+    "owner": "0x66ba583b92d36C3490aA5a5d327F731Ae19A9851",
+    "vault": "0xB4f4Ec9Dff6ac18b1133cf3E289DB2f7B21FC42e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF90D28704c0d943525c303f2Be8d5102DAe22420",
+    "vault": "0x946f8c0b67dC64062CaAEAdEFab446f64ff84A20",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9F9EBCE72C0715CdbAD4d589986EB22F6782A1CE",
+    "vault": "0x7dD67211cEd26Dd71f885f06393e96Ac3D435D17",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9deBADcAAE4820092c8Ff7DC741C9ec7D9E95027",
+    "vault": "0xc479FEbED8B260685d0ca48902ccC6fcD5BD5a72",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb3F2676eF1d55cB104dB731d35b97B1d3E5B9123",
+    "vault": "0x7a782F11E811f29C537A3A9e7e6A0322590eeEE5",
+    "gmxBalance": "821139849545608"
+  },
+  {
+    "owner": "0xe751970824f3BCbf97E611e351C1136776be1cE9",
+    "vault": "0xB39Ce2Bc7B7A9b60CA6204ce163549F23B9ee5AB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x83cFDE7a14Fc0d8bbDdFcaAF3993a90A35d1dBc8",
+    "vault": "0x9B01a488B28A51AD596342475456070020a34a41",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEF125E49fB1a1BC5F8025b364Ca5486368ff87a9",
+    "vault": "0xcc81DEeE24C4bB6AD0E5e2dAb372aE33caEe466f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x81Ba93B26bCe8cA5d649B6607DF15E6D45462D8F",
+    "vault": "0x9dAe33ed1CcEf033672D5CB7a565346F6aecFFfe",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1A7228605AD816861b61E9ec1944346660FE52d7",
+    "vault": "0x36f3f8Fa444Eb03645bE3320307FdEA2BE994529",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x470D235cA1CafF614AbEE02D98Ac3aa89A6758bD",
+    "vault": "0x865B2C2678C9e3B9b6b3d20dB33E21A8FA66d579",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x070b6A6a64c7dD54bFf6Ca30391889C2BE4D4FE1",
+    "vault": "0x86375616E49b13506602C852c79CC6ddb12ED497",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1341df844780b66AF4ccC98Ae0F34be87eABe1d5",
+    "vault": "0x979364DEb6a2723c411c655A9a9607f9e39510cC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF8bd80783318b8D26E22EB51d7f6C078872a3026",
+    "vault": "0x25377EEfb0D60600aCbbA3142A5EA6d56d8f1970",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2a06913D5b8748b222E1236768C24ca19198B374",
+    "vault": "0x849C46450AA346093B8713078DE11c0822820133",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x919C3D9282fb2054fFca2B0b46CE4AEC65f97cE9",
+    "vault": "0xfEe8691edED21F317Fc1B6F72EbDbFe219BC89dC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc018b9a9a1E881C0Be9078c580e7B10041E33230",
+    "vault": "0xeB02bfafA56a514b40EAc6FB923A015f457e5b60",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD416Fc6C9C1A249C2c396Dc4E56FA6EA978eca3C",
+    "vault": "0xD24c31e1FED93a49C19a36969e8c974ABa757C8f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39c31A899662Da8BBA43862c82C8bA531Dc61390",
+    "vault": "0xCaf5197B71D83De65d81abDB44822f4f6d88Bc79",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x734cBbFf65d8d44A3e4DEdB832c0beEEeBAB5e5e",
+    "vault": "0xc0300C0f372f77D11b2A99135a2f73fb66e82128",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2600544F150Db80438004BE4Bbc7114aa21615A9",
+    "vault": "0xaeb30A3C763cF2E6A84C9FB4f1d4948991dAA0c7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9480fc2A527BB0F0e5E6A3CF2922BcD123B71302",
+    "vault": "0xA1BA82d82D9ab3dbD3524B79d8a71a8818eFF671",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x802d75488D05B34E2Ff140382AfE5C1b7614A134",
+    "vault": "0xCe7198c1F9443684a338e03C117c5cF85CF57A31",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x168feF2fD1AF371625B2593468620185Cea904FF",
+    "vault": "0x576c7B0973D8EA4ec6843314D5C7EF8439565d26",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x066Dc3fF62C9C356e2D602D1156Cee762AcdA921",
+    "vault": "0x9bB11e321fB6Db02AB400Cd2c5f45c06Bf006588",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9c57027B1eca93093a6F446422C59C85A5A3Fa52",
+    "vault": "0x1269521240bd4a6EFD5270C002495797Cb4D78c7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD93bDEcBED0BA6dFD32Edc5B8610591F2533202c",
+    "vault": "0xd5A87c7559887925Fc2c766e8f9BDaD78e1627Dc",
+    "gmxBalance": "37181258642312886092058"
+  },
+  {
+    "owner": "0x44c6988aE9DD86be7E30306f4eF0Fbbd716bf0D0",
+    "vault": "0xfEe563379EF191bf1a3c694312e50C87b4b0d83f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x257d74Fc229f91de6285a4C7bDd6D5004dE9Aa31",
+    "vault": "0xeff4222303B462A28f676AC9f255C179835880b5",
+    "gmxBalance": "68054975935350"
+  },
+  {
+    "owner": "0x5998Fff8B8a51aF65F2983F7F09EF563a2753428",
+    "vault": "0xA8765F9B47a7b61c52967642cDC0fDB0338678Cd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x00A63087446564108E0DF27F5c26bbfa886B98CD",
+    "vault": "0x13a7E3B15055A6259e38D431f8D6F595f833A5CF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF572d207aF78a35B0C773684c9C98E5C9B9B0CA9",
+    "vault": "0xaa313e256aF0C7206Cd55621362151414478596e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x46B8BB289d0E9597981db4108b96EC89DAeb6b80",
+    "vault": "0xDf8436B784715149d3D99475A466141Aa8A6766A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4Bb12cC382E36B4b6faF7BDcA7708969Aed258eF",
+    "vault": "0x119ABc5468b1050b98Da4398d1834f5aC236fCDB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC1269B5614C6F5Cc50aFfA5E62d403622c6cdb3F",
+    "vault": "0x6C70A7b531F6abda39b15ec12c04571BDbaAd5ac",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA2D35E418814A8b6367c66a5ac2FEc8ea16332b2",
+    "vault": "0xCF104B2154426E2230e775b124E1f73F81B21891",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x67EebB70b6B91B66fd6a5D81d2b1FB9206E01a2b",
+    "vault": "0x5138Ff9c19A45180C7472836E2aBed041fb066aD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x66805D8B82664Acab4CbE0C0498889dDE9aF7841",
+    "vault": "0x6f2c606D61b58c54E2A0E3Ed4Ee8BC460470d387",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xAAC22da0bAAf48CE621c0c8ADd5983c2078381bB",
+    "vault": "0x4D1f0Fa33257EC40a408473Cd75597c014c16f4d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2F8AA2e28e4563c9a69912322Cf3B6FB040d873c",
+    "vault": "0x88cc4141dfCEa7e16C238FE5E7AD1431Bc2f298a",
+    "gmxBalance": "183440768087357500"
+  },
+  {
+    "owner": "0xEfce38f31Ebeb9637E85D3487595261FDf6ebeEb",
+    "vault": "0xBb67C93Cf2E228d306F51C68cCdfb692b4Cb9F94",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x59A9f07Bc3c3D3765e835e825C8f942232d017C0",
+    "vault": "0x40902a538Eb8574CD4Aa018B90475dBB2E2dBa3D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfb37A0a3034FcC61A44bcB1C52EC309811255B1f",
+    "vault": "0x2D5709dA3a01dF0f7b3B5aaE31ad78b7F0e707E1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x887C3599c4826F7b3cDe82003b894430F27d5b92",
+    "vault": "0xd7eEC5a019F77C73E9f72Bf70063CBa116dcC690",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x139791013f6DCC26F4052E6a7b8ED50099E7D15b",
+    "vault": "0xf29d759c2Ae41D70aB88Fe751b6D310c44a07014",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE3A738d9Ae0dB0d372B05AF92643D763a4776025",
+    "vault": "0x71d61c8F5df2165C6280E31b1986686171607CA1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2a23D0650DB1C536e71AEB63eCd3DAA0b52E66E1",
+    "vault": "0x81567Ef0C869F40c351E1D28C913b481f38B8C69",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x67037dA0Acc7CfEa5994eb21F922E19bF18110B8",
+    "vault": "0xffA86CffDec37E3aA1A327FfB23cDEA191fa8D8c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9451F085DEC45111112fF9776Db30EffC4c83fCD",
+    "vault": "0x01E37aB426245C183d98e69E6a88F7647CCc23e4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xccBB5c2c91bFbD3CEAC68F75831a8AEb8Ddf16f9",
+    "vault": "0x186fA23c16ba35Cb1525484ad00be6eD18d6ed9f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8d85114de0e28D55cCc33162b265a2DCdFFa3Cc8",
+    "vault": "0xe14357c2616efa30174E952410E86EF73604Ce33",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa4431D8aD55bC69C055cD452D58640764aC1185c",
+    "vault": "0x35740c3e81C3Ed801C1572952fbE283f9d68544f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc47c4c896Afe31e0c37ecDb54df7836313b6504c",
+    "vault": "0x3250F20AB2A89B1282A13a2090d55f63b0719F11",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x41dff6280f3463D28b65dAcF4DDb224d31e659a0",
+    "vault": "0x4574cbdCF4d8740b41134B00B2678ac2eb5D82Fa",
+    "gmxBalance": "352634889894891256426"
+  },
+  {
+    "owner": "0x72A5F37927ae6CD4C985a49082e1b489A8f13344",
+    "vault": "0xB809c820a549640098e3e78a38db8BDAF40529f9",
+    "gmxBalance": "5322585487534604"
+  },
+  {
+    "owner": "0xA60AAdf62907bF06Dd714781d44Bbd4C2d783259",
+    "vault": "0x8168Bcd13670A325773325FF37E340d37D81fed2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1A2923D39F11f4b0A47BcdEC29B30eC273dA0932",
+    "vault": "0x6A72beAb4d2Eb040cb620Aae8D9e356Aebf8ced1",
+    "gmxBalance": "563845614117463"
+  },
+  {
+    "owner": "0x28883A80C699c0e8eDEe3b85B53dA66CCBf6D895",
+    "vault": "0x487eE546f897fe2A42b1Ea88378eb5cfb9dEf11f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x26Cb1DBAd7349B57af814A22718D04d0fCdfbeB1",
+    "vault": "0xE7de6d84105CEAAd0198d14AE7895f1F4A6776Df",
+    "gmxBalance": "31822342209963176011"
+  },
+  {
+    "owner": "0x8284DD79d44E7D7bAC9c285aB1FF8E072183b5C1",
+    "vault": "0x848867D6538c43C845c0b65658224d17eD85E2d0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x87f242ca15f3f9d80C049AeFea0174D0B3C4650f",
+    "vault": "0x68F8Ff59688695869ca48C4C2C9ef8259F9E89eA",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd81c5771c72294a0dCB98f8A88c410A2c64e53d3",
+    "vault": "0x43fD33802f91D6378CBEc7a2fE67bb64E390ae7B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3DD1B656fcC459Cc4CF203b53AAAbF8C85181f1d",
+    "vault": "0x8b8A38C1e08F22f656159c291a69D330A1371c50",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2218A37513B2bDd11226e43A22CE6732bf07323B",
+    "vault": "0x2F07031AE92F0BBEEB7ebD2A4873874B3A7d19b2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEb2A77971d5A8d3b458b81e7964DE27a2453F84a",
+    "vault": "0x52De28d503213F3a0c6343Dfc0EBA667D2ad8c96",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x97D7846316efe4581a5A1ef3DE3E88814ba75e25",
+    "vault": "0x1B98EAC8f6b3121675CFF46329Fe1106Ac0bCEe1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x54E5e90a6679314E8339BB1ED74BeAb5cA19324A",
+    "vault": "0x226698432326BA3195786F352f899786De64d8CC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3B27944505847cb14f3F2983638d082c8D9526d0",
+    "vault": "0x94916576AfaD4C9D68ee8E17Be5cb232B0A41Fe4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcD54Cc88aC8bb4f437937b5DFa9C341570c6169b",
+    "vault": "0x3402e2f6A69607d982C0C485fb492CF841bc4a32",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd25F3FF4d63179800DCe837dC5412dAc1Ba6133F",
+    "vault": "0xc72e1813114d9dA5DC38e374685b8E7145263832",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCB6222f4Df04385ea08E8DA2A5871131FF5F6cBA",
+    "vault": "0x38AfC2Ff1c20Cef895d9043B927695B7CAAd1b92",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x775A9311c4BcBab6F18BFfcd3bC42e5746B1C805",
+    "vault": "0x22336c90dECB32A5C93Fe7A1149f4250392E138F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa8F4D199A01b446bE88bBFD5fBb0C16b9e77cf46",
+    "vault": "0xc3Cb4e7E3401632549d5fA2C1Eda6b2f5AFf3cdd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x495D6517dce95c166d24F622Cfa0d5F892e1de5F",
+    "vault": "0x0f6c9Aaa7B55342204cE08D6ccf742DF9C399eFa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x750E9A7b449904f47B793B805dB469FA6e025E33",
+    "vault": "0xe30F2471506b82D034BFc04E28DB8dE906A81d16",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x65F8F6fc92D58aA586da5b678c994E1413D9E939",
+    "vault": "0xc2DBE76F88Def535ee150547E0CbFa97947E70C2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7e3D42Cf88B70F8Ff5920642140D66CaF8634865",
+    "vault": "0x99D6e8dce0bB9bA091F8181389C2Af08EEe5F3a0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xaa88dC074f6A1C3A059Ba984c2b7d47Bd73D2b92",
+    "vault": "0x170ac71C770d8111Bc8EcA9117E2E69388F2620D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x232832F88e98e4680A12c03D12eF1FDA22ED7122",
+    "vault": "0x288Fca594F43048F5D6c6b73bd836e5804D7E0fc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfb53cC84f5187c2F386E9895476B3DECF33d4982",
+    "vault": "0xBA94AC64d90C8CD89586f3F09CafE61A62495d21",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF3A0803a37064A52C7222DE63A2d7EeDe4b17864",
+    "vault": "0xb336Dc6603B5251347A75eFfcCF378216B443Bce",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd095955dA4F49a6F446512163635a76A3839A833",
+    "vault": "0xCE4aC17f786b62C07489B53d6C45ed5e823bad7b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7c45FB10a18f834a47cc3F470E97140A399B6AF8",
+    "vault": "0x6313eA024B3A78D6c518D0f00d559D4Ab2b34f25",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9aeBeA73d2Af4cd33557f491545d8BE97874021e",
+    "vault": "0x774ACD63B96B0c6CbB195C2Cd9f2b1Ce6A0f4c0B",
+    "gmxBalance": "93653054661389"
+  },
+  {
+    "owner": "0x277C583c6ac9CDafBaD6A1c97d86CbEC56cf2f8f",
+    "vault": "0x1CBE5bb793A524dcF5D0D6880D6A93032BE0305c",
+    "gmxBalance": "2394637497999515"
+  },
+  {
+    "owner": "0x9B370d8EB68a7a36535cB4C2D1996E95F74D4A3a",
+    "vault": "0x29ccCC314605Ca8f61cD98c923eC641aEeb01414",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4adFa859472e738Ee4c96Ac43261da0051852326",
+    "vault": "0x9353A1B210c9847fd77A9BA1B303Ca48439671A3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA534EEeA097D3Cfabbc155bAdAA7e09aEe07E343",
+    "vault": "0x710DB5cBB71A8AE48fD76DBEB2CF347d974f7448",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x133B2f8476af944c434454695313082215d5c4b3",
+    "vault": "0x175d53445fE1237328e6Cb01E696fC54431179F3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x18B0046eF6Ee3fD03bA91A190e37E7AE72b89D8b",
+    "vault": "0xDEC04D0979a1E744c5A18bAD51BBfFcdd5Ca5AD5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x362379c21e2b23075E6B0e36a7ed3dE280C0b923",
+    "vault": "0x63c433Da212d16B4FabE5391238EF0426A958227",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x71784A8B738a340C433c48ccE913c1f633869830",
+    "vault": "0x3CD6CE22Da605bB415E083919882e47c10EC7387",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4e48Bd7bB7D4A6ea48D900F1AD2527eE38B24949",
+    "vault": "0xd88bb974bF35f7a5A56C2a6abDb3261161d91535",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7dBE1741295E4Ec99770cA120D31D4f774d59aC4",
+    "vault": "0xE0C6fEB1d671F68f735A4185821d6c9E863994F9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x00Ca340D789F00d4c978b236606C3105A09254F8",
+    "vault": "0x5BBAE469DE3FF4539792222c5015af45971da03F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x01004bEa6919b67C1475756EA75019F3Bdc40679",
+    "vault": "0xc1F2C936f76cC585E98d2F6e1347cE4Bd5753403",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4060369598c9Ceae3178167387a26b885381493e",
+    "vault": "0xEB95812624f02144f34C568e7c656c17A372F1E9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA6e14452Bac0d4CB25F788f1DE0AF7DECA87f514",
+    "vault": "0x949Ff38f62b7688C18f2be699f43b6db49752AeF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCed5C5BD48d49Eb75A1345f5c2837d27713d225f",
+    "vault": "0xEF735B349cc6D65Be27B54A1bb99D8d83814C097",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x765a16ca391A6b9249cfA65bf2D14C38722198e3",
+    "vault": "0xD8d701AE2339eCB247b661B4D044F733Ea4dd66C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0bf7Fb51211b4842bAd8E831ba2F42fcB836C7e1",
+    "vault": "0xCE0794D6017aF2dD716fDe2B5E74Ee6bc4F18b8F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9E80C6106640A55aBC24f17a5e5Cc2904B4AB02d",
+    "vault": "0x49Be03A91153699BB08F62dc8dFe6A9FcAA8C589",
+    "gmxBalance": "85223909653122"
+  },
+  {
+    "owner": "0x0F8988cb31ece73faD5C2c7B3844B5c4228aB7c2",
+    "vault": "0x606383681316Ea7FC9BDa5A25456758913c02ec1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcfd90b3949958fAa9408550601A47E16910dEa01",
+    "vault": "0xb5f9ee45D5266C6738b571d1C93ea90Ac2e3f9BE",
+    "gmxBalance": "64018125917436"
+  },
+  {
+    "owner": "0x470c4462C67a3FaB03901B81C0B96909F8330Ca6",
+    "vault": "0xf64dD5baAaE5DEC46b090d6562ab326F5ACdd6b3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x515C07dd7Cd01496d4000e4998B4FD5aCd2c09E1",
+    "vault": "0x803F113e4867e4858bdAeeFEf0e1027da7D7Bf95",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x092E6362C5e0213041876b3864ac8732418693a6",
+    "vault": "0x48c665285a5Dde24651006FDEDF47E28054e80a7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7f18ba2B83B9bf96d91f464dB898445eDcABEC40",
+    "vault": "0xD7CBAd402f994Cf0C6C1C080a703D62cD9762ee8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb26B4A4BBA425aC28224cFDd45B4Bd00C886cC33",
+    "vault": "0x4dDC0e8d58c351C3Ca38D37063bFf81Ab64eB67e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE5656D9cF64FF41CEb7e26E819D70df8B66d1595",
+    "vault": "0x391A4df5cDD9fce67f7B1FC9389E3237F808784D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2446f1a75162F045d02F23D1D3b0F5A2C0f9A4cB",
+    "vault": "0xe5179ad3854c4Ba0942C3011095f0cD887B22040",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcc0E6D05981d000BC8987C443ea909256bD1C8C7",
+    "vault": "0xf9069b068B71b0482B02c946252d027d0DbD6E31",
+    "gmxBalance": "8260890740239274"
+  },
+  {
+    "owner": "0xd67aB36c800C2415D2C0A7760DD2C40b0edD6Ff4",
+    "vault": "0x9171C7ee54b6dB15Bd5f3eBfa0267cd38FBed2ae",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x190ac830b737AcfbfA819F1D3aB0a6D702D72147",
+    "vault": "0xbA43e2D3bC6C620A63C7DE5951Db44eDfA5b5B46",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD27c24a1ba61854F73F29809deE8F00bf388D28F",
+    "vault": "0xc25F5a77DE44819AD80219F5f43A84390ab4A361",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x35E8171BB85a471C8e6B379C19515006dABFf236",
+    "vault": "0x44f6Fa7008CCC859777bd2eab8BbE29742c5F89D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x50Cd4175e0Bb2cc85C225911096dbDd01Dd14926",
+    "vault": "0xc7d1dB1a3F012d7b2Fa8Cb043473a2F2769Bf3d4",
+    "gmxBalance": "361173216135271"
+  },
+  {
+    "owner": "0x946d6aBfF3c47A52263D9b0dD61dcEaE31F49E38",
+    "vault": "0x2Df7888342E33a57BE836edE27B5ff9621ceA386",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb25024c421D4F8BEbE468d3dC353e07868C99901",
+    "vault": "0xf998f7e4220FE0a85caDCDe380a3169DD27753a7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe3dB0DF6A4A62106A3dD5CEf76C196A53F3e7E4d",
+    "vault": "0x2503eaFF61D12BE73a06CcdE1D2fde21E51686D2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7F6314aab783af61551310d56E926a410F9b6ca7",
+    "vault": "0xC63F525a2ca0318A15cd4A3a8E624258Da8f08Fd",
+    "gmxBalance": "195606645440592005"
+  },
+  {
+    "owner": "0x1299bE28376fE9d218919DA47A84aF25E4514C85",
+    "vault": "0x9FD05Fc892308fA2dF7Aca6cE676D04aFCA97366",
+    "gmxBalance": "116538647253732883"
+  },
+  {
+    "owner": "0x57124eb24f603a1005aB919a702c969156985E75",
+    "vault": "0xEE4485eD0eA0100B4E788c806C98Df19bdf2Fa15",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB480399d261F231F978D9681E614C1Fa32d8622C",
+    "vault": "0x744634af8dCcac7AEd0955638fED747A3A443061",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2B1F83B30c1a85E6F93723CBD5D4145f27fdb489",
+    "vault": "0x03D7E092Fd2d5Ff2D124f9eC2bB9E8266aA38dd1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2DfDdC72B4a0b6027282539ED22e6239268c1cfB",
+    "vault": "0x3c6D6A518D8cB689e86065901796f70fb40F15dd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf15D1B576d0988f11Ca018D1f86829c020970e36",
+    "vault": "0xfAc3c754BA4352A25F0d565761D17f0154293ea5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6CA2fC6CF24cfE57F259F39EB1Db52BAA257c1e6",
+    "vault": "0x2583978b44b68780Da529A6D4D843027048b43b9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCb4fFEDc45865498cA34311A5bDdfb4D71f41f43",
+    "vault": "0xFD7BB083850C4B3DAe84E7c5f29f264988CFe92e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA058f9D15551EDab64fFF26203E53b5B40c0f55C",
+    "vault": "0x7200091Ec297413AF75BA46AEE9d3C7c8E9848b7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x44F6CCf0D09Ef0d4991EB74D8c26d77a52a1Ba9e",
+    "vault": "0x31574c36670e4D16c96EDefd70E9F0CceE4D4012",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x048A8BB49aC39C7a31ffBa9f9b6522396Df26B2B",
+    "vault": "0xdcEaB1753D51E81326c7A69ce21B832Ed70310ac",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x671f8EDb620B99790739f49D337dD2B0ED56634f",
+    "vault": "0x378721D28cA752cB371116E1c0Ba0c46b7E66f14",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf9A796Aa3F50cfE34600085923C17D3264A371Ab",
+    "vault": "0xE4d3c30c47c2F0cBa86f0c333EEa56A59a116124",
+    "gmxBalance": "198832441581633752126"
+  },
+  {
+    "owner": "0x55afab54d569ae0A74d6AA0315F0aA0CC113e998",
+    "vault": "0x130C25F8448Afc8e706DcAeE8b0DeE16334133A0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x21BF63C0418D4f1D13f884C50498B2259B321b43",
+    "vault": "0x3d85B91BA755F5620d6Cf465b6A590Af70539BA6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2a03278590cd1962De28F9AbC855CF3774fe3eb6",
+    "vault": "0x504815B794F2788254689A912931b1F4B759Bbb5",
+    "gmxBalance": "16226037800783197"
+  },
+  {
+    "owner": "0x4e724089956d474C2beE62dabFd9b0B1c1aA272c",
+    "vault": "0x48918C3f31dbda9E4566166338BB30d189D8FF07",
+    "gmxBalance": "473328249281149394001"
+  },
+  {
+    "owner": "0xA2F4C3EC6a3bADB940A224C1cc2E8F96030eB479",
+    "vault": "0xAD503A89AC29ECaaD3E91156411c9645b3926d5b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF72422772FCf7fB9f453566c65E2AbF770210410",
+    "vault": "0x81e01Be3AC9Ff37e841a98F2C5eC25fc12B3E229",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x29cF2074D472f019F5E8AfDc42b7e05Ee26EF963",
+    "vault": "0xB02b3d185d1dE75128beedCF9180CF8Fb1ec744F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCE6E27E298bD6024E91BE5028762D57d857Bb5C5",
+    "vault": "0x3d7AB6f3983bbb30D531C1e8ed7B09C5cee2B5b8",
+    "gmxBalance": "1046068091503094"
+  },
+  {
+    "owner": "0xb8DeF4f452F4d2A7482bcfF77b9788b4269f3a3F",
+    "vault": "0xff97Ea0045250969e51e7BBbe0568365c5F94B6D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x70C65c8217458443Ca0b6FF9E171971B8d03b91e",
+    "vault": "0x0B53eFAae4a0137fbc5Ca8765a76A527c82FE518",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB2043c543bb60Fb7AA7265CdcA359A35C4Bc09fa",
+    "vault": "0x2E9E24fFEd9D1651D77474635a4a40Cf12B943Bc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc9c816F7F415D9544a83Fc2CdfcDae9cE36050b9",
+    "vault": "0x2E73F8eFb60f7Ca1DD03A00ebC1b7A270bD709B6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA49A2DB9814998a5b95A4E9271187f36dAd0BBDd",
+    "vault": "0xB58efb91521227435dA0B4f6F6e740e4432827Bc",
+    "gmxBalance": "977575174353331"
+  },
+  {
+    "owner": "0xB4FBDbc8371a1a3aD3b92012C7a3cDAD807B6641",
+    "vault": "0xD98086164D9c82946714A7C8d6F4eF4173Da2B28",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6a4428339F6e4780b36c75348196339EEB5cB166",
+    "vault": "0xf57e8cc792b2D460C77fc3ddA091b75b283b8662",
+    "gmxBalance": "32110423399410340"
+  },
+  {
+    "owner": "0xF34E13b94257e1932Cb39a05fa35674f66EFFC23",
+    "vault": "0x1cc28C177061a7e0393bCb1fC55e0a5870bd0333",
+    "gmxBalance": "28405922796131412"
+  },
+  {
+    "owner": "0x8935D3183d19b4f88BeD80545f282124BA016B04",
+    "vault": "0x8f61775Fa6f4cfB946Ba7399Fe75DD6197792e93",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x49DD94F8bf3d408275d326dF4a45057aA48cf7F8",
+    "vault": "0xdA997e940eA5D298C217f3e8E0aF28Ad37d98fca",
+    "gmxBalance": "46237087484787"
+  },
+  {
+    "owner": "0xBE3C90D34b757587C62852DCd57f7c8E1bc5547C",
+    "vault": "0x1BbCAfe100b335Fa84886E660be6FB41223DA48e",
+    "gmxBalance": "20789380913780"
+  },
+  {
+    "owner": "0xEfbC53e0AFdc9f649Bc1Ab692461df57E70A560f",
+    "vault": "0xB6bE1725230c0F8F6cA7A8255eE2955Ba155eFc1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x67bcD41adBf12D1eCFFD86e17AF2b14179B556a3",
+    "vault": "0x7F60723397D84ba1f6e1dCC96dAFaF127c252809",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1a88b6012d4dFAa6D7a69E4cEec22Fb3fe1F95b7",
+    "vault": "0x94285026B1BC1aae154b69d33239738a9060638A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEAEAf30599Cf2348417cca0834B7881eE075670d",
+    "vault": "0x1D8d511DeA10d802e462F38749b83AF16c12c699",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6Cd57998cC8A6Ad4Cef6D5991Df0b7417b85aBf5",
+    "vault": "0x83a5CFA748EA83ad455fbE2d90C82113f7734e42",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCca65ea3449566d7Cc2f6589BA126adc0c151Eb7",
+    "vault": "0xdf31b864da5fD354a6647951DeF049A755C8ac1B",
+    "gmxBalance": "315453838080701"
+  },
+  {
+    "owner": "0x063Ae79a21d7794F69d2afAe38B73bb9a957EFd3",
+    "vault": "0x6a26d570173A91422f4bf9E19bF5E30f8C1b26f4",
+    "gmxBalance": "11938814374029385"
+  },
+  {
+    "owner": "0xdB5eBB25E3B7d8c4dbcA295F6b333Cd47ed6C8e5",
+    "vault": "0xD2986e4823DcAf8B1010DBDe8c01048C49C885Db",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x328d75A47E07F26e1Ad22fF3DE08E8ba3ca190d4",
+    "vault": "0xcb9e0Db58B83707b14aFDf4Dd5EbB473243A31D5",
+    "gmxBalance": "1000000000000000"
+  },
+  {
+    "owner": "0xECD02810Db92Ff027ea1b0850d46BdA963676D74",
+    "vault": "0xD7c244eF6a46E7adc4230b67bA12db99E845098E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf493789786Aaa04b5Ae17ED95Bc87CFe6A260658",
+    "vault": "0x1b9568Cd576455e1964Cb6683d86242Fc51ae35a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xAf02fEd043940022de75BE24b712546d2761E903",
+    "vault": "0xab963326ed764e449d656C244Ff2312e75E35cd5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x13108aB5c6eB7efDcD7Ba6F8cc55d265eAE6176F",
+    "vault": "0xA0e791202b7A63CdEe51FD3FAF6E1C2868592040",
+    "gmxBalance": "497804341904889396"
+  },
+  {
+    "owner": "0x1C8dBe89479c8b2e55a921Be0038F16638a52b49",
+    "vault": "0x6eDD5022e46868c462305593232C438B70cC9FCD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x25FA68A4c340202737EDBC67fD1a2Ec8DE872dB6",
+    "vault": "0x3e063Bb91f10Fc95458E834780E51736d894e2ca",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB75f4ccd55cC56332f999BA917Dd5170cc1e2764",
+    "vault": "0x600262AC620FAa9b7893C326779F514181Ff2920",
+    "gmxBalance": "107895643887638580660"
+  },
+  {
+    "owner": "0xFE362f889a2c843708DaF7D32eD70ec6188a3A47",
+    "vault": "0xEBB88b36dA9FA0b0Ece940164188cbCb1925cC2B",
+    "gmxBalance": "42410154846294456822"
+  },
+  {
+    "owner": "0x22723cc5aE5a1B4514ca41F2466E2ADe15Cf529B",
+    "vault": "0xDC285F81B11853C8307ac31d772a2A47b4a8D040",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3D6a18349E745442705AFA3377f8f725C80a6E1b",
+    "vault": "0x92164Ac630c1b91dD4175F4826ba50650a62ca59",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCeec7485996BEF8815821481bDEe918426419C18",
+    "vault": "0x021027a01398a7533325e2A4dCaDC1Ed6A844DaF",
+    "gmxBalance": "63089901680729938604"
+  },
+  {
+    "owner": "0x5f1Da18007f212A0281AC98438fEbcc44F0f3709",
+    "vault": "0x7d72972AB326deef5D22A4e6990ee0076aCF8269",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x786504696489E2B4755791d7585DbD620b2459F8",
+    "vault": "0x20cE4249486a552Aa318FcBaD5AA7789FEFad4DD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFBbf7d0d6Df7d68384C939225b936848b24f4600",
+    "vault": "0x79BD63f59b13bF9De8AD36Db341a4D0344dD0E6a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x07502E888ad3e92f18dC26d0cc40A2B8a4cB0D60",
+    "vault": "0x4DC39858CAe720A17760FA44A95B58e8fa69a1df",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdCB906044452856242401323e4c76dF9f15690E1",
+    "vault": "0x2c29e785428478d9A3B6675477E5F367af2866d3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe63E2CDd24695464C015b2f5ef723Ce17e96886B",
+    "vault": "0x93bfDFC1536D952F1dc2C3dcf84ABdcd10cde16b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1b803AAE9edEC38d87048FC3155B1B746932511B",
+    "vault": "0x392dF7eE8a9ad876Dd05B6008288ED38c3dD40A8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x22222257783F4Ae46c637466a538b1691871013E",
+    "vault": "0xf889b5d4931DBA71C9d2Deb996DF30F1186fE2DA",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4104C53cc2Bb2892A995E924488155EaB8050c7b",
+    "vault": "0x9954c46282b90534CE7F0C39f2627beF39dFcC2a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEDae60F1d7837B13EDa3D3bA9F4dA6b8463c07c8",
+    "vault": "0x8F216F1eA5eB634E9A0165BDB92fff0a741A831A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD3CbEa9e063f958e3B9861663C7e4A00854bbd1E",
+    "vault": "0x60C3211186878BB376b5207084F7d01F2796A9BF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xaBf0f7bD0Dc8Ce44b084B4B66b8Db97F1b9Ce419",
+    "vault": "0xC212002846BD41BFCE0b8D954843C407D5aC5C51",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfe8cC72D95633e3a40CF3D221a609ef0C4807745",
+    "vault": "0x7515c0116543082E8bD0519690efe9dC0e24Eb8D",
+    "gmxBalance": "13201555449736057"
+  },
+  {
+    "owner": "0x1bbdaBC5C39f56Ff980178B4159F169ea810fc7D",
+    "vault": "0x153d7395030E5eaEd14Ea73F419a89e022ACba8a",
+    "gmxBalance": "15562057123790069"
+  },
+  {
+    "owner": "0x88902117D492794c19e16785369ccABB65475c1d",
+    "vault": "0x45a44e0F0F48aAA1AeF801D5BBD67EDcD0521152",
+    "gmxBalance": "544463842436497"
+  },
+  {
+    "owner": "0xDF30911DF2Aa5f7A7abd5C8b26392384c8042a78",
+    "vault": "0x2C3d893b8f5d31b5A854c98e4C2d213BA06b2409",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf3423BD788cB70eE5ad05a962f12e89678309989",
+    "vault": "0xcce566A38df36A0a7a77bd5df15140725D43e101",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4dCBA122d0aB15ee406aCBCd38b8116138C16312",
+    "vault": "0xE4D0d0B76fFeE8CCd9d509a07109bA7deF9432B5",
+    "gmxBalance": "35580250910388595"
+  },
+  {
+    "owner": "0x450ec0d160a0366850D928bD615dAE53b36B55b3",
+    "vault": "0x799880C5dB1831727e5DA4c5BF60c315198A5AC3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB3DED49f393275978A744C633Fa80D74db64c970",
+    "vault": "0x2D281E72324b92A2F804384537D88c223F6Ca521",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x30044b7C080A6e456386d5b9c370Dc7c259AE2cd",
+    "vault": "0x44a396b865E285dEe20a4CE59a67de3518742658",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xef8d32351f92c79B00198E5fD6328Eafe266aE68",
+    "vault": "0x017ED04A277190Ff8ad44BB455Fe252b4197D0F2",
+    "gmxBalance": "12451591304409263"
+  },
+  {
+    "owner": "0x8A8C879D39A74fCE0593714956bB7Ed048A5c1BF",
+    "vault": "0x9F6dE2EC4F1C5A7A5940B56f8f4ffeF4Fe2cDBe6",
+    "gmxBalance": "286833074066506604"
+  },
+  {
+    "owner": "0x3ef9eCB11004681503faBD8835A50A97f54bd2d7",
+    "vault": "0x54cc9562d5023bCC0F3312B00E39802C51AB3D50",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x583bBaDA56bb535BCBb31877A620A6ff2A25CeA5",
+    "vault": "0x3a58c120065A63F42EA4E622759Fa6eD3f451402",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x28d424Ca841F4f1D08d76D491f3a221783C85581",
+    "vault": "0x46Cf0eb03A91b71dA982151629dD5F854EE27227",
+    "gmxBalance": "4621697806741803"
+  },
+  {
+    "owner": "0x5F4d81E1dF86A23B2d3A9313682AA5795dBc803A",
+    "vault": "0xb9dfc86895D5976D55E14BAE8A327c8dEC78F1a9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9A1cA9F181f580C2463Ade82658759E22c5618F6",
+    "vault": "0xe7085f62FB68c4e485519FC3f59f4F8DA75B83e0",
+    "gmxBalance": "1637539609922966"
+  },
+  {
+    "owner": "0x73408DAE6c28CF0274Be4732C7C0f159669e232E",
+    "vault": "0xA05aE9c454e8df1fFF82B228830Efe5F9c1f3954",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1e15B51616213E06aC509261aAa84466646b9084",
+    "vault": "0x17579399B6b039Fd987FbdB4bBc9Dfa1c10c41aD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9A41aBEe1477745AB8004ce129AD60F1231Ef85b",
+    "vault": "0xDb23eD670Aa262D35CB13aaD59586115c2D8357b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x08318A08f1B4E99F1356Abdf53B03FB602A22517",
+    "vault": "0xE77517B2f7BC4629FFA9DfECA0736ea3Ce662a13",
+    "gmxBalance": "1919192729499958"
+  },
+  {
+    "owner": "0x8Fc642d66492C830dA43D95da7fE3F027F4F3246",
+    "vault": "0x34A4080D384543125D85b9845fB3631679019e63",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x20665e0b5fb3e81ABefA4d2aB515bdf0e6Fa6700",
+    "vault": "0x5Bef96b85a12EC138DDFCc4CE0bE6Ac5F3550599",
+    "gmxBalance": "98225570687673"
+  },
+  {
+    "owner": "0x6b5D2A86637C09663896F1954208c3b212f1586b",
+    "vault": "0x1439281A9f490DD8BA52e12Dd906483570aA95ba",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd751889A8eac6503A50C5EdF5b141fFfA05634c7",
+    "vault": "0x78946E02ef57B214e6CfC910AA20A19daebfC1C0",
+    "gmxBalance": "10000000000000"
+  },
+  {
+    "owner": "0xbFC4fBBeC37c291aeD1d14f02B5221d0bE0Fe8f1",
+    "vault": "0x3d01b68568b17b28BdF1f5f30446292Bf20c5ADA",
+    "gmxBalance": "33429045660847883464"
+  },
+  {
+    "owner": "0x313d3d834E147A49A4cbA528Ff5CAB327757469C",
+    "vault": "0x2cF8Bc04F6714dCe91E5E2C6890b5625CBe1120b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8C1bFdeD02Ed7e157115ADe43d4E26F02E86A52c",
+    "vault": "0xa1AD7972fbCB487076fe89D77CccaB2E14E0D869",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB19f6698d63D51Cfa0D6eb4490ca83Fcd640F462",
+    "vault": "0x786E16F1623101c1B7dAaa7a7d69Ff63ae0FF2Dd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6e12541f29c3B3dbfE723dd5EB21e7ab2F046F3C",
+    "vault": "0x54685BD59711A42991Cfb1981c9B05d42F98FDA8",
+    "gmxBalance": "374469991542967"
+  },
+  {
+    "owner": "0xc65Aa07A7134B08a558cBc29ABa93CEBdfB02a33",
+    "vault": "0x707c5DC98C46eE96a55D7Df0D0a03eE2348AD8C0",
+    "gmxBalance": "4604584475677751"
+  },
+  {
+    "owner": "0x3CB004Dc0f60BCA7cD9D724546c1c8EC56cD9fF8",
+    "vault": "0x1F5954587f57bF19B0EE7Ac9Ef56558D38502a95",
+    "gmxBalance": "538225623087250872"
+  },
+  {
+    "owner": "0x00068f0BD662FA683d1923c12129976eb8D7ccd3",
+    "vault": "0x5D06981b0847AF2E030929ffF379D9449382941c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa02a1aB39Ef37b7d860D7A791661703023389149",
+    "vault": "0x22B3e20Ec17fa7C0B8aE5870f174350A139e8ecC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4Dd74e17cd0Ce65D1Fa6Aa27c20fe678221bA01a",
+    "vault": "0xbFfC373659490c39dc287C2193412dDff42818f1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x81038bd85686d738444B4613a0893258A2723a54",
+    "vault": "0xe74E0D96E831C9ad896612539F751baA778B26d4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x57786979c5088e17807FeD6a6E4fAa5330D63079",
+    "vault": "0x5DCE8597937bD919E5744350f96DA9a22c8F590C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x57f0CA1408feD9F08f4214a113fA24Ad7047719b",
+    "vault": "0xD4C7145c49046Cae79120280533193DcF2b0edfF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDEe9Be8bdEDecAB8213c517c45BFe71e440b5260",
+    "vault": "0x1830D3F6E2eCF8bD4c2232ec7f04551780e765B5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x47e858bC6ac9d8D6617CC6B2D263ed38d6b9aB0c",
+    "vault": "0xcFd0500ae193537e5FCB962Aa7b229efCeA43A17",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8D17851c043dd69EE8ba1e68fB8300B80e8E7Bb4",
+    "vault": "0x8f9F437C2Dad75191CC2D735fa0825551150b08d",
+    "gmxBalance": "219385305048721796"
+  },
+  {
+    "owner": "0xDb786F073095c3915749114e227a27A81Ef03a15",
+    "vault": "0x758Fa61952859177e9AFB07ae7FD0300493Ee0D7",
+    "gmxBalance": "80798868360739935"
+  },
+  {
+    "owner": "0x7e81462e3c1A43cd4BfF20216ac5EbeB6913e534",
+    "vault": "0x7893191e078b328c28e142Bce08D94180471EB96",
+    "gmxBalance": "140530300329604221"
+  },
+  {
+    "owner": "0x2F0d5918Af0D12631Df3fd45270AC3153C48f38B",
+    "vault": "0xf3a1fC8DC6740f04C2cE160cC15Fa2a08A69Eb27",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7DA2323ed062b7f0ed7BD387D11ab8adEAa0CA30",
+    "vault": "0x1d5cD6Cf83864923feBE2Ff018B0f9094e4719E0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xbE767d6a5D3388f0151e86c1b47638B241E02D79",
+    "vault": "0x1ca913E9629555Cc38b6cF1b218F3737cee6fdac",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe5988E0A077491660bADdb23d2444c5519195596",
+    "vault": "0x8298469104c75af70924c9FaAd4de5b438AC4120",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCe60cf2ecd9497eb9Cc472de3D33d94dE098A2E3",
+    "vault": "0x0977d32D671576213FA79d4972bCfe104da14560",
+    "gmxBalance": "4812650619530685"
+  },
+  {
+    "owner": "0x9b5b56123F3308813d1ae3b0d51fE945e1C37c5E",
+    "vault": "0x9cFec5267D4Dfd8Fc193F3cE561b08df06EcF40F",
+    "gmxBalance": "39131925676275016"
+  },
+  {
+    "owner": "0xFD2f351d335aB6a24F7A96a1e7f54FB09e4150Da",
+    "vault": "0x90869B27cA50c57985809Eb9BD61eB63180509a4",
+    "gmxBalance": "13561472364240075"
+  },
+  {
+    "owner": "0x5d20f971447b9DfC55Ec161a2d8914d20f24c86A",
+    "vault": "0xE196278996448CA6d4F0D67Cad6738c93FBda922",
+    "gmxBalance": "135499348150952877"
+  },
+  {
+    "owner": "0xC9B528F852B7A60644f29910DbD5fFd0568d08D0",
+    "vault": "0xA383DFBBa3B6b5EDB5785228311A79fa4b3C4e80",
+    "gmxBalance": "2364995548362423031"
+  },
+  {
+    "owner": "0x6953a35Fc1A009A4C3B879D0416609E40231468A",
+    "vault": "0xA51fb3d38896eb05831357320CFF87FfC59D679d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe7C080cd5C7A4c88ebd8939e2Ae4Fc98B1dFB839",
+    "vault": "0x27fF738Ddc8Ba2898af1E21Ec15fDaA7ff1604f9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1241dE051C6C822809E405806418c0211Fd027CA",
+    "vault": "0xc8320Cc9694F0C1b402f1E165a15f445079167b3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x635681E0B420198F03Cbcc4026eFa66Af3f5fb40",
+    "vault": "0xE53eB049810559733c815Ca570E0852D8B274fB2",
+    "gmxBalance": "6091995116899257"
+  },
+  {
+    "owner": "0xb39d9d81Ce88Aa1679f0570af6E452D50358eA3F",
+    "vault": "0xA4E82A0A15b74b83df0617c4726FcA2D71b6b9C5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa9Bc90dA88BDAc8E0Fd90339f3C3D56B1dBf2C2C",
+    "vault": "0x10b663cc99F8941B5479e9Cf6d62a375Bd9553e1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3E32f66290b7F8C6B9B3eb8A9dE24830Cc5874c1",
+    "vault": "0x90A1028d0E961959adB8b3A610C0746b7aBE6f67",
+    "gmxBalance": "8695017025868499"
+  },
+  {
+    "owner": "0xd5b807540CA933ba8C065dfE2FF5055b77D87646",
+    "vault": "0x76e120d617ccAD512b88eF1Dd4C27e3CbC520A41",
+    "gmxBalance": "154699177617730692115"
+  },
+  {
+    "owner": "0xa43D2b4331AAaaffb59c03EF4E5B168f6111f8Ca",
+    "vault": "0x05Aa8AE11D3060e795AABe3cecd11BCa2dFf192d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd6f631C796a56A5d448Dd88a01f15058c4A0Be52",
+    "vault": "0x4Ddd9A07b6A36E52EdfEc9c3B9C27cB6D17b03E5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x988682054ca48D89ADbd5C027D750A36c86b0493",
+    "vault": "0xEc37ABae2597491204B281119FC1E1e2b9C87759",
+    "gmxBalance": "8199823176507135"
+  },
+  {
+    "owner": "0x46c38155354791Da32e8Ca26FAd5d84fF1bDE945",
+    "vault": "0x04f8f65eA044f321aA33C823059A5A61C1c8901E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA2b2F10A3C542FEd3a53654cca97D34f628f55e3",
+    "vault": "0x44DC540e39006b383751fB040A9ad3Bd27653160",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf018B923bEbdef7a8124371B322D7E29a08c3198",
+    "vault": "0xFDafB7B0a9D59e68bc3dD14Fa5770e217A2e0DB5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa2D36f11E2225d1b89146F443350e825F15B8B68",
+    "vault": "0xFb52A0CF71597e182eb68503f89BB0a94ebb277a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD7a2Df79E0a43710Bc938B5d28CC92353e622614",
+    "vault": "0x8453CA37E4aA20B447FD6D0ffF79e96dBb1987F3",
+    "gmxBalance": "83964534172227002"
+  },
+  {
+    "owner": "0x584918c2ed491fFFBC324f9d78B31d199C9Ca22d",
+    "vault": "0xB3d454F42C1c0207aa7Ad06E07AEc29Bb71cD718",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa1a940aFB30354032Bf9dbb3b2fca3382A891471",
+    "vault": "0x0527ACBFcDB57cBeEBD2D4C63Ff8867B3460dcA2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc6A4e70939E86E25DF1cb29A7f49562A7249b0D8",
+    "vault": "0x38a8CC7158d292bdd656FB460a05d3179ecC5F7D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x165E4e022bc79aFD1CF5464b85016d41cba53201",
+    "vault": "0x75E7a097c7F98eFCeFb8da189EB451B63b3aBAbe",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xde2b7d7f3BF2E8CB16c1532077468Bb65db34b5b",
+    "vault": "0xa23e9C0940D3fCC7753A5AEE1b65eFaa4A20cc88",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x42E3C1B90FB712909B09593c419D245C50942a50",
+    "vault": "0x935AB9Cfb49e732f6DE1704740a884f55d40e916",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf706BC1B284E37eC672865eb56491e82dC7AB141",
+    "vault": "0x98647230f19217C5B67897237F369B51Eb3862B2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9595F24afD22AB291BE3D9DFDF978a2e1c454C51",
+    "vault": "0x34968B4Ef899B6ca281B31F0DcFdd63A26990eE5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1EA2A806f60d3aBD361B2E9ec992Ba7b85258343",
+    "vault": "0xbB28E835dD2d5C864B87BB0758F19f067686fA11",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEc5CA1812dEd2994d128aa7Dd56DC62765c685d8",
+    "vault": "0x952fbFEb7A7B4e52ACe4b8CA19DD14D480d32B96",
+    "gmxBalance": "5459011905219170"
+  },
+  {
+    "owner": "0x7b6c27E6F26B762FB2092279679E58769f4890A8",
+    "vault": "0x90B69c6E1a8e790eC3aa422e36BD030f928177c2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC62ff3eDECb024836968Bc57470711d4FbdBe59B",
+    "vault": "0x5F7Af09e842543045254138CDEDE3FaC049Bf9a8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2868592F0a42A2F3689fB49F41Eebd3BB0604a2C",
+    "vault": "0x65B0b1A7eF966348720810a3446Db4dD25860E39",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x53a8bf09b42bCFcA6c0d8C90f9BAD83f9b66b052",
+    "vault": "0xdFc6994635A413eFD4DA15E3ffa2C84a4507395f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4fBb705621E7c412539Ac034E804D9418465eF29",
+    "vault": "0x398b4D97F5916a1A16542752841f9a4755a902ef",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x305cb081c471d8bf6EB80ef9D37589176eb83800",
+    "vault": "0x2D83e3c7d6d8EAa622D96e955D9C7470c3c5957b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd8bF8aEb0c196d3c9fCEDc92C3c37133fFD8fbeA",
+    "vault": "0xA21F67131EbA4420E1A9Ce65b189e963097e59de",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB7Ff55bf999c21A441e7833b1346daB299762F1f",
+    "vault": "0xF668AC54A2c31B859666B5451b0Ef68602ba22E1",
+    "gmxBalance": "1584775248078276"
+  },
+  {
+    "owner": "0x9b31254723e0C5e6887294eD4cE98d809DDdFcbA",
+    "vault": "0xC3b34eD125af7f6385B44b3Dce82DE2B66E4328c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0fD90B9D61af052C4328BC2Fa9A1529627af0a7d",
+    "vault": "0xb594506cE7259b9fD62dA54bB58F7119BB541D87",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x972b0F9cDE1266e860E546ac92E783741769400F",
+    "vault": "0x6Ca69fc1e5ABD69d4B6fBf381946bbB9Fb2ADb8B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4eE976b121de67Fcc77140cc36045E18Bd3b7AF5",
+    "vault": "0x627E628385e782C62c4cdB3A685f7001b624DC8f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xeE9A0bbD2cE67fc008fE3f7f6a86F2c6dA5F7a65",
+    "vault": "0x95a8bA551F81AC8A2294a968814A44dF37c48B12",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39BFf8C8E9CC9bD59b88190AC0961d1C944020f1",
+    "vault": "0x1F37fbA121189da7d2fe3cBF2299797Efc7d2728",
+    "gmxBalance": "50578020368626"
+  },
+  {
+    "owner": "0xe10c0E94B2C87CeBCA499Ae421de8B8dc8467256",
+    "vault": "0x4F14e62E15e1E95002d96c866927675c310116a8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb5f4af1a4B5021Ae10207E1C2E119ce8249B3007",
+    "vault": "0x3fdC52Cef24bbE90bc6d1e1E01f989f995206361",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xAA09F334c6B547d360E7ec09a84bf6E580d3Dc25",
+    "vault": "0x29f800a63ee745E69c6E1E83ed3bE7cD2C5c3867",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfbA4F88DFA6de3Dafd7BAFdb527d36EbA840CC05",
+    "vault": "0x1eB5041BD884Eb438E1ed5BbcbafE5f0c779BbbE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x07c479aEAfBcdCFd587A324A0A4fF0A10C9efa3F",
+    "vault": "0x0094Dc140630C7182c7f3c9271362BB5bBf758b9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x433915Fe84037cebD803F7Fb13626E9cA51e3c9c",
+    "vault": "0xa8F4E6C783140177D272925B693C864F5C2Db500",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7C88B0345983C709426b3b0648Bb10Ba1a5FD8dA",
+    "vault": "0xfFcde675331bf2E8139428ad3434a71AFa236cea",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x52540C17b227fD5aD746256612800A0Aaad5A39C",
+    "vault": "0x31c3D7aB0d9C048fe27E18040D9Fb38D3e7dEACa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6B00ea6fC7a9b699Ce17Bd7825BC16D45D2B3455",
+    "vault": "0xd6dB8CcA06cACF505EF42F01D084Ec24FdC5CE57",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x40A24Ea5B6a248f3A138e6BFe3366e78D1Cc71Cb",
+    "vault": "0xb1add3C013560617AEDE638417d6692e3a317Cbc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4B445dE07860F86484c38e093E9D3187cD034e7C",
+    "vault": "0xd331d2Ac17FB666Ade89Cc9080A7999E566330c3",
+    "gmxBalance": "537161644013494"
+  },
+  {
+    "owner": "0x2900Cc370bA294787937BF6f92Ae851A74B7A85D",
+    "vault": "0x011375Be3e22496E56d2748592BC70f1B628d868",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x648349e02C549986C8ef2b75514d73040D581Acc",
+    "vault": "0xF7e84B94d97Ec0CE6518001E0a99435F7b7d3AF9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0eBaBD3787d889e6B5e4B165906bff09050940AC",
+    "vault": "0x57E92Fa20F569500777F4d75d8e889Ab608B60E0",
+    "gmxBalance": "358537020799415784"
+  },
+  {
+    "owner": "0xfb0191315A4dbc61d3A4b029B8455fd30231F49D",
+    "vault": "0x5Ec7685C363AAF3e085c6041917483A556A1d6e6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD643D3bbe343f2261559eF8D163adA6B8B9BD682",
+    "vault": "0x0CfB23Ca244E95b4F465afdc4844dB1F8B3D4877",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x594B9ee83194A743d65F0345275ab33ef021d9b4",
+    "vault": "0xb7261650AD8b17f2D9175F74bEAa4Ca6d18c5a90",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcc9073c44AA42048DC6BEc970dbA45e986FC024A",
+    "vault": "0x65116e754dFF942880602CCB27a05432297B87FC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf286E07ED6889658A3285C05C4f736963cF41456",
+    "vault": "0x327A13897a8Cc9ECE3305fE811d4CD78c90ea5A6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x162B2fb2F8658F262828E12D044390D6Bc6342C6",
+    "vault": "0x77284FE8A8758b7B2F40a518A85e21803D75De85",
+    "gmxBalance": "5247996755565059"
+  },
+  {
+    "owner": "0xf1bAeb439b8eF5043E069af0C8C8145963ebc3f8",
+    "vault": "0x1c152680df271841e1fC01F5e98fb6F89Ba0607D",
+    "gmxBalance": "10000000000000000"
+  },
+  {
+    "owner": "0x358161dB3344634e7Aa3A128a511CC314Ff1F953",
+    "vault": "0xC3167F51bBDDf34Fe59A93428d598c7fd78BDA6F",
+    "gmxBalance": "1376741354534841866"
+  },
+  {
+    "owner": "0x6301940D2BAeef6b3269079bCBE2f54de23cE081",
+    "vault": "0x1743ad0DF27321Df73260428807CC775556e9248",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2C9183595f2a806FAd6729511B9dB8fAf1a99b3E",
+    "vault": "0x204C66a9379D9a7d4952442B95e507293081f0d5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x72EEc2691B856a7F0B5529266e83f3C7a0552b35",
+    "vault": "0x7C61FBFd1F7330eB7a49266414790719ceFB2a48",
+    "gmxBalance": "24665663634106457"
+  },
+  {
+    "owner": "0x2E0e8fBf7764a5967C5597bA9b4ff4F639DbA69E",
+    "vault": "0xC936586b231468624Cb88846FdaA71f9e5e2f31A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1466F5596c439142B6f39723eEd27c117A97f8ED",
+    "vault": "0xBda4df2663F653c9F5DDDA2FD51034cc59c60831",
+    "gmxBalance": "6912865536500190"
+  },
+  {
+    "owner": "0xDED9A28Aa6D5178113328150a83E3113D14be6f3",
+    "vault": "0x18B084C5492048942a20EF6B7b940eCDF0d16297",
+    "gmxBalance": "79429863251960177884"
+  },
+  {
+    "owner": "0x2074cd9a4Eda63C9523B02f3f5eCfc7A2e90c2c6",
+    "vault": "0x3210bC017765ABA3845cDbF8c176853466ACb603",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7dDED0481811c15cB16F9D595D7b92AcDaB8626b",
+    "vault": "0x76F53B7018377ca1f72B001aFed55e3f0dDce9B3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD2BC982A2035dB0E1Be7c2C1a9f87E31794C653e",
+    "vault": "0x9ADd08959c50944Dee09ea1f43f55dd15c86616E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8798716242A3b6Ed6a11Dd841853D392587dfdE1",
+    "vault": "0x58ca8E3a8D31A0F82b32ECc56A1475d629D66AF7",
+    "gmxBalance": "358462180426727"
+  },
+  {
+    "owner": "0x791E4c2Ad3ea89f7183E6b010ac41E632a3C323a",
+    "vault": "0x79BD071741633DeAe8D92E252755878b05116F7e",
+    "gmxBalance": "6130665916646004"
+  },
+  {
+    "owner": "0x5253752071AEAa485040b368ab6eCb49E3bdD68d",
+    "vault": "0x7DaA3da06c876873a18445923Ce1973Ed39c9c4e",
+    "gmxBalance": "5000000000000000"
+  },
+  {
+    "owner": "0xf36B1902BB6FEd4413eF1B9d5bDb86044abedfF0",
+    "vault": "0x021a439157f2Cb4034524D779eFdB2c6B7Af3aC0",
+    "gmxBalance": "361177914771186"
+  },
+  {
+    "owner": "0x329f4435E0F22899b733756c71AA12C1004146B1",
+    "vault": "0x0cbc661eEBF1E4049daF704150Db9798d77Ce51b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8A8841F4AB46A052139e0DE31B1e693382193813",
+    "vault": "0x27d8eb7c5548D2B4cE57462ADC242795AF6a0415",
+    "gmxBalance": "3555641056474949"
+  },
+  {
+    "owner": "0x2042c5e7fb1123fe38FA1F37d341DeCB78b970e6",
+    "vault": "0xd9d946914CB6CbFaccc933722B22460fE4937ed9",
+    "gmxBalance": "1138884691005579"
+  },
+  {
+    "owner": "0xE34634f9fb4287547f6E05469bB84077c57075bb",
+    "vault": "0x65d4AfB84b3042b17879A540fc1AD45A1Ad738F2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x411d209E4874E00Dd550de43190224515b28fAFe",
+    "vault": "0xbb8c050b5b54B187eE3819D78c55FEf91B2Ad686",
+    "gmxBalance": "10783718685520634"
+  },
+  {
+    "owner": "0x49F65fe360a0aEE3fF2c5Fe7eA4F154D48095853",
+    "vault": "0x6fe7FAc5758a5966a735b6565272A90e7Ca17F15",
+    "gmxBalance": "4364481785231290"
+  },
+  {
+    "owner": "0xA1ebf2043e76446eFA2724bD1Ec18321776096FF",
+    "vault": "0x4e4B84219B418520aD956AB2C0736f7Fbf6298bb",
+    "gmxBalance": "570812711105841"
+  },
+  {
+    "owner": "0x7ECCBbabf5276c4b48Bc15c4508C5B808F54E781",
+    "vault": "0x7bD7d4d0104F676a9CB0A8F6Df878000eE2406C6",
+    "gmxBalance": "15650448141867278"
+  },
+  {
+    "owner": "0xAb01AB744f11833c512b0cBEDCf3b29820b4f356",
+    "vault": "0xDE15666103dA69cc5a37A19D7F5B6c7c6D341831",
+    "gmxBalance": "240841811114953470"
+  },
+  {
+    "owner": "0x0e9E19E7489E5F13a0940b3b6FcB84B25dc68177",
+    "vault": "0xC234a8bB5b24aF6A5426138b8E1629a947d27Db3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9f07D23531349275b407a93e589c40a89D1e5179",
+    "vault": "0x375C16E2109417D16fE3E25a83dB9E3026b35fD7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0B3B33cC7aAd4D334EfF76B21218679179c0a84F",
+    "vault": "0x59770E5C982910e6fC0332ACe38Ac69A3f15aC23",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc6d2Edb9cfD6df27C390702bE405b764c5ABe97e",
+    "vault": "0x6C1Ca99d821737D398f5E05d461817948CC412DF",
+    "gmxBalance": "53705506646536616"
+  },
+  {
+    "owner": "0x5A1c829a78c98F1A79277E21f866cc7ca417659F",
+    "vault": "0x9e03c5B657114900D884cb949a125fA01F720211",
+    "gmxBalance": "100000000000000"
+  },
+  {
+    "owner": "0x5b977cE6ae6DE2947d32EbD3EC1eE7F57E30a82F",
+    "vault": "0x9Af5004a511E808F90B1227F28881436468c48bb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEd47E1F7fD024e35f5Db9d1f53c1aBBc855fF06E",
+    "vault": "0x4d1Ed6C0f04FE6e04Ab12eBd14728b4cE0340409",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x479725BE70dE39195d6F820D2527921801767bA6",
+    "vault": "0xd66680b8e0496b223cc7225C31e1aB64C87439aa",
+    "gmxBalance": "3212186382696718"
+  },
+  {
+    "owner": "0x7dbb2448FbC5D34691097c871595dd7a51D1Ee16",
+    "vault": "0x0C8B134Ff7f8881ef6196C3991B831067096185A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x13dA52047FD89Da8B45E00DC332BC527093C0C18",
+    "vault": "0x404b90c67A134fd7fb1241278fFD90426cE3E7F8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0BAb71cfD67e9F037573b4Adc726cE266e2B1b2c",
+    "vault": "0x77557E8d22BC65BcAe6F38debf34F10173bc5636",
+    "gmxBalance": "29094871937634038"
+  },
+  {
+    "owner": "0x32cB9fd13AF7635Cc90d0713a80188b366A28205",
+    "vault": "0x6Dc183Cb7FbF6A5179909b7dE017756BF276d1d5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8102c13F090cEE4B9B8ff58aBAB42dA5896fbaCc",
+    "vault": "0x401BC982576984213c35ff0b836DEB19b8A4402d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x352245dd57423a176E582174e2cA76b1a3229502",
+    "vault": "0xE9FC471369fcA621C866Ebb614688e2327095E92",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2E8fBA7125cFad75B8Bc750832B06aCae9729B16",
+    "vault": "0x4bAB038C52A8814963cF1C69FaEF5BEaB7Aa924e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x827a9f3cE3141a770F92800B7cD15172FE062a7c",
+    "vault": "0x881C804f4C3a4a62F8bc4b67dFdCcD748DAD2007",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7F2FCcaf717128Bdf5eFaBd67a8ea9a812D5813e",
+    "vault": "0x120e927843F730f946D3cea3d89c015472A7fCA9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x609470c2f08FF626078bA64Ceb905d73b155089d",
+    "vault": "0x186f149993341c26c540DF2aB27A2526d4C241c0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdb8d9a4fc8368DBa0A527CF7C7c6d795C3E40971",
+    "vault": "0x464ED2bc8731b36548d8bc0f813AC72e7EF8835E",
+    "gmxBalance": "18890603466468322651"
+  },
+  {
+    "owner": "0x0E57F58CC5EB3674c4738074362A3d9d82ca7648",
+    "vault": "0x81b49464544a970f850828b3d8143Ef1Dec77451",
+    "gmxBalance": "6799355510811832"
+  },
+  {
+    "owner": "0x0640B34aA370c2B4aC73184726a4A2AEF8b52829",
+    "vault": "0x91229DB4C186C556DFD9Fe4d496005f2Cf31F9CD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1Ac41f4721E7F9636E0445Cc000450919178FF5c",
+    "vault": "0x5d8118D289aE21f37A81719e6fE96077aA47d31c",
+    "gmxBalance": "500000000000000000"
+  },
+  {
+    "owner": "0x8C39b7cB82B9D791ADCc9387098944B635C17B32",
+    "vault": "0x638cf07A71550CED009c7D6A6B779a704903e290",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x16EC5EE1cC431cA95de00b6C88d21D0B4d3Fc2a6",
+    "vault": "0xfA50082C95606219701D1e3df2A49C46eb128fcC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd8b2B7F42873F111348c835563e26865474337db",
+    "vault": "0x7d8BB93657Ba973D5f4D16d196BEE731A8978d5b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc3112C26Fe9a86ecA5a2749DE9A71B73d2e78BBc",
+    "vault": "0xEbae45ad0212ADEf927aDf13B9a8B613Ea296a50",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x67beb3Dd509b88b706dC5A9f03f50006410b088B",
+    "vault": "0xF310702d323FB53c04B92e83705A5D982141840b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe1C00431715b915717dbCDd417CB7BF7011cCCD2",
+    "vault": "0x5FFe2f9F9f99C59431B18C9b1B626d4914Bf49fA",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8549D43ac2741219a7D26754fbE1801b82184A3B",
+    "vault": "0xFC5e7809ddc70Efac3d25DEc7D94FeA4297aC396",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x48840F6D69c979Af278Bb8259e15408118709F3F",
+    "vault": "0xd06A36F831fb2BC0955768BC4775769749f8Fa4d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD3Efb39f06379d05f5ca1F3Dfa03C26Afc74dE9f",
+    "vault": "0xB6557F6f118B506dD70738dA7Fd9443007F27cdA",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x971D720CD004856FDbDbAa7b6DD3da1858d430fe",
+    "vault": "0xEA9603c60A40dBe807650b9d8A488cdE50AFB503",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x23128C782B120b3D8C4E4A609B3f8c42fdE32345",
+    "vault": "0x4504a30777Acd18214E0A89b689724651d9CBC63",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF712aB8c4505eB4B36a2Ff9Fa746470be81E6538",
+    "vault": "0xd13AFe2cE47DE68A957533A66dAfdAFE227A370c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39be44CDdd5e3f3D1eDC66fD8C2B0D5ED355B64b",
+    "vault": "0x7ceAFe85d7163F41785F0f902e141d692eeb2E40",
+    "gmxBalance": "10331585545479022"
+  },
+  {
+    "owner": "0x14C32A94d825b0fBfc1A7024282F6BcAAA3082D1",
+    "vault": "0xfC118967058f3dEE30755326F239aC89FA23b424",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDD0CDF8D98d9Ad3ADfaa49AaECD444Bfa01d9C9a",
+    "vault": "0x15970aE8473498DfE16bF18551D7499199a00F55",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfAF307fCC6136A09d3fDc19355A8aA8602eF353E",
+    "vault": "0x9b228c2ea8dBdd4219034572bA49f8fB96fd4794",
+    "gmxBalance": "19200000000000"
+  },
+  {
+    "owner": "0xEb327254587faCfa7D90A7d13601c8758604ea0a",
+    "vault": "0xc592B8540fAEB0225aD29856aaF81b3F4dfA2D64",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xECd97Ab23e739597400957523250431eAC3A86ba",
+    "vault": "0xB64154dC4D702d086fdC9e2D7af17D91BA50BFbD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFd4F98c2fe695336205C8D03525CDaab90b1eb82",
+    "vault": "0x8AA87b2C29444A5cA66a16604F3a6b3F9988F76A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc5150Ee35Bbd51F9B1A6EE0D7A0A6f9BD8E96E75",
+    "vault": "0xFA2eBa2Abc5790DB5526eDfEA37559d3cDDcFc75",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x52EF1F3c4A1068d0079093cD2DCAe9eBE9Edcb8F",
+    "vault": "0xb9E0FBd2e155bA8C1F79Dfa4965D822D649Af35F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xce65a2b43eFCcd13D7a7adF2ffb0C72aCDE0B2F1",
+    "vault": "0xD24E96b12ac35582B75eB6122CC828590Bd689CF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa670EbdaaA258311a7c33A5BF795f07B97C83430",
+    "vault": "0x0A734FC769ce15fBE494729F0fd0f58063d3c3B3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xAcad027eC3F4746f052345a5d058591c81FBb925",
+    "vault": "0xdFCceff60273F033fC7e42f5c27149B90fCdE5b2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xbebd24c6ddafD20880cb1f3cF80BaF640774dF34",
+    "vault": "0x779cdE0B28d94e296F0567147c4fbA1d9c6bf457",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3B411CB6F1F30e90Cce2bA5F1D3C8C4DaBc7dAce",
+    "vault": "0xC31b43ff4d8A49cfA297665fDDb2AbCe7B0a3Ec1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdb7fe3D1722701f9C45bB7216bC9A5F482565B29",
+    "vault": "0xf4FE5C5E359Af62836f9B3d1D29adF0fC63d3ecB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8afFD7003FA18dEeb480c52C463C183D8E639e09",
+    "vault": "0x5Db820CC2F8b6B157FBe0c12a4d98fA952685667",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x67f1BebA75D7721175e120B7a9906Df999E52e6c",
+    "vault": "0xF6aFEBAE078736B766E26c798F165b1F7622023D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD09729321471210e4C75B902f36C89F71c934a9C",
+    "vault": "0x49f83AF63fa89444617d73e5077eB0a4D98d7b9d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcdeC510974a17FCf3156EFB104990dE7F12CBcfE",
+    "vault": "0x95a2208154Fe9Ef7fD57d453280E584428bD29CE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9A9AB4d9f84d9c6797a963445D0A369A4796E0fF",
+    "vault": "0x5F21049b1cacBA192E4c02B1F1Cc0Cb7211bf436",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x473107621bE2A0736B33A6eC9cEFb6Dd3E5bBc92",
+    "vault": "0xAb22c23ce84f0272Ae9cD64f6927b9b2De5163A5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2567C298baA9508cEd2CD34feb414DbB52Be3Db2",
+    "vault": "0x984Dd5A4ACC162De566EFe9945e0977B0a9fd80b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6ec9Ce2de339B004B918d054BAB20b88Dea941b2",
+    "vault": "0xD9CA8A36024E9A8Fb725941DcB788cd5483F0066",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5E088A51a7A043b745757F3b3dc36bc774EdEA91",
+    "vault": "0x7986F2B7624E01432E077D09505fcAf19ECe4F89",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39032520c46C965F0995DAfAf2A26c1c12546690",
+    "vault": "0xf005c3d0F1A6B14Ce2a9A7881ccFC17A2e528632",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x808979E64E19d52D36A2b0d3aFa72a60d1f12019",
+    "vault": "0xa0916d0ea6870655Ab5513EC1966890C1652EfE0",
+    "gmxBalance": "659395798387081268"
+  },
+  {
+    "owner": "0x2A61E85d71Ba1d31B00e28E859ab7d034a749b04",
+    "vault": "0xf7b843fa01dDC88B965cc0B4D5cA650C7cf63eca",
+    "gmxBalance": "163000000000000000"
+  },
+  {
+    "owner": "0xe3502a47f5F68542E6715a0fd547397c0E7d57fD",
+    "vault": "0xb5ebE978b5bfeDB7Ce26784FE3fB9b9fDE73e9Be",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x23dd73e6808c04543e10EE582A107999057556e9",
+    "vault": "0x9564D2621c7083F187f1E440d57E3f46e7aa2511",
+    "gmxBalance": "5596667763488806014"
+  },
+  {
+    "owner": "0x6AB880AFd1E0C7786cc5D05F4FD9b17761768da8",
+    "vault": "0xd1dff1ab81A035D45ce4ce4C9518134917eAF0B9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x17eDe21b60c44A0139968E0d1D9a001D2bdC8f85",
+    "vault": "0xD122320c26536a41Db133B3c92aFbB7EBFaEDBA9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x00908A54988f2db52436351AC8188CF68bf92FeC",
+    "vault": "0xd7D4d2E05Aa652170c7f7603B3b35D5914287E9D",
+    "gmxBalance": "515593773494081"
+  },
+  {
+    "owner": "0x7101836957b13f63ab416dBEa605CC2e24723a4c",
+    "vault": "0xc4aeaDD27B98Dc0aEAac0b3d08ce20FF7FA42Be9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3844597c2b75E8510d8895173adDC28dd995fA45",
+    "vault": "0x00cE533d6b461e25E0CaCBb2d524fC54739c89a1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x713Ee446aC93aF3461b59C9d9B3150EbE3a876f5",
+    "vault": "0x24E88a6fcF182f67E9Ea8D7931ec9d39884D5989",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x367b22f56F3b01A4c90D508F9388e9C7Ac06ED67",
+    "vault": "0xCFDf5b6AC6a75129986071Aeb26E17a1549f9225",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7c8787ec009E8A4f234C5feB055A8557cF0305b4",
+    "vault": "0xdB35250C012118e297D6fC517536755e3BB7946e",
+    "gmxBalance": "11477846150598486"
+  },
+  {
+    "owner": "0xd069FA1E2d428F2580C553fA68C445640f281F79",
+    "vault": "0x059E7cEbE17672F28b3ae422e49025E1C6017ADa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2C3eabe39593D985D5b4Aa5C9A7C9F48BCf51aAc",
+    "vault": "0xCe54006CaD1e07d8aefaB605F7F64647A9AFaB36",
+    "gmxBalance": "10000000000000000"
+  },
+  {
+    "owner": "0x50AD6357e307E4cC78579a7B4ccFD5876a968035",
+    "vault": "0x04A381A166e315De5aaAf73Ef7a5Fe2BBCC72B1A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x12B590c2A9BC3D7dddeE3b00c6c6b39aF2FE26e8",
+    "vault": "0x8389c1715C777B7a3F26aA46A75F92DA4a26FCa8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x54d21dcB81C79f7E5E7e364189b3448FC58e2ced",
+    "vault": "0xae9070Be75e3C8ec14F9850553C1D6e9f5D3A3Af",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2832760aB88d16dA6F36493369e67581B456c7Fd",
+    "vault": "0x925Edc7062Eb8adBA7A6ED81B112D8519985e4AE",
+    "gmxBalance": "2756978268505533"
+  },
+  {
+    "owner": "0x271B68A4Aa515A78b8D6dd0B2628fED2f1224643",
+    "vault": "0x5407a910F9Bfe1B8275bD389132E23A99F2DEb27",
+    "gmxBalance": "1000000000000000"
+  },
+  {
+    "owner": "0x5B8F4C08CD8a75B33Fb7705bB079C16024177e73",
+    "vault": "0x26003A43D262235282D945182591A8de7958cF34",
+    "gmxBalance": "708277688194368"
+  },
+  {
+    "owner": "0x6D3E8657fd8480d26cc87E7aFC0865B4c8F7796e",
+    "vault": "0x1ceea1e98C41e76F1aBc94CD1571F88D24440054",
+    "gmxBalance": "42389913596963513713"
+  },
+  {
+    "owner": "0xfa0009083c0725c09B23B6916Ee6Bf6F897ac6b5",
+    "vault": "0xCB8D95199BE77384F2ADBe4e822Cb0170a68D39c",
+    "gmxBalance": "1976315754684419"
+  },
+  {
+    "owner": "0x360006FBC28958F5289C3d3f872eb9Bcc3468bad",
+    "vault": "0xf71925f6206BCa8C8A5ba94F494249E1Fe569f06",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6Fb8245a89067c777721A51Db3A86B8d415591a3",
+    "vault": "0x156793b42b2815173fc29a0858c579d36e3D94C0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF234Cd5e91eA2C6A3F5C5359862A7C08B97324E8",
+    "vault": "0x8Ca8b3112E0e22C54F93874869d07294029baD4B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x186B4E576E34974c776aB8048970AefD9C71468e",
+    "vault": "0x88C0dD3793b79c782DF7005149ABF5c3eC3FC5DA",
+    "gmxBalance": "100000000000000000"
+  },
+  {
+    "owner": "0x68282C7FB58A7Fb09537E44F2C9436c43a544a06",
+    "vault": "0xAC8222b7235D925d1967264231BC30352045509F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb3Ca07F3aEE4338CB217Eb1Cc272d7A1276bc12B",
+    "vault": "0x5F294f6E473331C7Bb1E3d2A85f58aF641EaF947",
+    "gmxBalance": "67584155975180113"
+  },
+  {
+    "owner": "0x2D7dDD0C3f9485213969bD44cee69E979ee0Deba",
+    "vault": "0xb853eDfdf938678510a62078C54caBA82e02127E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x52bB0d2213502a51d05F4f7DBF6D0cC8C1A97083",
+    "vault": "0xb29B56A51ea124C92ed245D5C6A04051FE4Fc547",
+    "gmxBalance": "7541916049784892"
+  },
+  {
+    "owner": "0x3768e6c39A365Bb4be13bf89fFAB4B7471455F3e",
+    "vault": "0x8745d6463b5f700D6294681c95103a4451a0Fbc6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe3478A1e87688541F9B07056d0f1DE87dC30CfB6",
+    "vault": "0x0e8d9A03fA2A890eFB53c8364FA9226Efbbe5A74",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2d96dAA63b1719DA208a72264e15b32ff818e79F",
+    "vault": "0x5e2481CBcD5f284658fD6333D2a4aAbB98e1700b",
+    "gmxBalance": "199694516884552549"
+  },
+  {
+    "owner": "0x968b485FD10D94Ca65Cb34A239DE947C6ac5f8A7",
+    "vault": "0x137E1E36872676774344D5BB4C3d2d60915821bF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7b0f99A3911FA3773C8fe173f69873d9984A2BfC",
+    "vault": "0x1c5261BD6191804E60C26DFE3dEcd0363fAF4e37",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD3C19457708ab5bCC5E4aA5c3a2379D8Fb02C8b0",
+    "vault": "0x40b72DE53675818305bbB06B2cA424239efdeA72",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5e7C21DefE711bCd5CEa1B267d2e87F7913D510F",
+    "vault": "0x528233CC0d2431507e51Fb18b8aF6eF15BB9D991",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x15A2f78b23Bc1d23960381e00d9bb534b6335d8B",
+    "vault": "0xf4514935085476554CDAE3D6209B8735A6D701C8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe64684B29489a8aa19fdCf68e1616D47971cA7b6",
+    "vault": "0x1d6e78067C9d8f5d759176df1eCEb7b6286B1AE8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCA0073964efe7f9422CeB16901018b1DB0cC4785",
+    "vault": "0x4598694E4D2cfea61fC8ac120dc061673F7a63C7",
+    "gmxBalance": "29061046202352037"
+  },
+  {
+    "owner": "0x4aA09F7d7d5DBe6269a72B71Ce548c52eC70C063",
+    "vault": "0x7d8b62f4E5491dBb45C92FdE32ef5c3B3D21c73C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x10ba44DF917fbbc67F3B5E7fD6320707b66000A6",
+    "vault": "0x98db4E0BcBF7505798F68d0b6C49D1f3731c1fb3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x839c28440E29f00d9E5aE5466E3464D89e7D11c8",
+    "vault": "0xd3584B981E2A37A92a0bfF28962e26a96082514F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x27a3144D9d1AcdEC3B6bCEF17693F7bdBc3D044b",
+    "vault": "0xa42089628a97D949fddde1fBFA6754Eca396e7ca",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd35F08b274A96E1Ce111E62dd9Eb77D31EFbA9A3",
+    "vault": "0x77958CCb73205CB9b353aE6efcF7A8c416167Ee3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6458f999E595D3bDA5692db9df011CCD4ab13a96",
+    "vault": "0xdaE95eE28d378177FAeAcbE3645328d29358D9da",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8e5e01DCa1706F9Df683c53a6Fc9D4bb8D237153",
+    "vault": "0x07dE8dc76c13352108C386309078cd75D86C9958",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xeeAa0CA304f835a43A4b0e75830E66ee1e657152",
+    "vault": "0x11A1b2E1a6530cF13f703fCdB5483f2AD78f45f9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa8D3CBa554A9c41bFaE8EE11185b86B078c2461A",
+    "vault": "0x1f64c89E9E4F9cd9e856270714BF0E533a2CFDaC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdd078a8fF3c1164f61664a5064294cC1D55cbF8E",
+    "vault": "0x8D37EB9c1F00F67C8cBc202eb8e2779AF7bCBa87",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA069F2204CAB4862c861925AD40b113D158A5E2F",
+    "vault": "0x50C597f023418Df473D0B29D3ec21Aea34a12946",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD7040140B51125fBff24f6b6d3Df096c9757fb85",
+    "vault": "0x862F0edE449EFB848f293215Fd8D80C092e4DBF6",
+    "gmxBalance": "10065611847515910"
+  },
+  {
+    "owner": "0x1A08d81CBb0138DCc73d0D06c49F0Ef027c75D75",
+    "vault": "0x76e95164D8c47F418e4B5A0a4297891150173e77",
+    "gmxBalance": "820555945840559"
+  },
+  {
+    "owner": "0xd924Be337962640d464DA5c54A598d8E630f85ec",
+    "vault": "0x59b094D3Aa3Ed144E4D72aD10E2C0eb25Cd8bEa9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2D1a0F69ea53d61b4f74648Ca1db523610784406",
+    "vault": "0x598749BA0bb92Bb3616A8Fc1bb869F7a148d7e1d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7D1C7676C82475995C10d29aE2F150bB57D764B3",
+    "vault": "0x23Fd137c0be19C263103B86aefd45A9FF7c32Fb5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3e596CA94A3639880067204bD371A1F3F8377709",
+    "vault": "0x1E7e67bcBEd5c703b1dE8C952911c1f56A5666C8",
+    "gmxBalance": "90141632820627744"
+  },
+  {
+    "owner": "0x4B4ed7a88081954937B20c55ECd97EbBfB0a9f37",
+    "vault": "0x3414d5333EDfdcD7B6B9834b0C0b93775a7F403F",
+    "gmxBalance": "3927733661766569"
+  },
+  {
+    "owner": "0xD47248D5cC7BD078D111B9bae350587621A5aaB6",
+    "vault": "0xEFc70122D226427740aB6e230996421DB12dc3AB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe0f1a6494ee81864A2BB84E31D7F252342b90476",
+    "vault": "0xdE34Ee5619445f89EdDFBD3Fb5dc3EAD5cD96522",
+    "gmxBalance": "10000000000000000"
+  },
+  {
+    "owner": "0x8Fc125fFF145F62d917dE4FCdE4E2c2465e7CA56",
+    "vault": "0x1cae4515795552A25CD74441ed9adfa42f771f24",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7a360c6175F232F78aD1336c8E501F7564B9B3Dc",
+    "vault": "0x92d6b35C339ADf0db5E498c8e7CA99d5a2a754d7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x833e17fF97f5730b2411C3D7f48605bA5cBEDB49",
+    "vault": "0xcBd730cb94E0520C8369dC4429Df95Ccf84f4174",
+    "gmxBalance": "249104117963569465"
+  },
+  {
+    "owner": "0x36f4E1803f6fF34562dB567f347dea00DeC87246",
+    "vault": "0xEcAF8B2BE5bDEC0c9Bd02E923eacc54633323a59",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x78631Cbd0Cf80F90fd059FdF5af0e2f0d14fb302",
+    "vault": "0xA4bCd80820E89914eb4b3C0eB8019B9dcf18f6e6",
+    "gmxBalance": "1117013365667568"
+  },
+  {
+    "owner": "0x6003372829bb259E36EdCcF987de5D2AF9Be8042",
+    "vault": "0x64e6D6D2814148dac96653b2509CA17e4e7aa570",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7640B5FF361A45249F12E8793ac17D91a0e76EcE",
+    "vault": "0x5E96282008DE2384CBDaaB1a81F31941d8460991",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb94585B99e59E6519B8fbF057679434DdeAD6d7b",
+    "vault": "0x658412C601e4Ec618BABf2aFC5150771166d1814",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8084590C4681FD169E44354a4424ad24e549826D",
+    "vault": "0x449d0578A04A4E0B89A590948D84cf8Dc69b9E60",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2010aEbD2826893408019F47d1F4d11bA0a518a0",
+    "vault": "0x7fEB3eAfF317C98A1CCcBa096DE0A74624eAB7d3",
+    "gmxBalance": "1000000000000000"
+  },
+  {
+    "owner": "0x37E858D015478E6Bd64C6D94C6422a3344eed009",
+    "vault": "0xcA1357216CdABb8CcC134a58E8F84a2E3D9D4e4b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0eDca77a23DfDafc40099246E6F325730aeEa63D",
+    "vault": "0x7a4c177755384D7dED9222da98a0fA6F3B6ce60d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3025D523B34444f7aF66c9d6A747f4C93B9AB062",
+    "vault": "0xe4baDa5F91aFD5d1bb36F909207B0440acf13bc8",
+    "gmxBalance": "10731039740598012"
+  },
+  {
+    "owner": "0xCdb54556D8d9c8EFa9Eb2cD33dd0C99c60F0647C",
+    "vault": "0x9adcd764986D9B6FFd34BDdA28d22688154501Fe",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFE2575C6402E56FA977651Ea30bBFA0d3B4aE578",
+    "vault": "0x51eE2B58BA2AbeEe8D47D65bE2833282c6319cD2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa3271e0eA07475C722474fAAa5738a219e3aCA96",
+    "vault": "0x2dDd1Fa7d85Fb288D28D68f45cB35b73B1826A30",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB216965Bfb2c8EA95165f0a1e9a7a64B6c1d94bA",
+    "vault": "0xdF9939d42E08d58a8cDE2A2F431b944c2f791981",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x480d8600b0b2D0E2B772Eb68F25d32c7e6D91B7B",
+    "vault": "0xEAaE164A679838Ad3820b65d4c67108dc2CAB7F0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x852E45eD1a6502406Af4c409DF4e0Eef3CC0A0E3",
+    "vault": "0xDa10C755B5C73586882c03bADd72fE4Fb0b67441",
+    "gmxBalance": "80267005294347689"
+  },
+  {
+    "owner": "0x3E7d81B7B1FAe155201D1A2a6F73b66c97dEde76",
+    "vault": "0x885c52bdee50b53A343482e28A5AD9Dec236cc67",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7AB33AD5f25dB07d1Da7a8Df55A71036F07dA22E",
+    "vault": "0x4F72CD2551B8a8Ad7963500A50bC5359848F2A9B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x44F4D478cB1d4225B83fDA680CbcdA2784438746",
+    "vault": "0x08C03fF26ABCbF7c2dc5963cB12D39B39aE5BAf2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa8b4C7F8B3d91b324F815252da74884E68FB4C4C",
+    "vault": "0x826695B63f1CE2b9fbD7e516FeA60aD3CFe6B859",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf3b059c887172f2cc52b5e77EE3b2C8B3A32E6eF",
+    "vault": "0x019C09371309d9dFd7caC258946db413d44Db8ea",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2f7479Ad52a75EB90A9b2acfb296a39D41828c36",
+    "vault": "0x49EF3F6FC8315863426cBCc375cE6F69e8395350",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7792434C05e9FE2d8cdB61550c566FE912A8cEcc",
+    "vault": "0xBc0Cb16336dB74dF4518082D5d740ded01cFe015",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8cce8eeF33e74EA5E52d8c3D2Af3376fb55dA34f",
+    "vault": "0x12827C07DDA8b302e484bBbb97D4acC318cCaF0b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x65305620EA4e7B3aF5928247639525BA2A171043",
+    "vault": "0x6969bC2D8B9261F6c223F4467C45c9b88e176a40",
+    "gmxBalance": "33392633101374382729"
+  },
+  {
+    "owner": "0x79ad42161a55840D1327c39d7B47D12d6cC4c68A",
+    "vault": "0x8750B7f0Fa2Dc79edcc8fdC51DC5499eA61F1D07",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x06aCDcD3c5c54201a322b6F87ba4dd7869a73bD9",
+    "vault": "0xD0FA24BCE4d795EeBEc1f377e88F87e75b1fdCaE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd6b9608036f292d218bA6CdC11f3Ee4A0cbB1B88",
+    "vault": "0x9E7C9DBf70170cFC395Bd4B4bD02a95DFEdB0535",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xeD38eA368888788A0D5939872676b5700E2fC52B",
+    "vault": "0xC1E635916E1F2D14a423AeA3af836171fdE927a6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2411d60f20434E44cfE89Ae38513c6a595B8145A",
+    "vault": "0x2286a44453b66Fd9b438858Ac9B90a2aE8e044A1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD158301e120151D93EeB9A30D264858613A3fCd4",
+    "vault": "0x764E46ED9Dfd77AB78861575bbB63E374AA69308",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xbfD81D494aD08fd2Bc54b392C3BB9DaF87812E5F",
+    "vault": "0xeD037A80b5E24c48095C32aeFd448F6825C2F09E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x847d5305082da7edB28B11F5231CcD70DBa3111A",
+    "vault": "0x7088Cb48bEBd8BC05ff7007edFBBc6ce1051375D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xBc8819C1821Bc52b5d30D2Dd52F0Cb6110510005",
+    "vault": "0xE92e90B6d8e47A82109224DFC3c2f3EBB25772E8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA50b87f8C860F79F2C38f39A0B5f1991cCbd2177",
+    "vault": "0xc3ADf08Dd99001F73dAFBBF03d9A16F2Db04380E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd92bd3c2e27A5286d82C63D7D4c483B8f5f3D322",
+    "vault": "0x222A62B56d73Ce52c6d25891c554a7e132860F17",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x264f66719f3Ca44067772D33A4a1F8f52B58d898",
+    "vault": "0x1cE5304fDdAb74185ED0fe0fcA82f50D16A29532",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x173dEA8BE3696225D2fC856F6f4fe2dBB4377944",
+    "vault": "0xf5FC31b1f3a6F2949cEd287B826e025a58f8eE8f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x10daAdDfCbf9dCaDE8939b9149fb4a67Db2C22b2",
+    "vault": "0xa1fb9dbDD596a295f026e3b6D177c919B0827be6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2a48D3bE1b3603af83Ff5F72Df5B14b8cFD37164",
+    "vault": "0x6Bea1436738bb12D6CD8355a2D7E9b44B7cD043c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8369E7900fF2359BB36eF1c40A60E5F76373A6ED",
+    "vault": "0xEA9f56c36B8a74294Fd3975e772442945145c4Be",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7374A389311c1d46E9afdf86EC12e2a0E73F34Eb",
+    "vault": "0x1c269Fc59061b38E7A59C7E5B3ab2F272CE8884a",
+    "gmxBalance": "455438317585763"
+  },
+  {
+    "owner": "0xE6a369732F1bcBFA27A09AeCbc1ef360507C920E",
+    "vault": "0x6FF575f1b928c0FCd83B694615B1deF41dA2e347",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf110589F7E02D4E643e6a5814cd69da667F4b127",
+    "vault": "0x49a864C1644Eb5756Ff2F0E47F55cf659DB4548D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3787Eea0767fE73d272aD543651Ada3F4dad8279",
+    "vault": "0xE3C94ed08aB7e7372EecE5E09E094E39e0db8402",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9A76ec6cDFD8981ecE4Fe23107612e2A48eE9F87",
+    "vault": "0xcBCaf83aaf23Fc47d30B388949b35f4421fa1f03",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x000007656F345A789bB422f0307D826660258333",
+    "vault": "0xd16c2E53d7FB5b067E3EDC219934ED47C2B3F7Cd",
+    "gmxBalance": "79104179061973232"
+  },
+  {
+    "owner": "0xA4eF650F3BB011B43bD58400eFb752462b9908fF",
+    "vault": "0x3bAD1b9c4F6f012b5Ab3773cae28E8A8e0B28d08",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb918F44Dc8B5781AbbFAdE3266c668B370442887",
+    "vault": "0x1bb63D1BD1Af3F9CC68676a78D8bE8160b9Cb799",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x91d6Bf11608ed2Dd40f44a95f3ef222840746577",
+    "vault": "0x2B9d1b0EC264666C7AF19418D33D305B9d025B87",
+    "gmxBalance": "446570532201552"
+  },
+  {
+    "owner": "0xc7e6DA4D1373BABa0033A9799470b3B4900f338C",
+    "vault": "0x51289ADf6105B856592Bd97Cc7b15995C0E9C688",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x099dD527CDEfB41BB6B3509ee146ab186c2edbE8",
+    "vault": "0xC3A2E0275866BbE51B451640727aECa0A0D99255",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5eC8Cd4881eba87279f5F243Eb89EA9383E677c6",
+    "vault": "0x2440de9C1572492B90dc886045666584545bA899",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6f44eA1Fc874aA1C2Cf70309B30EC71eF30205fE",
+    "vault": "0x820b0552B7669d85eD47a30Ee0274C8D3d24f0D0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x560858580455B2E277dde49E4e907653761DF20c",
+    "vault": "0xC4E725936D8fC65Eb6d7E02CB5dC6cb9b5a9Aa29",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE518E345E43A8944E0c28d4678648E0665408490",
+    "vault": "0x6514Dd4362bc7Ab3FEDF867BDB04812320460dC5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0769C5d106ffFb68421C59B04845d7857AfDa15A",
+    "vault": "0xABf24A01D2347A270218bAE7b4EB991697A7c6d4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf4cae903dC1698bb309c650685F69cD84b45bc3c",
+    "vault": "0x2A3018534eEF807C11A5BC8037694D804D81C137",
+    "gmxBalance": "7093680516712126"
+  },
+  {
+    "owner": "0x952815eA349a0c10db5d854a16A27d768e85053e",
+    "vault": "0xBe70F9BC6588DA73157d87461A05521C2080a5b4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3B9b1B19EAaCE67B2B455F931968dD6E6a51e8DB",
+    "vault": "0x96C616Bc81984b2a32Db3DEff3BefC03747b5AAD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x87058292F212cc4eB6560debae7283D3CF0a5b3F",
+    "vault": "0xAF99BFc131C3e1b1B22fbD9cBA40CB05b245b4Df",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCea7402B8e42fa3536a3Af0E9633dB3fcB984A5a",
+    "vault": "0xaF96E84f2DB7384b2Ea08877AC2B8abdF3f830A8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x28DA3DdE285D8F1f87B2D858f89961Bb8B9Af180",
+    "vault": "0xA204A3c6d04797EF4B48D7Ede18Ebf60A581d9C3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe5Ae5AAc9A19Ec43aBdd161e95640A1cc12aE348",
+    "vault": "0x50DDD0981d0D7a8aBaf67a36ac107e19d5A31E87",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9B87E1Fd164E70E6FA8c7fbEE5943C2532f7834B",
+    "vault": "0x833BDf9d33b7fed8A748F2E76CA52F10730fe406",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xBFaC3eE7E4224aD4E8e9Deb6906b41fBa1878228",
+    "vault": "0x1482602229fD9b5Ee473B35a6A6511dC98beC159",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc7f91e6650Fe21791B1f8af864eD019B6853294E",
+    "vault": "0x3f3E2FE7AB33c5F3764C81975F07eFBCb83A6eff",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x668035c440606dA01e788991Bfbba5C0d24133ab",
+    "vault": "0x886fD4dd1366ef920c76104b6D2724a00F4f4ca2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb028522B0914e29Da2dd4E58521103dE8Cc5de41",
+    "vault": "0xD1e0E92cE6F82f18625592a82C401368bECB00ed",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x41fa0135454cb261b99716265F97B8579680Ab0d",
+    "vault": "0xf3EdEC76b2E3cA32D699ECB4B5b6BB4223661598",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6eCef2a4FE3bFc94AA2C26b5f3a4f5A77084D1ca",
+    "vault": "0x05Af6E65dB01f5140d1303E7E5d20D0364B936f6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3Eb1C577fF96a8095748453D6Db5fa06527C1085",
+    "vault": "0x8F7D2B267E85C6cEEBD6690d031B4b38322237Ff",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0365566ef442e63ea7E6905AFDE6bB749c845fA6",
+    "vault": "0x4143bbcc5e135bb6b3460D8bB51eAe0FDcBAfe69",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD2c40B8CC8BCAC74EE00c030F209B3B3FF1dEAad",
+    "vault": "0x6fca03410E6ca3b9D60C2631087D76e80854429D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1D9da1fc0f98611f5f7b254EcE4f2F40738544A8",
+    "vault": "0xfcCeb3b9497C962d21425D07885B2cAf7184d11b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2d7ea78FD36eBa022F94Ae14e85225736580B319",
+    "vault": "0x6FB980a4FB416068Ef36493a5E1Ea4C654c62AE8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x932B6a952394F052263ed41a39a19EF65dd79279",
+    "vault": "0xc278aA4c012f0c9f34d1a6fc4F80e0769828776f",
+    "gmxBalance": "4840918392687"
+  },
+  {
+    "owner": "0xC6004DCC7694cDA5bbA0e0fCEb33bAD1683Db2Ee",
+    "vault": "0xdb708DCe68458e59F7BD19305B4776DC4a3dD096",
+    "gmxBalance": "1049616330702749"
+  },
+  {
+    "owner": "0xbDFBECf4600101D4AB18d2c996Cc5CfD7C68d40c",
+    "vault": "0xc2965aC7c98c6edD8b4B5fDE6b10478bb2AFFAA9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x04d04C019dA3b971928e53847e9c4bbbdE82D96e",
+    "vault": "0x061893A7BD5F9e2fB5ff067B6710E240808c204D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x270a29A6B809C2FA29F0b1D853bBD1789d14b7b4",
+    "vault": "0xB3FC569DA421bD02BF6A36832498679954fB4eAD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2DA3516857B15d0123EBB79c58648EbB38447a06",
+    "vault": "0x418A23a60Dc669E82Bb9eA485b1779Fc7660235d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb53D014fF74C58787649604002Fc6AF7f8D179D8",
+    "vault": "0x0eb6CC66D8275160A16c7d309f5D0B7fB6030f55",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEc956f84143A0072EdE186AbEE5fe7EacB445197",
+    "vault": "0x09cC50551c5f1348FDAbb10048f9966584e082Aa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA39684308fAE7c39799a91C38f1acA139a090a38",
+    "vault": "0x1C703d4BAD0ffe6236023d95d911D77ad145D12d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe8678FBecb76C557f48BBb949a114216CB1fd775",
+    "vault": "0x410722d7D1F761Fb007B823D18E508B5141C4e56",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x25B9f3Bf60c74a7041115Cf6Fac3Dc3715b2a8Ee",
+    "vault": "0x9062D59C1CD2538943eE18362eD38417eBE2CaeE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9C2b07Dd951eDAE10fbf58bB98a1448cDe417F58",
+    "vault": "0x8E45F1C6975d3F13C6a5d4b3bB2862EB37C1A9f6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCed3FC4610761F79242D7D8A72FE86F3A1c626b4",
+    "vault": "0xaCC08111Fe8A4133313C415C1f34BbBF9197DE77",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x11041676C7fD86E98904470263667F9ac60dAA03",
+    "vault": "0x6211490cb39Fe31e29A25d8DEe97042f1B339C79",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF4D03aaA7f9eDF97C96efF079eD358A1F66c3603",
+    "vault": "0xcc21EAe8497DFfD9460eE594055d3942D4433911",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x93392D72199A66c716a5Dca355F6F9c9E5d7e965",
+    "vault": "0x87E5d9c2c58bc118C339d7274291596554F43CaB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb8829168d3D3269bbd32acd313AC916e2C79695D",
+    "vault": "0x6D4CcF4930d9CbadB9125d0003be3F679635ea1a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x913f1e27695e97AA6C66C663272d9Bd774562Df2",
+    "vault": "0xf2a05eE6f4B9AEa5e0D4cecc596776B255b44884",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x87EE12898A2b9Ee67F1b577C0B84d769c4844432",
+    "vault": "0x6255a4B058Ad001b7B9596d04257f3BF4C5896EF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1fCAD2F019b595291EfC1a9B9dCF8D29fBcf0010",
+    "vault": "0x6eC97d656d6B5eBFB0Cf7d01939004e53ea4A2fe",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf36cCab924910bFcedDCe38377ca9e764B86C272",
+    "vault": "0x2d63e9FeBd3c3f619Dc1Eea21Ed515716b051b66",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4A15805D28d5ebD13c120F5a5e7BE4194512D96B",
+    "vault": "0x7114CCAc22AaE4d81eCFc814DbaFc5932b8B5221",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x812B9c3Ea2c49beC95D0Bcda4Db39513baaee261",
+    "vault": "0x79544cE1d49ACd9a785CFbA477920e2F5ea61CD9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE8C11b95621c80AC03F41Bc33b36F343A1d95A25",
+    "vault": "0x1365Fe58393C2ED820d5060baDa0E7aa0535EfdD",
+    "gmxBalance": "45594929696333226359"
+  },
+  {
+    "owner": "0xD23737Be145911829A21A3B3AbC7CBD6D58d5A5E",
+    "vault": "0xBf2655830c299c15189086DA435D5Ff17BA8068a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC9C4209ebF1A00D347A658A5Cbc2436219c045a8",
+    "vault": "0x33fbaDab8C90951252a6EA1Fe6b74055E04ccD47",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfcAE5296fC6f7D18D817f67d9f57C9233D85e7C2",
+    "vault": "0x65d11Bad583474c87a4140F920b5d9EBE538645F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x58605D60E2964Aa36D6cB4da23d9f9dDeC9Bc4f7",
+    "vault": "0x8671ecA8B8173BE493d150325e6b06484ad6D5Bf",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4F4bD77781cEeE4914B6bC16633D5437eaBCa5D3",
+    "vault": "0x7aCbe4c4cda04024487B012a74736AFc8aC4b507",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5b8Bd5583a1E56d5D8D928Eb58742dd9fD9E7E39",
+    "vault": "0x1Cf0E7AAc2582Fe1b4D0cCA20cCF8B6f410bc4eB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x62eF908630136Cd50c571c2b311ca1a85f5B33Cf",
+    "vault": "0x9A738b0B6623e5396082F2D59e9c16C281531Db3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf46d36A35eCA074DAC347baB4F70D969E8Cbce59",
+    "vault": "0x751650f33e5Cc5812c2Bb4Eba2ddd6D163D0b52A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x856565Db827588a88780454863F98A4A323E13Aa",
+    "vault": "0x1DEC1Ef27D71cfDF0dc9E68e214fcE72a6983350",
+    "gmxBalance": "37325841768044144"
+  },
+  {
+    "owner": "0x5E58fF09350631C79dd00beC30d6DE329FC072c0",
+    "vault": "0xB4c82fAf0710b3Ac50e29c2267876308EB95a049",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x435b7D470767Cb121F37dD296B2AC7913fDF5427",
+    "vault": "0x8a8a83e91bFdb7dB2b8153356A86fbC1425fC644",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6471D0848C6FD0df3E82F05B9e581462464b9eEF",
+    "vault": "0x583BBd0013E5e5C41CccFA316DE062079a13bb37",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa1729437FC5AF379118DCC7AE06926628CA52E0d",
+    "vault": "0x7dE3733C7361527C0B6221393176997DD2DB97c2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7693517008eee395E93dFC8E784d48E667222FA6",
+    "vault": "0xE0f79bF8537cE318753C046016863A641b021b85",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x094cd2630E3e6999B37a0817b4FA47dE7fD6CB63",
+    "vault": "0xa528afEf11cf708990abbc10610E0950301a3E73",
+    "gmxBalance": "12005104378324315"
+  },
+  {
+    "owner": "0xD9A0028935A1c71eB9c830CC8F87A3E2f28ca5ca",
+    "vault": "0x2734E193479C201260E015F490c048aBa2d77084",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6E56E7ff87b9D28BFA3EB58Aff1C4ECC0955b25e",
+    "vault": "0x0cBBdF89A9fD91267238d3C04EC679B16beFE032",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x58082F5d08996964C649d6f22E2c30fa9c0655E8",
+    "vault": "0x1ea8e9068d23C3c47e03eafB1f85c9B481525EbB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9D32F1e7C5fF707e92b4B30937A1e5E2C2De2462",
+    "vault": "0x92dA4683287FCcD19dAd53a0F613f3299d6DABFB",
+    "gmxBalance": "683362091970011893"
+  },
+  {
+    "owner": "0xd7440155BE07e7a0EC4E657D0dc4d12f14047876",
+    "vault": "0x9A844a1170C849e4B69cdfddfa6a03eE8d38a64E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa5EbE5D1871CC87480B23126FAc13D7161a5c1d9",
+    "vault": "0xd62690665f4AAfeF233fb0b2A89653ae0b19b4bD",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8c580556Fdb1f57853e49F409Ae9b89f7658e7A2",
+    "vault": "0x6821fbF5C0D5EF7e2AEb3b286f0314A3d17B05EF",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8d2aE74898d7C068DD9E1A73929Dd77b75d819B7",
+    "vault": "0x4E7445817e7C7a3b9cD84E831094E7531558c8CC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x00591Fca5A8A5963E82C2900310a7b42F96b4a30",
+    "vault": "0xaD8a341ecDEaF36Cf50fBBdB8F2f730A78402F14",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x823de6B63f9Cb010cbb58951c90eea30bF02BD36",
+    "vault": "0x2932FE7EbE458f909Ee3dC0989226660e40b5a3B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xbbb7b32A5e384829FA67E200041d64e4Dd8A6105",
+    "vault": "0xD7466c09d03b33Db5e9179e8c5c22eF400ADa3d9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5699E88191EC026F856fa30d9dFf3A1f3b8cf843",
+    "vault": "0xFf830f3F0f8b994213c1a5AA07F0c678AbfD7250",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x259e3f056CD6E62519Cb9950F0DC23dC84C5573d",
+    "vault": "0x1C708Ab076fC9788619502559531218Da8e2DDB6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x41cf693Fe12E02c142A9573161b4cAC579CB6930",
+    "vault": "0xb06407bC721d0c271475d1083327EF1d612c5060",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA07D83334758Af046DbCEe6991E341C0E061d121",
+    "vault": "0xA20ae297ae8256eeB922F7Ea1981EDc15FFfE266",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x62FA348C4bF5C1cA166cC64DcCdaB0db0E35753E",
+    "vault": "0x81967164401bE8e6bBaC11c69DF693268C2b2B4d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x658191594cdA88744d8158813029420dcf137A32",
+    "vault": "0xd44F341Ab126ad7AD7A343A0fA882EEd79fCb65E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3C52D129E4A310ee508F1Ce734305fB0Bf97DB7e",
+    "vault": "0xf5692B174Fd924bbd4fdA679FE83ba679B52BA3b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x29c7A1E7DA7256Fd389B3b89Afa2E5Fb88cDFcFE",
+    "vault": "0xD3f3Bc82e03a07e905927f40d4e20f8ed4C0aAfd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5F8F2110B11c2896f82d25CE4E67005A0c5006B6",
+    "vault": "0x50779b866a5487F5a09d5fd3D75F597298a10458",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFdF1BfF1850f05641075588e380622D25774a7eC",
+    "vault": "0x7064C31C4587ceB6CC8C0f8Cb37b6Ff10301E890",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1593b1a5C5942aa49Af1Ae1cCf3d7deF33a0d011",
+    "vault": "0x5920B9d1E82f8D278212C2246115795e37875312",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF68d4b506ED84e4c9F30652dA9c511A32Bd1A192",
+    "vault": "0x999Dd91eD672dc0CfC0Fdfdc161546d635e98B61",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFfb2D556D654FF461750414d2eBE5808dFF85169",
+    "vault": "0x35CC8b78A498386845b88583eed10631C483b665",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0Fafccb52edcB326441d38E0dd071adDCef9001c",
+    "vault": "0xDA79e873F446B2a728DFF887831934F7BfF47167",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1FB99c83110726B40ba6bacE5044580675d22F04",
+    "vault": "0xD4412Be27903a9edaf336644ce927B91BaEF3b56",
+    "gmxBalance": "80727854604156738"
+  },
+  {
+    "owner": "0x9F960AcD821C28fD9aa9b017aa361B1Ae744dCC7",
+    "vault": "0xFc1a54dfDd5852227a0991Eac7FAddB0E186Cdc9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcd81917ff5313d02d7Da3d47a9Afcd3f635c36e3",
+    "vault": "0x652feeD1346eF837a7d2F5A86C16A6ED28Af6cDB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9387F71F3928ebe9cE8B3D8cF37a8FB52739aE7d",
+    "vault": "0xBdCB4459483D414A662b825250D7957c8861004B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3D051cb89DccC55935F0d1C6E8626b9d1B73e97C",
+    "vault": "0x6d3d4b4380D9cA5dA759BE9e2f7D0336Ed55845F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE09621E97dd5A7a10799b1C4A15084b56A7F7019",
+    "vault": "0x96F3b03968740f99E00cc8C0838f39A8E0EcA849",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x113DF096519d61D94C42A0Eee942b2a01ebAF60e",
+    "vault": "0xF1F2d5Af71DdE2262ba7027E3E76930Dd547bD03",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x90F5D58DD8322e02d6BBF200A701A57c71D42e44",
+    "vault": "0x3BF7f3d47D83D5f22E29F6C912ff6cC54c995587",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1C74b67F9C6dD986E4735B3e2b34BC1eaA828A20",
+    "vault": "0x42DDD70c643faBac2D34a72e1843eFE5F8d3445c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB4C3a8Ca8fE617a990df8ad7D8307642161cd074",
+    "vault": "0x237e447628871BA6b9983dC443FF6345D6ACED51",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe3eC8563551F049Da5FC973472a7fB04Cb940D08",
+    "vault": "0x46Aa56F6F9727b8B9934d252Ac06fdBa245F1705",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2778FdC3dbc3553F1f6f26D8d310F08DB49abe4D",
+    "vault": "0x67c76B12f1Ac8B0D598CC06a9e6d42eFe0bB26b7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x81eA04C179b82d31662994a68b2582AD9D860F88",
+    "vault": "0x0127637305Cfe9d81C5C3A7B692F511494d15419",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x078F5f48edeB1E4d1F27fE5D7966BAc4Ae450FaA",
+    "vault": "0x01Fd80da8cF3e57B4E96Add60c146b279B4d9034",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1d8c4d80464270AFB50576CAB66F08a29903747F",
+    "vault": "0x8eBb3e1585201A05e3997138072320eaFf0B9a55",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD05551aED88f03C5BecB1687f9d110D78FE4C124",
+    "vault": "0xc74c390a605DdF2733A4AC12776f5f2D37dA8764",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB733e74F89E438eF78f256eA74Ef7E760bC3E07B",
+    "vault": "0x7d7da795F8Ad00540e31484d8Df0696C3BcA3a46",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc6404f24DB2f573F07F3A60758765caad198c0c3",
+    "vault": "0xD49B2fc611eccE7eDdF801BfBBbA8Cb34D66bc4a",
+    "gmxBalance": "2716634995711464"
+  },
+  {
+    "owner": "0xb37eC87376628A8c366e6e35C1a7c8336A1aAB3d",
+    "vault": "0xfBA9430a10664d16d0ea9c36917D6f840B862771",
+    "gmxBalance": "584932051502533"
+  },
+  {
+    "owner": "0xDB4787E25A4a0c99DdBa9537390f143d53d6b40F",
+    "vault": "0xFF6D4e7977Cecb1B32A2e1f1dca2AcAc29BE88fA",
+    "gmxBalance": "4987894047079545"
+  },
+  {
+    "owner": "0x96085D4471694331bfC2f421a452b000C6f790AB",
+    "vault": "0xF3f78F926e3A6467774b1610EFB1BDFa42Fb1778",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7546966122E636A601a3eA4497d3509F160771d8",
+    "vault": "0x0a9e634B357ff74c2EFdbC55Ebf113c668Afc132",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc12DE812ae612B6d514b52d529F97f6Acb524c8E",
+    "vault": "0xbD784bEF1684cFd76b17Ede51EF188d9A4cCce32",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x79192c49A2FaeAc5416616A2199212e52623250A",
+    "vault": "0xe370c652312FF26AA2507698B731e367FeDacD2f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6f568Ab3967774119713ce3Ee5df49Fde29AaB30",
+    "vault": "0xcB4CFB19Fd0270a242850cb7db892AC809A6e433",
+    "gmxBalance": "296607197785052"
+  },
+  {
+    "owner": "0x857b99db33feE6038c95D9314739dFfC324D6636",
+    "vault": "0x8D2d2E3b3F38d433558aCc1A644385EB86d9554C",
+    "gmxBalance": "4762231685546138"
+  },
+  {
+    "owner": "0x7dF79AD0787527b308024e6a82994aEFB7B72929",
+    "vault": "0xA39017B3917214df337dAB48E3c95CD016b7A5F7",
+    "gmxBalance": "234268109944085"
+  },
+  {
+    "owner": "0xcAf90CF11AA55eC26E9AbAc1AC0045A422f739b4",
+    "vault": "0xc54EE12dF3427EefbB08246cf57dCCe2e3f530dB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf89Da8AA289399096EBD0672697aC44a62a78234",
+    "vault": "0x4DAeF42DA759D9E45Fa03B3F4e27fFbCa7d603C5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6808a2ab42dfb5e5D5B5c17a001810F79d6EF6f0",
+    "vault": "0x01156826B2f77CB08bEB202Cb3b94fe816a1dcc3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2Bdf1DCfD13D4f7e2c3D160E3D92Aaf6A5e89150",
+    "vault": "0x83A46b2253df7A4b157D52c62899A839A7BE2ab7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0442Dd88a482833fE2Ca98a6b66526Aa640321F3",
+    "vault": "0xCAf67ae28b8Ea7cCBFEf3fDc7E0145f48b022d98",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x50A852203b68861968786fA057b0716860775b3a",
+    "vault": "0xfA7702e68A794b00634e33d813F7044c53ad1E9a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xab7eeD4971b3637C3dF434B34a5A19fCD947E971",
+    "vault": "0x513A99B3426798C03b407A7cD1C34B68C984b696",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe8a204e487A026C353cB1438C8D43aAf1e47D644",
+    "vault": "0x0c481C1EA2D7cBA8Ea7466E986da881882A1b1E5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcAe798C0C6958df8299dF4f13726da433B8BA7bA",
+    "vault": "0x8B6f6421e6238D57F6d40e8d01342bDA7B1c014B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA6CFbbAC23B2AAA5a9C6cC947e265F61CA87BACD",
+    "vault": "0x34c820b6CEecF6e1491BE22F09Cc918a01ec5942",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x41e41b40856D31FFCC36b0E8313945F3C4D2B014",
+    "vault": "0xF945ea8C1A753e4C218Aa146d3D0CB7766a33A34",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x373f526f80063A62d4c7a0B2F486F8613F4Bc140",
+    "vault": "0x655B3a11E0dC7A31b1d8f97924930D577b634B4C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4c653CE31873b3ca333cf8F0DeB9b1fBFF6CE2b1",
+    "vault": "0x373A0FDF53Eb7c4904Ae6d8cd566D403469112A6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc0EF7a58910F31656C2251E35C447E1707330205",
+    "vault": "0xD9c6232cD31bE4b3Cf741e2826abf5045aEF0048",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xf4B7d30B8B982CF35C6478672b06aa0Ffe01BC21",
+    "vault": "0x26F9BFdb025Ebf2FEa3b8d751719E068d319fAbB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF9897204d330fCd729a65315f4A9773019495D86",
+    "vault": "0xC7AE95202B57b24e20bC31159284E0b1ddccc97c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3fC602C3529Dde58e44f7d62C4d8506bd42D319e",
+    "vault": "0xd929B71814460c4F242Eb8A9589b89fc56e065BC",
+    "gmxBalance": "5153566246039945"
+  },
+  {
+    "owner": "0xDF9185777454cF8ecBBD5b8C2e9E32119A7bbDF7",
+    "vault": "0xC78f48BEDbfFca7768Dd6b4Ec9377933bEbBd31f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0961f05D29056077EF9ed4EEedC76A97ed007BeD",
+    "vault": "0xB7f58805F95579d149Eb1DD1B1A68fcfE4121a52",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xddF38adAC8Fbe4662274947FA80Ac1c48F55BAFC",
+    "vault": "0xa5Bd121c864140ACa5fAD5Db1e2370082dBF418d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC986782911D4028EB7Cf1D652cBBdEDaFFa124D5",
+    "vault": "0x2B20f592f1570361d32DEDEC06157ffe076935Cb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1c548493930D6De8Db946BDa03011e8AF93dDAe4",
+    "vault": "0x0987C27DAC209a581c91Fe1c50BC317eDF7DfB97",
+    "gmxBalance": "191126363285162"
+  },
+  {
+    "owner": "0x755a513D6AdAd8486C44e126abc3A739251b0aA6",
+    "vault": "0x2ceF6Ac223f4118D6Da73d5c4b0939f48086eA39",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFD8426aD0d5EafE55E69A946C7FA4E462d075027",
+    "vault": "0xEcaf61842F12412abd7E5f7Aae38eD94DF16a8Bc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe05679941535c722D9D3a5Ca60D18CA757c24330",
+    "vault": "0x09b0b63eAba69E7Ab451dAc94CD8F30E4c418bb4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD0B0ebFCC7B2386efcbfb70044cA20bf86014B14",
+    "vault": "0x22D79986EC67c4488df76320661644a3e3Bb4F4f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x505e38F114F0875ff29a88557Ab2793317BB67E1",
+    "vault": "0xeE9107727B8780BfDFE3849C0E18cC17CeBbdD2F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xBb4499Df08ef992d7194e09CBE210E9bC40750Af",
+    "vault": "0x707C8A706C2ea3cFfeb8CCfb09A6d7676d8f0d87",
+    "gmxBalance": "3381178164519901572"
+  },
+  {
+    "owner": "0xB62Cf338452be6c4A8B48ab1f5856B6FBce829A9",
+    "vault": "0xeF32DA91733C2479873488e00CCeAc5a53DbaE11",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3C55E15B21CcBd1F13881761Fc5461101C9807C3",
+    "vault": "0x5858fF93265BB37DA4667edb6063846aa3949b39",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x392A4934914210ca730F64beD1b3888404eC9D59",
+    "vault": "0x9448A2CeADD5c3Adf70f8C55d5c4064278Ef8c0B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5B9629aE14FA6EeC94743F379748670d4a8231c8",
+    "vault": "0x9616df0538b153Ea146FC0415c2B7fdF78d975B8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2817D13Ed8ED176CD99684C8BD5BDb0145667228",
+    "vault": "0xc39E98f5AcaA78456cf7084E60556c007F1B59cb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x16FE89c973Fd6A4ba47441962075Ab2cc3dbd03f",
+    "vault": "0xFa2B2bE77F2B68C9C65776A97BC7D80B55a467e1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x871f511ad04098c39e6471392A357444Ac2374eB",
+    "vault": "0xc708246367Df1e4933BAE4F93EF76a14391a43dd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xadc184bd85370FaE2Fb3eAf5cF187F35Fd235163",
+    "vault": "0x1cE21fb7cA684594E7f64fa7625C40c8D85978d0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF7734765e5088666131DA50130235203Ff4a6967",
+    "vault": "0xfC51890600532b1cDCAB9c6ef422222Be15BA04E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x152FA38FfA947a7FE081A8a7D80d7Cc402b5BF9e",
+    "vault": "0x7FcEC8ABE661FC88c91b7F26c32aD47F9387a970",
+    "gmxBalance": "8407671880712"
+  },
+  {
+    "owner": "0x5d0E1AbF31Ab2F871B67c4986ae74042802BdB60",
+    "vault": "0xcf9507E859d46b0a07F47be11bED1d1121dAa637",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4197839E44788e080182e18e11d2c174c4f018D8",
+    "vault": "0x2C2AC5886fE2af96Fc6b4E3e2573deC608A4dE14",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xfE95b935EABDa9FC47233223c057c590E95ce47B",
+    "vault": "0x85895b9bFF042DF68c9d3Cd9Cd872CB4093D661B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa10Ff7eb74497F809352409AB96e8c84Eeae7119",
+    "vault": "0xb6233a8DD265eB1a7Acb36F5167Cb3a860d9cA5B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x706f9AC0C9d08d725B899cC8C2582620745CF930",
+    "vault": "0x64fB452ec748308cA2748e101459aa2B82b2a039",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd0319771F95375b161006fB2481fde74EB80cCf4",
+    "vault": "0x61968950b1C733B3A17386bd36Dc3c5741c85F3f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8dFefef2C80d6195a2DfC0c3c9CfF24fB61e3167",
+    "vault": "0x2fb439Cf1a5F5874a5a1C5Ba1f2965e8e86A377e",
+    "gmxBalance": "3533602861940787878996"
+  },
+  {
+    "owner": "0xB307b01c5b2fc3B11Eedb26C5Ba9BC33AF8bE2B6",
+    "vault": "0x2c3ABca9f9397E39AD8714A92f2a742CfD8120f5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x20EB4cDe6240D295208c907825921800DF3D4b7c",
+    "vault": "0x544C2fAFd31735B857a0fce329a3EaFC5BdeA352",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8c5Ee5aFE1e3cE261e312FC0EDc2A4b6f0f49338",
+    "vault": "0x726F1528AA845ceD9920196A60294C6eD764bd9e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4789f8ED86858dd6879104781293A98569B46b16",
+    "vault": "0xD2C3A5E71a72Ef95acEDFe999E2689B303BC9DcE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x19a791Bd19C68715Ce2a8b55108a1Caee05741Ee",
+    "vault": "0xf0CB9d759618B611bDB679fB4c547787957FEe48",
+    "gmxBalance": "578012992390796518"
+  },
+  {
+    "owner": "0xd12E53A1121794eD6Eb33461254bCf2887aA2192",
+    "vault": "0xcE51D57c71Fcac1Ff437a32C7774005a142a57Df",
+    "gmxBalance": "2285075711155477"
+  },
+  {
+    "owner": "0x08609aE25d14E53A4B67b067Bcd856DF61e88c5D",
+    "vault": "0x8D5688ba15AeD942d0f164bC6272C9ca0471328A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc9838745C254bD67e29Cb96D1b29addf81e7aba6",
+    "vault": "0x84bd4510c4247bBa78A0a517f248473e315355EB",
+    "gmxBalance": "342199123510524906"
+  },
+  {
+    "owner": "0x47D228fb786BB14117625147f1055638F46b6893",
+    "vault": "0x663c62B840af951797466afA5BE337E475cA0840",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x125Ff07E99904F868481a423F656862312C96D0F",
+    "vault": "0xc17031006E6Df5b3ebE649Cf5a432618ca7d66Bd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDd2E387daa3Bb0cb32708827a087368a62406698",
+    "vault": "0x10719e63478477DD8953b6F8c619263eeeABBF72",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF8C4C2156fc7a8D929A47A3BFaA0A79D429Ae5a1",
+    "vault": "0x0a6674B77002ed4462e19102B4c55fF8fEC78fc8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3E6fc92D4eDcd1156fe211eb4d3AeC1bAe2922Af",
+    "vault": "0x835A5a955FB2Ee559eE4342073b2d498d1A7e557",
+    "gmxBalance": "81246951109269294489"
+  },
+  {
+    "owner": "0x5aB1317a541427C4D960C1a3565b0638d17845f4",
+    "vault": "0xF4e8F941C1a6Ac4887F06eC12A048045c413e585",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0ce17eB3DBCa900b4bB585711AeaB365e282c670",
+    "vault": "0x421b2aC82a3959deE2dfA876Fb37ad55af066825",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe4042c9B91e090AbC2e08a711d357faDd6C0a9A3",
+    "vault": "0xA9ec3a648B0DE14523e48fFf9b90cB86658D533B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x059C45e91A012A6Fe79813721b53235e60640b76",
+    "vault": "0x4EBe544f649Be03FAE09043BdffFAF4AEff0dEF6",
+    "gmxBalance": "1622401458207174981"
+  },
+  {
+    "owner": "0xa58341b962C46E905EEAFAeA7eF809B34d836880",
+    "vault": "0xF601C6642B02e6Ca8921Eb1B77111d9019839cd6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd8aAa186db7214926cdD4C8aB5Ef1d919913402F",
+    "vault": "0x19897b7050Dcbd48952c501FeB6c56Eef3C08441",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2b1aEf40A181cD7c33c58D6238CD90949794c54b",
+    "vault": "0x98028E46Ff4304b215422e831B141d11AF55534D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA2fFAA0fB21Ce1a70fc96A3BCD0868dbF87fE598",
+    "vault": "0x7d534c2b6f97145CaAabC2bF6BA87445584CfA2E",
+    "gmxBalance": "99721681964029"
+  },
+  {
+    "owner": "0x37EBefeAb5491ad7EC00eB79e288C809ED03E36e",
+    "vault": "0x97398607f4CEbbEf7447b1d2da5F97098e0BB0da",
+    "gmxBalance": "89981225427149"
+  },
+  {
+    "owner": "0x25F98439C4564c702443484392Dd60E4B60E90E7",
+    "vault": "0x26110BF1d2b0f4b1377047bc9729dbB58D725640",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1b1E39bF0C0E1FfBa64bA97787251c4705baB956",
+    "vault": "0xC5840a24F8393A97438EE2EFF193D6ABBCF7eE84",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x834e5ffbdc482573CCc67eCd0E76B446C5eCdBD8",
+    "vault": "0xb5402421e9440b4d862f58672C1Fb99483868eeb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE28bD436E6aa6215af33f195275485F6B521EBD0",
+    "vault": "0xeF3eF3B7796B277d735E542BB285078da42baE63",
+    "gmxBalance": "122154328443435235"
+  },
+  {
+    "owner": "0xb52b41dD0cBc0D9F9d305BAc556838BF2deA0B10",
+    "vault": "0x879A31CD91142e3fBF625949E3345dfDA4f0bac6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF4149F4624F0f350e50f069c5D7A4F25aDc2cC0e",
+    "vault": "0xB3E83d9283a280857579573d11434aa1100F2aEc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x91F2b192d55B48b4BBBC1daa0b092c559e1676dB",
+    "vault": "0xCfeA42275Ce6Af62f16E4b860ACC3F490AF4CF2C",
+    "gmxBalance": "4998960618633488"
+  },
+  {
+    "owner": "0x92DB5C5a5477Edade95D6467c85D86c35cC5B007",
+    "vault": "0x9122f8f1D6956E4E8AccA1f032473D546647Ed83",
+    "gmxBalance": "10534880571994984"
+  },
+  {
+    "owner": "0x82C14DC7596E3657Ae485626746549459FaA06FF",
+    "vault": "0xA771ca5e471AA4e89FC2CF9954e66d7618D0848C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDC963250E302dD6fd5457039989692ffe072D722",
+    "vault": "0x6Ae7F1Bd8d2Ad01FDb97FD2e2de8CbE740034A08",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x21093947278aEC469f300A7e4515999316885783",
+    "vault": "0xEC827F4730aF0Cc0E3c6a5838f09d4e221DB0B3B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCb7Ed8E406094d63C84c70e816A12596394261A6",
+    "vault": "0x2401688bfA072d13b3C0c67495B2ad19fD924156",
+    "gmxBalance": "1186834515109045"
+  },
+  {
+    "owner": "0xa02971F439BfB25F077867a6159e21dbaA4157f4",
+    "vault": "0x95206eca4CC0D82b66829fCcDAe7DaDA10E2982F",
+    "gmxBalance": "1776598919453240"
+  },
+  {
+    "owner": "0x8B01c0e3d5F6eb7cE7CA16355Ab02C14ec70fCED",
+    "vault": "0x7FbC682691ab7B2a6E967DCef92C7B45342caceF",
+    "gmxBalance": "1536184407402741"
+  },
+  {
+    "owner": "0xC154Aa9287366A8C35d9E1A91ac11CE865266EbC",
+    "vault": "0xaE11620709A8eC61B2F2529c5a96FadF76067326",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x12cDa3e710b5C08E5fC771f23c3Bc43F7351337B",
+    "vault": "0x2264E5d00f029903b6842dD21723988F477909b5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0c0cA03f2f3F6c3fD915F060a71c29cA86897dba",
+    "vault": "0x3440bd0C60bB42a8F0Df7BED0450B6aFE3c2D297",
+    "gmxBalance": "1179453829452416"
+  },
+  {
+    "owner": "0x1270388b431A353082Df5747EE6E72687467d603",
+    "vault": "0x25CbD01C3401893BDAa719fF656f78ce7c89e5b0",
+    "gmxBalance": "1173675496421214"
+  },
+  {
+    "owner": "0x213fbe7864ef4f8545c5B83a625C3cdC42eA7A3c",
+    "vault": "0xe5827632E3D8BDdFd5B133046b938eA9FE757575",
+    "gmxBalance": "1177522986105834"
+  },
+  {
+    "owner": "0xa10A132f20d76ff9537e87286891eEc36f7eFaC7",
+    "vault": "0xed1B789bD874572418484F0cD96fdd4347588b46",
+    "gmxBalance": "1175596880257358"
+  },
+  {
+    "owner": "0x35B115b395378d775E167F8a9a43898aa54a0fFb",
+    "vault": "0xC3b65e8a44a627C9cb3fF76eeE140b9842FEF7ea",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4605f71bc49792ebbC22167a4533B22C0106C5B2",
+    "vault": "0x716828C38127b55b24674F84a0AEa20Ad9E2552E",
+    "gmxBalance": "1194826898333330"
+  },
+  {
+    "owner": "0x0524b6283CbC42503f51a577249593aee0714D74",
+    "vault": "0xF50A2D3D6f591F4777f484021401a0C48CE1F23a",
+    "gmxBalance": "1194810374929814"
+  },
+  {
+    "owner": "0xc5E24671fA61C932009f69aF9585B81e10cD00E2",
+    "vault": "0x93D0D33F99FDCA2643Ec9C51e44CEA53c266A866",
+    "gmxBalance": "1194818636588727"
+  },
+  {
+    "owner": "0xD1CB331f3A1ec4cCE39dCB6bF1B9Ba0B0Ef60c02",
+    "vault": "0x3e42b52b01c1c6dC7CF5255FBF1319135f0EB48F",
+    "gmxBalance": "1194802113356589"
+  },
+  {
+    "owner": "0x7129Ab37A353db22345DD385B7c4F13903a02E3E",
+    "vault": "0xC0C7AA871D1380578F142d3FA3Ad8339563CB8e7",
+    "gmxBalance": "1198007890509379"
+  },
+  {
+    "owner": "0xcaB257699F8014368121Ea3127E458E98de7c259",
+    "vault": "0x82F6a6B86fcbc636BDb4C4359AeAf551d96f398c",
+    "gmxBalance": "1198016185343579"
+  },
+  {
+    "owner": "0x9f7CdD854Fa94B2696d39ae8992a1284daa38dfA",
+    "vault": "0x658501F1b993260feFb8F780ff3B3647EB2dfD40",
+    "gmxBalance": "1197999595749972"
+  },
+  {
+    "owner": "0x753008dfb4b4dC23f6FCd1718F9b9c90f2971e8e",
+    "vault": "0xdfebF4e617f17b7fE38CDF3a8cE0a53d61802Dc2",
+    "gmxBalance": "1197991301076713"
+  },
+  {
+    "owner": "0xbcdafb61c06E796939ee4A52aFFF79f02E9148B1",
+    "vault": "0x055135aB9D08f33C7a90A1087D2839E580Fa38C9",
+    "gmxBalance": "131574195273480126"
+  },
+  {
+    "owner": "0xADe4622Fc96163a049d2fb267B4B470ee9b3cFA0",
+    "vault": "0x3a45b041eDcfc3a41c0A69a0bd35b580Fa1b0922",
+    "gmxBalance": "575339246328343"
+  },
+  {
+    "owner": "0x7bf19523CA5Dd91A33359bE941E7C7784AA5b7ac",
+    "vault": "0x8c5956c9Fbe0926E5B8bCC730533dFDd965dd0a7",
+    "gmxBalance": "576738972341332"
+  },
+  {
+    "owner": "0xB195e454cE8D486c2783C5AB8233362A85defA4f",
+    "vault": "0x9ec78156b19A14267eFfcFfA35F91b16203e2deD",
+    "gmxBalance": "576271829981252"
+  },
+  {
+    "owner": "0xF35B32269703fd2B1BD2714F7B88a4caDB839C2b",
+    "vault": "0xed4BfF26f15F0759ab52e19534E6a18854cA6aE7",
+    "gmxBalance": "575805254949688"
+  },
+  {
+    "owner": "0xa37b2Fb48098ecD498973a431AdEA36976dE8dc1",
+    "vault": "0x57a065893630bb86f5959d30DAA67A2D35c8f9F7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA7356Af46c3169310e34D7F1c4DBBf3cb92A0c7e",
+    "vault": "0x288299Fa0b31Ae7CB8387d215aE1eAa941Ba2D75",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0304492c94D8DAFAB67756c7B7aAf94E2C9Ca709",
+    "vault": "0xC950A9211856Bb7cB160f449DE8055914322dDD7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4c5d97f02d0774b114f3c9f5d2b433C41cBe7b7d",
+    "vault": "0x8b6398374975015D897E4A19F2cf8470200e2600",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc1a8da2603bF579dF012309768C021eBe8383d33",
+    "vault": "0x77AE39C7a65B8735974A010c2ce633291D7761F2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4016F938B565dd7676d358CeAA8dbFcdf21E2AB6",
+    "vault": "0x265b4130eE87D67F0Aea80dcDa9771b6E5F6695c",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x28EcAb16e94673f078D0A3453929c95C0B367F7B",
+    "vault": "0xB83dDf6bc5A05907d76Ab8E807676eeEBbBA1f43",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa08386C4c19A4AE405886d46D78e468b993b679C",
+    "vault": "0xd3cD726394d5b3b49eD8e7a2a3B9BBc9c051B4f4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE6Afc8263d21c4d8bDeFd3c082A3b1fFCFA5C799",
+    "vault": "0xfb4403F1B40A2Bbd40c1ab86eD4D304Ca6e77C57",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9104C15e9362807930eF784fD96A310856BEB217",
+    "vault": "0x8968629e68f53B70706aC5C812f15Ae18f336e85",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3Aa86dEEbAd262C4B94F90C05Fc6B69a609C56B3",
+    "vault": "0xeb4DD709405DeeEC93EDd7583Ca90C140356420a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x51546d4Fe66E33778EEfb45505a8d59f0eCaD4E7",
+    "vault": "0x1e55f4F1302D8356E40Dfb3ecf3f8Aae84C698A5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x46686eF8Bc5D8e8b5a1C97A4D532f6A681A1c5De",
+    "vault": "0x085bC3b3B6A0BbCFAAb205448f41ff80B23c7B70",
+    "gmxBalance": "13749327091127176051"
+  },
+  {
+    "owner": "0xD09A609d3cED20a364092abd930354e03CD4F84b",
+    "vault": "0xc71Ae08867b3366f03E64CddB58425101F4706B8",
+    "gmxBalance": "34326466206520307"
+  },
+  {
+    "owner": "0x36f47fC1F2202196Deb24098AE02458B7Dc1B027",
+    "vault": "0x7946829A667EB82D5a35c670A26836480B872f31",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd038b0E055829D67aae4636A2A68b631Dcc169e2",
+    "vault": "0x450D4853308d03c59DCc9133550f6F17A31948ca",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA016B59Cea666f53da4DA3C9F99B97dA1e0b016b",
+    "vault": "0xF5f51b8Bd96b7269C0c184b9fc8428C1a36A0Ee2",
+    "gmxBalance": "2500843624724674"
+  },
+  {
+    "owner": "0x2F062d9Aa98209D2c79a744b0d4Ef203d363B7D6",
+    "vault": "0x596675dA1F25EBFbe74Fa2ADE9fd7185aa6C2466",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x03270912905F63b1B2b99b9A520a86810aa07f89",
+    "vault": "0x391da03A4044b56b23cda72896eCE9E84705FE13",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDdaC95994D0C3B6773801D26210e2b6b2F8e8dab",
+    "vault": "0xc0650C9155F07eCA82134E4d99261301C0390CF4",
+    "gmxBalance": "10130988020246233"
+  },
+  {
+    "owner": "0x5aF58F280e51fc99aC1011B093116A097be28bd7",
+    "vault": "0x4fed2a955836588DFF5D02662B8882dA5B5BCC09",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0534C96Ac39b2e1BDD90587a7fac6bF9606C60Ac",
+    "vault": "0x90066D64841De89e03BD88779973b2A13c629fc9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xcc17B807C76D70db7bA4318101A2E29973746d2E",
+    "vault": "0x63Eb85CF68955c31452649918D6335736f9bF408",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEd9490Eb47478b11e0c6352446Fa70542a093ef5",
+    "vault": "0x7742Ba8f30fA2299396805D15026A1c27f642feb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc4d8A4813A129835424B22856C19F044b2EcdaCd",
+    "vault": "0x7E003B2d1996DDfb5871D8a5CFa5462BD4d47617",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDeE4E935D47ca5e97025e92b96e74Cc348553F99",
+    "vault": "0xeC699F5abEB5E97c78dd2502B3e30d4682227766",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB0720A40d6335dF0aC90fF9e4b755217632Ca78C",
+    "vault": "0x13d1FBB9b28b202D5F970580D91A74bfe20EC96D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9334945F984A8737011Fd1cd793e03f78AA66e27",
+    "vault": "0xFa84Af9216f5218457457c63379ca4A6b53B2B8E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3819F68B2A023a77b9b3fD7E05Cf0607A836b62B",
+    "vault": "0x141a4d850875aeB4DdD63c0aAEb8e7384F8d0bad",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC3C65C31276a8e019d4f892d916D809733Dba421",
+    "vault": "0xE6CEf1E0E07EaE493725922b6B5912d86CF18b21",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x785842A0F7b4795131F38Fc7b1dAa92cEA5851ad",
+    "vault": "0x6F675af251bCB82f8997f3A3373C34C43D95c731",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39958845c0Fd534b934589cddf5627512DB8a543",
+    "vault": "0x6Bd3A114120420ACBbAa2283C01A5a0efB5A2e4d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x29A9188a7015aCE634d348814627018753629DB2",
+    "vault": "0xC532Ca727f000edc84D906b149cb95A8583e9C79",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4B1D25eF673882385A524AFD0882fEeeBf340eCE",
+    "vault": "0x4cA019f089D3327C4c44426E43e816FFD0A37c5F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFcEDcb5E28B1f0B7Caf46029A6058d365C5f070f",
+    "vault": "0x48606098BCE52370214698e906EB51Aa75a888Ca",
+    "gmxBalance": "748865332878879"
+  },
+  {
+    "owner": "0x4442318189da6B7FBC2fCa5eD4A67ebeedB7A9eC",
+    "vault": "0xfE7a63e8EE57287a8537956aC576975f8D83d712",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6D693Ba72274aaD567ec5BEEF88B861e08092Eb5",
+    "vault": "0xCB308Ea5576753fF8523A4c2a225dEc7E7d8Ae5B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xA9Ca2e36Abd617F3062110802B499Bd45fa1574A",
+    "vault": "0x19004C40af500Bd919bc9c73f38eF041992366ec",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6bF2EeCF8b998bDaD95b984b08854ad08421f851",
+    "vault": "0x87e83C618C7aE21cf9333FA990895baC017Ab71E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdE9c06bAdC0fC8c490043f4596BC69a54191bFa0",
+    "vault": "0x18046c482C17975be5214dF5Ac2A806031962413",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3858E36F636fa28Cc0269B6941c1de748BDBe8ba",
+    "vault": "0xEe80Bed574D02Bccfe31c1Eb208BfB60Ab0959cc",
+    "gmxBalance": "1750803634969733152"
+  },
+  {
+    "owner": "0x354a7d54e1BA84ef711dE4aA6084bf8974180366",
+    "vault": "0x92120F53f7e3fE226FaC6454E3C8Eb6F342c7adc",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xdE0AEf70a7ae324045B7722C903aaaec2ac175F5",
+    "vault": "0xa190CFB056830d1861539DF26B741A3961fa1Ea6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2c1259a2C764dCc66241edFbdFD281AfcB6d870A",
+    "vault": "0x09Fe2A087DD81677aD9289C8fD18e73499511754",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x896212Da5D35Dbf0e7C57A37133F0C97033F82b5",
+    "vault": "0xB999731e2eF65C245D0D2D90a90078A704c153F0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6e4aeB2Af9CE3b67116d8B19E6f1CA6b318Fc629",
+    "vault": "0x92Cc8E0c3Fe4A7cE133ed5Fb9dF1DD75b9f8d9fb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb1E87889b4bde8737c561810121Bc8a12A36C153",
+    "vault": "0x3fb70FccBCfe2f05359046643450775F4d0A395A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x880E14298Dd46418806F7B5e12B92Aa9873bB5D4",
+    "vault": "0xcC4A83480fb9c9537eB0916ee617275e7bae4889",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9eb4312047ebA7Aba5B61548a0F705999dDf76bB",
+    "vault": "0x540AE6b05749e873ED9De6cF865A8Ba6cBC5CB97",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9943ab699B0Cf1D2d7b0aB7114249b53713370EA",
+    "vault": "0xd1624957E26926d6a59B81fb928720411A2685a8",
+    "gmxBalance": "3580289443097721"
+  },
+  {
+    "owner": "0xB8fD61993B7e95eF57D7Ae0aE62bEe03B9eee760",
+    "vault": "0xcb481542d60cB1e335238B16353f867e3BCABFFb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x7b2aEF922CaCE6Ed4b0bA971aAE24B6876518AA8",
+    "vault": "0xecbdceF4FfCdcD8b8C072aC7838a62285246e88a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1cBF55d2D460122339Dc1Adf8A176fdA197bE176",
+    "vault": "0xa03ae37005b4F3f90688e6CD2e9682940955BA2E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD6f14caf5dB98820628e0acD3e3A7009b96C8861",
+    "vault": "0xF7C8091b98Fd444815DC0d129fdd06cab9DFA228",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8f4177CAeeBC7B25AC4bBAB7E5f38830237CcB3B",
+    "vault": "0xDbFF7515D6eD36835C525cad31CD6A7E5dDcC85D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x86207141dD219036578B1De200e7788452fb7016",
+    "vault": "0x4fA916c20a2401deEd35eAe126f806Ddcd78010F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCf143B0E9BCF524511D382684c63D786e41763B3",
+    "vault": "0x108c9d9E289765a86aDb37735741BFD1F193065E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCd064e5D6a477517FdC1EB30ff46eE593537DbEa",
+    "vault": "0xF31Fd9639D0329f0Ef96C01B958BC11115F7539F",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x47d48bB70f5DBf11028905ced3B87fAD2e2A1352",
+    "vault": "0xa4930463d06BA617A015952F3907A0D92101B2A7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xBeE2230fDECCb379BB9Ccb371d36a045d079A348",
+    "vault": "0x98F8eCb3b42854f407c291D646CfF2807D1b7694",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x14A5a065F6645aA70643297f64462001c7C1d112",
+    "vault": "0x54675B75F705D4D382289eBb6c4Bbb1008331326",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5029983455dbeB71b0245f2cEA3531cc5F7deBF8",
+    "vault": "0x5e0501001480583b4fd9f0c15582aF711f9dda73",
+    "gmxBalance": "104259509247597184"
+  },
+  {
+    "owner": "0x557AAb37cEE8E1E7E6F88C53ea6bf67f3912976A",
+    "vault": "0x9803f6a74deB44D2fB2c2E2B5b3204D7663Aa1bd",
+    "gmxBalance": "22308255623360805842"
+  },
+  {
+    "owner": "0x1eb322c016815EE5b29c071586C1B75Be5934576",
+    "vault": "0x648F5a81bF22ae83fd741a79aaBF378Bfe8E73D8",
+    "gmxBalance": "12306308884644423"
+  },
+  {
+    "owner": "0x14c55Eb9867E957BED83E1BF663e86060FaD604D",
+    "vault": "0x2fe4AEEb54f3Ed54450db3F386cAAd6392b8A170",
+    "gmxBalance": "681517566691156"
+  },
+  {
+    "owner": "0x5B60DE565583c1d81bB997220ac29740D842148d",
+    "vault": "0xdC75B2311948012E6Cb4262915BC332028eC4f54",
+    "gmxBalance": "635780156432852"
+  },
+  {
+    "owner": "0x47346C16a52E2F6b654daF69835b0186ACA11BB9",
+    "vault": "0x372556a3FDfC59aF3C4CD0D075a521C0cB1a9fa6",
+    "gmxBalance": "41000000000000000000000"
+  },
+  {
+    "owner": "0x3D6991085Ab1ae3926cB96f25684C40a364B6856",
+    "vault": "0x3d516813DB9ca27E3a403b738191B53aB4E2772d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xDA33E6230ecB4872d7f073cfc704B8279e18fAB3",
+    "vault": "0xdDf1a94fae864feb5eC4b1C5F9f6e7A8E9b4Ff79",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd113a6a043c7c284de9A570171859D12C43A4F83",
+    "vault": "0xe5010e173E56BeA2b6bD042BAC171F220b682a75",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x24E5BeC76FA3D750BFA97BDBf16B377F6B13AF15",
+    "vault": "0x6Be52EA498Ad4D473eF415b9E5004ffa1E91Df4A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x47f2a02B5b58b7EEae86c8BD7bAEf6c6cC412A3a",
+    "vault": "0xCe8c6C52554412DCfCdC15c6672aa01F3F64bd17",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x99b40B9b57c370ACA09dE4f58D26E2DEc9086E1b",
+    "vault": "0x66631507E0bf756132918569E1A0377C551FF8A5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x91aC14C7d856a9B786e25b2d505EFcAf6B5cB180",
+    "vault": "0x49B93480Df0049B95A145F333bae6aA58453DA46",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3Ac0b41d46FFc99c1886DB72F9C1A6deB9935E0F",
+    "vault": "0xc70Ea8e461c5150Cb37a747D037F8dF87f834F5f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xedB9394B623723cF030FB94a358297b8eD4E16c3",
+    "vault": "0x91237E3998F93dde93c912b16DA147068B1cc247",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x751150016ceaC6C1a24f8c074666D5Eae0e2108F",
+    "vault": "0x91cECC33eE1A11ACc9b6224803Ad9660e6765880",
+    "gmxBalance": "986730861264745"
+  },
+  {
+    "owner": "0x6f69286d7C51DE0f0cF5F3C03c8cA3edA8a322F9",
+    "vault": "0x93b91e109c3799AC81da71c41f2dc74F96747289",
+    "gmxBalance": "258741237322488620"
+  },
+  {
+    "owner": "0x52032BE37a44dB879Bd9A36fC3bff6c3f431FbE7",
+    "vault": "0xD2cf4D2948B650920B919eaB4510c9fD51Ef5732",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xad91612160A5D16780D52cF0B0C21255a68b1B55",
+    "vault": "0x71C37e5cf53b2D2DdeE347f20dcAF3D39582C041",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x25B3708f4187985544E9c147dde746f90Ffd9f14",
+    "vault": "0x18fFd088316D604eE33C4CC22810730D1965d6Ff",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x937fB2E4e6361e351b1A1EC7F0C2351A8FAfb4bF",
+    "vault": "0x1540a22288C7a88BdD8FD9102a5530a5a224B88B",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEb86acD66B6567BEA10A00D2289035692f3cDaaB",
+    "vault": "0x54f230CfCb91e3B509C159e8B60E8e9E028cb14a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2f5297Cba4e30637df7281bf3Cb853d5F447fc8e",
+    "vault": "0xC2675d1f17705bFD395C0676746abF999EfA259D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB44E0A5d944a05e86eE3Fa9469F186b083cf5504",
+    "vault": "0x3BE7A1a9ea4585cB939aA44f35E60699C88F22F2",
+    "gmxBalance": "5292906573"
+  },
+  {
+    "owner": "0x8a405B930ed8C1657beB61D2Cb1Aa212e59E3a81",
+    "vault": "0x182cf3dd75a47515d06CBcF74871CF7ecbBfE284",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe811Cb17aF7e635c11091a49581cd40b69fFC320",
+    "vault": "0xB208Bd334Bf2865fa9Ec0308cB534D64aB7D0743",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb92E53Ccedbb5F04Ac12eb36771DeEb92013f4f9",
+    "vault": "0xFCE5655688a97307Dd6E9Af2814b9f20562162e5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x19C29401044097D450D25038a45898A57a7CeA6E",
+    "vault": "0x32Af59082c10f938D4f9DA76C77382C5eCbBC0e7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFe7f1d76344e1A3F0419789f5FbBea961834ca82",
+    "vault": "0x285F9CF4f719b09EEBD9AAEe43920d5c992817DE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x39486543Ae9E1fDea6613f4d95FD568E33d55BB3",
+    "vault": "0x594Fab2cCAe4C4f0Ec6c4f125239d643da631843",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd2e80D60aff5377587E49FF32c9bad639d6f68Bc",
+    "vault": "0x754BB56A0F9E979E37c88c29f470f0E3837D151a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF4328A8C6653cF5d13589B7ca5F4e24C98FfF016",
+    "vault": "0xf8B64506f1976Cd2adc012D9148630147Bc81bD2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x28C974C18C6553B445c4B77F35D83F3499ACF58f",
+    "vault": "0x1567AD3CaC7c9e7Ebc3C5e8E27A815F7644b9576",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x78F801B373e49ee378275b0e55342b7AB7b3c53f",
+    "vault": "0x088F840025112Ee94162457Ee92dbbDB611c3cEB",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb4bBCCb27cD9b6eA71105cf20b3D755fa527a6f0",
+    "vault": "0xA41304Cc45190b834Db1a0D131ab1d5c03b42546",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x08BcB856963cb4F0c3f099C64a57C928A9C88888",
+    "vault": "0x1dc1E4A4E50998235d9312ab60fd396b889534A3",
+    "gmxBalance": "881314391609587180"
+  },
+  {
+    "owner": "0xda62F3FbFA0E725e9DB71c3F18A69808d56964B1",
+    "vault": "0x647e733510A4181A4773A8685ED28BdE1A10045D",
+    "gmxBalance": "300000000000000000"
+  },
+  {
+    "owner": "0x6371024C5fFDaefEf716aDCe3cac52AC6181cD9D",
+    "vault": "0x27Ef63f7a1AEb2B5C9DbecD3cBf34B065cd89700",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x05120363CEAA374e696F9148A0C9df15435a2434",
+    "vault": "0xF0d864EC56b2cC4FC6a57D2f060DA638239BFb3A",
+    "gmxBalance": "4863161240163380"
+  },
+  {
+    "owner": "0x4d6abB03613034e9ca9C36Efe8EaCEb9e767f4f7",
+    "vault": "0xE0682452c57AdC0B3E7d7e7AFDb1eC5d157B5585",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x0604E652A188931e245717d45Feb26F583B92908",
+    "vault": "0x039f43f144429BAD1e520ea8F59EC44c6C53D5Ca",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9270d9deC674Df526F765dA64b16d4b1A4971ea2",
+    "vault": "0x2FC90F64AdC9DcCDDfD82108F6843C7d0B5b0711",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc55863b0dD1cF89fB41563ADe7ac12F840A507d2",
+    "vault": "0x06A455fd30155f93e4fb9839409A3Eb8429D2327",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4Ab3e48Ad79cda4A994c14F5acEF93444Aa036C5",
+    "vault": "0x2C9Bb54F6ae79660621de639216442AB3A93E86e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x359CBdcAfdB7641Ec3775C9Ff421541F2A6dFB45",
+    "vault": "0x04Ec74FeeB45627c76f86F833338f1C9e2f63234",
+    "gmxBalance": "870563216288621"
+  },
+  {
+    "owner": "0x88Df4D4240d4F388A88d9edC1DbC7D0154B996Cf",
+    "vault": "0x2b8De18812410501E0edD27e850D9Bb739016355",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xabE9AfE4D09C1b236149e703957554c221e7532B",
+    "vault": "0xa24BABF7b31b49892312088869c61168A4BD0Cbe",
+    "gmxBalance": "165344219914"
+  },
+  {
+    "owner": "0xd031B341b6732B7cdCD0356cF99937c1F0B1C7CD",
+    "vault": "0xc09fbcd9183AA6ae93Bd3df029898e98e031424e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x593B0c00078A741eB440c7B9Dde999bdD40Aa1F9",
+    "vault": "0xdc5677dDDad26a8b4b450bd95b9Fafe813931121",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x447154dd6F956CE7143c686542Ec1318769D566d",
+    "vault": "0xD215d0D5189D5FA767C263DfAd11619d5C81cB42",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5764CfcFb4C206f497C5B65684Dd187dF8E30543",
+    "vault": "0x075D6ACD47FcbED1dB67296eb8117b99Fdf58d69",
+    "gmxBalance": "47377662916231118"
+  },
+  {
+    "owner": "0x632C9cdF89823dab7481c8762fd33C92BDC9D504",
+    "vault": "0xa31fEedD8C2f263151CFDd9e087597E2696669bD",
+    "gmxBalance": "12178836775400877750"
+  },
+  {
+    "owner": "0xFb408FA20c6f6DA099a7492107bC3531911896e3",
+    "vault": "0x93f36DFC835ff72E378C5B08e080Ca02a116330f",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9E43d17F2D31b9fD88De3D4a865927cA52135475",
+    "vault": "0x17A003fFA2D6745FEe3bD9330949eD9Fc7fEdCE2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE687F42f75f98157BaDD0443553ddF806c32477A",
+    "vault": "0x81fF40ccC166af9F3B5F7E05D1F949A37656b436",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x68CbE93EEE39213b5b18aa0d3c8600139D563007",
+    "vault": "0x32e0035d7c39a653c579c0C24DFF4D7941826843",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xaf4DA3BEc83Da5BBDfcEf872E16cd78b26a97477",
+    "vault": "0x6Eb1cc1E6577e74BeaD40c4499C610A0B30805C9",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x51442BA52a0FF09371853625e01c6d77350820e6",
+    "vault": "0x1254CCf77f0657bEBF87FB063a3f542742B2b244",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x5B9337EEB9d0A9013cEa4b0C80178087492EBC61",
+    "vault": "0xbD627cB111517c4c992A8bC84646005a35778aAE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc6697aaC097DC9fae8190eF4b01dFf6152FCd1F9",
+    "vault": "0x921161E26fA46E8D273731E531D56ec7360FBc03",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1fafb618033Fb07d3a99704a47451971976CB586",
+    "vault": "0x81E0a1ac648622FA5B88d6FaFD6B7Fc5DB937016",
+    "gmxBalance": "138205875968288543"
+  },
+  {
+    "owner": "0x4F0A01BAdAa24F762CeE620883f16C4460c06Be0",
+    "vault": "0xa22ef66E8E94987684c8e8638232853145a8F3fd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa078a0601AA35871e002614afdbF7a487579e6c9",
+    "vault": "0xcD12c8077d966C0a1A302aa5E28EaD2e3AF9f435",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9a0eC5ba7912018b8523f110d84a6e1ab7B0D900",
+    "vault": "0x63946B9aD442aD1F23CC5921cadD18De4216b282",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2AD6B3148A004a085326Ed388078f67AaA5d3F9a",
+    "vault": "0x69E478188BE6e9227ab48bdcD9Da908BCa5Aa736",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x07110D0b1c44Cf38c7789b5fecd13221D4B08972",
+    "vault": "0x0D32741c0268F9c1277BEd91Ef7444e01cA28b00",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb4B35d7Ba2A507EBA7D15B06FddeD697E33189e2",
+    "vault": "0x9d4715Dc75f2D8fD7Fb20EaCe5db4577F66dddFd",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x68AD1Fa00cB9D499B73e85c6449766374463B6B2",
+    "vault": "0x692b57da407F39A3959F8a44df5477BdE4D6cdc3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe796b856f6d0cAF88DFd7dCbE83804a02b6D9283",
+    "vault": "0x08a2C1D0F5D7EFe08db08c5F6b831A7fdE938fc3",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x302c798651367D282da4ee6B019a9e0694406E74",
+    "vault": "0x72F4b03Dd588b848Db89897D8D10FA4756252b02",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd8F3676A7567842295170B3f6AE4Bd466A878374",
+    "vault": "0xd44da88F7Bdc57021006f448CA2C26010Def6deb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xADeED59F446cb0a141837e8f7c22710d759Cba65",
+    "vault": "0xD25659c3c7a28e118a5B5F6d4671854CB9857DcC",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1e901C396E49bcC6EcB4c6e40Ccb4E0B0A77c3Ff",
+    "vault": "0x5639Dc494eC29774091f9Aa0eB81D53ae4Faf813",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xE5F8a81F072150701c25FbA31c910884fA33098c",
+    "vault": "0x749c71c0b1296F59a3E93a9C499E5d9be70630C2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x31795034F7079ce982b9d608d1b2FE54C4c3a731",
+    "vault": "0x7EB7bDdb66Bc3Bc34FBb8AbEEdfacA5FA29dC5d8",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2BC138a8665C81bc315E2ca30BBCF87115cC521E",
+    "vault": "0xeFb8f1dC57834e54Dc49a20e9d56F8bC0Aa4ca45",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xB1Ecc06C51D2523145465C7C2C29930DD47f5947",
+    "vault": "0x263901bfa984a533997aA3889A3f0840EDf20504",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD1A2f4768E86884aEbe5d97f2053e733b2e9EC2F",
+    "vault": "0x1DF581F960D37b9C6E7dd4770181EdBc4F040CE5",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x37859514b36EbB1cddb3603E3c340b019348A44B",
+    "vault": "0xCc1c6Daa8D32B0553256455FCD5147aF07be4183",
+    "gmxBalance": "646915130306296757"
+  },
+  {
+    "owner": "0x4d72D4269Ab46962713ca19cAb8161A87684A163",
+    "vault": "0xBB3E18337121a80780F269e120C019f91d21B5f7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc25cCd4896917E9e31925755cEd674cBD7214E1A",
+    "vault": "0xc284A83B87dBba3ab0fc126ABfE093f75382c96D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x2F629DC38D07deee1E43623FA720C47Bca87d72b",
+    "vault": "0xcf4844C27AaD7C55e65DD2c7CC5Cc62D6Fa934D4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x62714d5E51dD2506d65F0c0aE2230cD076E54231",
+    "vault": "0x417d34c488B7d431089fc245eB43235805AC251a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9F985f2363ca31052A939C0D157217D280cB6cb8",
+    "vault": "0x5771D4CdAba67EC65fC60D118c7638b65DF06A33",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x069699DE80e04089f259bA9646f4e3e7ba627aBd",
+    "vault": "0x1B2536451a96d8f79935a2eb73ea69b8465B821e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x228b8643E1c53C9f2119156C9Bec3374A9B1101f",
+    "vault": "0x1a621022A98ea5B239b8772795032148FdBAdFe2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x179C4D74de5284519b96A44543C918665BaDE088",
+    "vault": "0xF8D1a3369a9f43eBdBA9abec3C144991bD793FDd",
+    "gmxBalance": "417379385412586372440"
+  },
+  {
+    "owner": "0x08d26f88cc1394f91b066019F0039F223f950f10",
+    "vault": "0xbEbB3620271fA31DAE37DB22CbEac13E7c460953",
+    "gmxBalance": "60505028456996704018"
+  },
+  {
+    "owner": "0x0a7fcB938b2c9Ab0449b567Bb689ad054Fe269f3",
+    "vault": "0xDDc7a524fC0D7b7B73d9a05112E059ee7d9bfcaa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x799743090109D41471f06C222178570D47949777",
+    "vault": "0xAb354F05fcF879D30c84A53dE94EEFb0D651d292",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xa08F5d8E362a20686F0EdB9128F6B854E5D20748",
+    "vault": "0x3665180C7936CF90Dd2026E0F6e43918d469cB34",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xCD7F23e12F0626e652D9207019FBAF17adB145e4",
+    "vault": "0x5d0269396CDEAddECA4eB095c274E21B7FfEbD86",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x118076eE0F7907676C77FBed98D84e045EEC1835",
+    "vault": "0x71BF101F6C0D4F8Fa01aDfEBBb36B84B5D8BA927",
+    "gmxBalance": "5048383077319392141"
+  },
+  {
+    "owner": "0xc2C7906Dfc83ad7e9E4374A74726881978700735",
+    "vault": "0xcE60D51fFB7e6C89D38cb40f27FBEb8377D24c2A",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x3fFdFF6014eEc97404D5E7eaDB5Ba8a4B87d7dE9",
+    "vault": "0x83728CCC9b28255d07426153d2a11F6a205AC528",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x488259D54f7498c1fDe771aab41f9C2C35202968",
+    "vault": "0x588E7541EBB900bE0c94Cb002E1dcFFF431b530d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x867A7A376caFd1237C3013DEC92Cfdf01E1B2037",
+    "vault": "0x153787041e586396ca7c19E118Ce7f826A14Cdbb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6b732aD3898aF56055024F2F920147b85be04176",
+    "vault": "0x9e8D3DDB774FB6f47666b34b7fB3D69B2B20ceAa",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x57F6F77da955C8FA89f3CF7973a1fB8054B56204",
+    "vault": "0xAdb2b646a637693B8aBC3AF6613cf4347974415e",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x66e05fB6CF95EA8D1e789e88E1dc8929F9577E79",
+    "vault": "0x8b5Ef512beabF05836fa20C1a623c05726E6ba11",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4138F7b064Dc467A7C801c8ce19B94C98120A473",
+    "vault": "0x6508e639a63aCaDE3b29790Fa16a8db9D54EC731",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD43c78DAA632A023B328C12aA7a4c5cba52eB9Ca",
+    "vault": "0x048A9A8A1DC1674951fefC5804ed19211d5f13d7",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8E3E62E2229F49ab0A4F5028d05840BB89E20378",
+    "vault": "0xC7117eD26f6DaD3EC458F8c1361be5460AeC6943",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x9930b243fA35baD07eeA3Ac7E3dD3c72Ecdbd1A2",
+    "vault": "0x4157E3d184b1f7465FF969624315EA4cEe5c0b05",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x53F8893D108Fb80E1088ea17Da2C3a092691c574",
+    "vault": "0xF3f807c8b046d6c7a29f2ec420907BaD4772D1EA",
+    "gmxBalance": "470297065427972647"
+  },
+  {
+    "owner": "0x32cd32b45277BF025C1df7BB4388e6a412B77FE5",
+    "vault": "0x05d0de9F64d9d87ca061E8Ff144dCDd3d418F042",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb1b86cC078870a9c0F998F7c24Dc27AC3dd46Cf1",
+    "vault": "0xD73902d45CAB0F6106B5a26BD20bf138Fc3a31f1",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x441e39C498a2d06A9d6631ec7e25F4376a5B0De9",
+    "vault": "0xB6C3065270D867b5A08da9Df0AD73A7332723044",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xde708BaA282A1cA68F7a39fb1AAE1835Be289313",
+    "vault": "0xa21ec78C3C87696e73c66f2729832A17568b3993",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEB16d7b30b901f515674A3d057F600d44449b87D",
+    "vault": "0xe2a68C984c6BB45396dCEcF2396Ccce4E16c4B62",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x014CcC93FF00D407BC7ff533d5c3b32Aa3597F44",
+    "vault": "0x3751999164F28e11E97061B76E118aC086d819b6",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD5589B82113fD3cf4993743d03bde11ec3380Ffe",
+    "vault": "0x30AED6fBa9672DeA25B9DF69C16d159f5fc9F9bE",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4aC56846E032dC3b6711660B61FBd791aB142c70",
+    "vault": "0xB956Ba4E88534F126d8662a2C791F6139081c535",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xd0A319791076b157Ad08e01c752BEFe8F681759c",
+    "vault": "0x54ba281193791c7C8B0EF293Dd8ab975dA5CC21D",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4F8eC2e2115D98b39c595378400cfe3aac9DdBe9",
+    "vault": "0x6C579e16Af42C2f6d6b1B98577fAaecf3587e670",
+    "gmxBalance": "1000000000000000000"
+  },
+  {
+    "owner": "0x9B320DdB2AB2eD1B5FFa673F92AD42b40D921Db8",
+    "vault": "0x5a05Ebe16f719D528478C8a5f1a2c8352601EBA4",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xe5657DFa63971Ba46487ad8376b2bc986D7B6441",
+    "vault": "0x303e09A688046B7823Ba4f5a120c6C7629085891",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xC57BA3E1d508dB99Ac4AFC45969Cd853Fe6e0f6C",
+    "vault": "0x0370507A30e5e698C0deBbe951E5a4e0903f7255",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xD3c21358511976077697d872900Bf282d8C34138",
+    "vault": "0x5b5F457e6D8fA8eD134d84eefDBB0EFE8DDeD851",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xFb42A940D1AB79f4e53345fa4CC8629CB84aD2e0",
+    "vault": "0xF0Dd9c74678CF6c1Af07e4c757551c40935196E2",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x4a2763570eDEeEB78e0174aEae6bEdDE6F143398",
+    "vault": "0x4185d67Fa5e262D8D2fc7faFF01c3bc82D89f536",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x05756ad8a4846ff97c0eddD0A4dB2aA586B50387",
+    "vault": "0xa72f4D05be940fAb7eb9f05B481D0F9900EBB570",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x26AbC9e54b5A0894b9e6d834d1f1A7e7768Ea00a",
+    "vault": "0x5959ee1e7E8Bd2f624CcA89c09E5809aa0C980cb",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x13c64d7C5f5E3Ab61Bfe990eD82192C1577BDB7E",
+    "vault": "0x1F9F9d0B08BD653E97C693543f2be647997e666d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x17c8AFd739A175eACF8Af5531671b222102B8083",
+    "vault": "0x71416Cf1f934eA183F1f9b5f0302857f1bCD8767",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc294cAC72C69a18b3127a35804FB97939e2327af",
+    "vault": "0x450f609d08c08D5e083D171EeF4Ba91F738D1951",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xEFD94fBAad800AF19A8210F2C538E867f3Ac2243",
+    "vault": "0xfdf6Ad631311cFc28915024631eE8d412ffF50ED",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x6fD3490DF0939947c283bF6dcEe932d31CeD2f8a",
+    "vault": "0x4cbb08320d4A8e882d447F9905dCFA41AEfF634D",
+    "gmxBalance": "700000000000000000000"
+  },
+  {
+    "owner": "0x4cB75146e98562C9d79b31649C6C739e4DCB7CD5",
+    "vault": "0x8D66EDdC87B567a1AeaCF14aA68537E7A9042209",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x926D368FD6211Fdd626Ed3B4C4E227a6C93a7f4E",
+    "vault": "0xe87F977EA450D9688d00C9283302A18211D11CE0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x8fF5Bde0C42D97c83C77888B084448cDBB16db97",
+    "vault": "0xf72B92841DAE625A9C0E46184cc756764a6b6dC0",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xed0bc782F82B8F90c6BF524359FCf7d725A95D30",
+    "vault": "0x6395c5E1175D6FD475403475C19a8e0FE6c65913",
+    "gmxBalance": "492001131099304375"
+  },
+  {
+    "owner": "0x81a3F6ec56e96b58299d181243a760e3aB24c320",
+    "vault": "0xa340D26Ac9e7AcFBff037B8490b33e9251d1944c",
+    "gmxBalance": "29607427193908949"
+  },
+  {
+    "owner": "0x03Dd0162f621f6C76DcBF475A19471C0C6b6Be67",
+    "vault": "0xE0E1229553fA0A03039d6c7CFF7564EF7E1c926b",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xBcb6aA2c75422C51d4FD20f1A3469BcB3cC5baDc",
+    "vault": "0x3a05b0Ec67fEc89F9bd02C42c5b47F111b474A92",
+    "gmxBalance": "14881643106479060"
+  },
+  {
+    "owner": "0x7b44267fB3CD186767E828269232392C748C0CD9",
+    "vault": "0x3EE134E793107689d3002550737B9772cCFD3B87",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xc23383cCA0662929573868bA6D47a478FBf25112",
+    "vault": "0x7246ca9f1B6e120694A9cFdeDC4cd00e4498e6fE",
+    "gmxBalance": "4500000003268692633380"
+  },
+  {
+    "owner": "0xCbB1cb42c2833d49a4e1a902054E216c25498879",
+    "vault": "0xc90B946AC96Ebd1e8e0c1c870c0209Ef7977eb8d",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xF11f0aaE4C52dD5EB948C61b2DfcD55C6c44cE1c",
+    "vault": "0xFe186c4C4F727E3A18C3c8cEc7F73992837f734a",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x1aa72FCbF7732678735f948E0337Eb4b0d4fD7BB",
+    "vault": "0x1b7FB4cD2C96774f462C7D336CAD872D6d580D41",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x655b2c89862E4382e07Bf99d0bdA61aD92e65385",
+    "vault": "0x5AC91360b2b3E1D0aA0aCa935F1C08De7b97F929",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x079dFb0A62b4723B45166aBB7892fe362543AD8f",
+    "vault": "0x095F84c65EbC74fCbbfd00D626F479088Fb31e9C",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x10573EA2C71547ef9867fe2D89eB8e392d22d718",
+    "vault": "0xacbf7e1c78d94acB27a8a6dF585D0157B14E1d1E",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0xb577EBe03D5Dd2aD29833ab53c8eB5180892F829",
+    "vault": "0xCB3A5fdD6f77505d038103c5089F6419b45bD8Df",
+    "gmxBalance": "0"
+  },
+  {
+    "owner": "0x023691BfDf6e0fAb584CD89B733e1000D684Df8c",
+    "vault": "0x78b6D5ab5E65d63B8451A620F870F470543c259C",
+    "gmxBalance": "0"
+  }
+]

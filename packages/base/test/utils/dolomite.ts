@@ -64,7 +64,7 @@ export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.Arbitr
 export type Expiry<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
-  const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
+  // const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
   const contract = await createContractWithLibrary('IsolationModeTokenVaultV1ActionsImpl', {}, []);
   return { IsolationModeTokenVaultV1ActionsImpl: contract.address };
 }

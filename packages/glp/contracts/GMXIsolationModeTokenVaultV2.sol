@@ -32,6 +32,7 @@ import { IGMXIsolationModeTokenVaultV2 } from "./interfaces/IGMXIsolationModeTok
 import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GMXIsolationModeTokenVaultV2
@@ -52,7 +53,7 @@ contract GMXIsolationModeTokenVaultV2 is
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "GMXIsolationModeTokenVaultV1";
+    bytes32 private constant _FILE = "GMXIsolationModeTokenVaultV2";
 
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_DEPOSIT_SOURCE_GLP_VAULT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceGLPVault")) - 1); // solhint-disable-line max-line-length
@@ -74,11 +75,19 @@ contract GMXIsolationModeTokenVaultV2 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function ownerUnstakeGmx(uint256 _amount) external onlyHandler(msg.sender) {
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
+    function ownerUnstakeGmx() external onlyHandler(msg.sender) {
+        IGLPIsolationModeTokenVaultV2 glpVault = IGLPIsolationModeTokenVaultV2(registry().glpVaultFactory().getVaultByAccount(OWNER()));
+        assert(address(glpVault) != address(0));
 
-        IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount);
+        if (glpVault.vGmx().balanceOf(address(glpVault)) > 0) {
+            glpVault.unvestGmx(false, false);
+        }
+
+        uint256 gmxBalOf = IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf();
+        if (gmxBalOf > 0) {
+            uint256 unstakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).maxGmxUnstakeAmount();
+            IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(unstakeAmount);
+        }
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -86,13 +95,6 @@ contract GMXIsolationModeTokenVaultV2 is
         assert(glpVault != address(0));
 
         IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount);
-    }
-
-    function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
-
-        IGLPIsolationModeTokenVaultV2(glpVault).vestGmx(_esGmxAmount);
     }
 
     function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {

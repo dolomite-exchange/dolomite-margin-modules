@@ -154,16 +154,17 @@ contract GLPIsolationModeTokenVaultV4 is
         address _receiver
     ) external onlyVaultOwner(msg.sender) {
         Require.that(
-            underlyingBalanceOf() == 0,
+            underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
             _FILE,
-            "Cannot transfer if holding glp"
+            "Cannot transfer"
         );
 
         gmx().approve(address(sGmx()), type(uint256).max);
+        IERC20(sbfGmx()).approve(_receiver, type(uint256).max);
         gmxRewardsRouter().signalTransfer(_receiver);
     }
 
-    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
+    function cancelAccountTransfer() external onlyVaultOwner(msg.sender) {
         gmx().approve(address(sGmx()), 0);
         gmxRewardsRouter().signalTransfer(address(0));
     }
@@ -375,6 +376,8 @@ contract GLPIsolationModeTokenVaultV4 is
 
     function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx, bool _addDepositIntoDolomite) internal {
         _vester.withdraw();
+        // uint256 bal = gmx().balanceOf(address(this));
+        // gmx().safeTransfer(msg.sender, bal);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
