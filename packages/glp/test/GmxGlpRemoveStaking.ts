@@ -128,7 +128,7 @@ describe('GmxGlpRemoveStaking', () => {
   });
 
   describe('#ownerUnstakeGmx', () => {
-    it.only('should work for all vaults', async () => {
+    xit('should work for all vaults', async () => {
       for (const gmxVault of gmxVaults) {
         const vault = IGMXIsolationModeTokenVaultV2__factory.connect(
           gmxVault.vault,

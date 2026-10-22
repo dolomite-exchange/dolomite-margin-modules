@@ -30,7 +30,7 @@ import { ISGMX } from "./ISGMX.sol";
 
 
 /**
- * @title   IGLPIsolationModeTokenVaultV5
+ * @title   IGLPIsolationModeTokenVaultV4
  * @author  Dolomite
  *
  * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV2 implementation
