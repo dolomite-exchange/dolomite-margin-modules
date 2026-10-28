@@ -27,7 +27,6 @@ import gmxVaults from './all-staked-gmx-vaults.json';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { PlutusVaultGLPIsolationModeWrapperTraderV1__factory } from 'packages/plutus/src/types';
 
 const blockNumber = 517_014_000;
 const borrowPositionsQuery = `

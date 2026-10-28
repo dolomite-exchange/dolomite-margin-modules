@@ -2,16 +2,15 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import ModuleDeployments from '../../../deployments.json';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
 
 /**
- * This script deploys GLPIsolationModeTokenVaultV4 and GMXIsolationModeTokenVaultV2
- * and upgrades the GLP and GMX factories to use the new implementations.
+ * This script:
+ * - updates the GMX registry
+ * - Sets the handler
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -20,37 +19,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const glpVaultImplementation = await deployContractAndSave(
-    'GLPIsolationModeTokenVaultV4',
-    [],
-    'GLPIsolationModeTokenVaultV15',
-    {
-      ...core.libraries.tokenVaultActionsImpl,
-      GLPActionsLib: ModuleDeployments.GLPActionsLibV2[network].address,
-    },
-  );
-  const gmxVaultImplementation = await deployContractAndSave(
-    'GMXIsolationModeTokenVaultV2',
-    [],
-    'GMXIsolationModeTokenVaultV13',
-    core.libraries.tokenVaultActionsImpl,
-  );
+  const gmxRegistryImpl = await deployContractAndSave('GmxRegistryV1', [], 'GmxRegistryImplementationV2');
 
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.gmxEcosystem.live,
-      'dGlp',
-      'setUserVaultImplementation',
-      [glpVaultImplementation],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.gmxEcosystem.live,
-      'dGmx',
-      'ownerSetUserVaultImplementation',
-      [gmxVaultImplementation],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxEcosystem.live, 'gmxRegistryProxy', 'upgradeTo', [
+      gmxRegistryImpl,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core.gmxEcosystem.live, 'gmxRegistry', 'ownerSetIsHandler', [
+      '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2',
+      true,
+    ]),
   ];
 
   return {
@@ -67,14 +45,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      assertHardhatInvariant(
-        (await core.gmxEcosystem.live.dGlp.userVaultImplementation()) === glpVaultImplementation,
-        'Invalid GLP vault implementation',
-      );
-      assertHardhatInvariant(
-        (await core.gmxEcosystem.live.dGmx.userVaultImplementation()) === gmxVaultImplementation,
-        'Invalid GMX vault implementation',
-      );
     },
   };
 }
