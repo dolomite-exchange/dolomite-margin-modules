@@ -4708,6 +4708,13 @@
       "isVerified": true
     }
   },
+  "GLPIsolationModeTokenVaultV15": {
+    "42161": {
+      "address": "0x575936e0E506335513A1B45623b0EB088622e4a2",
+      "transaction": "0xbdde6c814e43a98fd4ce160c0ebdc930b7f1185802046a68eecc90f0dfe46b40",
+      "isVerified": true
+    }
+  },
   "GLPIsolationModeUnwrapperTraderV1": {
     "42161": {
       "address": "0xe2E26241E8572912d0fA3c213b935D10a4Fe2268",
@@ -5128,6 +5135,13 @@
       "isVerified": true
     }
   },
+  "GMXIsolationModeTokenVaultV13": {
+    "42161": {
+      "address": "0xD19708Ff574045549f3E3E84D9A0100C00De7B17",
+      "transaction": "0x26380139f44b3a1fe07fad1b9b5d0a371ed7a093ad7a57b14a520d6337af32b6",
+      "isVerified": true
+    }
+  },
   "GMXIsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0xE437e70a287a7204125d1D16390071903841d9B0",
@@ -5177,24 +5191,24 @@
       "isVerified": true
     }
   },
+  "GmxRegistryImplementationV1": {
+    "42161": {
+      "address": "0x39f39051c115d909d25021F5A18137B18AbcE7Ad",
+      "transaction": "0x3262e0df91ec5adc6fe51d542a3ebfc0cf1db1ade5211ef9cc135be4585ad1f2",
+      "isVerified": true
+    }
+  },
+  "GmxRegistryImplementationV2": {
+    "42161": {
+      "address": "0x2e9fB38c24d7e9f45f7cA9EFAB323520d7ab565c",
+      "transaction": "0x0f789dcdaa343a13ff1ae07db834543407a835c0578191ed11c0d153b732be32",
+      "isVerified": true
+    }
+  },
   "GmxRegistryProxy": {
     "42161": {
       "address": "0x07F1142C3025d39241051d1dcb19b9Fff4F377a1",
       "transaction": "0x25dee72b8cdea6112cab21b7bfb8e1a4b2356d9a3414b7ea665ea8d47b83b97c",
-      "isVerified": true
-    }
-  },
-  "GmxRegistryV1": {
-    "42161": {
-      "address": "0x068Dc745455f65C3dC3Cf3b439b661113B31166e",
-      "transaction": "0x2cd87390e40e4ae547db300fefabccefae2aa0f3625d372a608df8058e0735a2",
-      "isVerified": true
-    }
-  },
-  "GmxRegistryV1Implementation": {
-    "42161": {
-      "address": "0x39f39051c115d909d25021F5A18137B18AbcE7Ad",
-      "transaction": "0x3262e0df91ec5adc6fe51d542a3ebfc0cf1db1ade5211ef9cc135be4585ad1f2",
       "isVerified": true
     }
   },

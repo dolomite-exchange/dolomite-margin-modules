@@ -25,6 +25,7 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modu
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
+import { IGmxVester } from "./IGmxVester.sol";
 import { ISGMX } from "./ISGMX.sol";
 // solhint-enable max-line-length
 
@@ -213,6 +214,8 @@ interface IGLPIsolationModeTokenVaultV2 is IIsolationModeTokenVaultV1WithFreezab
     function gmx() external view returns (IERC20);
 
     function sGmx() external view returns (ISGMX);
+
+    function vGmx() external view returns (IGmxVester);
 
     function gmxRewardsRouter() external view returns (IGmxRewardRouterV2);
 }
