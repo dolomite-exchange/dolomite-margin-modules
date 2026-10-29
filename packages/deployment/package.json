@@ -10,6 +10,7 @@
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "deploy:berachain-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts berachain",
+    "deploy:bitmap-risk-override-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts bitmap-risk-override",
     "deploy:boyco-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts boyco",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
