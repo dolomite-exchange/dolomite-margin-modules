@@ -1082,6 +1082,13 @@ export const USDE_MAP: Record<Network.ArbitrumOne | Network.Berachain | Network.
   },
 };
 
+export const USDG_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x004B506865409877C9fA29bfb1ebA929984B9bbC',
+    marketId: 77,
+  },
+};
+
 export const USDL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x7F850b0aB1988Dd17B69aC564c1E2857949e4dEe',
@@ -2770,6 +2777,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<DolomiteNetwork, Record<str
     },
     [USDC_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
+    },
+    [USDG_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xE9Bd4Ca2CDacb56cd06c9C4C5231e69c33340B3c',
     },
     [USDE_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x88AC7Bca36567525A866138F03a6F6844868E0Bc',

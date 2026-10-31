@@ -20,16 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IAdminClaimExcessTokens } from "@dolomite-exchange/modules-admin/contracts/interfaces/IAdminClaimExcessTokens.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
-import { BaseClaim } from "./BaseClaim.sol";
-import { IFeeRebateClaimer } from "./interfaces/IFeeRebateClaimer.sol";
-import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.sol";
-
+import {IAdminClaimExcessTokens} from "@dolomite-exchange/modules-admin/contracts/interfaces/IAdminClaimExcessTokens.sol"; // solhint-disable-line max-line-length
+import {AccountActionLib} from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
+import {AccountBalanceLib} from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
+import {IDolomiteStructs} from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import {Require} from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import {TypesLib} from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
+import {BaseClaim} from "./BaseClaim.sol";
+import {IFeeRebateClaimer} from "./interfaces/IFeeRebateClaimer.sol";
+import {IFeeRebateRollingClaims} from "./interfaces/IFeeRebateRollingClaims.sol";
 
 /**
  * @title   FeeRebateClaimer
@@ -66,7 +65,7 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
 
         super.initialize();
         initializeV2(
-            /* _epochs = */ new uint256[](0),
+        /* _epochs = */ new uint256[](0),
             /* _timestamps = */ new uint256[](0),
             /* _marketIds = */ new uint256[](0)
         );
@@ -340,6 +339,12 @@ contract FeeRebateClaimer is BaseClaim, IFeeRebateClaimer {
     }
 
     function _performClaim(IAdminClaimExcessTokens _adminFeeClaimer, uint256 _marketId) internal returns (uint256) {
+        if (!DOLOMITE_MARGIN().getNumExcessTokens(_marketId).sign) {
+            // If num excess tokens is negative, the claim would revert. We can safely return 0 since there's nothing
+            // for us to claim
+            return 0;
+        }
+
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: 0

@@ -102,6 +102,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   uni: IERC20;
   uniBtc: IERC20;
   usde: IERC20;
+  usdg: IERC20;
   usdl: IERC20;
   usdm: IERC20;
   usds: IERC20;
@@ -198,6 +199,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   tbtc: BigNumberish;
   uni: BigNumberish;
   uniBtc: BigNumberish;
+  usdg: BigNumberish;
   usds: BigNumberish;
   usdt: BigNumberish;
   wbtc: BigNumberish;
