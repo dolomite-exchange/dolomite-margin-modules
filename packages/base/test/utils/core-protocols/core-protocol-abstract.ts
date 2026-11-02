@@ -16,6 +16,7 @@ import {
   OracleAggregatorV2,
 } from 'packages/oracles/src/types';
 import {
+  BitmapRiskOverrideSetter,
   DolomiteERC4626,
   DolomiteERC4626WithPayable,
   IBorrowPositionProxyV2,
@@ -145,6 +146,7 @@ export interface CoreProtocolParams<T extends DolomiteNetwork> {
   adminExpirePosition: IAdminExpirePosition;
   adminPauseMarket: IAdminPauseMarket;
   adminRegistry: IAdminRegistry;
+  bitmapRiskOverrideSetter: BitmapRiskOverrideSetter;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
@@ -221,6 +223,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   public readonly adminExpirePosition: IAdminExpirePosition;
   public readonly adminPauseMarket: IAdminPauseMarket;
   public readonly adminRegistry: IAdminRegistry;
+  public readonly bitmapRiskOverrideSetter: BitmapRiskOverrideSetter;
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
   public readonly borrowPositionRouter: IBorrowPositionRouter;
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
@@ -293,6 +296,7 @@ export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
     this.adminExpirePosition = params.adminExpirePosition;
     this.adminPauseMarket = params.adminPauseMarket;
     this.adminRegistry = params.adminRegistry;
+    this.bitmapRiskOverrideSetter = params.bitmapRiskOverrideSetter;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
     this.borrowPositionRouter = params.borrowPositionRouter;
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;

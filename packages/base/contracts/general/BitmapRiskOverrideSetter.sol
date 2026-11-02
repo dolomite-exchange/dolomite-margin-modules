@@ -199,6 +199,16 @@ contract BitmapRiskOverrideSetter is
         return s.debtWithStrictCollateralMarketIds;
     }
 
+    function isMarketSingleCollateralStrictDebt(uint256 _marketId) external view returns (bool) {
+        Storage storage s = _getStorage();
+        return s.singleCollateralStrictDebtMarketIds | (1 << _marketId) == s.singleCollateralStrictDebtMarketIds;
+    }
+
+    function isMarketStrictCollateral(uint256 _marketId) external view returns (bool) {
+        Storage storage s = _getStorage();
+        return s.debtWithStrictCollateralMarketIds | (1 << _marketId) == s.debtWithStrictCollateralMarketIds;
+    }
+
     function getSingleCollateralStrictDebtSettings(uint256 _marketId) external view returns (SingleCollateralStrictDebtStruct[] memory) {
         Storage storage s = _getStorage();
         return abi.decode(s.singleCollateralStrictDebt[_marketId], (SingleCollateralStrictDebtStruct[]));
@@ -212,6 +222,21 @@ contract BitmapRiskOverrideSetter is
     function getCategory(Category _category) external view returns (CategoryStruct memory) {
         Storage storage s = _getStorage();
         return s.categories[_category];
+    }
+
+    function getCategoryByMarketId(uint256 _marketId) external view returns (Category) {
+        Storage storage s = _getStorage();
+
+        Category[] memory activeCategories = s.activeCategories;
+        for (uint256 i; i < activeCategories.length; ++i) {
+            CategoryStruct memory category = s.categories[activeCategories[i]];
+
+            if (category.bitmap | (1 << _marketId) == category.bitmap) {
+                return activeCategories[i];
+            }
+        }
+
+        return Category.NONE;
     }
 
     // ==============================================================

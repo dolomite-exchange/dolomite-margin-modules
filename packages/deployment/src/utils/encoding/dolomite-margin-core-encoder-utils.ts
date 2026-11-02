@@ -1,7 +1,14 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 
-import { BYTES_EMPTY, DolomiteNetwork, DolomiteV2Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  DolomiteNetwork,
+  DolomiteV2Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from 'packages/base/src/utils/no-deps-constants';
 import { OracleAggregatorV2 } from 'packages/oracles/src/types';
 import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
@@ -307,6 +314,107 @@ export async function encodeSetIsBorrowOnly<T extends DolomiteV2Network>(
       isBorrowOnly ? AccountRiskOverrideRiskFeature.BORROW_ONLY : AccountRiskOverrideRiskFeature.NONE,
       BYTES_EMPTY,
     ],
+  );
+}
+
+export async function encodeSetIsBorrowOnlyV2<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  isBorrowOnly: boolean,
+): Promise<EncodedTransaction> {
+  const currentBorrowOnlyBitmap = await core.bitmapRiskOverrideSetter.getBorrowOnlyBitmap();
+  let newBorrowOnlyBitmap;
+  if (isBorrowOnly) {
+    newBorrowOnlyBitmap = currentBorrowOnlyBitmap.or(ONE_BI.shl(BigNumber.from(marketId).toNumber()));
+  } else {
+    newBorrowOnlyBitmap = currentBorrowOnlyBitmap.and(
+      ethers.constants.MaxUint256.xor(ONE_BI.shl(BigNumber.from(marketId).toNumber())),
+    );
+  }
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { bitmapRiskOverrideSetter: core.bitmapRiskOverrideSetter },
+    'bitmapRiskOverrideSetter',
+    'ownerSetBorrowOnlyBitmap',
+    [newBorrowOnlyBitmap],
+  );
+}
+
+export async function encodeSetSingleCollateralStrictDebtV2<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  params: SingleCollateralWithStrictDebtParams[],
+): Promise<EncodedTransaction> {
+  const structList = params.map((p) => ({
+    debtBitmap: p.debtMarketIds.reduce<BigNumber>(
+      (bitmap, debtMarketId) => bitmap.or(ONE_BI.shl(BigNumber.from(debtMarketId).toNumber())),
+      ZERO_BI,
+    ),
+    marginRatioOverride: { value: parseEther(p.marginRatioOverride).sub(ONE_ETH_BI) },
+    liquidationRewardOverride: { value: parseEther(p.liquidationRewardOverride) },
+  }));
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { bitmapRiskOverrideSetter: core.bitmapRiskOverrideSetter },
+    'bitmapRiskOverrideSetter',
+    'ownerSetSingleCollateralStrictDebt',
+    [marketId, structList],
+  );
+}
+
+export async function encodeSetDebtMarketWithStrictCollateralV2<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  collateralMarketIds: BigNumberish[],
+): Promise<EncodedTransaction> {
+  const collateralBitmap = collateralMarketIds.reduce<BigNumber>(
+    (bitmap, collateralMarketId) => bitmap.or(ONE_BI.shl(BigNumber.from(collateralMarketId).toNumber())),
+    ZERO_BI,
+  );
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { bitmapRiskOverrideSetter: core.bitmapRiskOverrideSetter },
+    'bitmapRiskOverrideSetter',
+    'ownerSetDebtMarketWithStrictCollateral',
+    [marketId, collateralBitmap],
+  );
+}
+
+export async function encodeSetCategoryStructV2<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  category: AccountRiskOverrideCategory,
+  marketIds: BigNumberish[],
+  collateralization: TargetCollateralization,
+  liquidationPenalty: TargetLiquidationPenalty,
+): Promise<EncodedTransaction> {
+  const categoryBitmap = marketIds.reduce<BigNumber>(
+    (bitmap, marketId) => bitmap.or(ONE_BI.shl(BigNumber.from(marketId).toNumber())),
+    ZERO_BI,
+  );
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { bitmapRiskOverrideSetter: core.bitmapRiskOverrideSetter },
+    'bitmapRiskOverrideSetter',
+    'ownerSetCategoryStruct',
+    [
+      category,
+      categoryBitmap,
+      { value: parseEther(collateralization).sub(ONE_ETH_BI) },
+      { value: parseEther(liquidationPenalty) },
+    ],
+  );
+}
+
+export async function encodeSetActiveCategoriesV2<T extends DolomiteV2Network>(
+  core: CoreProtocolType<T>,
+  categories: AccountRiskOverrideCategory[],
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { bitmapRiskOverrideSetter: core.bitmapRiskOverrideSetter },
+    'bitmapRiskOverrideSetter',
+    'ownerSetActiveCategories',
+    [categories],
   );
 }
 

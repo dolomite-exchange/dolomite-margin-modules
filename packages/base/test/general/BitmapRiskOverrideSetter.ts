@@ -636,6 +636,90 @@ describe('BitmapRiskOverrideSetter', () => {
     });
   });
 
+  describe('#isMarketSingleCollateralStrictDebt', () => {
+    const settings = [{
+      debtBitmap: getBitmap([2]),
+      marginRatioOverride: marginRatio,
+      liquidationRewardOverride: liquidationReward,
+    }];
+
+    it('should return false by default', async () => {
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(core.marketIds.wbera)).to.eq(false);
+    });
+
+    it('should clear only the removed market', async () => {
+      for (const marketId of [core.marketIds.wbera, core.marketIds.wbtc]) {
+        await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(marketId, settings);
+      }
+      await riskOverrideSetter.connect(core.governance).ownerRemoveSingleCollateralStrictDebt(core.marketIds.wbera);
+
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(core.marketIds.wbera)).to.eq(false);
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(core.marketIds.wbtc)).to.eq(true);
+
+      await riskOverrideSetter.connect(core.governance).ownerRemoveSingleCollateralStrictDebt(core.marketIds.wbtc);
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(core.marketIds.wbtc)).to.eq(false);
+    });
+
+    it('should return true when configured with empty settings', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(core.marketIds.wbera, []);
+
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(core.marketIds.wbera)).to.eq(true);
+    });
+
+    it('should support the lowest and highest market IDs in the bitmap', async () => {
+      for (const marketId of [0, 255]) {
+        await riskOverrideSetter.connect(core.governance).ownerSetSingleCollateralStrictDebt(marketId, settings);
+      }
+
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(0)).to.eq(true);
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(255)).to.eq(true);
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(1)).to.eq(false);
+      expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(254)).to.eq(false);
+    });
+  });
+
+  describe('#isMarketStrictCollateral', () => {
+    it('should return false by default', async () => {
+      expect(await riskOverrideSetter.isMarketStrictCollateral(core.marketIds.usdc)).to.eq(false);
+    });
+
+    it('should return true only for configured debt markets', async () => {
+      const marketIds = [core.marketIds.usdc, core.marketIds.honey];
+      for (const marketId of marketIds) {
+        await riskOverrideSetter.connect(core.governance).ownerSetDebtMarketWithStrictCollateral(
+          marketId, getBitmap([core.marketIds.wbera]),
+        );
+      }
+
+      for (const marketId of marketIds) {
+        expect(await riskOverrideSetter.isMarketStrictCollateral(marketId)).to.eq(true);
+        expect(await riskOverrideSetter.isMarketSingleCollateralStrictDebt(marketId)).to.eq(false);
+      }
+      expect(await riskOverrideSetter.isMarketStrictCollateral(core.marketIds.wbera)).to.eq(false);
+    });
+
+    it('should return true when configured with an empty collateral bitmap', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetDebtMarketWithStrictCollateral(
+        core.marketIds.usdc, ZERO_BI,
+      );
+
+      expect(await riskOverrideSetter.isMarketStrictCollateral(core.marketIds.usdc)).to.eq(true);
+    });
+
+    it('should support the lowest and highest market IDs in the bitmap', async () => {
+      for (const marketId of [0, 255]) {
+        await riskOverrideSetter.connect(core.governance).ownerSetDebtMarketWithStrictCollateral(
+          marketId, getBitmap([2]),
+        );
+      }
+
+      expect(await riskOverrideSetter.isMarketStrictCollateral(0)).to.eq(true);
+      expect(await riskOverrideSetter.isMarketStrictCollateral(255)).to.eq(true);
+      expect(await riskOverrideSetter.isMarketStrictCollateral(1)).to.eq(false);
+      expect(await riskOverrideSetter.isMarketStrictCollateral(254)).to.eq(false);
+    });
+  });
+
   describe('#getSingleCollateralStrictDebtSettings', () => {
     it('should revert for an unconfigured market', async () => {
       await expectThrow(riskOverrideSetter.getSingleCollateralStrictDebtSettings(core.marketIds.wbera));
@@ -649,6 +733,95 @@ describe('BitmapRiskOverrideSetter', () => {
       expect(result.bitmap).to.eq(ZERO_BI);
       expect(result.marginRatioOverride.value).to.eq(ZERO_BI);
       expect(result.liquidationRewardOverride.value).to.eq(ZERO_BI);
+    });
+  });
+
+  describe('#getCategoryByMarketId', () => {
+    it('should return NONE when there are no active categories', async () => {
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.wbera)).to.eq(Category.NONE);
+    });
+
+    it('should return the matching active category for each market', async () => {
+      const categories = [Category.BERA, Category.BTC, Category.ETH, Category.STABLE];
+      const marketIdsByCategory = [
+        [core.marketIds.wbera],
+        [core.marketIds.wbtc],
+        [core.marketIds.weth],
+        [core.marketIds.usdc, core.marketIds.honey],
+      ];
+      for (let i = 0; i < categories.length; ++i) {
+        await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+          categories[i], getBitmap(marketIdsByCategory[i]), marginRatio, liquidationReward,
+        );
+      }
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories(categories);
+
+      for (let i = 0; i < categories.length; ++i) {
+        for (const marketId of marketIdsByCategory[i]) {
+          expect(await riskOverrideSetter.getCategoryByMarketId(marketId)).to.eq(categories[i]);
+        }
+      }
+    });
+
+    it('should return NONE when no active category contains the market', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.BERA, getBitmap([core.marketIds.wbera]), marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([Category.BERA]);
+
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.usdc)).to.eq(Category.NONE);
+    });
+
+    it('should ignore a matching inactive category', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.BERA, getBitmap([core.marketIds.wbera]), marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([Category.BERA]);
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.wbera)).to.eq(Category.BERA);
+
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([Category.BTC]);
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.wbera)).to.eq(Category.NONE);
+    });
+
+    it('should skip active categories with empty bitmaps', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.BERA, ZERO_BI, marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.STABLE, getBitmap([core.marketIds.usdc]), marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([
+        Category.BERA, Category.BTC, Category.STABLE,
+      ]);
+
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.usdc)).to.eq(Category.STABLE);
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.wbera)).to.eq(Category.NONE);
+    });
+
+    it('should reflect updates to the category bitmap', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.STABLE, getBitmap([core.marketIds.usdc]), marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([Category.STABLE]);
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.usdc)).to.eq(Category.STABLE);
+
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.STABLE, getBitmap([core.marketIds.honey]), marginRatio, liquidationReward,
+      );
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.usdc)).to.eq(Category.NONE);
+      expect(await riskOverrideSetter.getCategoryByMarketId(core.marketIds.honey)).to.eq(Category.STABLE);
+    });
+
+    it('should support the lowest and highest market IDs in the bitmap', async () => {
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoryStruct(
+        Category.BERA, getBitmap([0, 255]), marginRatio, liquidationReward,
+      );
+      await riskOverrideSetter.connect(core.governance).ownerSetActiveCategories([Category.BERA]);
+
+      expect(await riskOverrideSetter.getCategoryByMarketId(0)).to.eq(Category.BERA);
+      expect(await riskOverrideSetter.getCategoryByMarketId(255)).to.eq(Category.BERA);
+      expect(await riskOverrideSetter.getCategoryByMarketId(1)).to.eq(Category.NONE);
+      expect(await riskOverrideSetter.getCategoryByMarketId(254)).to.eq(Category.NONE);
     });
   });
 });

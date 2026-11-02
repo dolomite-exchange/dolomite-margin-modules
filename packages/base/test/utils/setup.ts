@@ -42,6 +42,7 @@ import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
+  BitmapRiskOverrideSetter__factory,
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
   DolomiteERC4626,
@@ -969,6 +970,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     governance,
   );
 
+  const bitmapRiskOverrideSetter = BitmapRiskOverrideSetter__factory.connect(
+    ModuleDeployments.BitmapRiskOverrideSetter[config.network].address,
+    governance,
+  );
+
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
@@ -1137,6 +1143,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     adminExpirePosition,
     adminPauseMarket,
     adminRegistry,
+    bitmapRiskOverrideSetter,
     borrowPositionProxyV2,
     borrowPositionRouter,
     chainlinkPriceOracleV1,
