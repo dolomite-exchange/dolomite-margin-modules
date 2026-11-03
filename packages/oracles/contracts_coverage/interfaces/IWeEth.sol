@@ -19,23 +19,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   ICappedStEthExchangeRatePriceOracle
+ * @title   IWeEth
  * @author  Dolomite
  *
- * An interface for the CappedStEthExchangeRatePriceOracle
+ * An interface for the WeEth
  */
-interface ICappedStEthExchangeRatePriceOracle is IDolomitePriceOracle {
-    event CapParametersSet(uint256 snapshotRatio, uint256 snapshotTimestamp, uint256 maxGrowthPerSecond);
+interface IWeEth {
 
-    struct SetCapParameters {
-        uint256 snapshotRatio;
-        uint256 snapshotTimestamp;
-        uint256 maxGrowthPerYear;
-    }
-
-    function ownerSetCapParameters(SetCapParameters memory _setCapParameters) external;
+    function getRate() external view returns (uint256);
 }

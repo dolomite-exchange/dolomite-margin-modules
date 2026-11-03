@@ -23,7 +23,7 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { ICappedStEthExchangeRatePriceOracle } from "./interfaces/ICappedStEthExchangeRatePriceOracle.sol";
+import { ICappedExchangeRatePriceOracle } from "./interfaces/ICappedExchangeRatePriceOracle.sol";
 import { ILido } from "./interfaces/ILido.sol";
 
 
@@ -33,7 +33,7 @@ import { ILido } from "./interfaces/ILido.sol";
  *
  * An implementation of the IDolomitePriceOracle interface that gets the capped wstETH <> stETH exchange rate
  */
-contract CappedStEthExchangeRatePriceOracle is ICappedStEthExchangeRatePriceOracle, OnlyDolomiteMargin {
+contract CappedStEthExchangeRatePriceOracle is ICappedExchangeRatePriceOracle, OnlyDolomiteMargin {
 
     bytes32 private constant _FILE = "CappedStEthExchangeRateOracle";
 

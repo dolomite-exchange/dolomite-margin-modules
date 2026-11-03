@@ -23,12 +23,12 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 
 
 /**
- * @title   ICappedStEthExchangeRatePriceOracle
+ * @title   ICappedExchangeRatePriceOracle
  * @author  Dolomite
  *
- * An interface for the CappedStEthExchangeRatePriceOracle
+ * An interface for the CappedExchangeRatePriceOracle
  */
-interface ICappedStEthExchangeRatePriceOracle is IDolomitePriceOracle {
+interface ICappedExchangeRatePriceOracle is IDolomitePriceOracle {
     event CapParametersSet(uint256 snapshotRatio, uint256 snapshotTimestamp, uint256 maxGrowthPerSecond);
 
     struct SetCapParameters {
