@@ -26,7 +26,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IModularLinearStepFunctionInterestSetter } from "@dolomite-exchange/modules-interest-setters/contracts/interfaces/IModularLinearStepFunctionInterestSetter.sol"; // solhint-disable-line max-line-length
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
 import { IAdminSetInterestSetter } from "./interfaces/IAdminSetInterestSetter.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { IDolomiteOwnerWithSubmitAndExecute } from "./interfaces/IDolomiteOwnerWithSubmitAndExecute.sol";
 
 
 /**
@@ -78,7 +78,7 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
     )
     external
     checkPermission(this.setInterestSetterByMarketId.selector, msg.sender) {
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerSetInterestSetter.selector,
@@ -93,7 +93,7 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
     )
     external
     checkPermission(this.setModularInterestSetterByMarketId.selector, msg.sender) {
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             abi.encodeWithSelector(
                 IDolomiteMarginAdmin.ownerSetInterestSetter.selector,
@@ -111,7 +111,7 @@ contract AdminSetInterestSetter is OnlyDolomiteMargin, AdminRegistryHelper, IAdm
     )
     external
     checkPermission(this.setInterestSettingsByToken.selector, msg.sender) {
-        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+        IDolomiteOwnerWithSubmitAndExecute(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             modularInterestSetter,
             abi.encodeWithSelector(
                 IModularLinearStepFunctionInterestSetter.ownerSetSettingsByToken.selector,

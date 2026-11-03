@@ -23,9 +23,7 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { IExpirePositionProxy } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IExpirePositionProxy.sol"; // solhint-disable-line max-line-length
 import { AdminRegistryHelper } from "./AdminRegistryHelper.sol";
-import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 import { IAdminExpirePosition } from "./interfaces/IAdminExpirePosition.sol";
 
 
