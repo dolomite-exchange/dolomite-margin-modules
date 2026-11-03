@@ -1,15 +1,7 @@
-import { marketToIsolationModeVaultInfoBase } from 'packages/deployment/src/deploy/isolation-mode/base-isolation-mode';
-import {
-  marketToIsolationModeVaultInfoEthereum,
-} from 'packages/deployment/src/deploy/isolation-mode/ethereum-isolation-mode';
-import { marketToIsolationModeVaultInfoInk } from 'packages/deployment/src/deploy/isolation-mode/ink-isolation-mode';
-import {
-  marketToIsolationModeVaultInfoXLayer,
-} from 'packages/deployment/src/deploy/isolation-mode/xlayer-isolation-mode';
+import { marketToIsolationModeVaultInfoSepolia } from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/sepolia-isolation-mode';
+import { ModuleDeployments } from '@dolomite-exchange/modules-deployments/src/utils';
 import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
-import {
-  prettyPrintEncodedDataWithTypeSafety,
-} from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
 import { BigNumber, ethers } from 'ethers';
 import { network as hardhatNetwork } from 'hardhat';
 import {
@@ -23,19 +15,18 @@ import {
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import {
-  marketToIsolationModeVaultInfoArbitrumOne,
-} from 'packages/deployment/src/deploy/isolation-mode/arbitrum-isolation-mode';
-import {
-  marketToIsolationModeVaultInfoBerachain,
-} from 'packages/deployment/src/deploy/isolation-mode/berachain-isolation-mode';
+import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum-isolation-mode';
+import { marketToIsolationModeVaultInfoBase } from 'packages/deployment/src/deploy/isolation-mode/base-isolation-mode';
+import { marketToIsolationModeVaultInfoBerachain } from 'packages/deployment/src/deploy/isolation-mode/berachain-isolation-mode';
+import { marketToIsolationModeVaultInfoBnb } from 'packages/deployment/src/deploy/isolation-mode/bnb-isolation-mode';
+import { marketToIsolationModeVaultInfoEthereum } from 'packages/deployment/src/deploy/isolation-mode/ethereum-isolation-mode';
+import { marketToIsolationModeVaultInfoInk } from 'packages/deployment/src/deploy/isolation-mode/ink-isolation-mode';
 import {
   DeployedVaultInformation,
   IsolationModeVaultType,
 } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
-import {
-  marketToIsolationModeVaultInfoMantle,
-} from 'packages/deployment/src/deploy/isolation-mode/mantle-isolation-mode';
+import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle-isolation-mode';
+import { marketToIsolationModeVaultInfoXLayer } from 'packages/deployment/src/deploy/isolation-mode/xlayer-isolation-mode';
 import {
   deployContractAndSave,
   getMaxDeploymentVersionNumberByDeploymentKey,
@@ -43,11 +34,6 @@ import {
 import { DolomiteMargin, isIsolationModeByName } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
-import { marketToIsolationModeVaultInfoBnb } from 'packages/deployment/src/deploy/isolation-mode/bnb-isolation-mode';
-import {
-  marketToIsolationModeVaultInfoSepolia,
-} from '@dolomite-exchange/modules-deployments/src/deploy/isolation-mode/sepolia-isolation-mode';
-import { ModuleDeployments } from '@dolomite-exchange/modules-deployments/src/utils';
 
 export class DeployedVault {
   public contractName: string;
@@ -189,21 +175,11 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   let skippedMarkets = 0;
   const deployedVaults: DeployedVault[] = [];
   if (config.network === Network.ArbitrumOne) {
-    skippedMarkets = initializeVaults(
-      config,
-      governance,
-      marketToIsolationModeVaultInfoArbitrumOne,
-      deployedVaults,
-    );
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoArbitrumOne, deployedVaults);
   } else if (config.network === Network.Base) {
     skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoBase, deployedVaults);
   } else if (config.network === Network.Berachain) {
-    skippedMarkets = initializeVaults(
-      config,
-      governance,
-      marketToIsolationModeVaultInfoBerachain,
-      deployedVaults,
-    );
+    skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoBerachain, deployedVaults);
   } else if (config.network === Network.Bnb) {
     skippedMarkets = initializeVaults(config, governance, marketToIsolationModeVaultInfoBnb, deployedVaults);
   } else if (config.network === Network.Ethereum) {
@@ -235,6 +211,12 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
     ModuleDeployments.MultiCallWithExceptionHandlerV2[config.network].address,
     dolomiteMargin.provider,
   );
+  if ((await multiCall.provider.getCode(multiCall.address)) === '0x') {
+    console.warn(
+      'MultiCallWithExceptionHandlerV2 not deployed yet on this hardhat fork. Skipping isolation mode checks',
+    );
+    return deployedVaults;
+  }
 
   const addressCalls = [];
   for (let i = 0; i < marketsCount.toNumber(); i++) {
