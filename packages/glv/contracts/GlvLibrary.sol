@@ -107,7 +107,7 @@ library GlvLibrary {
     ) public returns (bytes32) {
         bytes32 executeDepositKey = keccak256(abi.encode(
             _EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED,
-            _registry.glvHandler()
+            _registry.glvDepositHandler()
         ));
         Require.that(
             !_registry.gmxDataStore().getBool(executeDepositKey),
@@ -297,7 +297,7 @@ library GlvLibrary {
         {
             bytes32 createWithdrawalKey = keccak256(abi.encode(
                 _CREATE_GLV_WITHDRAWAL_FEATURE_DISABLED,
-                _registry.glvHandler()
+                _registry.glvWithdrawalHandler()
             ));
             bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
             if (isCreateWithdrawalFeatureDisabled) {
@@ -308,7 +308,7 @@ library GlvLibrary {
         {
             bytes32 executeWithdrawalKey = keccak256(abi.encode(
                 _EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED,
-                _registry.glvHandler()
+                _registry.glvWithdrawalHandler()
             ));
             bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
             if (isExecuteWithdrawalFeatureDisabled) {

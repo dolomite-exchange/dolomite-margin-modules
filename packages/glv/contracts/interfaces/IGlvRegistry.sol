@@ -90,6 +90,10 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
 
     function glvHandler() external view returns (IGlvHandler);
 
+    function glvDepositHandler() external view returns (address);
+
+    function glvWithdrawalHandler() external view returns (address);
+
     function glvVault() external view returns (address);
 
     function glvTokenToGmMarketForDeposit(address _glvToken) external view returns (address);
