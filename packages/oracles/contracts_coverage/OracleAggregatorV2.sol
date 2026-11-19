@@ -37,8 +37,8 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     // ========================= Constants =========================
 
     bytes32 private constant _FILE = "OracleAggregatorV2";
-    uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint256 private constant _WEIGHT_TOTAL = 100;
+    uint256 internal constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
 
@@ -82,6 +82,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
         address _token
     )
     public
+    virtual
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
