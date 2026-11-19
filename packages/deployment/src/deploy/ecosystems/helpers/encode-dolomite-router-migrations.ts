@@ -1,4 +1,4 @@
-import { DepositWithdrawalRouter, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { BorrowPositionRouter, DepositWithdrawalRouter, IBorrowPositionProxyV2, RouterProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { PAYABLE_TOKEN_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
@@ -10,6 +10,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/ba
 export async function encodeDolomiteRouterMigrations(
   core: CoreProtocolType<any>,
   depositWithdrawalRouter: DepositWithdrawalRouter,
+  borrowPositionRouter: BorrowPositionRouter,
   routers: string[],
   routerImplementations: string[],
   deployedVaults: DeployedVault[],
@@ -60,6 +61,18 @@ export async function encodeDolomiteRouterMigrations(
         ),
       );
     }
+  }
+
+  if (!(await core.borrowPositionProxyV2.isCallerAuthorized(borrowPositionRouter.address))) {
+    transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          core,
+          'borrowPositionProxyV2',
+          'setIsCallerAuthorized',
+          [borrowPositionRouter.address, true],
+        ),
+    );
   }
 
   for (const deployedVault of deployedVaults) {
