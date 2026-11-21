@@ -29,12 +29,13 @@ import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from
 import { parseEther } from 'ethers/lib/utils';
 import { ethers, network as hardhatNetwork } from 'hardhat';
 import {
+  AdminRegistry__factory,
   DolomiteOwnerV1__factory,
   DolomiteOwnerV2__factory,
+  DolomiteOwnerV3__factory,
   IAdminClaimExcessTokens__factory,
   IAdminExpirePosition__factory,
   IAdminPauseMarket__factory,
-  IAdminRegistry__factory,
 } from 'packages/admin/src/types';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
@@ -950,6 +951,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
+  const adminRegistry = AdminRegistry__factory.connect(
+    ModuleDeployments.AdminRegistryProxy[config.network].address,
+    governance
+  );
+
   const adminClaimExcessTokens = IAdminClaimExcessTokens__factory.connect(
     ModuleDeployments.AdminClaimExcessTokensV2[config.network].address,
     governance,
@@ -962,11 +968,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
 
   const adminPauseMarket = IAdminPauseMarket__factory.connect(
     ModuleDeployments.AdminPauseMarketV2[config.network].address,
-    governance,
-  );
-
-  const adminRegistry = IAdminRegistry__factory.connect(
-    ModuleDeployments.AdminRegistryProxy[config.network].address,
     governance,
   );
 
@@ -1116,6 +1117,11 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     DolomiteOwnerV2__factory.connect,
     gnosisSafe,
   );
+  const ownerAdapterV3 = getContractOpt(
+    ModuleDeployments.DolomiteOwnerV3?.[config.network]?.address,
+    DolomiteOwnerV3__factory.connect,
+    gnosisSafe,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
@@ -1177,6 +1183,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     oracleAggregatorV2,
     ownerAdapterV1,
     ownerAdapterV2,
+    ownerAdapterV3,
     testEcosystem,
     hhUser1,
     hhUser2,

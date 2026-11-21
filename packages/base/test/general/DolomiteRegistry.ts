@@ -34,6 +34,7 @@ describe('DolomiteRegistryImplementation', () => {
       core.dolomiteAccountRegistry.address,
       core.gnosisSafeAddress,
       core.governanceAddress,
+      core.governanceAddress // @dev this is the fee agent
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -54,6 +55,7 @@ describe('DolomiteRegistryImplementation', () => {
       );
       expect(await registry.liquidatorAssetRegistry()).to.equal(core.liquidatorAssetRegistry.address);
       expect(await registry.eventEmitter()).to.equal(core.eventEmitterRegistryProxy.address);
+      expect(await registry.feeAgent()).to.equal(core.governanceAddress);
     });
 
     it('should fail to initialize if already initialized', async () => {
@@ -67,6 +69,7 @@ describe('DolomiteRegistryImplementation', () => {
           core.eventEmitterRegistryProxy.address,
           core.dolomiteAccountRegistry.address,
           core.gnosisSafeAddress,
+          core.governanceAddress,
           core.governanceAddress,
         ),
         'Initializable: contract is already initialized',
@@ -188,7 +191,7 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetFeeAgent', () => {
     it('should work normally', async () => {
-      expect(await registry.feeAgent()).to.equal(ZERO_ADDRESS);
+      expect(await registry.feeAgent()).to.equal(core.governanceAddress);
       const result = await registry.connect(core.governance).ownerSetFeeAgent(OTHER_ADDRESS);
       await expectEvent(registry, result, 'FeeAgentSet', {
         _feeAgent: OTHER_ADDRESS,
@@ -576,6 +579,31 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetAdminRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetDTokenHandler', () => {
+    it('should work normally', async () => {
+      expect(await registry.dTokenHandler()).to.equal(ZERO_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetDTokenHandler(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'DTokenHandlerSet', {
+        _dTokenHandler: OTHER_ADDRESS,
+      });
+      expect(await registry.dTokenHandler()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDTokenHandler(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dTokenHandler',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDTokenHandler(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
