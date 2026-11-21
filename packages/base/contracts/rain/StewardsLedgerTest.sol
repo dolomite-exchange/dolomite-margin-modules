@@ -34,11 +34,18 @@ contract StewardsLedgerTest {
 
     bytes32 private constant _FILE = "StewardsLedgerTest";
 
+    struct UnderpaymentInfo {
+        uint256 partialPrincipalPaymentAmount;
+        uint256 swipesLengthSnapshot;
+    }
+
     struct Merchant {
         uint256 verifiedWeeklyRevenue;
         uint256 maxSpecifiedPercentage;
         uint256 factorForNewSwipes;
+        uint256 headSwipeIndex;
 
+        uint256 numRepayments;
         uint256 totalRepaidAmount;
         uint256 principalOutstanding;
         uint256 firstOutstandingMCAIndex;
@@ -46,10 +53,16 @@ contract StewardsLedgerTest {
 
     struct Swipe {
         uint256 amount;
+        uint256 swipePrincipalOutstanding; // only updated once the swipe becomes the head swipe
         uint256 factorRate;
-        uint256 swipePercentage;
         bool isClosed;
-        // maybe store verified weekly revenue at the time
+
+        uint256 swipePercentage;
+        uint256 cumulativeSwipePercentage;
+        uint256 cumulativeWeightedFactorRate;
+        uint256 cumulativeAmountTotal; // for calculating the weighted factor rate
+        uint256 paymentsAlreadyMade;
+        UnderpaymentInfo[] underpayments;
     }
 
     uint256 merchantCounter;
@@ -69,9 +82,11 @@ contract StewardsLedgerTest {
             verifiedWeeklyRevenue: _verifiedWeeklyRevenue,
             maxSpecifiedPercentage: _maxSpecifiedPercentage,
             factorForNewSwipes: _factorForNewSwipes,
+            headSwipeIndex: 0,
             totalRepaidAmount: 0,
             principalOutstanding: 0,
-            firstOutstandingMCAIndex: 0
+            firstOutstandingMCAIndex: 0,
+            numRepayments: 0
         });
     }
 
@@ -88,38 +103,132 @@ contract StewardsLedgerTest {
             _FILE,
             "Insufficient credit limit"
         );
+        merchant.principalOutstanding += _amount;
 
         // store swipe
         uint256 newSwipePercentage = calculateSwipePercentage(_amount, merchant.factorForNewSwipes, merchant.verifiedWeeklyRevenue);
-        Swipe memory swipe = Swipe({
-            amount: _amount,
-            factorRate: merchant.factorForNewSwipes,
-            swipePercentage: newSwipePercentage,
-            isClosed: false
-        });
-        merchant.principalOutstanding += _amount;
+        Swipe[] storage merchantSwipes = merchantIdToSwipes[_merchantId];
 
-        merchantIdToSwipes[_merchantId].push(swipe);
+        uint256 cumulativeSwipePercentage;
+        uint256 cumulativeWeightedFactorRate;
+        uint256 cumulativeAmountTotal;
+        if (merchantSwipes.length == 0) {
+            cumulativeSwipePercentage = newSwipePercentage;
+            cumulativeWeightedFactorRate = _amount * merchant.factorForNewSwipes;
+            cumulativeAmountTotal = _amount;
+        } else {
+            cumulativeSwipePercentage = merchantSwipes[merchantSwipes.length - 1].cumulativeSwipePercentage + newSwipePercentage;
+            cumulativeWeightedFactorRate = merchantSwipes[merchantSwipes.length - 1].cumulativeWeightedFactorRate + _amount * merchant.factorForNewSwipes;
+            cumulativeAmountTotal = merchantSwipes[merchantSwipes.length - 1].cumulativeAmountTotal + _amount;
+        }
+
+        Swipe storage swipe = merchantIdToSwipes[_merchantId].push();
+        swipe.amount = _amount;
+        swipe.factorRate = merchant.factorForNewSwipes;
+        swipe.swipePrincipalOutstanding = _amount;
+        swipe.isClosed = false;
+        swipe.swipePercentage = newSwipePercentage;
+        swipe.cumulativeSwipePercentage = cumulativeSwipePercentage;
+        swipe.cumulativeWeightedFactorRate = cumulativeWeightedFactorRate;
+        swipe.cumulativeAmountTotal = cumulativeAmountTotal;
+        swipe.paymentsAlreadyMade = merchant.numRepayments;
     }
 
+    // @audit does the weighted factor rate formula work as repayments start happening
+    // @audit we'd need to handle if head swipe has less payment remaining than the swipe percentage
+    // @audit we need to handle changes to the verified monthly revenue
     function executeRepayment(
         uint256 _merchantId,
         uint256 _repayAmount,
-        uint256 _principalRepaid,
-        uint256[] memory _swipesToClose
-    ) external {
-        // require sender is dolomite
-
-        // 
+        uint256 _underpaymentHelperIndex
+    ) external /* requireSenderIsStewards */ {
         Merchant storage merchant = idToMerchant[_merchantId];
-
-        merchant.principalOutstanding -= _principalRepaid;
-        merchant.totalRepaidAmount += _repayAmount;
-
         Swipe[] storage merchantSwipes = merchantIdToSwipes[_merchantId];
-        for (uint256 i; i < _swipesToClose.length; ++i) {
-            merchantSwipes[_swipesToClose[i]].isClosed = true;
+
+        // calculate total swipe percentage & expected payment
+        uint256 totalSwipePercentage = merchantSwipes[merchantSwipes.length - 1].cumulativeSwipePercentage - merchantSwipes[merchant.headSwipeIndex - 1].cumulativeSwipePercentage;
+        uint256 expectedPayment = merchant.verifiedWeeklyRevenue * totalSwipePercentage / 1e18;
+
+        Swipe storage headSwipe = merchantSwipes[merchant.headSwipeIndex];
+        Swipe storage latestSwipe = merchantSwipes[merchantSwipes.length];
+
+        if (_repayAmount == expectedPayment) {
+            uint256 weightedFactorRateNumerator = merchant.headSwipeIndex == 0 ? latestSwipe.cumulativeWeightedFactorRate : latestSwipe.cumulativeWeightedFactorRate - headSwipe.cumulativeWeightedFactorRate;
+            uint256 weightedFactorRateDenominator = merchant.headSwipeIndex == 0 ? latestSwipe.cumulativeAmountTotal : latestSwipe.cumulativeAmountTotal - headSwipe.cumulativeAmountTotal;
+
+            // decrease total principal by the weighted factor rate
+            uint256 principalAmount = _repayAmount * weightedFactorRateNumerator / weightedFactorRateDenominator;
+            merchant.principalOutstanding -= principalAmount;
+
+            // decrease head swipe principal
+            // @audit This has to be prior to the other stuff. Can fix later
+            headSwipe.swipePrincipalOutstanding -= _repayAmount * headSwipe.swipePercentage / headSwipe.factorRate;
+        } else if (_repayAmount > expectedPayment) {
+            uint256 weightedFactorRateNumerator = merchant.headSwipeIndex == 0 ? latestSwipe.cumulativeWeightedFactorRate : latestSwipe.cumulativeWeightedFactorRate - headSwipe.cumulativeWeightedFactorRate;
+            uint256 weightedFactorRateDenominator = merchant.headSwipeIndex == 0 ? latestSwipe.cumulativeAmountTotal : latestSwipe.cumulativeAmountTotal - headSwipe.cumulativeAmountTotal;
+
+            uint256 principalAmount = _repayAmount * weightedFactorRateNumerator / weightedFactorRateDenominator;
+            merchant.principalOutstanding -= principalAmount;
+
+            // start at head swipe and loop through
+            uint256 overpayAmount = _repayAmount - expectedPayment;
+            while (overpayAmount > 0) {
+                if (overpayAmount > headSwipe.swipePrincipalOutstanding) {
+                    merchant.principalOutstanding -= headSwipe.swipePrincipalOutstanding;
+                    overpayAmount -= headSwipe.swipePrincipalOutstanding;
+                    headSwipe.swipePrincipalOutstanding = 0;
+                    _updateHead();
+                } else if (overpayAmount < headSwipe.swipePrincipalOutstanding) {
+                    headSwipe.swipePrincipalOutstanding -= overpayAmount;
+                    merchant.principalOutstanding -= overpayAmount;
+                    overpayAmount = 0;
+                } else {
+                    headSwipe.swipePrincipalOutstanding = 0;
+                    merchant.principalOutstanding -= overpayAmount;
+                    overpayAmount = 0;
+                    _updateHead();
+                }
+            }
+        } else {
+            Swipe storage partialSwipe = merchantSwipes[_underpaymentHelperIndex];
+
+            // check underpaymentHelperIndex is correct
+            // @audit need to handle edge case where it perfectly fills this swipe
+            // uint256 percentagePaid = _repayAmount * 1e18 / merchant.verifiedWeeklyRevenue; REMOVED CAUSE STACK TOO DEEP
+            uint256 leftIndex = merchantSwipes[_underpaymentHelperIndex - 1].cumulativeSwipePercentage - merchantSwipes[merchant.headSwipeIndex - 1].cumulativeSwipePercentage;
+            Require.that(
+                _repayAmount * 1e18 / merchant.verifiedWeeklyRevenue < leftIndex + partialSwipe.swipePercentage,
+                _FILE,
+                "Invalid helper index"
+            );
+
+            // decrease total principal by weighted factor rate under the index
+            uint256 weightedFactorRateNumerator = merchant.headSwipeIndex == 0 ? partialSwipe.cumulativeWeightedFactorRate : partialSwipe.cumulativeWeightedFactorRate - headSwipe.cumulativeWeightedFactorRate;
+            uint256 weightedFactorRateDenominator = merchant.headSwipeIndex == 0 ? partialSwipe.cumulativeAmountTotal : partialSwipe.cumulativeAmountTotal - headSwipe.cumulativeAmountTotal;
+
+            uint256 fullSwipesPayment = merchant.verifiedWeeklyRevenue * leftIndex / 1e18;
+            merchant.principalOutstanding -= fullSwipesPayment * weightedFactorRateNumerator / weightedFactorRateDenominator;
+
+            // decrease total principal by leftover amount at the index
+            uint256 partialPrincipalAmount = (_repayAmount - fullSwipesPayment) / partialSwipe.factorRate * 1e18;
+            merchant.principalOutstanding -= partialPrincipalAmount;
+
+            // push to the swipes underpayments
+            partialSwipe.underpayments.push(UnderpaymentInfo({ partialPrincipalPaymentAmount: partialPrincipalAmount, swipesLengthSnapshot: merchantSwipes.length }));
         }
+    }
+
+    // @audit one thing I'd like to add is potentially confirming the new principal amount fits with total principal outstanding
+    function _updateHead() internal {
+        // check that current head has principal of 0
+
+        // move head to next index
+
+        // calculate number of full repayments made (will need to figure out changes to verified weekly revenue)
+
+        // loop through underpayments to add to repayment number, and if need be, move underpayments to next swipe
+
+        // calculate principal paid amount using factor rate and update principal owed on this swipe
     }
 
     // ========================================================
